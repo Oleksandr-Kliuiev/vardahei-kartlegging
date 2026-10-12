@@ -3,7 +3,7 @@
 Oleksandr (безопасность и ИТ, Vardahei IT — MSP в Согндале, Норвегия). Команда: Oleksandr, Asbjørn (шеф), Bjarte.
 Клиенты: Daco, Gasta, Kviknes, Maskinsenteret, SFHS, Tharaso.
 
-Проект: опросники для сотрудников клиентов, дашборд с результатами, админка с прогрессом в реальном времени. Дальше — платформа Varde (опросы + семинары + AI-ассистент), см. `docs/varde/`.
+Проект: опросники для сотрудников клиентов, дашборд с результатами, админка с прогрессом в реальном времени. Дальше — платформа Varde (опросы + семинары + AI-ассистент), см. `docs/varde/`: `ARCHITECTURE.md`, `PRINCIPLES.md`, `STAGES.md`, `adr/` — план, одобренный Astra и Fable 11.10 (итог — `astra/final-summary.md`); `varde-arkitektura.md` — исходный документ rev 33, история. План не учитывает изменения kartlegging от 12.10; по ним идёт delta — `astra/delta-12-10-brief.md`.
 
 Перед работой прочитай `docs/SAMMENDRAG.md` (история и контекст) и `docs/BACKLOG.md` (что дальше).
 

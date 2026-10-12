@@ -1,6 +1,8 @@
 # Передача: brainstorm архитектуры Varde (для локальной сессии Claude Code)
 
-> **Сначала:** документ rev 33 устарел в нескольких местах — см. `docs/varde/ENDRINGAR-etter-rev33.md`. Обнови `docs/varde/varde-arkitektura.md`, затем пересобери `astra/round-1-prompt.md` (контекст и формат ответа в нём остаются, меняется только документ в конце) и только потом запускай раунд 1.
+> **Статус на 12.10.2026.** Brainstorm уже проведён 11.10 в локальной сессии Claude Code — по rev 33 и коду kartlegging на 11.10, без `docs/varde/ENDRINGAR-etter-rev33.md`. Три раунда и три прохода одобрения; итог — `docs/varde/` (`ARCHITECTURE.md`, `PRINCIPLES.md`, `STAGES.md`, `adr/`) и `astra/final-summary.md`. Раунд 1 заново не запускать. Следующий шаг — delta под изменения 12.10 по `astra/delta-12-10-brief.md`. Ниже — исходная инструкция, сохранена как история процесса.
+
+> ~~**Сначала:** документ rev 33 устарел в нескольких местах — см. `docs/varde/ENDRINGAR-etter-rev33.md`. Обнови `docs/varde/varde-arkitektura.md`, затем пересобери `astra/round-1-prompt.md` (контекст и формат ответа в нём остаются, меняется только документ в конце) и только потом запускай раунд 1.~~ Устарело, см. статус выше.
 
 Прочитай этот файл целиком, потом `docs/varde/ENDRINGAR-etter-rev33.md` и `docs/varde/varde-arkitektura.md`, потом начинай раунд 1. Отвечай Oleksandr по-русски, коротко, без пересказа того, что он и так знает.
 
