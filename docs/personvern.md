@@ -54,12 +54,12 @@ Vardahei работает как MSP: опрос проводится для к�
 | Опросник, вводный экран (`fakta2`) | «Vi spør om initialane dine, slik at vi kan sjå endringa frå førre runde. Ingen får karakterar.» | Дашборд считает каждому snittscore и зону, по сути оценку |
 | Текст рассылки (`admin.html`) | «Du skriv inn initialane dine først, elles er det ingen namn. Svara blir brukte samla for bedrifta.» | Vardahei видит ответы по каждому человеку |
 
-Предлагаемые тексты — в чате 12.10, применяются после «да».
+Исправлено 12.10.2026: «Svara per person ser berre Vardahei IT. Bedrifta får eit samla bilete utan initialar.» (опросник) и «Svara per person ser berre Vardahei IT, og bedrifta får eit samla bilete.» (рассылка), en — так же.
 
 ## Что ещё сделать
 
 1. Проверить databehandleravtale с шестью клиентами (Asbjørn).
 2. Добавить запись выше в протокол.
-3. Поправить два текста для сотрудников.
+3. ~~Поправить два текста для сотрудников~~ — сделано 12.10.2026.
 4. Команда удаления по клиенту (бэклог P2).
 5. Перед push в удалённый репозиторий решить, оставлять ли `runde1.js` в git.

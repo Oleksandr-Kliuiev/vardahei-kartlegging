@@ -839,7 +839,7 @@
         en: ["We at Vardahei IT would like to know what IT security looks like in your everyday work: which routines exist, how you keep track of passwords and sign-ins, and what you do if something goes wrong.",
              "The questions are the same as in the previous round, so we can see what has changed. The answers are handled together for the company and used for improvements."]
       },
-      fakta2: { nn: "Vi spør om initialane dine, slik at vi kan sjå endringa frå førre runde. Ingen får karakterar.", en: "We ask for your initials so we can see the change since the previous round. Nobody is graded." },
+      fakta2: { nn: "Vi spør om initialane dine, slik at vi kan sjå endringa frå førre runde. Svara per person ser berre Vardahei IT. Bedrifta får eit samla bilete utan initialar.", en: "We ask for your initials so we can see the change since the previous round. Only Vardahei IT sees answers per person. Your company gets an overall picture without initials." },
       fakta3: { nn: "Ingen feil svar. «Usikker» er eit heilt greitt svar, og nyttig for oss å vite.", en: "No wrong answers. “Not sure” is a perfectly fine answer, and useful for us to know." },
       fakta4: { nn: "Vi kjem tilbake til bedrifta med det vi fann, og kva vi føreslår å gjere.", en: "We'll get back to your company with what we found and what we suggest doing." },
       leiar: {
