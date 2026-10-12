@@ -82,7 +82,7 @@ rsync -av --exclude data/ kartlegging/ vardahei-vps:/opt/kartlegging/
 ssh vardahei-vps 'bash /opt/kartlegging/deploy/installer.sh'
 ```
 
-`installer.sh`: создаёт `data/` (700), кладёт стартовые учётки, если их нет; поднимает контейнер `node:22-alpine` (read-only код, `data` отдельным томом, cap_drop ALL, 256 МБ); добавляет домен в Caddyfile с бэкапом и проверкой, перезагружает Caddy; печатает ссылки.
+`installer.sh`: создаёт `data/` (700), кладёт стартовые учётки, если их нет; поднимает контейнер `node:22-alpine` (read-only код, `data` отдельным томом, cap_drop ALL, 256 МБ); добавляет домен в Caddyfile (с HSTS, `max-age=31536000`) с бэкапом и проверкой, перезагружает Caddy; печатает ссылки. На проде HSTS добавлен 12.10.2026 вручную тем же способом.
 
 Обновление кода: тот же `rsync` и `docker compose -f /opt/kartlegging/deploy/compose.yaml restart`.
 

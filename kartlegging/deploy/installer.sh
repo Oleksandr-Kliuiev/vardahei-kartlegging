@@ -32,7 +32,7 @@ else
   KOPI="$CADDYFILE.bak-$(date +%Y%m%d-%H%M%S)"
   cp -p "$CADDYFILE" "$KOPI"
   # Skriv i same fil (same inode), elles ser ikkje Caddy-containeren endringa
-  { cat "$KOPI"; printf '\n%s {\n\tencode zstd gzip\n\treverse_proxy kartlegging:3070\n}\n' "$DOMENE"; } > "$CADDYFILE.ny"
+  { cat "$KOPI"; printf '\n%s {\n\tencode zstd gzip\n\theader Strict-Transport-Security "max-age=31536000"\n\treverse_proxy kartlegging:3070\n}\n' "$DOMENE"; } > "$CADDYFILE.ny"
   cat "$CADDYFILE.ny" > "$CADDYFILE"; rm -f "$CADDYFILE.ny"
   if ! docker exec "$CADDY" caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1; then
     echo "   Ny Caddyfile er ugyldig. Set tilbake den gamle."
