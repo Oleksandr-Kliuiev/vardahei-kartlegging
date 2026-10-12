@@ -879,7 +879,7 @@
        Same som formelen i arket Tilsett_visning (snitt risikorang ≤ 1,5 grøn, ≤ 2,5 gul, ≤ 3,5 oransje). */
   var SONER = {
     nivaa: [{ id: "gron", namn: "Grøn" }, { id: "gul", namn: "Gul" }, { id: "oransje", namn: "Oransje" }, { id: "raud", namn: "Raud" }],
-    person: [1, 2, 2.5],
+    person: [1, 2, 3], // som Risikonivå i Spørring2_v2 i Master_Analyse.xlsx
     samla: [0.5, 1.5, 2.5]
   };
 

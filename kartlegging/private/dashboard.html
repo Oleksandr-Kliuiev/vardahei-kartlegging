@@ -448,7 +448,7 @@ tr.sumrad td { font-weight: 700; border-top: 1.5px solid var(--line); }
      Snittscore = snittet av poenga. Kritisk andel = delen av svara som er oransje eller raude.
      Éin person får sone etter SONER.person, eit spørsmål, ei rolle eller ei bedrift etter SONER.samla. */
   var SN = (K.soner && K.soner.nivaa) || [];
-  var GRENSE_PERSON = (K.soner && K.soner.person) || [1, 2, 2.5];
+  var GRENSE_PERSON = (K.soner && K.soner.person) || [1, 2, 3];
   var GRENSE_SAMLA = (K.soner && K.soner.samla) || [.5, 1.5, 2.5];
   function soneP(x) { if (x == null) return null; var i = 0; while (i < GRENSE_PERSON.length && x >= GRENSE_PERSON[i]) i++; return SN[i]; }
   function soneS(x) { if (x == null) return null; var i = 0; while (i < GRENSE_SAMLA.length && x > GRENSE_SAMLA[i]) i++; return SN[i]; }
