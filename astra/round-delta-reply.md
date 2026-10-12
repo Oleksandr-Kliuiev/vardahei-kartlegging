@@ -1,0 +1,33 @@
+### 1. K1–K13
+
+| K | закрыто / не закрыто | причина (`file:line`) |
+| --- | --- | --- |
+| K1 | закрыто | `identification` закреплён в TemplateVersion; `aggregate` сохраняет k, `person` доступен только админам под AuditLog. [ADR-025:9](/Users/oleksandr/vardahei-kartlegging/docs/varde/adr/ADR-025-identification-and-person-channel.md:9) |
+| K2 | закрыто | Раунд 1 импортируется в common Response; определены mapping, manifest, сверка и `comparability`. [ADR-024:14](/Users/oleksandr/vardahei-kartlegging/docs/varde/adr/ADR-024-provable-import-and-cutover.md:14) |
+| K3 | закрыто | Ключ — `(client, respondent_key)`; сравнение по людям зависит от raw, тест полноты ограничен агрегатами. [ADR-025:10](/Users/oleksandr/vardahei-kartlegging/docs/varde/adr/ADR-025-identification-and-person-channel.md:10), [STAGES:94](/Users/oleksandr/vardahei-kartlegging/docs/varde/STAGES.md:94) |
+| K4 | закрыто | Баллы принадлежат TemplateVersion, пороги — versioned MetricDefinition; операторы границ соответствуют продукту. [ADR-026:9](/Users/oleksandr/vardahei-kartlegging/docs/varde/adr/ADR-026-zone-model-and-findings-inventory.md:9) |
+| K5 | не закрыто | Задача 1.10 отправляет `F12×B13` в snapshots, а 1.28 требует его отсутствия там. Критерии несовместимы. [STAGES:93](/Users/oleksandr/vardahei-kartlegging/docs/varde/STAGES.md:93), [STAGES:123](/Users/oleksandr/vardahei-kartlegging/docs/varde/STAGES.md:123) |
+| K6 | закрыто | Советы и scenario оставлены только в KI; паритет и визуальный стиль включены в проверки runner. [STAGES:103](/Users/oleksandr/vardahei-kartlegging/docs/varde/STAGES.md:103) |
+| K7 | не закрыто | Бессрочность отражена. Но person-delete выбирает только `respondent_key`: leader не охвачен, KI получает безусловный отказ даже при идентифицирующем free text. Не закрыта защита от восстановления удалённого — см. §3. [ADR-017:12](/Users/oleksandr/vardahei-kartlegging/docs/varde/adr/ADR-017-retention-by-data-class.md:12), [STAGES:128](/Users/oleksandr/vardahei-kartlegging/docs/varde/STAGES.md:128) |
+| K8 | не закрыто | `frozen` и правила изменения anchor добавлены, но исключение не перенесено в обязательные автопроверки черновика: ≤25 слов и запрет продуктов остаются безусловными. [ADR-005:12](/Users/oleksandr/vardahei-kartlegging/docs/varde/adr/ADR-005-template-format.md:12), [ARCHITECTURE:85](/Users/oleksandr/vardahei-kartlegging/docs/varde/ARCHITECTURE.md:85) |
+| K9 | не закрыто | Запреты и отрицательные тесты добавлены, однако конфликт K5 оставляет путь leader-derived данных в snapshots, которые читают внешние каналы. [STAGES:93](/Users/oleksandr/vardahei-kartlegging/docs/varde/STAGES.md:93), [ARCHITECTURE:58](/Users/oleksandr/vardahei-kartlegging/docs/varde/ARCHITECTURE.md:58) |
+| K10 | закрыто | Части разделены в обоих опросниках; варианты (a)/(b) и зависимость `[O4]` сохранены. [ADR-021:16](/Users/oleksandr/vardahei-kartlegging/docs/varde/adr/ADR-021-privacy-contract.md:16), [STAGES:18](/Users/oleksandr/vardahei-kartlegging/docs/varde/STAGES.md:18) |
+| K11 | не закрыто | Этапы и поля определены, но Master_Analyse допускает person-CSV, тогда как PRINCIPLES запрещает person в любом CSV. Нужно явно ограничить запрет клиентским экспортом. [STAGES:126](/Users/oleksandr/vardahei-kartlegging/docs/varde/STAGES.md:126), [PRINCIPLES:17](/Users/oleksandr/vardahei-kartlegging/docs/varde/PRINCIPLES.md:17) |
+| K12 | закрыто | Лимиты, VPS, `leaders_all` обновлены; расположение кода оставлено входом Oleksandr. [ADR-009:6](/Users/oleksandr/vardahei-kartlegging/docs/varde/adr/ADR-009-respondent-access-codes.md:6), [ADR-016:6](/Users/oleksandr/vardahei-kartlegging/docs/varde/adr/ADR-016-hosting-and-backup.md:6), [STAGES:41](/Users/oleksandr/vardahei-kartlegging/docs/varde/STAGES.md:41) |
+| K13 | не закрыто | Переключатель nb реализован в контракте, но одновременно необязательным сделан en. Решение §3.11 меняет только букмол. [ADR-019:12](/Users/oleksandr/vardahei-kartlegging/docs/varde/adr/ADR-019-languages-and-translation-gate.md:12), [brief:41](/Users/oleksandr/vardahei-kartlegging/astra/delta-12-10-brief.md:41) |
+
+### 2. Решения за Oleksandr
+
+- **O5:** заранее исключён возврат данных клиенту. Рамка O2 оставляет решение о данных после договора клиенту; нужен conditional rule по результату проверки databehandleravtale, включая повторный architecture gate при конфликте с обещанием конфиденциальности. [ADR-017:33](/Users/oleksandr/vardahei-kartlegging/docs/varde/adr/ADR-017-retention-by-data-class.md:33), [brief:50](/Users/oleksandr/vardahei-kartlegging/astra/delta-12-10-brief.md:50).
+- По O3 и O4 — нет.
+
+### 3. Новые противоречия
+
+- **Удаление ↔ import/restore.** Удаление Response уничтожает используемый импортом `source_id`: повторный импорт восстановит ответ, а при оставшейся leader-строке создаст дубль. Restore дампа, сделанного до запроса, потеряет и сам `ForgetRequest`. Нужен сохраняющийся независимо от восстанавливаемого snapshot deletion ledger, применяемый также при import/rollback. [ADR-017:12](/Users/oleksandr/vardahei-kartlegging/docs/varde/adr/ADR-017-retention-by-data-class.md:12), [ADR-024:10](/Users/oleksandr/vardahei-kartlegging/docs/varde/adr/ADR-024-provable-import-and-cutover.md:10), [ADR-016:11](/Users/oleksandr/vardahei-kartlegging/docs/varde/adr/ADR-016-hosting-and-backup.md:11).
+- **`frozen` ↔ прежние quality gates.** Исключение должно действовать и в автопроверках/translation eval: F20 превышает 25 слов, F17 содержит продукты. [ARCHITECTURE:85](/Users/oleksandr/vardahei-kartlegging/docs/varde/ARCHITECTURE.md:85), [ADR-010:11](/Users/oleksandr/vardahei-kartlegging/docs/varde/adr/ADR-010-model-provider.md:11), [sporsmal.js:190](/Users/oleksandr/vardahei-kartlegging/kartlegging/public/sporsmal.js:190).
+- **Optional nb ↔ схема текстов.** ADR-019 допускает отсутствие nb, неизменённый ADR-005 по-прежнему задаёт `{nn, nb, en}`. Требования схемы нужно согласовать. [ADR-019:9](/Users/oleksandr/vardahei-kartlegging/docs/varde/adr/ADR-019-languages-and-translation-gate.md:9), [ADR-005:9](/Users/oleksandr/vardahei-kartlegging/docs/varde/adr/ADR-005-template-format.md:9).
+- **Non-blocking:** Contact всё ещё назван единственным классом персональных данных вне семинаров, хотя добавлены идентифицированные Response. [ARCHITECTURE:50](/Users/oleksandr/vardahei-kartlegging/docs/varde/ARCHITECTURE.md:50).
+
+### 4. Вердикт
+
+**Reject: K5/K9 — противоречивый snapshot-контракт; K7 — неполное удаление и восстановление удалённых данных; K8 — несогласованные quality gates; K11 — запрет person-CSV; K13 — языковой контракт; O5 — преждевременное исключение возврата данных.**
