@@ -1,0 +1,46 @@
+### 1. Спорные пункты
+
+17: **принимаю вариант A** — единственную известную кросс-метрику K7×K8 можно сохранить снимком; отсутствие обещанного срока респондентам снимает прежний аргумент об обязательстве, но не доказывает пользу годового хранения raw. Ответ Oleksandr «заранее выбранные показатели» ведёт к A; подтверждённая необходимость новых ретроспективных разрезов в течение первого года — к B.
+
+21: **принимаю вариант B**, если доверенными считаются все трое операторов: доступ Oleksandr к raw означает, что нынешний A не обеспечивает заявленную защиту от всех троих. Ответ «защищать и от админов» ведёт к A с отдельной границей доверенного оператора; «и от оператора базы» — требует архитектуры, которой пока нет ни в A, ни в B.
+
+### 2. Уточнения U1–U5
+
+| № | подтверждаю / возражаю | одна причина |
+| --- | --- | --- |
+| U1 | подтверждаю | Требования к языкам могут зависеть от аудитории шаблона, сохраняя обязательные nn+nb+en для клиентских опросов. |
+| U2 | подтверждаю | Новый ADR и три ворота позволяют вернуться к функции без неявного расширения доступа модели. |
+| U3 | подтверждаю | `action_text` обеспечивает существующее поведение без преждевременного каталога `Action`. |
+| U4 | подтверждаю | Заранее выпущенный presenter-token устраняет зависимость экрана от доступности Entra. |
+| U5 | подтверждаю | Провал заранее установленного порога качества — достаточное основание проверить одного дополнительного провайдера с собственным ADR и проверкой условий. |
+
+### 3. Черновики varde-docs
+
+**Blocking**
+
+- **B1.** [PRINCIPLES.md](/Users/oleksandr/vardahei-prosjekt/varde-docs/PRINCIPLES.md:35), [HANDOFF.md](/Users/oleksandr/vardahei-prosjekt/astra/HANDOFF.md) · процесс · назначения неполны, а HANDOFF сохраняет Opus implementation `high` · добавить связанный с context map workflow: Sol orchestration `medium`, Astra/Fable architecture `xhigh` перед каждым новым этапом, Opus implementation `medium`, Sol/Opus acceptance и repairs `xhigh`, подтверждение фактических моделей, billing scope и единственный владелец записи.
+- **B2.** [STAGES.md](/Users/oleksandr/vardahei-prosjekt/varde-docs/STAGES.md:3) · checkpoints · независимая приёмка заявлена, но отдельные комплекты доказательств и условия завершения 1a/1b/1c отсутствуют · для каждого закрепить artifact hash, команды проверок, версии fixtures, ожидаемые результаты, согласованные отклонения паритета и запрет зависимой работы до двух approvals.
+- **B3.** [STAGES.md](/Users/oleksandr/vardahei-prosjekt/varde-docs/STAGES.md:45) · порядок 1a→1b→1c · импорт зависит от Client/RoundClient из последующей 1.10, а lifecycle API оказывается после runner · поставить seed перед импортом, серверный lifecycle перед приёмкой 1b, оставить его UI в 1c и выполнять инварианты соответствующего checkpoint сразу, а не впервые в 1.29.
+- **B4.** [STAGES.md](/Users/oleksandr/vardahei-prosjekt/varde-docs/STAGES.md:31), [ADR-016](/Users/oleksandr/vardahei-prosjekt/varde-docs/adr/ADR-016-hosting-and-backup.md) · 0.12 · проверяются отправка и AI workload, реализация которых появляется позднее, а «Atlas не деградирует» не имеет измеримого порога · определить репрезентативный стенд этапа 0, baseline и допустимое изменение Atlas, отдельно запланировать проверку настоящего Submission API перед cutover.
+- **B5.** [STAGES.md](/Users/oleksandr/vardahei-prosjekt/varde-docs/STAGES.md:29), [ADR-016](/Users/oleksandr/vardahei-prosjekt/varde-docs/adr/ADR-016-hosting-and-backup.md) · 0.10 · успешное восстановление само по себе не доказывает достаточность ночного бэкапа · до приёмки схемы резервирования получить RPO/RTO и заместителя Oleksandr, затем измерить потерю данных и время восстановления в drill.
+- **B6.** [STAGES.md](/Users/oleksandr/vardahei-prosjekt/varde-docs/STAGES.md:37), [ADR-010](/Users/oleksandr/vardahei-prosjekt/varde-docs/adr/ADR-010-model-provider.md) · 0.14 · «таблица оценок» не задаёт порог выбора или провала, а общая приёмка этапа 0 делает Azure препятствием для этапа 1 вопреки его цели · заранее определить шкалу, критические ошибки и пороги, выделив AI-допуск как обязательную зависимость этапа 2.
+- **B7.** [ADR-021](/Users/oleksandr/vardahei-prosjekt/varde-docs/adr/ADR-021-privacy-contract.md), [STAGES.md](/Users/oleksandr/vardahei-prosjekt/varde-docs/STAGES.md:38) · модель угроз и 0.15 · A одновременно включает всех админов в угрозу и оставляет одному raw, а для B не определена граница исключения raw-экспорта из общего контракта · после ответа Oleksandr перечислить доверенных субъектов, разрешённые каналы и отрицательные тесты для выбранного варианта.
+- **B8.** [ADR-020](/Users/oleksandr/vardahei-prosjekt/varde-docs/adr/ADR-020-metric-contract.md), [STAGES.md](/Users/oleksandr/vardahei-prosjekt/varde-docs/STAGES.md:39) · снимки и 1.28 · потребители требуют `released`, но контракт не определяет выпуск и неизменяемость снимка, а три Forms-метрики не покрывают весь дашборд и FUNN · задать lifecycle снимка и проверять сохранение всех согласованных распределений и 21 правила, включая K7×K8, после удаления raw.
+- **B9.** [ADR-017](/Users/oleksandr/vardahei-prosjekt/varde-docs/adr/ADR-017-retention-by-data-class.md), [ADR-024](/Users/oleksandr/vardahei-prosjekt/varde-docs/adr/ADR-024-provable-import-and-cutover.md) · удаление · срок свободного текста остаётся диапазоном, срок backup-копий отсутствует, а read-only kartlegging на 30 дней может пережить обязательное удаление после отчёта · определить точные сроки, приоритет срока текстовых полей внутри leader-ответов и удаление копий, сохраняя старое приложение без просроченного raw.
+- **B10.** [ADR-006](/Users/oleksandr/vardahei-prosjekt/varde-docs/adr/ADR-006-runner-draft-and-submission.md), [ADR-024](/Users/oleksandr/vardahei-prosjekt/varde-docs/adr/ADR-024-provable-import-and-cutover.md) · идентичность отправки и импорта · один `submission_id` черновика не описывает две независимые части, а исходная строка импорта содержит обе · определить независимые id частей без общего связывающего ключа, сверку отдельно исходных строк/common/leader, отклонение повторного id с другим содержимым и безопасный replay без повторного расходования квоты.
+- **B11.** [STAGES.md](/Users/oleksandr/vardahei-prosjekt/varde-docs/STAGES.md:54) · 1.4 и 1.12 · вся модель с constraints и все renderers с поведением упакованы в две трёхчасовые задачи без промежуточной приёмки · разделить модель по доменам, renderers — по поведению, сохранив общий checkpoint и отдельные проверяемые результаты.
+- **B12.** [PRINCIPLES.md](/Users/oleksandr/vardahei-prosjekt/varde-docs/PRINCIPLES.md:11), [STAGES.md](/Users/oleksandr/vardahei-prosjekt/varde-docs/STAGES.md:94) · переход к ассистенту · принцип требует настоящую кампанию до ассистента и семинаров, но план не содержит этой зависимости · добавить завершённую кампанию и разбор её результатов как ворота перед 2b и этапом 3.
+- **B13.** [STAGES.md](/Users/oleksandr/vardahei-prosjekt/varde-docs/STAGES.md:88) · 1.30 · запланирована репетиция, но отсутствует отдельный проверяемый production cutover · добавить остановку старых записей, финальный manifest и сверку, разрешение переключения и rollback с явным сохранением ответов, принятых Varde после переключения.
+
+**Non-blocking**
+
+- [STAGES.md](/Users/oleksandr/vardahei-prosjekt/varde-docs/STAGES.md:54) · объём этапа 1 · `Contact` и `FindingStatus` пока не имеют пользовательских задач · перенести их реализацию к первому использующему сценарию, оставив `action_text` достаточным для паритета.
+- [STAGES.md](/Users/oleksandr/vardahei-prosjekt/varde-docs/STAGES.md:78) · 1.20 · повторяется вход, уже реализованный в 0.7 · ограничить задачу оболочкой админки и интеграцией готового auth.
+- [STAGES.md](/Users/oleksandr/vardahei-prosjekt/varde-docs/STAGES.md:31) · оценки времени · неделя наблюдений, оценка носителями и перевод смешаны с часами кодера · отдельно показать трудозатраты, календарное ожидание и ответственных за внешние результаты.
+- [ADR-008](/Users/oleksandr/vardahei-prosjekt/varde-docs/adr/ADR-008-entra-and-break-glass.md), [STAGES.md](/Users/oleksandr/vardahei-prosjekt/varde-docs/STAGES.md:131) · presenter-token · автономность экрана не определяет автономность управления вопросами · уточнить разрешённые операции, срок и отзыв token, проверив сценарий семинара при отключённом Entra.
+- [ADR-018](/Users/oleksandr/vardahei-prosjekt/varde-docs/adr/ADR-018-tests-and-live-eval.md) · eval · CI-проверка явно привязана только к hash промпта · привязать отчёт также к deployment/model version и версии набора брифов.
+- [ADR-019](/Users/oleksandr/vardahei-prosjekt/varde-docs/adr/ADR-019-languages-and-translation-gate.md) · публикация · набор языков указан на изменяемом шаблоне · фиксировать его в опубликованной версии и добавить тест запрета клиентского шаблона только с `nn`.
+
+### 4. Вердикт
+
+**Согласна с архитектурой и планом этапов при условии …** устранения B1–B13 и решения Oleksandr по спорам 17 и 21: срок хранения должен соответствовать заявленной аналитической потребности, а обещание приватности — фактической границе доверия к администраторам и оператору базы.
