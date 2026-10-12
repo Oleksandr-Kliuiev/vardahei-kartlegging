@@ -7,7 +7,7 @@
 
 ## Решение
 - `RoundClient`: round, client, code (ADR-009), `population_snapshot` (численность на момент открытия), deadline, status (`draft → open → closed → archived`), reminders sent (руками, отметка).
-- Версия шаблона фиксируется на Round при открытии первого RoundClient; после этого Round нельзя перевести на другую версию.
+- Версия шаблона фиксируется на Round при открытии первого RoundClient; после этого Round нельзя перевести на другую версию. Изменено delta 12.10: вместе с версией фиксируется `Round.identification` (ADR-025).
 - Отклик = ответов общей части / `population_snapshot`.
 - Live poll (этап 3) — Round типа `live` с одним RoundClient на семинар и отдельным состоянием вопросов (`LivePollQuestionState`: open/closed/released), которое ведёт ведущий; renderer в runner общий.
 
