@@ -835,9 +835,9 @@
       minutt: 5,
       brev: {
         nn: ["Vi i Vardahei IT vil gjerne vite korleis IT-sikkerheita er i kvardagen hos dykk: kva rutinar som finst, korleis de held styr på passord og innlogging, og kva de gjer om noko går gale.",
-             "Spørsmåla er dei same som i førre runde, slik at vi kan sjå kva som har endra seg. Svara blir behandla samla for verksemda og brukte til forbetringstiltak."],
+             "Spørsmåla er dei same som i førre runde, slik at vi kan sjå kva som har endra seg. Svara blir brukte til å finne ut kva vi bør gjere betre i verksemda."],
         en: ["We at Vardahei IT would like to know what IT security looks like in your everyday work: which routines exist, how you keep track of passwords and sign-ins, and what you do if something goes wrong.",
-             "The questions are the same as in the previous round, so we can see what has changed. The answers are handled together for the company and used for improvements."]
+             "The questions are the same as in the previous round, so we can see what has changed. The answers are used to find out what we should improve in the company."]
       },
       fakta2: { nn: "Vi spør om initialane dine, slik at vi kan sjå endringa frå førre runde. Svara per person ser berre Vardahei IT. Bedrifta får eit samla bilete utan initialar.", en: "We ask for your initials so we can see the change since the previous round. Only Vardahei IT sees answers per person. Your company gets an overall picture without initials." },
       fakta3: { nn: "Ingen feil svar. «Usikker» er eit heilt greitt svar, og nyttig for oss å vite.", en: "No wrong answers. “Not sure” is a perfectly fine answer, and useful for us to know." },
