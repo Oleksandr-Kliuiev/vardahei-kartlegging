@@ -1,0 +1,949 @@
+<title>Vardahei kartlegging</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: éi smal, venstrejustert kolonne. Eitt spørsmål om gongen. Framdrifta er ein høgdeprofil: ein turgåar går frå dalen og opp til tre graner på toppen. */
+:root {
+  --bg: #eef2f4;
+  --surface: #f9fbfc;
+  --ink: #1e2a31;
+  --muted: #5d6a71;
+  --line: #c6d1d7;
+  --accent: #176e91;
+  --accent-ink: #ffffff;
+  --accent-soft: #dcebf2;
+  --feil: #b3402f;
+  --fjell: #dde6eb;
+  --fjell-bak: #e6edf1;
+  --sno: #ffffff;
+  --stein: #8a8c90;
+  --gran: #2f5f4c; --gran-lys: #3f7a60; --stamme: #6b4a33;
+  --telt: #e08a2c; --telt-skugge: #bf6f1d; --telt-dor: #5a3a1c;
+  --eld-1: #e2572b; --eld-2: #f39a2b; --eld-3: #fcd25a; --glod: #f39a2b;
+  --hud: #e9b99a; --lue: #c8432f; --sekk: #3f3f43;
+  --font: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --r: 10px;
+  --logo-filter: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10191e; --surface: #17242b; --ink: #e3eaee; --muted: #9aabb3; --line: #2c3d46;
+    --accent: #5fb0d3; --accent-ink: #08161d; --accent-soft: #183544; --feil: #ec7b66;
+    --fjell: #1b2a32; --fjell-bak: #15222a; --sno: #c7d6dd; --stein: #8c9095; --stein-mork: #c3c6ca; --gran: #4b8a6c; --gran-lys: #62a283; --stamme: #8d6a4f; --telt: #e8973c; --telt-skugge: #c47726; --telt-dor: #3b2614; --hud: #e2b394; --lue: #e0614b; --sekk: #8c9095;
+    --logo-filter: brightness(1.45) saturate(.9); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10191e; --surface: #17242b; --ink: #e3eaee; --muted: #9aabb3; --line: #2c3d46;
+  --accent: #5fb0d3; --accent-ink: #08161d; --accent-soft: #183544; --feil: #ec7b66;
+  --fjell: #1b2a32; --fjell-bak: #15222a; --sno: #c7d6dd; --stein: #8c9095; --stein-mork: #c3c6ca; --gran: #4b8a6c; --gran-lys: #62a283; --stamme: #8d6a4f; --telt: #e8973c; --telt-skugge: #c47726; --telt-dor: #3b2614; --hud: #e2b394; --lue: #e0614b; --sekk: #8c9095;
+  --logo-filter: brightness(1.45) saturate(.9); color-scheme: dark;
+}
+html, body { min-height: 100%; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font);
+  font-size: 17px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 36rem; margin: 0 auto; padding-inline: 18px; padding-block: 14px 120px; }
+
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.logo { display: block; height: 26px; width: auto; filter: var(--logo-filter); }
+.sprak { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.sprak button {
+  font: inherit; font-size: 14px; border: 0; background: transparent; color: var(--muted);
+  padding: 4px 12px; cursor: pointer;
+}
+.sprak button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+/* Høgdeprofilen: ein turgåar går opp mot toppen. Der står tre graner, og når du er ferdig, kjem teltet og bålet. */
+.fjell { position: relative; margin-top: 10px; height: 118px; }
+.fjell svg { display: block; width: 100%; height: 118px; overflow: visible; }
+.fjell .gatt-rect { transition: width .9s cubic-bezier(.4, .1, .2, 1); }
+.fjell .gaar { transition: transform .9s cubic-bezier(.4, .1, .2, 1); }
+.fjell .prikk { transition: fill .3s, stroke .3s, opacity .3s; }
+.fjell-merke {
+  position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap;
+  font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent-ink);
+  background: var(--accent); border-radius: 6px; padding: 1px 8px; line-height: 1.5;
+  transition: left .9s cubic-bezier(.4, .1, .2, 1), top .9s cubic-bezier(.4, .1, .2, 1);
+}
+.fjell-merke::after { content: ""; position: absolute; left: 50%; bottom: -4px; margin-left: -4px; border: 4px solid transparent; border-bottom: 0; border-top-color: var(--accent); }
+
+/* Turgåaren: beina går berre medan han flyttar seg */
+.fjell .kropp { animation: none; }
+.fjell .bein { transform: rotate(0deg); }
+.fjell.gaar-no .kropp { animation: vugge .3s ease-in-out 3 alternate; }
+.fjell.gaar-no .bein.a { animation: steg-a .3s ease-in-out 3 alternate; }
+.fjell.gaar-no .bein.b { animation: steg-b .3s ease-in-out 3 alternate; }
+@keyframes steg-a { from { transform: rotate(-24deg); } to { transform: rotate(22deg); } }
+@keyframes steg-b { from { transform: rotate(22deg); } to { transform: rotate(-24deg); } }
+@keyframes vugge { from { transform: translateY(0); } to { transform: translateY(-1.2px); } }
+
+/* Telt og bål dukkar opp når turgåaren er framme */
+.fjell .telt, .fjell .baal { opacity: 0; transform: scale(0); }
+.fjell.ferdig .telt { animation: reis 0.6s 1s cubic-bezier(.3, 1.5, .5, 1) forwards; }
+.fjell.ferdig .baal { animation: reis 0.45s 1.6s cubic-bezier(.3, 1.5, .5, 1) forwards; }
+@keyframes reis { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+.fjell .flamme { transform-origin: 0 0; }
+.fjell.ferdig .flamme.f1 { animation: flakk .45s ease-in-out infinite alternate; }
+.fjell.ferdig .flamme.f2 { animation: flakk .38s .1s ease-in-out infinite alternate-reverse; }
+.fjell.ferdig .flamme.f3 { animation: flakk .52s .2s ease-in-out infinite alternate; }
+@keyframes flakk { from { transform: scale(1, 1) skewX(0deg); } to { transform: scale(.85, 1.18) skewX(-6deg); } }
+.fjell .gnist { opacity: 0; }
+.fjell.ferdig .gnist { animation: gnist 1.6s ease-out infinite; }
+.fjell.ferdig .gnist.g2 { animation-delay: .55s; }
+.fjell.ferdig .gnist.g3 { animation-delay: 1.1s; }
+@keyframes gnist { 0% { opacity: 0; transform: translate(0, 0); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(3px, -16px); } }
+
+main { margin-top: 26px; }
+.skjerm { animation: inn .28s ease both; }
+@keyframes inn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+h1 { font-size: clamp(2rem, 7vw, 2.6rem); line-height: 1.1; margin: 0 0 18px; text-wrap: balance; letter-spacing: -.01em; }
+.brev p { margin: 0 0 14px; max-width: 34em; }
+.fakta { list-style: none; padding: 0; margin: 22px 0 26px; display: grid; gap: 10px; }
+.fakta li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; }
+.fakta svg { width: 20px; height: 20px; margin-top: 3px; color: var(--accent); }
+.helsing { margin-top: 26px; color: var(--muted); font-style: italic; }
+.kunde { display: inline-block; background: var(--accent-soft); color: var(--ink); border-radius: 6px; padding: 1px 8px; font-weight: 700; }
+
+.ingress { font-size: 15px; color: var(--accent); font-weight: 700; margin-bottom: 8px; }
+.sp { font-size: clamp(1.3rem, 4.6vw, 1.65rem); line-height: 1.3; font-weight: 700; margin: 0 0 8px; text-wrap: pretty; }
+.scenario .sp { font-weight: 400; }
+.scenario .sitat { display: block; margin: 10px 0; padding-left: 14px; border-left: 3px solid var(--accent); font-style: italic; }
+.hjelp { color: var(--muted); margin: 0 0 18px; font-size: 16px; }
+
+.val { display: grid; gap: 8px; margin-top: 18px; }
+.opt {
+  display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: center; text-align: left;
+  font: inherit; color: var(--ink); background: var(--surface); border: 1.5px solid var(--line);
+  border-radius: var(--r); padding: 13px 14px; cursor: pointer; min-height: 52px;
+  transition: border-color .12s, background-color .12s;
+}
+.opt:hover { border-color: var(--muted); }
+.opt[aria-checked="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.opt[disabled] { opacity: .45; cursor: not-allowed; }
+.opt .ind { width: 22px; height: 22px; border: 2px solid var(--muted); display: grid; place-items: center; }
+.opt[role="radio"] .ind { border-radius: 50%; }
+.opt[role="checkbox"] .ind { border-radius: 5px; }
+.opt[aria-checked="true"] .ind { border-color: var(--accent); background: var(--accent); }
+.opt[aria-checked="true"] .ind::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-ink); }
+.opt[role="checkbox"][aria-checked="true"] .ind::after { width: 10px; height: 6px; border-radius: 0; background: none; border-left: 2.5px solid var(--accent-ink); border-bottom: 2.5px solid var(--accent-ink); transform: rotate(-45deg) translate(1px, -1px); }
+
+textarea, input[type="text"] {
+  width: 100%; box-sizing: border-box; font: inherit; color: var(--ink); background: var(--surface);
+  border: 1.5px solid var(--line); border-radius: var(--r); padding: 12px 14px; resize: vertical;
+}
+textarea { min-height: 110px; }
+input.stor { max-width: 240px; font-size: 1.35rem; letter-spacing: .12em; text-transform: uppercase; }
+.fri { margin-top: 14px; }
+.fri label { display: block; font-size: 15px; color: var(--muted); margin-bottom: 6px; }
+
+.skala { display: grid; gap: 18px; margin-top: 18px; }
+.skala-rad .namn { margin-bottom: 8px; }
+.skala-knappar { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 6px; }
+.skala-knappar button {
+  font: inherit; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink);
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: 8px; min-height: 46px; cursor: pointer; padding: 0;
+}
+.skala-knappar button[aria-checked="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.skala-endar { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); margin-top: 6px; }
+.nps .skala-knappar { grid-template-columns: repeat(11, 1fr); gap: 4px; }
+@media (max-width: 460px) { .nps .skala-knappar { grid-template-columns: repeat(6, 1fr); } }
+
+/* Navigasjon nedst */
+.nav {
+  position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--line);
+  padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px));
+}
+.nav-inn { max-width: 36rem; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+.knapp {
+  font: inherit; font-weight: 700; border-radius: var(--r); padding: 12px 22px; cursor: pointer; border: 1.5px solid transparent;
+}
+.knapp.hoved { background: var(--accent); color: var(--accent-ink); margin-left: auto; }
+.knapp.hoved[disabled] { opacity: .4; cursor: not-allowed; }
+.lenke { font: inherit; background: none; border: 0; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 8px 4px; }
+.lenke:hover { color: var(--ink); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* Del B-intro og slutt */
+.mellom h2, .slutt h2 { font-size: 1.5rem; margin: 0 0 10px; line-height: 1.2; }
+.slutt h1 { margin-bottom: 10px; }
+.slutt section { margin-top: 34px; }
+.fasit { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 16px; }
+.fasit h3, .tips h3 { margin: 0 0 6px; font-size: 1.1rem; }
+.fasit .ditt { font-size: 15px; color: var(--muted); margin: 0 0 8px; }
+.fasit .ditt b { color: var(--ink); }
+.merk { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: var(--accent); }
+.tips { display: grid; gap: 22px; margin-top: 14px; }
+.tips article { padding-left: 16px; border-left: 3px solid var(--accent); }
+.tips p, .fasit p { margin: 0; }
+.kontakt { margin-top: 10px; display: grid; gap: 2px; font-size: 16px; }
+.kontakt span { user-select: all; font-weight: 700; }
+.kontakt small { color: var(--muted); font-size: 14px; }
+.notis { margin-top: 18px; font-size: 14px; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 8px; padding: 10px 12px; }
+.feil { margin-top: 18px; color: var(--feil); font-weight: 700; }
+
+@media (prefers-reduced-motion: reduce) {
+  .skjerm { animation: none; } .fjell *, .fjell-merke { transition: none !important; animation: none !important; }
+  .fjell.ferdig .telt, .fjell.ferdig .baal { opacity: 1; transform: none; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <img class="logo" alt="Vardahei IT" width="130" height="26" src="data:image/png;base64,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">
+    <div class="sprak" role="group" aria-label="Språk / Language">
+      <button type="button" id="sprak-nn" data-l="nn" aria-pressed="true">Nynorsk</button>
+      <button type="button" id="sprak-en" data-l="en" aria-pressed="false">English</button>
+    </div>
+  </header>
+
+  <div class="fjell" id="fjell" role="progressbar" aria-valuemin="1" hidden>
+    <svg id="fjell-svg" aria-hidden="true"></svg>
+    <div class="fjell-merke" id="fjell-merke"></div>
+  </div>
+
+  <main id="main" aria-live="polite"></main>
+</div>
+
+<div class="nav" id="nav" hidden>
+  <div class="nav-inn">
+    <button type="button" class="lenke" id="tilbake"></button>
+    <button type="button" class="lenke" id="hopp"></button>
+    <button type="button" class="knapp hoved" id="vidare"></button>
+  </div>
+</div>
+
+<script src="sporsmal.js"></script>
+<script>
+(function () {
+  "use strict";
+  var K = window.KARTLEGGING;
+  var API = "api/svar";
+  var LAGER = "vardahei-kartlegging-utkast";
+
+  var UI = {
+    nn: {
+      hei: "Hei!",
+      for: "Skjemaet er for deg som jobbar i",
+      f1: function (n) { return "Tek om lag " + n + " minutt"; },
+      velTittel: "Kva skjema skal du svare på?",
+      velTekst: "Lenkja du fekk, skulle ha opna rett skjema. Vel her om det ikkje skjedde.",
+      f2: "Vi spør ikkje om namn. Er de få på jobben, ser vi berre på svara samla for heile bedrifta.",
+      helsing: "Helsing",
+      start: "Start", vidare: "Vidare", tilbake: "Tilbake", hopp: "Hopp over", send: "Send svara", sender: "Sender …",
+      av: "av",
+      toppen: "Du er på toppen",
+      bTekst0: "Takk så langt.",
+      bTekst2: "Ærleg talt: sidan det ofte er berre éin eller to leiarar, er desse svara ikkje anonyme på same måte. Vi brukar dei når vi set oss ned med dykk.",
+      bStart: "Ta dei med",
+      bHopp: "Hopp over og send",
+      takk: "Takk!",
+      stengdTittel: "Kartlegginga er avslutta",
+      stengdTekst: "Takk for at du ville svare. Denne runden er ferdig, og vi tek ikkje imot fleire svar. Lurer du på noko, ta gjerne kontakt.",
+      ugyldigTittel: "Denne lenkja verkar ikkje",
+      ugyldigTekst: "Skjemaet krev lenkja du fekk frå leiaren din eller frå oss, med alle teikna på slutten. Prøv å opne ho på nytt frå e-posten, eller ta kontakt så sender vi ei ny.",
+      sendt: "Svara dine er sende. Vi samlar alt og kjem tilbake til bedrifta med det vi fann.",
+      ikkjeSendt: "Førehandsvising: svaret vart ikkje sendt nokon stad.",
+      sendFeil: "Svara kom ikkje fram. Sjekk nettet og prøv igjen.",
+      provIgjen: "Prøv igjen",
+      situasjonane: "Slik var det med situasjonane",
+      situasjonen: "Slik var det med situasjonen",
+      duValde: "Du valde",
+      hoppa: "Du hoppa over denne.",
+      rett: "Det var rett.",
+      rad: "Råd til deg",
+      ingenRad: "Du gjer mykje rett. Eitt råd likevel:",
+      litenData: "Du hoppa over ein del, så vi har lite å gå på. Eitt råd som passar for alle:",
+      kontakt: "Ta kontakt",
+      lukk: "Du kan lukke sida no.",
+      maks: function (n) { return "Vel inntil " + n + "."; },
+      valfritt: "valfritt"
+    },
+    en: {
+      hei: "Hi!",
+      for: "This form is for people working at",
+      f1: function (n) { return "Takes about " + n + " minutes"; },
+      velTittel: "Which survey are you answering?",
+      velTekst: "The link you got should have opened the right one. Choose here if it didn't.",
+      f2: "We don't ask for your name. In small workplaces we only look at answers for the company as a whole.",
+      helsing: "Best regards,",
+      start: "Start", vidare: "Next", tilbake: "Back", hopp: "Skip", send: "Send answers", sender: "Sending …",
+      av: "of",
+      toppen: "You made it to the top",
+      bTekst0: "Thanks so far.",
+      bTekst2: "To be honest: since there are often only one or two managers, these answers aren't anonymous in the same way. We use them when we sit down with you.",
+      bStart: "Go ahead",
+      bHopp: "Skip and send",
+      takk: "Thank you!",
+      stengdTittel: "The survey is closed",
+      stengdTekst: "Thanks for wanting to take part. This round is finished, and we're no longer accepting answers. Get in touch if you have any questions.",
+      ugyldigTittel: "This link doesn't work",
+      ugyldigTekst: "The survey needs the link you got from your manager or from us, including all the characters at the end. Try opening it again from the email, or get in touch and we'll send a new one.",
+      sendt: "Your answers have been sent. We'll put everything together and get back to your company with what we found.",
+      ikkjeSendt: "Preview: the answer wasn't sent anywhere.",
+      sendFeil: "Your answers didn't get through. Check your connection and try again.",
+      provIgjen: "Try again",
+      situasjonane: "About the situations",
+      situasjonen: "About the situation",
+      duValde: "You chose",
+      hoppa: "You skipped this one.",
+      rett: "That was right.",
+      rad: "Tips for you",
+      ingenRad: "You're doing a lot right. One tip anyway:",
+      litenData: "You skipped quite a few, so we have little to go on. One tip that fits everyone:",
+      kontakt: "Get in touch",
+      lukk: "You can close this page now.",
+      maks: function (n) { return "Choose up to " + n + "."; },
+      valfritt: "optional"
+    }
+  };
+
+  var params = new URLSearchParams(location.search);
+  var kundeSlug = (params.get("k") || "").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 40);
+  var kundeNamn = K.kundar[kundeSlug] || "";
+  var tilgang = (params.get("t") || "").replace(/[^A-Za-z0-9]/g, "").slice(0, 40);
+  var erForhand = location.protocol === "file:" || !!window.claude || /claude\.ai|claudeusercontent|anthropic/.test(location.hostname);
+
+  var skjemaId = (params.get("s") || location.hash.replace("#", "") || "").toLowerCase();
+  var F = K.skjema[skjemaId] || null;
+  LAGER = LAGER + "-" + (F ? F.id : "x");
+
+  function nyOkt() { var a = new Uint8Array(12); (window.crypto || {}).getRandomValues ? window.crypto.getRandomValues(a) : a.forEach(function (_, i) { a[i] = Math.random() * 256; }); return Array.prototype.map.call(a, function (b) { return ("0" + b.toString(16)).slice(-2); }).join(""); }
+  var okt = nyOkt();
+  // Anonym framdrift til adminpanelet: berre kva spørsmål økta er på, aldri svara
+  function meld(d) {
+    if (erForhand || !F || !tilgang || tilstand.ugyldig || tilstand.stengd) return;
+    var body = JSON.stringify(Object.assign({ skjema: F.id, k: kundeSlug, t: tilgang, okt: okt }, d));
+    try { fetch("api/framdrift", { method: "POST", headers: { "Content-Type": "application/json" }, body: body, keepalive: true }).catch(function () {}); } catch (e) {}
+  }
+
+  var tilstand = { lang: "nn", steg: -1, svar: {}, fri: {}, start: null, sendt: false, sending: false, feil: false, forhand: false };
+
+  function last() {
+    try {
+      var r = localStorage.getItem(LAGER);
+      if (!r) return;
+      var d = JSON.parse(r);
+      if (d && d.k === kundeSlug && !d.sendt && Date.now() - d.t < 3 * 864e5) {
+        tilstand.svar = d.svar || {}; tilstand.fri = d.fri || {}; tilstand.steg = d.steg; tilstand.lang = d.lang || "nn"; tilstand.start = d.start || Date.now();
+        if (d.okt) okt = d.okt;
+      }
+    } catch (e) {}
+  }
+  function lagre() {
+    try {
+      localStorage.setItem(LAGER, JSON.stringify({ k: kundeSlug, t: Date.now(), svar: tilstand.svar, fri: tilstand.fri, steg: tilstand.steg, lang: tilstand.lang, start: tilstand.start, sendt: tilstand.sendt, okt: okt }));
+    } catch (e) {}
+  }
+  function slett() { try { localStorage.removeItem(LAGER); } catch (e) {} }
+
+  function L(o) { return o ? (o[tilstand.lang] || o.nn) : ""; }
+  function u(k) { return UI[tilstand.lang][k]; }
+
+  var SP = F ? F.sporsmal : [];
+  var A = SP.filter(function (s) { return s.del === "A"; });
+  var B = SP.filter(function (s) { return s.del === "B"; });
+  function rolleSp(liste) { var r = liste.filter(function (s) { return s.rolle; })[0] || liste[0]; return r ? r.id : null; }
+  var ROLLE = rolleSp(SP);
+
+  function erLeiar() { return !!ROLLE && K.leiarRoller.indexOf(tilstand.svar[ROLLE]) > -1; }
+  function synleg(s) { return !s.vis || s.vis(tilstand.svar); }
+  // Vala som gjeld no: nokre val er berre for enkelte roller, og nokre spørsmål viser berre det du kryssa av tidlegare
+  function valAv(s) {
+    var kjelde = s.valFraa ? (tilstand.svar[s.valFraa] || []) : null;
+    return s.val.filter(function (v) {
+      if (v.vis && !v.vis(tilstand.svar)) return false;
+      return !kjelde || kjelde.indexOf(v.id) > -1;
+    });
+  }
+  function tomt(v) { return v == null || v === "" || (Array.isArray(v) && !v.length); }
+  // Stega: spørsmål-objekt eller "B-intro"
+  function steg() {
+    var s = A.filter(synleg);
+    if (erLeiar()) { s.push("B-intro"); s = s.concat(B.filter(synleg)); }
+    return s;
+  }
+  function spSteg() { return steg().filter(function (x) { return x !== "B-intro"; }); }
+
+  var main = document.getElementById("main");
+  var nav = document.getElementById("nav");
+  var bTilbake = document.getElementById("tilbake");
+  var bHopp = document.getElementById("hopp");
+  var bVidare = document.getElementById("vidare");
+
+  function el(tag, attrs, born) {
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      if (k === "text") e.textContent = attrs[k];
+      else if (k === "html") e.innerHTML = attrs[k];
+      else if (k.slice(0, 2) === "on") e.addEventListener(k.slice(2), attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    }
+    (born || []).forEach(function (b) { if (b) e.appendChild(typeof b === "string" ? document.createTextNode(b) : b); });
+    return e;
+  }
+
+  var IKON = {
+    klokke: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="8"/><path d="M10 5.5V10l3 2"/></svg>',
+    person: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="7" r="3.2"/><path d="M3.5 17.5c1-3.3 3.5-5 6.5-5s5.5 1.7 6.5 5"/></svg>',
+    hake: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10.5l4 4 8-9"/></svg>',
+    lys: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7.5 15h5M8 17.5h4M10 2.5a5.5 5.5 0 0 0-3.2 10c.5.4.7.9.7 1.5h5c0-.6.2-1.1.7-1.5A5.5 5.5 0 0 0 10 2.5z"/></svg>'
+  };
+
+  /* ---------- Teikning ---------- */
+  function teikn() {
+    document.documentElement.lang = tilstand.lang === "en" ? "en" : "nn";
+    if (F) document.title = L(F.namn) + " | Vardahei IT";
+    ["nn", "en"].forEach(function (l) { document.getElementById("sprak-" + l).setAttribute("aria-pressed", String(tilstand.lang === l)); });
+    main.innerHTML = "";
+    if (tilstand.ugyldig || tilstand.stengd) { teiknUgyldig(); return; }
+    if (!F) { teiknVal(); return; }
+    if (tilstand.sendt || tilstand.feil || tilstand.sending) { teiknSlutt(); return; }
+    if (tilstand.steg < 0) { teiknIntro(); return; }
+    var s = steg()[tilstand.steg];
+    if (s === "B-intro") { teiknBIntro(); return; }
+    teiknSp(s);
+  }
+
+  /* ---------- Høgdeprofilen ---------- */
+  // Ryggen: [x 0–1, høgd 0–1]. Stien sluttar på toppplatået ved x = TOPP.
+  var RYGG = [[0,.02],[.06,.11],[.1,.06],[.18,.25],[.23,.17],[.32,.38],[.37,.3],[.46,.5],[.51,.42],[.6,.62],[.65,.55],[.73,.79],[.77,.73],[.81,.94],[.9,.96],[1,.93]];
+  var BAK = [[0,.34],[.08,.5],[.15,.38],[.27,.7],[.34,.55],[.47,.86],[.55,.66],[.68,.9],[.78,.74],[.9,.8],[1,.62]];
+  var TOPP = .81, START = .015;
+  var fjellBygd = null, sistNr = null;
+  var NS = "http://www.w3.org/2000/svg";
+  function sv(tag, a, born) { var e = document.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); (born || []).forEach(function (b) { e.appendChild(b); }); return e; }
+  function hogd(pts, x) {
+    for (var i = 1; i < pts.length; i++) if (x <= pts[i][0]) { var a = pts[i - 1], b = pts[i], t = (x - a[0]) / (b[0] - a[0]); return a[1] + t * (b[1] - a[1]); }
+    return pts[pts.length - 1][1];
+  }
+
+  function gran(x, y, h) {
+    // Ei gran med tre lag, h = høgd i px
+    var w = h * .62, g = sv("g", { transform: "translate(" + x.toFixed(1) + "," + y.toFixed(1) + ")" });
+    g.appendChild(sv("rect", { x: (-h * .05).toFixed(1), y: (-h * .16).toFixed(1), width: (h * .1).toFixed(1), height: (h * .18).toFixed(1), fill: "var(--stamme)" }));
+    [[.14, 1, "var(--gran)"], [.42, .78, "var(--gran-lys)"], [.66, .55, "var(--gran)"]].forEach(function (l) {
+      var by = -h * l[0], bw = w * l[1] / 2, ty = by - h * .44;
+      g.appendChild(sv("polygon", { points: [-bw, by, 0, ty, bw, by].map(function (v) { return v.toFixed(1); }).join(" "), fill: l[2] }));
+    });
+    return g;
+  }
+
+  function turgaar() {
+    var g = sv("g", { class: "kropp" });
+    var beinA = sv("g", { transform: "translate(0,-8.5)" }, [sv("g", { class: "bein a" }, [sv("line", { x1: "0", y1: "0", x2: "0", y2: "8.5", stroke: "var(--ink)", "stroke-width": "2.2", "stroke-linecap": "round" })])]);
+    var beinB = sv("g", { transform: "translate(0,-8.5)" }, [sv("g", { class: "bein b" }, [sv("line", { x1: "0", y1: "0", x2: "0", y2: "8.5", stroke: "var(--ink)", "stroke-width": "2.2", "stroke-linecap": "round", opacity: ".75" })])]);
+    g.appendChild(beinB);
+    g.appendChild(sv("rect", { x: "-4.6", y: "-16.6", width: "3.6", height: "6.4", rx: "1.4", fill: "var(--sekk)" }));
+    g.appendChild(sv("line", { x1: "0", y1: "-8.5", x2: "0.8", y2: "-15.5", stroke: "var(--accent)", "stroke-width": "3.6", "stroke-linecap": "round" }));
+    g.appendChild(beinA);
+    g.appendChild(sv("line", { x1: "4.6", y1: "-13.5", x2: "5.6", y2: "0", stroke: "var(--stein)", "stroke-width": "1.2", "stroke-linecap": "round" }));
+    g.appendChild(sv("line", { x1: "0.8", y1: "-14.2", x2: "4.4", y2: "-11.2", stroke: "var(--accent)", "stroke-width": "2", "stroke-linecap": "round" }));
+    g.appendChild(sv("circle", { cx: "1.4", cy: "-19", r: "2.6", fill: "var(--hud)" }));
+    g.appendChild(sv("path", { d: "M-1.3,-19.4 A2.75,2.75 0 0 1 4.1,-19.4 Z", fill: "var(--lue)" }));
+    g.appendChild(sv("circle", { cx: "1.4", cy: "-22.4", r: "1", fill: "var(--lue)" }));
+    return g;
+  }
+
+  function telt() {
+    return sv("g", { class: "telt" }, [
+      sv("polygon", { points: "-12,0 0,-15 12,0", fill: "var(--telt)" }),
+      sv("polygon", { points: "0,-15 12,0 6,0", fill: "var(--telt-skugge)" }),
+      sv("polygon", { points: "-4,0 0,-9.5 4,0", fill: "var(--telt-dor)" }),
+      sv("line", { x1: "0", y1: "-15", x2: "0", y2: "-18", stroke: "var(--stein)", "stroke-width": "1.2", "stroke-linecap": "round" })
+    ]);
+  }
+
+  function baal() {
+    return sv("g", { class: "baal" }, [
+      sv("ellipse", { cx: "0", cy: "-1", rx: "8", ry: "3", fill: "var(--glod)", opacity: ".35" }),
+      sv("line", { x1: "-5", y1: "0", x2: "5", y2: "-2.4", stroke: "var(--stamme)", "stroke-width": "2.2", "stroke-linecap": "round" }),
+      sv("line", { x1: "-5", y1: "-2.4", x2: "5", y2: "0", stroke: "var(--stamme)", "stroke-width": "2.2", "stroke-linecap": "round" }),
+      sv("g", { transform: "translate(0,-2)" }, [
+        sv("path", { class: "flamme f1", d: "M-4,0 C-5,-4 -2,-6 -1.5,-10 C0.5,-7 4.5,-5 3.6,0 Z", fill: "var(--eld-1)" }),
+        sv("path", { class: "flamme f2", d: "M-2.6,0 C-3,-3 -0.5,-4.5 0,-7.5 C1.4,-5 3,-3 2.4,0 Z", fill: "var(--eld-2)" }),
+        sv("path", { class: "flamme f3", d: "M-1.2,0 C-1.4,-1.8 0,-2.6 0.2,-4.4 C1,-3 1.6,-1.8 1.2,0 Z", fill: "var(--eld-3)" })
+      ]),
+      sv("circle", { class: "gnist g1", cx: "0", cy: "-10", r: ".8", fill: "var(--eld-2)" }),
+      sv("circle", { class: "gnist g2", cx: "-1.5", cy: "-9", r: ".7", fill: "var(--eld-1)" }),
+      sv("circle", { class: "gnist g3", cx: "1.5", cy: "-9", r: ".7", fill: "var(--eld-2)" })
+    ]);
+  }
+
+  function byggFjell(n) {
+    var svg = document.getElementById("fjell-svg");
+    var W = Math.max(240, svg.clientWidth || 360), H = 118, botn = H - 4, topp = 56;
+    var X = function (x) { return 6 + x * (W - 12); };
+    var Y = function (h) { return botn - h * (botn - topp); };
+    var P = function (x) { return [X(x), Y(hogd(RYGG, x))]; };
+    var linje = function (pts) { return pts.map(function (p) { return X(p[0]).toFixed(1) + "," + Y(p[1]).toFixed(1); }).join(" "); };
+    var flate = function (pts) { return "M" + X(0) + "," + H + " L" + linje(pts).split(" ").join(" L") + " L" + X(1) + "," + H + " Z"; };
+    svg.innerHTML = "";
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    var defs = sv("defs", {});
+    var grad = sv("linearGradient", { id: "fjell-g", x1: "0", y1: "0", x2: "0", y2: "1" });
+    grad.appendChild(sv("stop", { offset: "0", "stop-color": "var(--accent)", "stop-opacity": ".38" }));
+    grad.appendChild(sv("stop", { offset: "1", "stop-color": "var(--accent)", "stop-opacity": ".06" }));
+    defs.appendChild(grad);
+    var rect = sv("rect", { class: "gatt-rect", x: "0", y: "0", width: "0", height: String(H) });
+    defs.appendChild(sv("clipPath", { id: "fjell-gatt" }, [rect]));
+    svg.appendChild(defs);
+
+    svg.appendChild(sv("path", { d: flate(BAK), fill: "var(--fjell-bak)" }));
+    svg.appendChild(sv("path", { d: flate(RYGG), fill: "var(--fjell)" }));
+    svg.appendChild(sv("path", { d: flate(RYGG), fill: "url(#fjell-g)", "clip-path": "url(#fjell-gatt)" }));
+    var sti = RYGG.filter(function (p) { return p[0] <= TOPP; });
+    svg.appendChild(sv("polyline", { points: linje(sti), fill: "none", stroke: "var(--muted)", "stroke-width": "1.6", "stroke-dasharray": "1 5", "stroke-linecap": "round", opacity: ".7" }));
+    svg.appendChild(sv("polyline", { points: linje(sti), fill: "none", stroke: "var(--accent)", "stroke-width": "2.6", "stroke-linejoin": "round", "stroke-linecap": "round", "clip-path": "url(#fjell-gatt)" }));
+
+    // Toppen: tre graner, plass til telt og bål
+    var skala = Math.min(1.45, Math.max(1.12, W / 360));
+    var b1 = P(.963), b2 = P(.99), b3 = P(.937);
+    svg.appendChild(gran(b2[0], b2[1] + 1, 15 * skala));
+    svg.appendChild(gran(b1[0], b1[1] + 1, 26 * skala));
+    svg.appendChild(gran(b3[0], b3[1] + 1, 19 * skala));
+    var tp = P(.887), bp = P(.849);
+    svg.appendChild(sv("g", { transform: "translate(" + tp[0].toFixed(1) + "," + (tp[1] + .5).toFixed(1) + ") scale(" + skala.toFixed(2) + ")" }, [telt()]));
+    svg.appendChild(sv("g", { transform: "translate(" + bp[0].toFixed(1) + "," + (bp[1] + .5).toFixed(1) + ") scale(" + skala.toFixed(2) + ")" }, [baal()]));
+
+    // Ein prikk per spørsmål
+    var prikkar = [], pos = [];
+    for (var i = 0; i < n; i++) {
+      var p = P(START + i / n * (TOPP - START));
+      pos.push(p);
+      var c = sv("circle", { class: "prikk", cx: p[0].toFixed(1), cy: p[1].toFixed(1), r: "2.3", "stroke-width": "1.2" });
+      prikkar.push(c); svg.appendChild(c);
+    }
+    var gaar = sv("g", { class: "gaar" }, [sv("g", { transform: "scale(" + skala.toFixed(2) + ")" }, [turgaar()])]);
+    svg.appendChild(gaar);
+    fjellBygd = { n: n, W: W, rect: rect, prikkar: prikkar, pos: pos, gaar: gaar, maal: P(TOPP + .005), skala: skala };
+  }
+
+  function sti(vis, ferdig) {
+    var boks = document.getElementById("fjell");
+    boks.hidden = !vis;
+    if (!vis) return;
+    var alle = spSteg();
+    var n = alle.length;
+    var nr;
+    if (ferdig) nr = n + 1;
+    else {
+      var s = steg()[tilstand.steg];
+      nr = s === "B-intro" ? alle.indexOf(A.filter(synleg).slice(-1)[0]) + 1 : alle.indexOf(s) + 1;
+    }
+    var svg = document.getElementById("fjell-svg");
+    if (!fjellBygd || fjellBygd.n !== n || Math.abs(fjellBygd.W - Math.max(240, svg.clientWidth || 360)) > 2) { byggFjell(n); sistNr = null; }
+    var f = fjellBygd;
+    var p = ferdig ? f.maal : f.pos[nr - 1];
+    f.rect.setAttribute("width", String(ferdig ? f.W : p[0] + 1));
+    f.gaar.style.transform = "translate(" + p[0].toFixed(1) + "px," + p[1].toFixed(1) + "px)";
+    f.prikkar.forEach(function (c, i) {
+      var gjort = ferdig || i < nr - 1;
+      c.setAttribute("fill", gjort ? "var(--accent)" : "var(--bg)");
+      c.setAttribute("stroke", gjort ? "var(--accent)" : "var(--muted)");
+      c.style.opacity = (!ferdig && i === nr - 1) ? "0" : "1";
+    });
+    // Beina går berre når han faktisk flyttar seg
+    if (sistNr !== null && sistNr !== nr) {
+      boks.classList.remove("gaar-no"); void boks.offsetWidth; boks.classList.add("gaar-no");
+      clearTimeout(sti.t); sti.t = setTimeout(function () { boks.classList.remove("gaar-no"); }, 950);
+    }
+    sistNr = nr;
+    boks.classList.toggle("ferdig", !!ferdig);
+    var merke = document.getElementById("fjell-merke");
+    var tekst = ferdig ? u("toppen") : nr + " " + u("av") + " " + n;
+    merke.textContent = tekst;
+    var mw = merke.offsetWidth || 60;
+    var left = Math.min(Math.max(p[0], mw / 2), f.W - mw / 2);
+    merke.style.left = left + "px";
+    merke.style.top = Math.max(0, p[1] - 28 * f.skala - 26) + "px";
+    boks.setAttribute("aria-valuemax", String(n));
+    boks.setAttribute("aria-valuenow", String(Math.min(nr, n)));
+    boks.setAttribute("aria-valuetext", tekst);
+  }
+  window.addEventListener("resize", function () { if (!document.getElementById("fjell").hidden) { fjellBygd = null; teikn(); } });
+
+  function navSett(o) {
+    nav.hidden = false;
+    bTilbake.textContent = u("tilbake"); bTilbake.hidden = !o.tilbake;
+    bHopp.textContent = o.hoppTekst || u("hopp"); bHopp.hidden = !o.hopp;
+    bVidare.textContent = o.vidareTekst || u("vidare"); bVidare.hidden = !o.vidare;
+    bVidare.disabled = !!o.lat;
+  }
+
+  function teiknIntro() {
+    sti(false);
+    var faktaListe = el("ul", { class: "fakta" }, [
+      el("li", null, [el("span", { html: IKON.klokke }), el("span", { text: u("f1")(F.minutt) })]),
+      el("li", null, [el("span", { html: IKON.person }), el("span", { text: F.fakta2 ? L(F.fakta2) : u("f2") })]),
+      el("li", null, [el("span", { html: IKON.hake }), el("span", { text: L(F.fakta3) })]),
+      el("li", null, [el("span", { html: IKON.lys }), el("span", { text: L(F.fakta4) })])
+    ]);
+    var d = el("div", { class: "skjerm brev" }, [
+      el("div", { class: "ingress", text: L(F.namn) }),
+      el("h1", { text: u("hei") }),
+      el("p", { text: F.brev[tilstand.lang][0] }),
+      el("p", { text: F.brev[tilstand.lang][1] }),
+      kundeNamn ? el("p", null, [u("for") + " ", el("span", { class: "kunde", text: kundeNamn }), "."]) : null,
+      faktaListe,
+      el("p", { class: "helsing" }, [u("helsing") + " " + L(K.avsendar)])
+    ]);
+    main.appendChild(d);
+    if (!teiknIntro.meldt) { teiknIntro.meldt = true; meld({ sp: "intro" }); lagre(); }
+    navSett({ vidare: true, vidareTekst: u("start") });
+  }
+
+  function teiknUgyldig() {
+    sti(false);
+    nav.hidden = true;
+    main.appendChild(el("div", { class: "skjerm" }, [
+      el("h1", { text: u("hei") }),
+      el("h2", { class: "sp", text: u(tilstand.stengd ? "stengdTittel" : "ugyldigTittel") }),
+      el("p", { text: u(tilstand.stengd ? "stengdTekst" : "ugyldigTekst") }),
+      el("div", { class: "kontakt" }, [el("div", null, [el("span", { text: K.kontakt.telefon })]), el("div", null, [el("span", { text: K.kontakt.epost })])])
+    ]));
+  }
+
+  function teiknVal() {
+    sti(false);
+    var d = el("div", { class: "skjerm" }, [
+      el("h1", { text: u("hei") }),
+      el("h2", { class: "sp", text: u("velTittel") }),
+      el("p", { class: "hjelp", text: u("velTekst") })
+    ]);
+    var liste = el("div", { class: "val" });
+    Object.keys(K.skjema).forEach(function (id) {
+      var f = K.skjema[id];
+      liste.appendChild(el("button", { type: "button", class: "opt", style: "grid-template-columns:1fr", onclick: function () {
+        F = f; skjemaId = id; SP = F.sporsmal;
+        A = SP.filter(function (s) { return s.del === "A"; }); B = SP.filter(function (s) { return s.del === "B"; }); ROLLE = rolleSp(SP);
+        LAGER = "vardahei-kartlegging-utkast-" + id;
+        try { history.replaceState(null, "", location.pathname + location.search + "#" + id); } catch (e) {}
+        last(); teikn();
+      } }, [el("span", { text: L(f.namn) })]));
+    });
+    d.appendChild(liste);
+    main.appendChild(d);
+    nav.hidden = true;
+  }
+
+  function teiknBIntro() {
+    sti(true);
+    meld({ sp: "B-intro" });
+    main.appendChild(el("div", { class: "skjerm mellom" }, [
+      el("h2", { text: L(F.leiar.tittel) }),
+      el("p", { text: u("bTekst0") + " " + L(F.leiar.tekst) }),
+      el("p", { text: u("bTekst2") })
+    ]));
+    navSett({ tilbake: true, hopp: true, hoppTekst: u("bHopp"), vidare: true, vidareTekst: u("bStart") });
+  }
+
+  function sisteSteg() { return tilstand.steg === steg().length - 1; }
+
+  function teiknSp(s) {
+    sti(true);
+    meld({ sp: s.id, nr: spSteg().indexOf(s) + 1, totalt: spSteg().length });
+    var boks = el("div", { class: "skjerm" + (s.scenario ? " scenario" : "") });
+    if (s.ingress) boks.appendChild(el("div", { class: "ingress", text: L(s.ingress) }));
+
+    var tekst = L(s.tekst);
+    var h = el("h2", { class: "sp", id: "sp-" + s.id });
+    if (s.scenario) {
+      // Set sitatet i guillemets på eiga linje
+      var m = tekst.match(/^(.*?)([«“].*[»”])(.*)$/);
+      if (m) { h.appendChild(document.createTextNode(m[1])); h.appendChild(el("span", { class: "sitat", text: m[2] })); h.appendChild(document.createTextNode(m[3].trim())); }
+      else h.textContent = tekst;
+    } else h.textContent = tekst;
+    boks.appendChild(h);
+
+    var hjelpTekst = s.hjelp ? L(s.hjelp) : (s.maks && !s.hjelp ? u("maks")(s.maks) : "");
+    if (hjelpTekst) boks.appendChild(el("p", { class: "hjelp", text: hjelpTekst }));
+
+    var verdi = tilstand.svar[s.id];
+    var ok = function () { return true; };
+
+    if (s.type === "single" || s.type === "multi") {
+      var multi = s.type === "multi";
+      var liste = el("div", { class: "val", role: multi ? "group" : "radiogroup", "aria-labelledby": "sp-" + s.id });
+      var gjeld = valAv(s);
+      var finst = function (id) { return gjeld.some(function (v) { return v.id === id; }); };
+      var valt = multi ? (verdi || []).filter(finst) : (finst(verdi) ? verdi : undefined);
+      var friBoks = null;
+
+      var oppdater = function () {
+        Array.prototype.forEach.call(liste.children, function (b) {
+          var id = b.getAttribute("data-id");
+          var on = multi ? valt.indexOf(id) > -1 : valt === id;
+          b.setAttribute("aria-checked", String(on));
+          if (multi && s.maks) b.disabled = !on && valt.length >= s.maks;
+        });
+        if (friBoks) friBoks.hidden = s.fritekstNaar ? !valt.some(function (v) { return s.fritekstNaar.indexOf(v) > -1; }) : false;
+        bVidare.disabled = multi ? valt.length < (s.minst || 1) : !valt;
+      };
+
+      gjeld.forEach(function (v) {
+        var b = el("button", { type: "button", class: "opt", role: multi ? "checkbox" : "radio", "data-id": v.id, "aria-checked": "false" }, [el("span", { class: "ind", "aria-hidden": "true" }), el("span", { text: L(v) })]);
+        b.addEventListener("click", function () {
+          if (multi) {
+            var i = valt.indexOf(v.id);
+            if (i > -1) valt.splice(i, 1);
+            else {
+              if (v.aleine) valt = [];
+              else valt = valt.filter(function (x) { var ov = s.val.filter(function (y) { return y.id === x; })[0]; return !(ov && ov.aleine); });
+              if (!s.maks || valt.length < s.maks) valt.push(v.id);
+            }
+            tilstand.svar[s.id] = valt.slice();
+            oppdater(); lagre();
+          } else {
+            valt = v.id; tilstand.svar[s.id] = valt; oppdater(); lagre();
+            if (!s.fritekst) setTimeout(function () { if (steg()[tilstand.steg] === s) fram(); }, 260);
+          }
+        });
+        liste.appendChild(b);
+      });
+      boks.appendChild(liste);
+
+      if (s.fritekst) {
+        var fid = "fri-" + s.id;
+        var ta = el("input", { type: "text", id: fid, maxlength: "500" });
+        ta.value = tilstand.fri[s.id] || "";
+        ta.addEventListener("input", function () { tilstand.fri[s.id] = ta.value; lagre(); });
+        friBoks = el("div", { class: "fri" }, [el("label", { for: fid, text: L(s.fritekst) }), ta]);
+        boks.appendChild(friBoks);
+      }
+      main.appendChild(boks);
+      navSett({ tilbake: true, hopp: !s.paakravd, vidare: multi || !!s.fritekst || !!verdi, vidareTekst: sisteSteg() ? u("send") : u("vidare"), lat: true });
+      oppdater();
+      return;
+    }
+
+    if (s.type === "text") {
+      var tid = "tekst-" + s.id;
+      // einlinje: eitt felt på ei linje (til dømes initialar). stor: store bokstavar. paakravd: kan ikkje hoppast over.
+      var t = s.einlinje
+        ? el("input", { type: "text", id: tid, maxlength: String(s.maksLengd || 80), autocomplete: "off", autocapitalize: s.stor ? "characters" : "sentences", "aria-labelledby": "sp-" + s.id, class: s.stor ? "stor" : null })
+        : el("textarea", { id: tid, maxlength: "1500", "aria-labelledby": "sp-" + s.id });
+      if (s.plasshaldar) t.setAttribute("placeholder", L(s.plasshaldar));
+      t.value = verdi || "";
+      var gyldig = function () { var v = (t.value || "").trim(); return s.paakravd ? v.length >= (s.minstLengd || 2) : true; };
+      t.addEventListener("input", function () {
+        if (s.stor) { var pos = t.selectionStart; t.value = t.value.toUpperCase(); try { t.setSelectionRange(pos, pos); } catch (e) {} }
+        tilstand.svar[s.id] = t.value; lagre();
+        bVidare.disabled = !gyldig();
+      });
+      boks.appendChild(t);
+      main.appendChild(boks);
+      navSett({ tilbake: true, hopp: !s.paakravd, vidare: true, vidareTekst: sisteSteg() ? u("send") : u("vidare"), lat: !gyldig() });
+      if (s.einlinje) setTimeout(function () { try { t.focus(); } catch (e) {} }, 50);
+      return;
+    }
+
+    if (s.type === "scale" || s.type === "nps") {
+      var vals = verdi && typeof verdi === "object" ? Object.assign({}, verdi) : {};
+      var rader = s.type === "nps" ? [{ id: "nps", nn: "", en: "" }] : s.rader;
+      var n = s.skala.max - s.skala.min + 1;
+      var wrap = el("div", { class: "skala" + (s.type === "nps" ? " nps" : "") });
+      var fullt = function () { return rader.every(function (r) { return vals[r.id] != null; }); };
+      rader.forEach(function (r) {
+        var radEl = el("div", { class: "skala-rad", role: "radiogroup", "aria-label": L(r) || L(s.tekst) });
+        if (L(r)) radEl.appendChild(el("div", { class: "namn", text: L(r) }));
+        var kn = el("div", { class: "skala-knappar" });
+        kn.style.setProperty("--n", n);
+        for (var x = s.skala.min; x <= s.skala.max; x++) (function (x) {
+          var b = el("button", { type: "button", role: "radio", "aria-checked": String(vals[r.id] === x), text: String(x) });
+          b.addEventListener("click", function () {
+            vals[r.id] = x;
+            Array.prototype.forEach.call(kn.children, function (c) { c.setAttribute("aria-checked", String(c.textContent === String(x))); });
+            tilstand.svar[s.id] = s.type === "nps" ? x : Object.assign({}, vals);
+            bVidare.disabled = !fullt(); lagre();
+          });
+          kn.appendChild(b);
+        })(x);
+        radEl.appendChild(kn);
+        radEl.appendChild(el("div", { class: "skala-endar" }, [el("span", { text: L(s.skala.lav) }), el("span", { text: L(s.skala.hog) })]));
+        wrap.appendChild(radEl);
+      });
+      if (s.type === "nps" && typeof verdi === "number") vals.nps = verdi;
+      boks.appendChild(wrap);
+      if (s.fritekst) {
+        var nid = "fri-" + s.id;
+        var inp = el("textarea", { id: nid, maxlength: "800" });
+        inp.style.minHeight = "80px";
+        inp.value = tilstand.fri[s.id] || "";
+        inp.addEventListener("input", function () { tilstand.fri[s.id] = inp.value; lagre(); });
+        boks.appendChild(el("div", { class: "fri" }, [el("label", { for: nid, text: L(s.fritekst) }), inp]));
+      }
+      main.appendChild(boks);
+      navSett({ tilbake: true, hopp: true, vidare: true, vidareTekst: sisteSteg() ? u("send") : u("vidare"), lat: !fullt() });
+    }
+  }
+
+  /* ---------- Flyt ---------- */
+  function fram() {
+    if (tilstand.steg < 0) { tilstand.steg = 0; if (!tilstand.start) tilstand.start = Date.now(); }
+    else if (sisteSteg()) { send(); return; }
+    else tilstand.steg++;
+    lagre(); teikn(); window.scrollTo(0, 0);
+  }
+  function bak() {
+    if (tilstand.steg <= 0) tilstand.steg = -1; else tilstand.steg--;
+    lagre(); teikn(); window.scrollTo(0, 0);
+  }
+  function hopp() {
+    var s = steg()[tilstand.steg];
+    if (s === "B-intro") { send(true); return; }
+    delete tilstand.svar[s.id]; delete tilstand.fri[s.id];
+    if (sisteSteg()) { send(); return; }
+    tilstand.steg++; lagre(); teikn(); window.scrollTo(0, 0);
+  }
+
+  function rydd() {
+    // Ta med berre svar på spørsmål som faktisk var med i flyten, og berre val som var synlege
+    var ider = [];
+    var ut = {};
+    spSteg().forEach(function (sp) {
+      var id = sp.id, v = tilstand.svar[id];
+      ider.push(id);
+      if (sp.val && !tomt(v)) {
+        var lov = valAv(sp).map(function (x) { return x.id; });
+        v = Array.isArray(v) ? v.filter(function (x) { return lov.indexOf(x) > -1; }) : (lov.indexOf(v) > -1 ? v : null);
+      }
+      if (tomt(v)) return;
+      if (typeof v === "string") { v = v.trim().slice(0, 1500); if (sp.stor) v = v.toUpperCase(); }
+      ut[id] = v;
+    });
+    var fri = {};
+    Object.keys(tilstand.fri).forEach(function (id) { var t = (tilstand.fri[id] || "").trim(); if (t && ider.indexOf(id) > -1) fri[id] = t.slice(0, 800); });
+    return { svar: ut, fri: fri };
+  }
+
+  function send(utanB) {
+    if (utanB) { B.forEach(function (s) { delete tilstand.svar[s.id]; delete tilstand.fri[s.id]; }); tilstand.utanB = true; }
+    var r = rydd();
+    var data = {
+      skjema: F.id, k: kundeSlug, t: tilgang, lang: tilstand.lang, versjon: K.versjon,
+      leiardel: erLeiar() && !tilstand.utanB,
+      sekund: tilstand.start ? Math.round((Date.now() - tilstand.start) / 1000) : null,
+      svar: r.svar, fri: r.fri
+    };
+    tilstand.sending = true; tilstand.feil = false; teikn();
+    var ferdig = function (ok, forhand) {
+      tilstand.sending = false;
+      if (ok) { tilstand.sendt = true; tilstand.forhand = !!forhand; slett(); }
+      else tilstand.feil = true;
+      teikn(); window.scrollTo(0, 0);
+    };
+    if (erForhand) { setTimeout(function () { ferdig(true, true); }, 300); return; }
+    fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
+      .then(function (res) {
+        if (res.status === 403 || res.status === 410) { tilstand.sending = false; tilstand[res.status === 403 ? "ugyldig" : "stengd"] = true; teikn(); return; }
+        if (res.ok) meld({ ferdig: true });
+        ferdig(res.ok);
+      })
+      .catch(function () { ferdig(false); });
+  }
+
+  function valTekst(s, id) { var v = s.val.filter(function (x) { return x.id === id; })[0]; return v ? L(v) : id; }
+
+  function teiknSlutt() {
+    sti(!!(tilstand.sendt && !tilstand.feil), true);
+    nav.hidden = true;
+    if (tilstand.sending) { main.appendChild(el("p", { class: "skjerm", text: u("sender") })); return; }
+    if (tilstand.feil) {
+      main.appendChild(el("div", { class: "skjerm" }, [
+        el("p", { class: "feil", text: u("sendFeil") }),
+        el("button", { type: "button", class: "knapp hoved", style: "margin-left:0", text: u("provIgjen"), onclick: function () { send(); } })
+      ]));
+      return;
+    }
+    var svar = tilstand.svar;
+    var d = el("div", { class: "skjerm slutt" });
+    d.appendChild(el("h1", { text: u("takk") }));
+    d.appendChild(el("p", { text: u("sendt") }));
+    if (tilstand.forhand) d.appendChild(el("p", { class: "notis", text: u("ikkjeSendt") }));
+
+    // Situasjonane (berre i skjema som har dei)
+    var scen = SP.filter(function (s) { return s.scenario; });
+    var sit = el("section");
+    if (scen.length) sit.appendChild(el("h2", { text: u(scen.length === 1 ? "situasjonen" : "situasjonane") }));
+    scen.forEach(function (s) {
+      var mitt = svar[s.id];
+      var f = el("div", { class: "fasit" });
+      f.appendChild(el("h3", { text: L(s.fasit.tittel) }));
+      if (mitt) {
+        var p = el("p", { class: "ditt" }, [u("duValde") + ": ", el("b", { text: valTekst(s, mitt) })]);
+        f.appendChild(p);
+        if (s.rett.indexOf(mitt) > -1) f.appendChild(el("p", { class: "merk", html: '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>' + u("rett") }));
+      } else f.appendChild(el("p", { class: "ditt", text: u("hoppa") }));
+      f.appendChild(el("p", { text: L(s.fasit), style: "margin-top:8px" }));
+      sit.appendChild(f);
+    });
+    if (scen.length) d.appendChild(sit);
+
+    // Råd (berre i skjema som har dei)
+    if (!F.tips.length) { d.appendChild(kontaktSek()); d.appendChild(el("p", { class: "helsing", text: u("lukk") })); main.appendChild(d); return; }
+    var treff = F.tips.filter(function (t) { try { return t.naar(svar); } catch (e) { return false; } });
+    var avslutt = treff.filter(function (t) { return t.avslutning; });
+    var aktuelle = treff.filter(function (t) { return !t.avslutning; }).slice(0, K.maksTips);
+    var radSek = el("section");
+    radSek.appendChild(el("h2", { text: u("rad") }));
+    if (!aktuelle.length) {
+      // Ros berre når vi har nok svar til å meine noko. Elles eit nøytralt råd.
+      var alleSp = spSteg();
+      var svara = alleSp.filter(function (q) { return !tomt(svar[q.id]); }).length;
+      radSek.appendChild(el("p", { class: "hjelp", text: u(svara * 2 >= alleSp.length ? "ingenRad" : "litenData") }));
+      aktuelle = F.tips.filter(function (t) { return t.reserve; }).slice(0, 1);
+    }
+    var tl = el("div", { class: "tips" });
+    var visKontakt = false;
+    aktuelle.forEach(function (t) {
+      if (t.visKontakt) visKontakt = true;
+      tl.appendChild(el("article", null, [el("h3", { text: L(t.tittel) }), el("p", { text: L(t) })]));
+    });
+    radSek.appendChild(tl);
+    avslutt.forEach(function (t) {
+      radSek.appendChild(el("div", { style: "margin-top:26px" }, [el("h3", { text: L(t.tittel), style: "margin:0 0 6px;font-size:1.1rem" }), el("p", { text: L(t), style: "margin:0" })]));
+    });
+    d.appendChild(radSek);
+
+    d.appendChild(kontaktSek());
+    d.appendChild(el("p", { class: "helsing", text: u("lukk") }));
+    main.appendChild(d);
+  }
+  function kontaktSek() {
+    var kSek = el("section");
+    kSek.appendChild(el("h2", { text: u("kontakt") }));
+    kSek.appendChild(el("div", { class: "kontakt" }, [
+      el("div", null, [el("span", { text: K.kontakt.telefon })]),
+      el("div", null, [el("span", { text: K.kontakt.epost })]),
+      el("small", { text: L(K.kontakt.tider) })
+    ]));
+    return kSek;
+  }
+
+  /* ---------- Hendingar ---------- */
+  bVidare.addEventListener("click", function () {
+    if (bVidare.disabled) return;
+    fram();
+  });
+  bTilbake.addEventListener("click", bak);
+  bHopp.addEventListener("click", hopp);
+  document.querySelectorAll(".sprak button").forEach(function (b) {
+    b.addEventListener("click", function () { tilstand.lang = b.getAttribute("data-l"); lagre(); teikn(); });
+  });
+
+  // Sjekk at lenkja har rett kode før folk byrjar å svare (ikkje i førehandsvisinga)
+  if (!erForhand) {
+    fetch("api/sjekk?k=" + encodeURIComponent(kundeSlug) + "&t=" + encodeURIComponent(tilgang))
+      .then(function (r) { if (r.status === 403) { tilstand.ugyldig = true; teikn(); } else if (r.status === 410) { tilstand.stengd = true; teikn(); } })
+      .catch(function () {});
+  }
+  if (F) last();
+  if (F && tilstand.steg >= steg().length) tilstand.steg = steg().length - 1;
+  teikn();
+})();
+</script>
+

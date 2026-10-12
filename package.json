@@ -1,0 +1,14 @@
+{
+  "name": "vardahei-kartlegging",
+  "private": true,
+  "description": "Kartlegging hos kundane: skjema, dashbord og adminpanel. Sjølve appen har ingen avhengnader; playwright er berre for testane.",
+  "scripts": {
+    "start": "node kartlegging/server.js",
+    "sjekk": "node --check kartlegging/server.js",
+    "test:skjema": "node tools/test/skjema.test.js",
+    "test:dashbord": "node tools/test/dashboard.test.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}

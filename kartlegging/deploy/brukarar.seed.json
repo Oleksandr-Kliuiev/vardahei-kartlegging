@@ -1,0 +1,20 @@
+{
+  "oleksandr@vardahei.no": {
+    "salt": "a6d2065ba1bed214c3f79bc33a76fd91",
+    "hash": "bc189e1ee1a93dd7b0d33d30f3b6f54d97bfb574586638732251d618c58d041c614862a67ecb4ae2aa17868ca0b0aec083c8d35ec7eeced75dab16717e2e6a64",
+    "maaByte": true,
+    "oppretta": "2026-10-06T11:42:57.081Z"
+  },
+  "asbjorn@vardahei.no": {
+    "salt": "8798e4749a64706cb0b2459458852618",
+    "hash": "1f30f7984b44340d85afafc8315ec01059175279bd088523583e30792d08078107ed94d874170af8f56caa9d9ed8243db22c53c73e8013659977dc252b4d1435",
+    "maaByte": true,
+    "oppretta": "2026-10-06T11:42:57.150Z"
+  },
+  "bjarte@vardahei.no": {
+    "salt": "46d4ebf1699e281daa807410da951409",
+    "hash": "c9356313f2d174f2442b4e007fa696128892fd62aaac91b11938756b05c9f3105d370f814b1d786eeed987b29fb790e96510b41f7d0a358e78acd4fda44fb5b8",
+    "maaByte": true,
+    "oppretta": "2026-10-06T11:42:57.216Z"
+  }
+}

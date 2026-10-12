@@ -1,0 +1,36 @@
+name: kartlegging
+# Vardahei IT: kartlegging hos kundane (kartlegging.vardahei.tech)
+# Koden ligg i /opt/kartlegging (berre lesbar i containeren). Svar, kodar og kontoar ligg i /opt/kartlegging/data.
+services:
+  app:
+    image: node:22-alpine
+    restart: unless-stopped
+    working_dir: /app
+    command: ["node", "server.js"]
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 256m
+    environment:
+      PORT: "3070"
+      HOST: "0.0.0.0"
+      BASE_URL: "https://kartlegging.vardahei.tech"
+      DATA_DIR: "/data"
+    volumes:
+      - /opt/kartlegging:/app:ro
+      - /opt/kartlegging/data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3070/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      edge:
+        aliases:
+          - kartlegging
+networks:
+  edge:
+    external: true
+    name: atlas_edge

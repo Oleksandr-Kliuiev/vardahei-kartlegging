@@ -1,0 +1,481 @@
+<title>Framdrift i kartlegginga</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: kontrollrom. Øvst kva som skjer no, så éin rad per kunde, nedst kvar folk stoppar og kva som har skjedd. */
+:root {
+  --bg: #eef2f4; --sheet: #f9fbfc; --ink: #1e2a31; --muted: #5d6a71; --faint: #8a979e; --line: #d2dbe0;
+  --accent: #176e91; --accent-ink: #ffffff; --accent-soft: #dcebf2; --bar: #176e91; --bar-track: #e3eaee;
+  --god: #2f7d4f; --merk: #a56a12; --kritisk: #b3402f; --live: #2f9e5f;
+  --font: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --logo-filter: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10191e; --sheet: #17242b; --ink: #e3eaee; --muted: #9aabb3; --faint: #6d8089; --line: #2c3d46;
+    --accent: #5fb0d3; --accent-ink: #08161d; --accent-soft: #183544; --bar: #5fb0d3; --bar-track: #22333b;
+    --god: #6cc08e; --merk: #e5a948; --kritisk: #ec7b66; --live: #5fd08f;
+    --logo-filter: brightness(1.45) saturate(.9); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10191e; --sheet: #17242b; --ink: #e3eaee; --muted: #9aabb3; --faint: #6d8089; --line: #2c3d46;
+  --accent: #5fb0d3; --accent-ink: #08161d; --accent-soft: #183544; --bar: #5fb0d3; --bar-track: #22333b;
+  --god: #6cc08e; --merk: #e5a948; --kritisk: #ec7b66; --live: #5fd08f;
+  --logo-filter: brightness(1.45) saturate(.9); color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+.ark { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 16px 60px; }
+
+/* Topplinje */
+.topp { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; }
+.topp img { height: 26px; width: auto; filter: var(--logo-filter); }
+.meny { display: flex; gap: 2px; padding-left: 18px; border-left: 1.5px solid var(--line); }
+.meny a { color: var(--muted); text-decoration: none; font-weight: 700; padding: 6px 12px; border-radius: 6px; }
+.meny a[aria-current="page"] { color: var(--ink); background: var(--sheet); box-shadow: inset 0 0 0 1px var(--line); }
+.meg { margin-left: auto; display: flex; align-items: center; gap: 14px; font-size: 14px; color: var(--muted); flex-wrap: wrap; }
+.meg a { color: var(--muted); }
+.meg form { margin: 0; }
+.meg button { font: inherit; background: none; border: 1px solid var(--line); color: var(--ink); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+
+.puls { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.puls i { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); display: inline-block; }
+.puls.live i { background: var(--live); box-shadow: 0 0 0 0 var(--live); animation: puls 2s infinite; }
+@keyframes puls { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--live) 60%, transparent); } 70% { box-shadow: 0 0 0 7px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+
+.demo { margin-top: 14px; border: 1.5px dashed var(--merk); background: var(--sheet); padding: 10px 14px; border-radius: 6px; }
+.demo b { color: var(--merk); }
+
+/* No-linja */
+.no { display: flex; flex-wrap: wrap; gap: 8px 34px; margin: 22px 0 6px; align-items: baseline; }
+.no h1 { font-size: 1.45rem; margin: 0; letter-spacing: -.01em; }
+.tal { display: flex; align-items: baseline; gap: 7px; }
+.tal b { font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+.tal span { color: var(--muted); }
+.tal.varsel b { color: var(--kritisk); }
+
+section.del { margin-top: 22px; background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 18px 20px 20px; }
+section.del > h2 { font-size: 1.15rem; margin: 0 0 4px; }
+section.del > .under { color: var(--muted); margin: 0 0 12px; font-size: 14px; max-width: 80ch; }
+
+/* Kundetabell */
+.tabell-wrap { overflow-x: auto; margin-inline: -4px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 980px; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font-size: 12.5px; color: var(--muted); font-weight: 700; white-space: nowrap; }
+tr.stengd td:not(:last-child) { opacity: .55; }
+.kunde { font-weight: 700; white-space: nowrap; }
+.kunde small { display: block; font-weight: 400; color: var(--faint); font-size: 12.5px; }
+.inp { font: inherit; font-size: 14px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; width: 64px; font-variant-numeric: tabular-nums; }
+.inp.dato { width: 132px; }
+.inp:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.prosent { min-width: 150px; }
+.prosent .linje { display: flex; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums; }
+.prosent .linje b { font-size: 15px; }
+.prosent .linje span { color: var(--muted); }
+.spor { height: 8px; background: var(--bar-track); border-radius: 4px; margin-top: 5px; overflow: hidden; display: flex; gap: 2px; }
+.spor i { display: block; height: 100%; background: var(--bar); }
+.spor i.igang { background: color-mix(in srgb, var(--bar) 40%, transparent); }
+.prosent small { display: block; color: var(--faint); font-size: 12.5px; margin-top: 3px; }
+.igang-tal { font-weight: 700; color: var(--live); font-variant-numeric: tabular-nums; }
+.igang-tal.null { color: var(--faint); font-weight: 400; }
+.sist { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.status { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13.5px; font-weight: 700; border-radius: 999px; padding: 3px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; white-space: nowrap; }
+.status i { width: 8px; height: 8px; border-radius: 50%; background: var(--god); }
+.status.av i { background: var(--faint); }
+.status.utlopt i { background: var(--merk); }
+.knappar { display: flex; flex-wrap: wrap; gap: 6px; }
+.knapp { font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 6px; padding: 4px 9px; cursor: pointer; white-space: nowrap; }
+.knapp:hover { border-color: var(--muted); }
+.knapp.fare { color: var(--kritisk); border-color: color-mix(in srgb, var(--kritisk) 45%, var(--line)); }
+.knapp.ok { color: var(--god); }
+
+/* Nedre rad */
+.to { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 22px; }
+@media (max-width: 900px) { .to { grid-template-columns: minmax(0, 1fr); } }
+.to > section.del { margin-top: 22px; }
+.skjemablokk + .skjemablokk { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.skjemablokk h3 { margin: 0 0 4px; font-size: 1rem; }
+.skjemablokk .fakta { color: var(--muted); font-size: 13.5px; margin: 0 0 10px; font-variant-numeric: tabular-nums; }
+.rad { display: grid; grid-template-columns: minmax(0, 1fr) 110px 32px; gap: 10px; align-items: center; padding: 3px 0; font-size: 13.5px; }
+.rad .spor { margin: 0; height: 9px; }
+.rad .spor i { background: var(--merk); }
+.rad .n { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tomt { color: var(--muted); font-style: italic; margin: 0; }
+
+.logg { list-style: none; margin: 0; padding: 0; }
+.logg li { display: grid; grid-template-columns: 74px 14px minmax(0, 1fr); gap: 8px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 14px; align-items: baseline; }
+.logg li:first-child { border-top: 0; }
+.logg time { color: var(--faint); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.logg .prikk { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); display: inline-block; }
+.logg .svar .prikk { background: var(--god); }
+.logg .start .prikk { background: var(--bar); }
+.logg .feil .prikk { background: var(--kritisk); }
+.logg .admin .prikk { background: var(--merk); border-radius: 2px; }
+.logg li.ny { animation: ny 1.6s ease-out; }
+@keyframes ny { from { background: var(--accent-soft); } to { background: transparent; } }
+
+tr.utsending > td { background: var(--bg); padding: 16px 14px 18px; }
+.utsend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 26px; }
+.utsend h4 { margin: 0 0 6px; font-size: 14.5px; }
+.utsend textarea { width: 100%; box-sizing: border-box; min-height: 210px; font: inherit; font-size: 13.5px; line-height: 1.45; color: var(--ink); background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; padding: 10px; resize: vertical; }
+.utsend .knappar { margin-top: 8px; }
+.utsend a.knapp { text-decoration: none; display: inline-block; }
+.utsend-topp { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-bottom: 12px; color: var(--muted); font-size: 13.5px; }
+.utsend-topp .sprak button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.knapp[aria-expanded="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.melding { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 8px; font-size: 14px; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .puls.live i, .logg li.ny { animation: none; } }
+</style>
+
+<div class="ark">
+  <div class="topp">
+    <img id="logo" alt="Vardahei IT" width="130" height="26">
+    <nav class="meny" aria-label="Sider">
+      <a href="admin" aria-current="page">Framdrift</a>
+      <a href="dashboard">Resultat</a>
+    </nav>
+    <div class="meg">
+      <span class="puls" id="puls"><i></i><span id="puls-tekst">Koplar til …</span></span>
+      <span id="meg-epost"></span>
+      <a href="byt-passord" id="lenke-passord">Byt passord</a>
+      <form method="post" action="logg-ut" id="logg-ut"><button type="submit">Logg ut</button></form>
+    </div>
+  </div>
+  <div class="demo" id="demo" hidden><b>Demodata.</b> Slik ser framdriftssida ut når skjemaet er ute. Her er tala oppdikta, og knappane endrar ingenting.</div>
+
+  <div class="no">
+    <h1>Framdrift</h1>
+    <div class="tal"><b id="t-svar">0</b><span>svar i dag</span></div>
+    <div class="tal"><b id="t-igang">0</b><span>svarar akkurat no</span></div>
+    <div class="tal" id="t-ugyldig-boks"><b id="t-ugyldig">0</b><span>ugyldige lenkjer i dag</span></div>
+  </div>
+
+  <section class="del">
+    <h2>Kundar</h2>
+    <p class="under">Svarprosenten blir rekna ut frå talet på tilsette du set inn. Den lyse delen av stolpen er folk som er i gang no. «Stengd» eller passert frist gjer at skjemaet ikkje tek imot fleire svar frå den kunden.</p>
+    <div class="tabell-wrap"><table>
+      <thead><tr><th>Kunde</th><th>Tilsette</th><th id="th-s1"></th><th id="th-s2"></th><th>I gang no</th><th>Sist aktiv</th><th>Status og frist</th><th>Lenkjer</th></tr></thead>
+      <tbody id="kundar"></tbody>
+    </table></div>
+  </section>
+
+  <div class="to">
+    <section class="del">
+      <h2>Kvar folk stoppar</h2>
+      <p class="under">Økter som ikkje har vore aktive på 30 minutt og ikkje vart sende, fordelt på spørsmålet dei stoppa ved.</p>
+      <div id="stopp"></div>
+    </section>
+    <section class="del">
+      <h2>Siste hendingar</h2>
+      <p class="under">Svar, nye økter, innloggingar og endringar her i panelet.</p>
+      <ul class="logg" id="logg"></ul>
+    </section>
+  </div>
+</div>
+<div class="melding" id="melding" hidden></div>
+
+<script src="sporsmal.js"></script>
+<script>
+(function () {
+  "use strict";
+  var K = window.KARTLEGGING;
+  var SKJEMA = Object.keys(K.skjema);
+  var data = null, demo = false, sisteIder = {};
+
+  function el(tag, a, born) {
+    var e = document.createElement(tag);
+    if (a) for (var k in a) {
+      if (k === "text") e.textContent = a[k];
+      else if (k.slice(0, 2) === "on") e.addEventListener(k.slice(2), a[k]);
+      else if (a[k] != null && a[k] !== false) e.setAttribute(k, a[k] === true ? "" : a[k]);
+    }
+    (born || []).forEach(function (b) { if (b != null) e.appendChild(typeof b === "object" ? b : document.createTextNode(String(b))); });
+    return e;
+  }
+  function relativ(ms) {
+    if (!ms) return "–";
+    var s = Math.max(0, (Date.now() - ms) / 1000);
+    if (s < 60) return "no nett";
+    if (s < 3600) return Math.round(s / 60) + " min sidan";
+    if (s < 86400) return Math.round(s / 3600) + " t sidan";
+    return new Date(ms).toLocaleDateString("nb-NO", { day: "numeric", month: "short" });
+  }
+  function klokke(iso) { return new Date(iso).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" }); }
+  function melding(t) { var m = document.getElementById("melding"); m.textContent = t; m.hidden = false; clearTimeout(melding.t); melding.t = setTimeout(function () { m.hidden = true; }, 2600); }
+
+  /* ---------- Demo (når sida ikkje er på serveren) ---------- */
+  function demodata() {
+    var no = Date.now(), m = 60e3;
+    var tilsette = { daco: 5, gasta: 9, kviknes: 14, maskinsenteret: 16, sfhs: 13, tharaso: 7 };
+    var t = { daco: [3, 1], gasta: [7, 5], kviknes: [6, 0], maskinsenteret: [11, 8], sfhs: [4, 2], tharaso: [0, 0] };
+    var kundar = Object.keys(K.kundar).map(function (k, i) {
+      var per = {};
+      SKJEMA.forEach(function (sid, j) {
+        var sv = t[k][j];
+        per[sid] = { svar: sv, starta: sv + (i % 3), igang: (k === "maskinsenteret" && j === 0) ? 2 : (k === "gasta" && j === 1 ? 1 : 0), avbrote: i % 3, leiarar: sv ? 1 : 0, sist: sv ? no - (i * 37 + j * 11 + 2) * m : null, url: "https://kartlegging.vardahei.tech/?s=" + sid + "&k=" + k + "&t=DEMO" };
+      });
+      return { k: k, namn: K.kundar[k], tilsette: tilsette[k], open: k !== "tharaso", frist: k === "kviknes" ? "2026-10-20" : null, aktiv: k !== "tharaso", skjema: per };
+    });
+    var skjema = {};
+    SKJEMA.forEach(function (sid) {
+      var sp = K.skjema[sid].sporsmal;
+      skjema[sid] = { namn: K.skjema[sid].namn.nn, starta: sid === "tryggleik" ? 38 : 22, svar: sid === "tryggleik" ? 31 : 16, median: sid === "tryggleik" ? 342 : 418,
+        stopp: [{ id: sp[3].id, tekst: sp[3].tekst.nn, n: 3 }, { id: sp[8].id, tekst: sp[8].tekst.nn, n: 2 }, { id: "intro", tekst: "Opna skjemaet, men starta ikkje", n: 2 }] };
+    });
+    var h = [
+      { type: "svar", k: "maskinsenteret", skjema: "tryggleik", sekund: 312, min: 2 },
+      { type: "start", k: "maskinsenteret", skjema: "tryggleik", min: 4 },
+      { type: "start", k: "gasta", skjema: "ki", min: 6 },
+      { type: "svar", k: "gasta", skjema: "ki", sekund: 455, leiar: true, min: 14 },
+      { type: "kunde_endra", epost: "asbjorn@vardahei.no", k: "tharaso", open: false, tilsette: 7, min: 40 },
+      { type: "ugyldig_lenkje", min: 52 },
+      { type: "innlogging", epost: "oleksandr@vardahei.no", min: 63 }
+    ].map(function (x) { x.tid = new Date(no - x.min * m).toISOString(); return x; });
+    return { no: new Date(no).toISOString(), idag: { svar: 9, igang: 3, ugyldige: 1 }, kundar: kundar, skjema: skjema, hendingar: h };
+  }
+
+  /* ---------- Teikning ---------- */
+  function teikn() {
+    if (!data) return;
+    document.getElementById("t-svar").textContent = data.idag.svar;
+    document.getElementById("t-igang").textContent = data.idag.igang;
+    document.getElementById("t-ugyldig").textContent = data.idag.ugyldige;
+    document.getElementById("t-ugyldig-boks").classList.toggle("varsel", data.idag.ugyldige >= 5);
+    document.getElementById("th-s1").textContent = K.skjema[SKJEMA[0]].kort.nn;
+    document.getElementById("th-s2").textContent = K.skjema[SKJEMA[1]].kort.nn;
+    teiknKundar(); teiknStopp(); teiknLogg();
+  }
+
+  function prosentCelle(k, s) {
+    var t = k.tilsette;
+    var d = el("div", { class: "prosent" });
+    var p = t ? Math.round(100 * s.svar / t) : null;
+    d.appendChild(el("div", { class: "linje" }, [el("b", { text: s.svar + (t ? " / " + t : " svar") }), el("span", { text: p != null ? Math.min(p, 999) + " %" : "" })]));
+    var spor = el("div", { class: "spor", title: s.svar + " svar, " + s.igang + " i gang" });
+    if (t) {
+      spor.appendChild(el("i", { style: "width:" + Math.min(100, 100 * s.svar / t) + "%" }));
+      if (s.igang) spor.appendChild(el("i", { class: "igang", style: "width:" + Math.min(100, 100 * s.igang / t) + "%" }));
+    }
+    d.appendChild(spor);
+    var info = [];
+    if (s.leiarar) info.push(s.leiarar === 1 ? "leiar har svart" : s.leiarar + " leiarar");
+    if (s.avbrote) info.push(s.avbrote + " gav opp");
+    if (!t) info.push("set tal tilsette");
+    if (info.length) d.appendChild(el("small", { text: info.join(", ") }));
+    return d;
+  }
+
+  function teiknKundar() {
+    var tb = document.getElementById("kundar");
+    var fokus = document.activeElement && document.activeElement.id;
+    tb.innerHTML = "";
+    data.kundar.forEach(function (k) {
+      var igang = SKJEMA.reduce(function (a, sid) { return a + k.skjema[sid].igang; }, 0);
+      var sist = SKJEMA.reduce(function (a, sid) { return Math.max(a, k.skjema[sid].sist || 0); }, 0);
+      var utlopt = k.open && !k.aktiv;
+      var tr = el("tr", { class: k.aktiv ? "" : "stengd" });
+      tr.appendChild(el("td", { class: "kunde" }, [k.namn, el("small", { text: k.k })]));
+      var inp = el("input", { class: "inp", id: "tilsette-" + k.k, type: "number", min: "1", max: "9999", inputmode: "numeric", "aria-label": "Tal tilsette i " + k.namn, value: k.tilsette || "", placeholder: "–" });
+      inp.addEventListener("change", function () { endre(k.k, { tilsette: parseInt(inp.value, 10) || null }); });
+      tr.appendChild(el("td", null, [inp]));
+      SKJEMA.forEach(function (sid) { tr.appendChild(el("td", null, [prosentCelle(k, k.skjema[sid])])); });
+      tr.appendChild(el("td", null, [el("span", { class: "igang-tal" + (igang ? "" : " null"), text: igang ? igang + " no" : "0" })]));
+      tr.appendChild(el("td", { class: "sist", "data-ms": sist || "", title: sist ? new Date(sist).toLocaleString("nb-NO") : "" , text: relativ(sist) }));
+      var st = el("button", { class: "status" + (k.open ? (utlopt ? " utlopt" : "") : " av"), type: "button", title: k.open ? "Klikk for å stengje" : "Klikk for å opne" }, [el("i"), k.open ? (utlopt ? "Frist passert" : "Open") : "Stengd"]);
+      st.addEventListener("click", function () { endre(k.k, { open: !k.open }); });
+      var dato = el("input", { class: "inp dato", id: "frist-" + k.k, type: "date", value: k.frist || "", "aria-label": "Frist for " + k.namn });
+      dato.addEventListener("change", function () { endre(k.k, { frist: dato.value || null }); });
+      tr.appendChild(el("td", null, [el("div", { class: "knappar" }, [st, dato])]));
+      var kn = el("div", { class: "knappar" });
+      kn.appendChild(el("button", { class: "knapp", type: "button", "aria-expanded": String(!!opne[k.k]), onclick: function () { opne[k.k] = !opne[k.k]; teiknKundar(); } }, ["Send ut"]));
+      var ny = el("button", { class: "knapp fare", type: "button" }, ["Ny kode"]);
+      ny.addEventListener("click", function () {
+        if (ny.getAttribute("data-stadfest")) { nyKode(k.k); return; }
+        ny.setAttribute("data-stadfest", "1"); ny.textContent = "Gamle lenkjer sluttar å verke. Stadfest";
+        setTimeout(function () { if (ny.isConnected) { ny.removeAttribute("data-stadfest"); ny.textContent = "Ny kode"; } }, 5000);
+      });
+      kn.appendChild(ny);
+      tr.appendChild(el("td", null, [kn]));
+      tb.appendChild(tr);
+      if (opne[k.k]) tb.appendChild(utsending(k));
+    });
+    if (fokus) { var f = document.getElementById(fokus); if (f) f.focus(); }
+  }
+
+  var opne = {}, sprakVal = {};
+  var TEKST = {
+    tryggleik: {
+      nn: "Hei alle!\n\nVardahei IT, som hjelper oss med IT, vil gjerne vite korleis IT-sikkerheita er i kvardagen vår: kva rutinar vi har, korleis vi held styr på passord og innlogging, og kva vi gjer om noko går gale.\n\nSpørsmåla er dei same som i førre runde, slik at vi kan sjå kva som har endra seg. Du skriv inn initialane dine først, elles er det ingen namn. Svara blir brukte samla for bedrifta. Det tek om lag {minutt} minutt, og «usikker» er eit heilt greitt svar.\n\n{lenkje}\n\nLenkja går til kartlegging.vardahei.tech, så du kan trygt opne ho.{frist}\n\nTakk!",
+      en: "Hi everyone,\n\nVardahei IT, who help us with IT, would like to know what IT security looks like in our everyday work: which routines we have, how we keep track of passwords and sign-ins, and what we do if something goes wrong.\n\nThe questions are the same as last round, so we can see what has changed. You enter your initials first; apart from that there are no names, and the answers are used together for the company. It takes about {minutt} minutes, and \u201cnot sure\u201d is a perfectly fine answer.\n\n{lenkje}\n\nThe link goes to kartlegging.vardahei.tech, so it's safe to open.{frist}\n\nThanks!"
+    },
+    ki: {
+      nn: "Hei alle!\n\nVi vil gjerne finne ut kva som tek tid i arbeidsdagen vår, og om KI kan gjere noko av det enklare. Vardahei IT har laga ei kort undersøking om det. Har du aldri brukt KI, er svaret ditt like nyttig.\n\nDet tek om lag {minutt} minutt og er anonymt.\n\n{lenkje}\n\nLenkja går til kartlegging.vardahei.tech, så du kan trygt opne ho.{frist}\n\nTakk!",
+      en: "Hi everyone,\n\nWe'd like to find out what takes time in our working day, and whether AI could make some of it easier. Vardahei IT has made a short survey about it. If you've never used AI, your answer is just as useful.\n\nIt takes about {minutt} minutes and is anonymous.\n\n{lenkje}\n\nThe link goes to kartlegging.vardahei.tech, so it's safe to open.{frist}\n\nThanks!"
+    }
+  };
+  function lagTekst(k, sid, l) {
+    var mal = (TEKST[sid] || TEKST.tryggleik)[l];
+    var frist = "";
+    if (k.frist) {
+      var d = new Date(k.frist + "T12:00:00");
+      frist = l === "nn" ? "\n\nSvar gjerne innan " + d.toLocaleDateString("nn-NO", { weekday: "long", day: "numeric", month: "long" }) + "." : "\n\nPlease answer by " + d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }) + ".";
+    }
+    return mal.replace("{minutt}", K.skjema[sid].minutt).replace("{lenkje}", k.skjema[sid].url).replace("{frist}", frist);
+  }
+  function utsending(k) {
+    var l = sprakVal[k.k] || "nn";
+    var td = el("td", { colspan: "8" });
+    var topp = el("div", { class: "utsend-topp" }, [
+      el("span", { text: "Teksten er skriven for at leiaren sender han frå si eiga e-post eller i Teams. Fortel gjerne om undersøkinga på eit møte først, så ingen trur det er svindel." }),
+      el("span", { class: "knappar sprak" }, [
+        el("button", { class: "knapp", type: "button", "aria-pressed": String(l === "nn"), onclick: function () { sprakVal[k.k] = "nn"; teiknKundar(); } }, ["Nynorsk"]),
+        el("button", { class: "knapp", type: "button", "aria-pressed": String(l === "en"), onclick: function () { sprakVal[k.k] = "en"; teiknKundar(); } }, ["English"])
+      ])
+    ]);
+    td.appendChild(topp);
+    var g = el("div", { class: "utsend" });
+    SKJEMA.forEach(function (sid) {
+      var tekst = lagTekst(k, sid, l);
+      var ta = el("textarea", { readonly: true, id: "tekst-" + k.k + "-" + sid, "aria-label": "Tekst til tilsette, " + K.skjema[sid].namn.nn });
+      ta.value = tekst;
+      g.appendChild(el("div", null, [
+        el("h4", { text: K.skjema[sid].namn.nn }),
+        ta,
+        el("div", { class: "knappar" }, [
+          el("button", { class: "knapp", type: "button", onclick: function (e) { kopier(tekst, e.currentTarget, ta); } }, ["Kopier tekst"]),
+          el("button", { class: "knapp", type: "button", onclick: function (e) { kopier(k.skjema[sid].url, e.currentTarget); } }, ["Kopier lenkje"]),
+          el("a", { class: "knapp", href: "plakat?k=" + encodeURIComponent(k.k) + "&s=" + sid, target: "_blank", rel: "noopener", onclick: function (e) { if (demo) { e.preventDefault(); melding("Demodata: plakaten opnar seg på den ekte sida."); } } }, ["Plakat med QR-kode"])
+        ])
+      ]));
+    });
+    td.appendChild(g);
+    return el("tr", { class: "utsending" }, [td]);
+  }
+
+  function teiknStopp() {
+    var boks = document.getElementById("stopp"); boks.innerHTML = "";
+    SKJEMA.forEach(function (sid) {
+      var s = data.skjema[sid];
+      var b = el("div", { class: "skjemablokk" });
+      b.appendChild(el("h3", { text: s.namn }));
+      var fullf = s.starta ? Math.round(100 * s.svar / s.starta) : null;
+      b.appendChild(el("p", { class: "fakta", text: s.starta + " økter starta, " + s.svar + " svar sende" + (fullf != null ? " (" + Math.min(fullf, 100) + " % fullførte)" : "") + (s.median ? ". Median tid " + (s.median < 60 ? "under 1 min." : Math.round(s.median / 60) + " min.") : ".") }));
+      if (!s.stopp.length) b.appendChild(el("p", { class: "tomt", text: "Ingen har gitt opp enno." }));
+      var maks = Math.max.apply(null, s.stopp.map(function (x) { return x.n; }).concat([1]));
+      s.stopp.slice().sort(function (a, c) { return c.n - a.n; }).forEach(function (x) {
+        b.appendChild(el("div", { class: "rad", title: x.id }, [el("span", { text: x.tekst }), el("div", { class: "spor" }, [el("i", { style: "width:" + (100 * x.n / maks) + "%" })]), el("span", { class: "n", text: x.n })]));
+      });
+      boks.appendChild(b);
+    });
+  }
+
+  function hendingTekst(h) {
+    var kunde = K.kundar[h.k] || "Ukjend kunde";
+    var sk = h.skjema && K.skjema[h.skjema] ? K.skjema[h.skjema].kort.nn : "";
+    switch (h.type) {
+      case "svar": return [ "svar", kunde + " sende svar på " + sk + (h.leiar ? ", med leiardelen" : "") + (h.sekund ? " (" + Math.max(1, Math.round(h.sekund / 60)) + " min)" : "") ];
+      case "start": return [ "start", "Nokon i " + kunde + " opna " + sk ];
+      case "ugyldig_lenkje": return [ "feil", "Nokon prøvde ei ugyldig lenkje" + (h.k ? " for " + kunde : "") ];
+      case "innlogging": return [ "admin", h.epost + " logga inn" ];
+      case "utlogging": return [ "admin", h.epost + " logga ut" ];
+      case "innlogging_feil": return [ "feil", "Feil passord for " + (h.epost || "ukjend konto") ];
+      case "innlogging_sperra": return [ "feil", "For mange forsøk, sperra: " + (h.epost || "") ];
+      case "passord_bytt": return [ "admin", h.epost + " bytte passord" ];
+      case "kunde_endra": return [ "admin", h.epost + " endra " + kunde + ": " + (h.open ? "open" : "stengd") + (h.tilsette ? ", " + h.tilsette + " tilsette" : "") + (h.frist ? ", frist " + h.frist : "") ];
+      case "ny_kode": return [ "admin", h.epost + " laga ny lenkjekode for " + kunde ];
+      case "eksport": return [ "admin", h.epost + " lasta ned svar (" + sk + ")" ];
+      default: return [ "", h.type ];
+    }
+  }
+
+  function teiknLogg() {
+    var ul = document.getElementById("logg");
+    var forste = !ul.children.length;
+    ul.innerHTML = "";
+    var nye = {};
+    if (!data.hendingar.length) { ul.appendChild(el("li", null, [el("span"), el("span"), el("span", { class: "tomt", text: "Ingenting har skjedd enno." })])); return; }
+    data.hendingar.slice(0, 25).forEach(function (h) {
+      var id = h.tid + h.type + (h.k || "") + (h.epost || "");
+      nye[id] = 1;
+      var t = hendingTekst(h);
+      ul.appendChild(el("li", { class: t[0] + (!forste && !sisteIder[id] ? " ny" : "") }, [el("time", { datetime: h.tid, title: new Date(h.tid).toLocaleString("nb-NO"), text: klokke(h.tid) }), el("span", null, [el("i", { class: "prikk" })]), el("span", { text: t[1] })]));
+    });
+    sisteIder = nye;
+  }
+
+  /* ---------- Handlingar ---------- */
+  function post(url, body) {
+    if (demo) { melding("Demodata: ingenting vart endra."); return Promise.resolve(); }
+    return fetch(url, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      .then(function (r) { if (r.status === 401) location.href = "logg-inn?til=/admin"; if (!r.ok) throw new Error(r.status); return hent(); })
+      .catch(function () { melding("Klarte ikkje å lagre. Prøv igjen."); });
+  }
+  function endre(k, endring) {
+    var kunde = data.kundar.filter(function (x) { return x.k === k; })[0];
+    Object.assign(kunde, endring);
+    if (demo) { kunde.aktiv = kunde.open; teikn(); }
+    post("api/admin/kunde", Object.assign({ k: k }, endring)).then(function () { if (!demo) melding("Lagra."); });
+  }
+  function nyKode(k) { post("api/admin/nykode", { k: k }).then(function () { if (!demo) melding("Ny kode laga. Send dei nye lenkjene til kunden."); }); }
+  function kopier(tekst, knapp, felt) {
+    var ferdig = function () { var g = knapp.textContent; knapp.textContent = "Kopiert"; knapp.classList.add("ok"); setTimeout(function () { knapp.textContent = g; knapp.classList.remove("ok"); }, 1500); };
+    var reserve = function () { if (felt) { felt.focus(); felt.select(); melding("Teksten er merka. Trykk Ctrl+C (Cmd+C på Mac)."); } else melding(tekst); };
+    try { navigator.clipboard.writeText(tekst).then(ferdig, reserve); }
+    catch (e) { reserve(); }
+  }
+
+  /* ---------- Data og sanntid ---------- */
+  var hentar = false, attpaa = false;
+  function hent() {
+    if (demo) return Promise.resolve();
+    if (hentar) { attpaa = true; return Promise.resolve(); }
+    hentar = true;
+    return fetch("api/admin/status", { credentials: "same-origin" })
+      .then(function (r) {
+        if (r.status === 401) { location.href = "logg-inn?til=/admin"; throw new Error("ut"); }
+        if (r.status === 403) { location.href = "byt-passord"; throw new Error("byt"); }
+        if (!r.ok) throw new Error(r.status);
+        return r.json();
+      })
+      .then(function (d) { data = d; teikn(); oppdatertNo(); })
+      .finally(function () { hentar = false; if (attpaa) { attpaa = false; hent(); } });
+  }
+  function oppdatertNo() { document.getElementById("puls-tekst").textContent = (straumOk ? "Direkte, " : "Oppdatert ") + new Date().toLocaleTimeString("nb-NO"); }
+  var straumOk = false, poll = null;
+  function kopleTil() {
+    if (!window.EventSource) { poll = setInterval(hent, 20000); return; }
+    var es = new EventSource("api/admin/straum");
+    es.addEventListener("oppdatert", function () { straumOk = true; document.getElementById("puls").classList.add("live"); hent(); });
+    es.onerror = function () {
+      straumOk = false; document.getElementById("puls").classList.remove("live");
+      document.getElementById("puls-tekst").textContent = "Mista sambandet, prøver igjen …";
+      if (!poll) poll = setInterval(hent, 20000);
+    };
+    es.onopen = function () { if (poll) { clearInterval(poll); poll = null; } };
+  }
+  setInterval(function () {
+    document.querySelectorAll("td.sist[data-ms]").forEach(function (td) { var ms = +td.getAttribute("data-ms"); if (ms) td.textContent = relativ(ms); });
+  }, 30000);
+
+  document.getElementById("logo").src = "logo.png";
+
+  fetch("api/meg", { credentials: "same-origin" })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (m) { document.getElementById("meg-epost").textContent = m.epost; return hent(); })
+    .then(kopleTil)
+    .catch(function () {
+      demo = true; data = demodata();
+      document.querySelector(".meny").hidden = true;
+      document.getElementById("demo").hidden = false;
+      document.getElementById("puls-tekst").textContent = "Demodata";
+      document.getElementById("meg-epost").textContent = "oleksandr@vardahei.no";
+      document.getElementById("logg-ut").addEventListener("submit", function (e) { e.preventDefault(); melding("Demodata: du er ikkje logga inn."); });
+      document.getElementById("lenke-passord").addEventListener("click", function (e) { e.preventDefault(); melding("Demodata: her byter du passord på den ekte sida."); });
+      teikn();
+    });
+})();
+</script>

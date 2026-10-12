@@ -1,0 +1,973 @@
+<title>Kartlegging hos kundane</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: eitt breitt ark. Øvst det vi bør gjere noko med, så tala bak, spørsmål for spørsmål. Ingen kort-mosaikk: blokker skilde med tynne linjer. */
+:root {
+  --bg: #eef2f4;
+  --sheet: #f9fbfc;
+  --ink: #1e2a31;
+  --muted: #5d6a71;
+  --faint: #8a979e;
+  --line: #d2dbe0;
+  --accent: #176e91;
+  --accent-soft: #dcebf2;
+  --bar: #176e91;
+  --bar-track: #e3eaee;
+  --bar2: #c08a2e;
+  --god: #2f7d4f;
+  --merk: #a56a12;
+  --kritisk: #b3402f;
+  --d1: #a8432d; --d2: #dc9a83; --d3: #dfe3e5; --d4: #8cbfd6; --d5: #176e91;
+  --font: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --logo-filter: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10191e; --sheet: #17242b; --ink: #e3eaee; --muted: #9aabb3; --faint: #6d8089; --line: #2c3d46;
+    --accent: #5fb0d3; --accent-soft: #183544; --bar: #5fb0d3; --bar-track: #22333b; --bar2: #e0b25f;
+    --god: #6cc08e; --merk: #e5a948; --kritisk: #ec7b66;
+    --d1: #e07a62; --d2: #8e4f40; --d3: #3a474d; --d4: #1f5f7c; --d5: #7cc4e3;
+    --logo-filter: brightness(1.45) saturate(.9); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10191e; --sheet: #17242b; --ink: #e3eaee; --muted: #9aabb3; --faint: #6d8089; --line: #2c3d46;
+  --accent: #5fb0d3; --accent-soft: #183544; --bar: #5fb0d3; --bar-track: #22333b; --bar2: #e0b25f;
+  --god: #6cc08e; --merk: #e5a948; --kritisk: #ec7b66;
+  --d1: #e07a62; --d2: #8e4f40; --d3: #3a474d; --d4: #1f5f7c; --d5: #7cc4e3;
+  --logo-filter: brightness(1.45) saturate(.9); color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+.ark { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 18px 60px; }
+
+.topp { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 10px 24px; }
+.topp h1 { font-size: 1.5rem; margin: 0; letter-spacing: -.01em; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.topp h1 img { height: 28px; width: auto; filter: var(--logo-filter); }
+
+.topp .meta { color: var(--muted); font-variant-numeric: tabular-nums; }
+.navlinje { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-bottom: 14px; }
+.navlinje img { height: 26px; width: auto; filter: var(--logo-filter); }
+.meny { display: flex; gap: 2px; padding-left: 18px; border-left: 1.5px solid var(--line); }
+.meny a { color: var(--muted); text-decoration: none; font-weight: 700; padding: 6px 12px; border-radius: 6px; }
+.meny a[aria-current="page"] { color: var(--ink); background: var(--sheet); box-shadow: inset 0 0 0 1px var(--line); }
+.meg { margin-left: auto; display: flex; align-items: center; gap: 14px; font-size: 14px; color: var(--muted); flex-wrap: wrap; }
+.meg a { color: var(--muted); }
+.meg form { margin: 0; }
+.meg button { font: inherit; background: none; border: 1px solid var(--line); color: var(--ink); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+.rutine td.num, .rutine th.num { text-align: right; }
+
+.demo { margin-top: 14px; border: 1.5px dashed var(--merk); color: var(--ink); background: var(--sheet); padding: 10px 14px; border-radius: 6px; }
+.demo b { color: var(--merk); }
+
+.fanar { margin-top: 18px; display: flex; gap: 4px; border-bottom: 1.5px solid var(--line); flex-wrap: wrap; }
+.fanar button { font: inherit; font-size: 16px; font-weight: 700; background: none; border: 0; color: var(--muted); padding: 10px 14px; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1.5px; }
+.fanar button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+
+.filter { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; margin-top: 14px; }
+.filter .gruppe { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.filter .namn { color: var(--muted); font-size: 14px; margin-right: 4px; }
+.chip { font: inherit; font-size: 14px; border: 1px solid var(--line); background: var(--sheet); color: var(--ink); border-radius: 999px; padding: 4px 11px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip small { color: inherit; opacity: .7; margin-left: 4px; }
+.lenkjer { margin-left: auto; display: flex; gap: 14px; font-size: 14px; }
+.lenkjer a { color: var(--accent); }
+
+section.del { margin-top: 30px; background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 20px 22px 24px; }
+section.del > h2 { font-size: 1.25rem; margin: 0 0 4px; }
+section.del > .under { color: var(--muted); margin: 0 0 14px; max-width: 70ch; }
+
+/* Funn */
+.funn { list-style: none; padding: 0; margin: 0; display: grid; gap: 0; }
+.funn li { display: grid; grid-template-columns: 92px minmax(0, 1fr) minmax(0, .9fr); gap: 6px 18px; padding: 12px 0; border-top: 1px solid var(--line); align-items: start; }
+.funn li:first-child { border-top: 0; }
+.niva { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
+.niva i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.niva.h { color: var(--kritisk); } .niva.h i { background: var(--kritisk); }
+.niva.m { color: var(--merk); } .niva.m i { background: var(--merk); transform: rotate(45deg); }
+.niva.g { color: var(--god); } .niva.g i { background: var(--god); border-radius: 50%; }
+.funn .tal { font-weight: 700; font-variant-numeric: tabular-nums; }
+.funn .tiltak { color: var(--muted); }
+.funn .tiltak b { color: var(--ink); font-weight: 400; }
+@media (max-width: 760px) { .funn li { grid-template-columns: 1fr; } }
+.tomt { color: var(--muted); font-style: italic; }
+
+/* Spørsmålsblokker */
+.rutenett { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 40px; }
+@media (max-width: 860px) { .rutenett { grid-template-columns: minmax(0, 1fr); } }
+.blokk { border-top: 1px solid var(--line); padding: 16px 0 18px; min-width: 0; }
+.blokk.brei { grid-column: 1 / -1; }
+.blokk h3 { font-size: 1rem; margin: 0 0 2px; text-wrap: pretty; }
+.blokk .n { color: var(--faint); font-size: 13px; margin-bottom: 10px; font-variant-numeric: tabular-nums; }
+.blokk .sp-tekst { color: var(--muted); font-size: 13.5px; margin: 0 0 6px; }
+
+.rad { display: grid; grid-template-columns: minmax(0, 1fr) minmax(90px, 38%) 74px; gap: 10px; align-items: center; padding: 3px 0; }
+.rad .etikett { font-size: 14px; min-width: 0; }
+.rad .etikett .rett { color: var(--god); font-weight: 700; font-size: 12.5px; margin-left: 4px; white-space: nowrap; }
+.spor { height: 12px; background: var(--bar-track); border-radius: 0 4px 4px 0; position: relative; }
+.fyll { position: absolute; left: 0; top: 0; bottom: 0; background: var(--bar); border-radius: 0 4px 4px 0; min-width: 2px; }
+.fyll.rett { background: var(--god); }
+.fyll.to { background: var(--bar2); }
+.verdi { font-size: 13.5px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+.verdi b { color: var(--ink); }
+.par .spor { height: 7px; }
+.par .spor + .spor { margin-top: 3px; }
+.par .verdi { line-height: 1.25; }
+.forklaring { display: flex; gap: 16px; font-size: 13px; color: var(--muted); margin: 0 0 8px; flex-wrap: wrap; }
+.forklaring span { display: inline-flex; align-items: center; gap: 6px; }
+.forklaring i { width: 12px; height: 8px; border-radius: 2px; display: inline-block; }
+
+.stabel { display: flex; height: 16px; gap: 2px; }
+.stabel span { display: block; height: 100%; }
+.stabel span:first-child { border-radius: 3px 0 0 3px; } .stabel span:last-child { border-radius: 0 3px 3px 0; }
+.skala-rad { display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, 42%) 56px; gap: 10px; align-items: center; padding: 4px 0; }
+.snitt { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.sitat-liste { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 10px; }
+.sitat-liste li { padding-left: 12px; border-left: 2px solid var(--line); }
+.sitat-liste .kjelde { display: block; font-size: 12.5px; color: var(--faint); }
+details summary { cursor: pointer; color: var(--accent); font-size: 14px; margin-top: 8px; }
+
+.nps-tal { font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Samanlikning og leiartabell */
+.tabell-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 13px; color: var(--muted); font-weight: 700; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pil-ned { color: var(--god); font-weight: 700; } .pil-opp { color: var(--kritisk); font-weight: 700; }
+.celle { display: inline-flex; gap: 6px; align-items: baseline; }
+.celle i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; flex: none; transform: translateY(-1px); }
+.celle.h i { background: var(--kritisk); } .celle.m i { background: var(--merk); transform: rotate(45deg) translateY(-1px); } .celle.g i { background: var(--god); border-radius: 50%; }
+
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* Soner: faste statusfargar (same i lys og mørk modus), aldri farge åleine: alltid tal eller namn ved sida av */
+:root { --s-gron: #2e7d32; --s-gul: #e8c21e; --s-oransje: #f08a1c; --s-raud: #e5484d;
+  --s-gron-bg: rgba(46,125,50,.16); --s-gul-bg: rgba(255,236,110,.42); --s-oransje-bg: rgba(240,138,28,.26); --s-raud-bg: rgba(229,72,77,.24); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --s-gron: #4caf50; --s-gron-bg: rgba(76,175,80,.22); --s-gul-bg: rgba(232,194,30,.24); } }
+:root[data-theme="dark"] { --s-gron: #4caf50; --s-gron-bg: rgba(76,175,80,.22); --s-gul-bg: rgba(232,194,30,.24); }
+.sone { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sone i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; flex: none; }
+.sone.gron i { background: var(--s-gron); } .sone.gul i { background: var(--s-gul); } .sone.oransje i { background: var(--s-oransje); } .sone.raud i { background: var(--s-raud); }
+.sone.ingen i { background: var(--line); }
+.sone small { color: var(--muted); font-weight: 400; }
+
+.hero { display: flex; flex-wrap: wrap; gap: 18px 40px; align-items: flex-end; margin: 6px 0 18px; }
+.hero .stor { font-size: 2.6rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.hero .etik { color: var(--muted); font-size: 13.5px; margin-top: 4px; }
+
+.sone-forkl { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+.sone-forkl .sone { font-weight: 400; color: var(--ink); }
+
+.rute-wrap { overflow-x: auto; }
+table.rute { border-collapse: separate; border-spacing: 3px; width: auto; font-size: 13px; }
+table.rute th { font-weight: 700; color: var(--muted); padding: 4px 6px; border: 0; vertical-align: bottom; }
+table.rute th.sp { writing-mode: vertical-rl; transform: rotate(180deg); text-align: left; max-height: 150px; height: 150px; white-space: nowrap; font-weight: 400; color: var(--ink); padding: 0 2px; }
+table.rute th.radnamn { text-align: left; white-space: nowrap; padding-right: 14px; }
+table.rute td { padding: 0; border: 0; }
+table.rute td .c { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 46px; height: 40px; border-radius: 5px; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink); position: relative; }
+table.rute td .c small { font-weight: 400; color: var(--muted); font-size: 11px; }
+.c.gron { background: var(--s-gron-bg); box-shadow: inset 0 -3px 0 var(--s-gron); }
+.c.gul { background: var(--s-gul-bg); box-shadow: inset 0 -3px 0 var(--s-gul); }
+.c.oransje { background: var(--s-oransje-bg); box-shadow: inset 0 -3px 0 var(--s-oransje); }
+.c.raud { background: var(--s-raud-bg); box-shadow: inset 0 -3px 0 var(--s-raud); }
+.c.ingen { background: var(--bar-track); color: var(--faint); font-weight: 400; }
+table.rute td.tot .c { min-width: 64px; }
+table.rute tr.tot th, table.rute tr.tot td { border-top: 1.5px solid var(--line); padding-top: 3px; }
+
+/* Kakediagram */
+.kaker { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 18px 28px; }
+.kake { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 14px; align-items: center; border-top: 1px solid var(--line); padding: 14px 0 12px; }
+.kake h3 { grid-column: 1 / -1; font-size: 1rem; margin: 0 0 -4px; }
+.kake svg { width: 112px; height: 112px; display: block; }
+.kake .midt { font-size: 1.35rem; font-weight: 700; fill: var(--ink); font-variant-numeric: tabular-nums; }
+.kake .midt-under { font-size: .62rem; fill: var(--muted); }
+.kake ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font-size: 13.5px; }
+.kake li { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.kake li i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.kake li .n { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kake li.vekt { font-weight: 700; }
+.kake .n-svar { grid-column: 1 / -1; color: var(--faint); font-size: 12.5px; margin-top: -4px; }
+.kake .tomt { grid-column: 1 / -1; }
+
+/* Per tilsett */
+table.tilsette td.num, table.tilsette th.num { text-align: right; }
+table.tilsette .init { font-weight: 700; letter-spacing: .06em; }
+table.tilsette .merk-sp { color: var(--muted); font-size: 13px; }
+table.tilsette .merk-sp .m3 { color: var(--kritisk); font-weight: 700; }
+table.tilsette .merk-sp .m2 { color: var(--ink); }
+table.tilsette .forr-celle { white-space: nowrap; }
+.fordeling { display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: 14px; }
+.fordeling .sone { font-weight: 400; } .fordeling b { font-variant-numeric: tabular-nums; }
+.hero .forr { border-left: 1.5px solid var(--line); padding-left: 18px; }
+.hero .forr .sone { font-size: 14px; }
+table.rute td.krit { padding: 0 8px; vertical-align: middle; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+h3.mellomtittel { font-size: 1rem; margin: 18px 0 6px; }
+tr.sumrad td { font-weight: 700; border-top: 1.5px solid var(--line); }
+.kake .n-svar .sone { font-size: 12.5px; }
+</style>
+
+<div class="ark">
+  <div class="navlinje" id="navlinje">
+    <img alt="Vardahei IT" width="140" height="28" src="data:image/png;base64,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">
+    <nav class="meny" aria-label="Sider"><a href="admin">Framdrift</a><a href="dashboard" aria-current="page">Resultat</a></nav>
+    <div class="meg" id="meg" hidden><span id="meg-epost"></span><a href="byt-passord">Byt passord</a><form method="post" action="logg-ut"><button type="submit">Logg ut</button></form></div>
+  </div>
+  <div class="topp">
+    <h1>Kartlegging hos kundane</h1>
+    <div class="meta" id="meta"></div>
+  </div>
+  <div class="demo" id="demo" hidden><b>Demodata.</b> Dette er oppdikta svar som viser korleis oversikta ser ut. Ekte svar kjem her når skjemaet er lagt ut og folk har svart. Svara frå runde 1 i samanlikninga er ekte, men utan initialar her. Svara i runde 2 og initialane der er oppdikta.</div>
+
+  <div class="fanar" role="tablist" id="fanar"></div>
+  <div class="filter" id="filter"></div>
+
+  <div id="innhald"></div>
+</div>
+
+<script src="sporsmal.js"></script>
+<script src="runde1.js"></script>
+<script>
+(function () {
+  "use strict";
+  var K = window.KARTLEGGING;
+  var R1 = window.RUNDE1 || { svar: [] };
+  var tilstand = { skjema: "tryggleik", kunde: "alle", rolle: "alle", data: [], demo: false };
+
+  /* ---------- Hjelparar ---------- */
+  function el(tag, a, born) {
+    var e = document.createElement(tag);
+    if (a) for (var k in a) {
+      if (k === "text") e.textContent = a[k];
+      else if (k === "html") e.innerHTML = a[k];
+      else if (k.slice(0, 2) === "on") e.addEventListener(k.slice(2), a[k]);
+      else if (a[k] != null) e.setAttribute(k, a[k]);
+    }
+    (born || []).forEach(function (b) { if (b != null) e.appendChild(typeof b === "string" || typeof b === "number" ? document.createTextNode(String(b)) : b); });
+    return e;
+  }
+  function pst(a, b) { return b ? Math.round(100 * a / b) : 0; }
+  function kundeNamn(k) { return K.kundar[k] || (k === "ukjend" ? "Utan kunde" : k); }
+  function F() { return K.skjema[tilstand.skjema]; }
+  function rolleSp() { var f = F(); return f.sporsmal.filter(function (s) { return s.rolle; })[0] || f.sporsmal[0]; }
+  function rolleId() { return rolleSp().id; }
+  function sp(id) { return F().sporsmal.filter(function (s) { return s.id === id; })[0]; }
+  function valNamn(s, id) { var v = (s.val || []).filter(function (x) { return x.id === id; })[0]; return v ? v.nn : id; }
+  function har(r, id, v) { var x = r.svar[id]; return Array.isArray(x) ? x.indexOf(v) > -1 : x === v; }
+  function svart(rader, id) { return rader.filter(function (r) { return r.svar[id] != null; }); }
+  function tel(rader, id, fn) { return svart(rader, id).filter(fn).length; }
+
+  /* ---------- Demodata (berre når serveren ikkje svarar) ---------- */
+  function demodata() {
+    var seed = 20261006;
+    function rnd() { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }
+    function vel(par) { var sum = 0, i; for (i = 0; i < par.length; i += 2) sum += par[i + 1]; var x = rnd() * sum; for (i = 0; i < par.length; i += 2) { x -= par[i + 1]; if (x <= 0) return par[i]; } return par[0]; }
+    function fleire(s, p, maks) { var ut = []; s.val.forEach(function (v) { if (!v.aleine && rnd() < (p[v.id] != null ? p[v.id] : .25)) ut.push(v.id); }); if (maks) ut = ut.slice(0, maks); if (!ut.length) ut = [s.val[0].id]; return ut; }
+    var tekstar = {
+      F20: ["Ja, det er nok realistisk. Vi står stille utan systema.", "Trur det er for høgt for oss, kanskje 30 000 per dag.", "Veit ikkje, men det ville vore ille i høgsesongen."],
+      F21: ["Opplæring av dei tilsette.", "At alle brukar MFA og passordhandterar.", "Ein plan for kva vi gjer om noko skjer.", "Betre rutinar for backup."],
+      F22: ["Skulle gjerne visst kven eg skal ringje om noko skjer på kveldstid.", "For mange passord, eg mistar oversikta.", "Fint om vi fekk ei kort påminning av og til."],
+      B1: ["E-post, PowerOffice og bookingsystemet", "Teams, økonomisystemet og telefonane", "Fagsystemet for ordre, e-post, nettbanken"],
+      B3: ["Høgsesongen frå juni til august", "Anbodsfristar og månadsslutt", "Eksamensperioden i mai"],
+      K3: ["Kopierer ordrar frå e-post inn i systemet, kvar dag.", "Skriv referat etter kvart møte, tek lang tid.", "Lagar vaktlista for neste veke kvar fredag."],
+      K15: ["Setje opp vaktlista.", "Svare på dei same spørsmåla frå gjester om parkering og frukost.", "Lage tilbod ut frå malen vår.", "Skrive referat frå måndagsmøtet."],
+      L1: ["Førespurnad på e-post, synfaring, tilbod, ordre, utføring, faktura i PowerOffice.", "Booking på nett, stadfesting, opphald, faktura og oppfølging."],
+      L3: ["Oversikt over timar per prosjekt", "Kva kundar som ikkje har kome tilbake"],
+      L9: ["Lønn og personalsaker", "Direkte kontakt med dei største kundane"]
+    };
+    var storleik = { maskinsenteret: 11, sfhs: 9, kviknes: 10, gasta: 7, tharaso: 5, daco: 3 };
+    var ut = [];
+    Object.keys(storleik).forEach(function (k) {
+      ["tryggleik", "ki"].forEach(function (sk) {
+        var f = K.skjema[sk];
+        var n = sk === "ki" ? Math.max(2, storleik[k] - 2) : storleik[k];
+        for (var i = 0; i < n; i++) {
+          var leiar = i === 0;
+          var svar = {}, fri = {};
+          f.sporsmal.forEach(function (s) {
+            if (s.del === "B" && !leiar) return;
+            if (s.rolle) { svar[s.id] = leiar ? "leiar" : vel(["kontor", 4, "sal", 2, "prod", 4, "anna", 1]); return; }
+            if (s.id === "F1") { var bok = "ABEFGHIKLMNORSTV"; var ini = ""; for (var q = 0; q < 5; q++) ini += bok[Math.floor(rnd() * bok.length)]; svar.F1 = ini; return; }
+            if (s.vis && !s.vis(svar)) return;
+            if (s.type === "single") {
+              var vekt = { F3: ["ja", 5, "delvis", 3, "nei", 1, "usikker", 1], F4: ["ja", 5, "nei", 4, "usikker", 1], F5: ["ja", 3, "delvis", 3, "nei", 2, "usikker", 3], F6: ["ja", 2, "delvis", 3, "nei", 3, "usikker", 3],
+                F7: ["ja", 5, "delvis", 4, "nei", 1, "usikker", 1], F8: ["ja", 3, "delvis", 4, "nei", 3, "usikker", .5], F9: ["ja", 2, "nei", 7, "usikker", 1], F10: ["ja", 5, "oftast", 3, "sjeldan", 1.5, "nei", 1],
+                F11: ["ja", 3, "nei", 6, "usikker", 1], F12: ["ja", 4, "delvis", 3, "nei", 2, "usikker", 2], F13: ["ja", 4, "nei", 5, "usikker", 1.5], F14: ["ja", 7, "nei", 2, "usikker", 1.5],
+                F16: ["ja", 4, "delvis", 3, "nei", 1.5, "usikker", 2], F17: ["ja", 2, "avogtil", 3, "sjeldan", 3, "nei", 3, "usikker", 1], F18: ["ja", 5, "delvis", 3, "nei", .5, "usikker", 2], F19: ["ja", 4, "delvis", 2, "nei", .5, "usikker", 4],
+                K7: ["aldri", 4, "provd", 3, "avogtil", 3, "veke", 2, "dag", 1], K8: ["aldri", 2, "provd", 3, "avogtil", 4, "veke", 3, "dag", 1.5],
+                K9: ["n0", 3, "n1", 4, "n2", 4, "n3", 1.5, "n4", .4], K4: ["u1", 2, "1-3", 4, "3-5", 3, "5-10", 1.5, "o10", .5, "vk", 1],
+                K14: ["gler", 1.5, "nysgjerrig", 5, "noytral", 3, "skeptisk", 2, "uroa", .6] }[s.id];
+              if (s.val && s.val[0] === undefined) return;
+              svar[s.id] = vekt ? vel(vekt) : s.val[Math.floor(rnd() * s.val.length)].id;
+            } else if (s.type === "multi") {
+              var p = { F15: { m365: .8, vpn: .2, erp: .3, crm: .2, andre: .3 }, K13: { kva: .35, lov: .3, data: .3, stolar: .25, tid: .3, tilgang: .15, passar: .15 } }[s.id] || {};
+              svar[s.id] = fleire(s, p, s.maks);
+            } else if (s.type === "scale") {
+              var r = {}; s.rader.forEach(function (rad) { r[rad.id] = Math.max(1, Math.min(5, Math.round(2.8 + (rnd() - .45) * 3.2))); }); svar[s.id] = r;
+            } else if (s.type === "nps") svar[s.id] = vel([10, 3, 9, 4, 8, 3, 7, 2, 6, 1, 5, .5]);
+            else if (s.type === "text") { var pool = tekstar[s.id]; if (pool && rnd() < (s.valfri ? .4 : .9)) svar[s.id] = pool[Math.floor(rnd() * pool.length)]; }
+            if (s.fritekst && tekstar[s.id] && rnd() < .3) fri[s.id] = tekstar[s.id][Math.floor(rnd() * tekstar[s.id].length)];
+          });
+          ut.push({ id: k + sk + i, tid: "2026-10-0" + (1 + i % 5) + "T10:00:00Z", skjema: sk, k: k, lang: rnd() < .12 ? "en" : "nn", leiardel: leiar, svar: svar, fri: fri });
+        }
+      });
+    });
+    return ut;
+  }
+
+  /* ---------- Utval ---------- */
+  function rader(utanRolle) {
+    return tilstand.data.filter(function (r) {
+      if (r.skjema !== tilstand.skjema) return false;
+      if (tilstand.kunde !== "alle" && r.k !== tilstand.kunde) return false;
+      if (!utanRolle && tilstand.rolle !== "alle" && r.svar[rolleId()] !== tilstand.rolle) return false;
+      return true;
+    });
+  }
+  function leiarRader() { return rader(true).filter(function (r) { return r.leiardel; }); }
+
+  /* ---------- Funn ---------- */
+  var FUNN = {
+    tryggleik: [
+      { id: "F12", f: function (r) { return har(r, "F12", "nei") || har(r, "F12", "usikker"); }, tekst: "veit ikkje korleis eller til kven dei skal melde frå om mistenkelege e-postar", tiltak: "Éi side på veggen og i Teams: kven du ringjer, kva du gjer med e-posten. Leiaren seier det høgt på neste møte." },
+      { id: "F5", f: function (r) { return har(r, "F5", "nei") || har(r, "F5", "usikker"); }, tekst: "kjenner ingen rutine for å stoppe ei IT-hending frå å spreie seg", tiltak: "Kort rutine: kople frå nettet, ring Vardahei, la PC-en stå på. Gå gjennom henne på eit møte." },
+      { id: "F14", f: function (r) { return har(r, "F14", "nei") || har(r, "F14", "usikker"); }, tekst: "brukar ikkje MFA, eller veit ikkje om dei gjer det", tiltak: "Sjekk i Entra kven som manglar MFA, og slå det på for alle. Vis korleis godkjenninga ser ut." },
+      { id: "F8", f: function (r) { return har(r, "F8", "ja") || har(r, "F8", "delvis"); }, tekst: "brukar same passord på fleire tenester", tiltak: "Passordhandterar og nytt, unikt passord på jobb-e-posten først." },
+      { id: "F9", f: function (r) { return har(r, "F9", "nei") || har(r, "F9", "usikker"); }, tekst: "har ikkje passordhandterar", tiltak: "Pilot med Bitwarden for 2–3 personar, så resten." },
+      { id: "F6", f: function (r) { return har(r, "F6", "nei") || har(r, "F6", "usikker"); }, tekst: "kjenner ingen rutine for å starte opp att etter ei alvorleg hending", tiltak: "Beredskapsplan på éi side saman med leiaren: kven gjer kva, i kva rekkjefølgje." },
+      { id: "F11", f: function (r) { return har(r, "F11", "nei") || har(r, "F11", "usikker"); }, tekst: "har ikkje fått opplæring i å avsløre phishing", tiltak: "Kort gjennomgang på eit møte, så ein test med falske e-postar nokre veker etter." },
+      { id: "F16", f: function (r) { return har(r, "F16", "nei") || har(r, "F16", "usikker"); }, tekst: "veit ikkje kvar filer skal lagrast for å få backup", tiltak: "Vis kvar felles filer skal liggje (OneDrive og Teams), og flytt skrivebord og Dokument dit." },
+      { id: "F17", f: function (r) { return har(r, "F17", "ja") || har(r, "F17", "avogtil"); }, tekst: "lagrar viktige filer lokalt på PC-en", tiltak: "Flytt skrivebord og Dokument til OneDrive, så blir det backup utan at folk må tenkje på det." },
+      { id: "F18", f: function (r) { return har(r, "F18", "nei") || har(r, "F18", "usikker"); }, tekst: "trur ikkje PC-en blir oppdatert, eller veit ikkje", tiltak: "Sjekk oppdateringsstatus for kunden, og fortel folk at det skjer automatisk." },
+      { id: "F19", f: function (r) { return har(r, "F19", "nei") || har(r, "F19", "usikker"); }, tekst: "veit ikkje om PC-en har antivirus eller EDR", tiltak: "Vis ikonet og forklar kva det gjer. Tryggleik folk ikkje veit om, gir ikkje tryggleikskjensle." },
+      { id: "F10", f: function (r) { return har(r, "F10", "sjeldan") || har(r, "F10", "nei"); }, tekst: "låser sjeldan eller aldri PC-en når dei går", tiltak: "Automatisk lås etter fem minutt, og ei påminning om Win + L." },
+      { id: "F7", f: function (r) { return har(r, "F7", "nei") || har(r, "F7", "usikker"); }, tekst: "meiner sjølve at passordvanane ikkje er gode", tiltak: "Dei er klare for hjelp. Passordhandterar og ein kort gjennomgang." },
+      { id: "F3", f: function (r) { return har(r, "F3", "nei") || har(r, "F3", "usikker"); }, tekst: "opplever ikkje at bedrifta har fokus på IT-sikkerheit i det daglege", tiltak: "Leiaren tek det opp på eit møte, og det blir fast tema ein gong i kvartalet." },
+      { id: "F13", f: function (r) { return har(r, "F13", "ja"); }, tekst: "har mistenkt at dei klikka på svindel", tiltak: "Sjekk innloggingslogg for kontoane, og køyr phishing-trening." }
+    ],
+    ki: [
+      { id: "K8", f: function (r) { return ["avogtil", "veke", "dag"].indexOf(r.svar.K8) > -1 && ["aldri", "provd"].indexOf(r.svar.K7) > -1; }, basis: function (rr) { return svart(rr, "K8"); }, tekst: "brukar KI privat, men knapt i jobben", tiltak: "Dei er klare. Gi dei eit godkjent KI-verktøy med jobbkonto og enkle reglar, så tek dei det i bruk.", mog: true },
+      { id: "K6", f: function (r) { return r.svar.K6 === "fleiredag" || r.svar.K6 === "dag"; }, tekst: "leitar etter informasjon dei veit finst, kvar dag", tiltak: "Ein assistent som søkjer i eigne dokument, e-post og system.", mog: true },
+      { id: "K9", f: function (r) { return r.svar.K9 === "n0" || r.svar.K9 === "n1"; }, tekst: "har ikkje kome i gang med KI", tiltak: "Praktisk demo på arbeidsplassen med deira eigne oppgåver, ikkje kurs.", mog: true },
+      { id: "K13", f: function (r) { return har(r, "K13", "lov"); }, tekst: "er usikre på om KI er lov å bruke hos dei", tiltak: "KI-reglar på éi side. Vi kan lage utkast saman med leiaren." },
+      { id: "K19", f: function (r) { return r.svar.K19 === "privat" || r.svar.K19 === "begge"; }, tekst: "har lagt jobbdokument eller kundeopplysningar inn i KI med privat konto", tiltak: "Avklar kva verktøy som er godkjende, og gi tilgang med jobbkonto. Forbod utan alternativ verkar sjeldan." },
+      { id: "K21", f: function (r) { return r.svar.K21 === "lim" || r.svar.K21 === "vk"; }, tekst: "ville limt inn ein kundekontrakt i ein privat KI-konto, eller veit ikkje", tiltak: "Kort opplæring om kva som kan delast med KI, og eit godkjent verktøy å bruke i staden." },
+      { id: "K13", f: function (r) { return har(r, "K13", "data"); }, tekst: "er redde for å dele opplysningar dei ikkje burde", tiltak: "Enkle reglar for kva som kan delast, og eit godkjent verktøy med jobbkonto." },
+      { id: "K14", f: function (r) { return r.svar.K14 === "skeptisk" || r.svar.K14 === "uroa"; }, tekst: "er skeptiske eller uroa for meir KI", tiltak: "Start med dei nysgjerrige. Vis konkret kva som blir lettare, og kva som ikkje endrar seg." }
+    ]
+  };
+  var TIMAR = { u1: .5, "1-3": 2, "3-5": 4, "5-10": 7.5, o10: 12 };
+  // Tyngste oppgåve: gonger per veke × minutt per gong
+  var GONGER = { fleiredag: 15, dag: 5, veke: 3, sjeldnare: .5 };
+  var MINUTT = { u5: 3, "5-15": 10, "15-30": 22, "30-60": 45, o60: 75 };
+  function oppgaveTimar(r) { var g = GONGER[r.svar.K17], m = MINUTT[r.svar.K18]; return g && m ? g * m / 60 : null; }
+  function tyngsteOppgaver(rr) {
+    var s16 = sp("K16"); if (!s16) return [];
+    var per = {};
+    svart(rr, "K16").forEach(function (r) {
+      var id = r.svar.K16, t = oppgaveTimar(r);
+      per[id] = per[id] || { id: id, namn: valNamn(s16, id), folk: 0, timar: 0, medTid: 0 };
+      per[id].folk++;
+      if (t != null) { per[id].timar += t; per[id].medTid++; }
+    });
+    return Object.keys(per).map(function (k) { return per[k]; }).sort(function (a, b) { return b.timar - a.timar || b.folk - a.folk; });
+  }
+
+  function funnListe(rr) {
+    var liste = [];
+    var fn = FUNN[tilstand.skjema];
+    fn.forEach(function (f) {
+      var basis = f.basis ? f.basis(rr) : svart(rr, f.id);
+      if (basis.length < 1) return;
+      var x = basis.filter(f.f).length;
+      var andel = x / basis.length;
+      var niva = andel >= .3 ? "h" : andel >= .15 ? "m" : null;
+      if (!niva || x < 2) return; // éin person er ein person, ikkje eit mønster
+      liste.push({ niva: niva, andel: andel, tal: x + " av " + basis.length, tekst: f.tekst, tiltak: f.tiltak, mog: f.mog });
+    });
+    if (tilstand.skjema === "ki") {
+      var t = svart(rr, "K4").filter(function (r) { return TIMAR[r.svar.K4]; });
+      if (t.length) {
+        var sum = t.reduce(function (a, r) { return a + TIMAR[r.svar.K4]; }, 0);
+        var topp = toppVal(rr, "K3", ["ingen"]);
+        var tyngst = tyngsteOppgaver(rr)[0];
+        if (tyngst && tyngst.timar >= 1) liste.unshift({ niva: "h", andel: 1.5, tal: "≈ " + Math.round(tyngst.timar) + " timar/veke", tekst: "på «" + tyngst.namn.toLowerCase() + "», den tyngste oppgåva for " + tyngst.folk + (tyngst.folk === 1 ? " person" : " personar") + " (anslag: kor ofte × kor lenge)", tiltak: "Ein konkret kandidat for automatisering. Sjå fritekstane for korleis oppgåva faktisk går føre seg.", mog: true });
+        liste.unshift({ niva: "h", andel: 2, tal: "≈ " + Math.round(sum) + " timar/veke", tekst: "går til rutineoppgåver hos dei " + t.length + " som svarte" + (topp ? ". Vanlegast: " + topp.toLowerCase() : ""), tiltak: "Start med den vanlegaste oppgåva. Sjå sitata under for kva folk faktisk gjer.", mog: true });
+      }
+    }
+    // Leiarsvar
+    var L = leiarRader();
+    var leiarFunn = tilstand.skjema === "tryggleik" ? [
+      ["B13", ["nei", "vardahei"], "har ingen plan for dei første timane etter eit angrep", "Lag ein beredskapsplan på éi side saman med kunden."],
+      ["B12", ["nei", "vk"], "har aldri testa å hente tilbake frå backup", "Tilby ein årleg gjenopprettingstest."],
+      ["B9", ["etter", "vk"], "har ingen fast rutine når nokon sluttar", "Sjekkliste og eit enkelt skjema for «tilsett sluttar»."],
+      ["B10", ["utan", "ikkje"], "har ingen reglar for jobb-e-post på private mobilar", "Reglar for mobil, eventuelt Intune."],
+      ["B7", ["ja"], "har fått spørsmål om IT-tryggleik frå kundar, bank eller forsikring", "Tilby dokumentasjonspakke: rutinar, oversikt og stadfesting."],
+      ["B18", ["endrar", "svar"], "kan endre kontonummer til ein leverandør utan å ringje og sjekke", "Fast regel: nytt kontonummer blir alltid stadfesta på telefon, helst av to personar."],
+      ["B18", ["rekneskap", "vk"], "veit ikkje korleis endra kontonummer blir sjekka", "Avklar rutinen med rekneskapsføraren."],
+      ["B17", ["id", "helse", "barn", "betaling"], "har særleg sensitive opplysningar (personnummer, helse, barn eller betaling)", "Kartlegg kvar dei ligg og kven som har tilgang. Prioriter tilgangsstyring og logging der."],
+      ["B19", ["fag", "nett", "okonomi", "booking", "some", "anna"], "har system som andre leverandørar har ansvar for", "Få oversikt over leverandørane, kven som har tilgang, og om det er tofaktor på innlogginga."]
+    ] : [
+      ["L10", ["ja"], "vil gjerne ta ein prat om KI", "Ring dei denne veka."],
+      ["L8", ["no", "halvar"], "vil prøve KI i drifta innan eit halvår", "Førebu eit konkret forslag ut frå svara til dei tilsette."],
+      ["L4", ["nei", "vk"], "har ingen reglar for KI-bruk", "Tilby KI-reglar på éi side."],
+      ["L5", ["gratis"], "har tilsette som brukar gratisversjonar utan avtale", "Snakk om kva verktøy som passar for dei, med jobbkonto, og kva som er trygt å dele."]
+    ];
+    leiarFunn.forEach(function (lf) {
+      var b = svart(L, lf[0]);
+      if (!b.length) return;
+      var hit = b.filter(function (r) { var v = r.svar[lf[0]]; return Array.isArray(v) ? v.some(function (x) { return lf[1].indexOf(x) > -1; }) : lf[1].indexOf(v) > -1; });
+      if (!hit.length) return;
+      var namn = hit.map(function (r) { return kundeNamn(r.k); }).filter(function (v, i, a) { return a.indexOf(v) === i; });
+      liste.push({ niva: tilstand.skjema === "ki" && (lf[0] === "L10" || lf[0] === "L8") ? "h" : "m", andel: hit.length / b.length, tal: tilstand.kunde === "alle" ? hit.length + " av " + b.length + " leiarar" : "Leiaren", tekst: lf[2] + (tilstand.kunde === "alle" ? " (" + namn.join(", ") + ")" : ""), tiltak: lf[3], mog: tilstand.skjema === "ki" });
+    });
+    if (tilstand.skjema === "tryggleik") {
+      // Folk seier dei veit kva dei skal gjere, men leiaren har ingen skriven plan: det er rutinen som manglar, ikkje kunnskapen
+      var vet = svart(rr, "F12"), jaVet = vet.filter(function (r) { return r.svar.F12 === "ja"; }).length;
+      var utanPlan = L.filter(function (r) { return ["nei", "ide", "vardahei"].indexOf(r.svar.B13) > -1; });
+      if (vet.length >= 3 && jaVet / vet.length >= .6 && utanPlan.length) {
+        var namn2 = utanPlan.map(function (r) { return kundeNamn(r.k); }).filter(function (v, i, a) { return a.indexOf(v) === i; });
+        liste.push({ niva: "m", andel: .5, tal: pst(jaVet, vet.length) + " %", tekst: "seier dei veit kor dei skal melde frå, men leiaren har ingen skriven plan for kva som skjer etterpå" + (tilstand.kunde === "alle" ? " (" + namn2.join(", ") + ")" : ""), tiltak: "Skriv ned det folk alt gjer i dag, så det ikkje heng på éin person. Éi side held." });
+      }
+    }
+    liste.sort(function (a, b) { return (a.niva === b.niva ? 0 : a.niva === "h" ? -1 : 1) || b.andel - a.andel; });
+    return liste;
+  }
+  function toppVal(rr, id, unnta) {
+    var s = sp(id); if (!s) return null;
+    var best = null, maks = 0;
+    s.val.forEach(function (v) { if ((unnta || []).indexOf(v.id) > -1) return; var n = tel(rr, id, function (r) { return har(r, id, v.id); }); if (n > maks) { maks = n; best = v.nn; } });
+    return best;
+  }
+
+  /* ---------- Soner (tryggleik), same modell som Master_Analyse.xlsx ----------
+     Kvart svar gir 0–3 poeng etter fargen sin (grøn 0, gul 1, oransje 2, raud 3).
+     Snittscore = snittet av poenga. Kritisk andel = delen av svara som er oransje eller raude.
+     Éin person får sone etter SONER.person, eit spørsmål, ei rolle eller ei bedrift etter SONER.samla. */
+  var SN = (K.soner && K.soner.nivaa) || [];
+  var GRENSE_PERSON = (K.soner && K.soner.person) || [1, 2, 2.5];
+  var GRENSE_SAMLA = (K.soner && K.soner.samla) || [.5, 1.5, 2.5];
+  function soneP(x) { if (x == null) return null; var i = 0; while (i < GRENSE_PERSON.length && x >= GRENSE_PERSON[i]) i++; return SN[i]; }
+  function soneS(x) { if (x == null) return null; var i = 0; while (i < GRENSE_SAMLA.length && x > GRENSE_SAMLA[i]) i++; return SN[i]; }
+  function des(x, d) { return x == null ? "–" : x.toFixed(d == null ? 2 : d).replace(".", ","); }
+  function prosent(x) { return x == null ? "–" : Math.round(x * 100) + " %"; }
+  function skoraSp() { return F().sporsmal.filter(function (s) { return s.del === "A" && s.farge; }); }
+  function fargeAv(s, v) { return s.farge && v != null && s.farge[v] != null ? s.farge[v] : null; }
+  function stat(rr, spL) {
+    var sum = 0, n = 0, krit = 0;
+    rr.forEach(function (r) { spL.forEach(function (s) { var p = fargeAv(s, r.svar[s.id]); if (p != null) { sum += p; n++; if (p >= 2) krit++; } }); });
+    return { snitt: n ? sum / n : null, n: n, folk: rr.length, krit: n ? krit / n : null };
+  }
+  function personStat(r) {
+    var sum = 0, n = 0, merk = [];
+    skoraSp().forEach(function (s) { var p = fargeAv(s, r.svar[s.id]); if (p != null) { sum += p; n++; if (p >= 2) merk.push({ s: s, p: p }); } });
+    merk.sort(function (a, b) { return b.p - a.p; });
+    return { snitt: n ? sum / n : null, n: n, merk: merk };
+  }
+  function rolleKort(rs, id) { return valNamn(rs, id).split("/")[0].split(" eller ")[0].trim(); }
+  function soneChip(z, tekst) { return el("span", { class: "sone " + (z ? z.id : "ingen") }, [el("i"), z ? z.namn : "–", tekst ? el("small", { text: " " + tekst }) : null]); }
+
+  // Runde 1 som rader i same format som svara frå serveren, filtrert på kunde og rolle
+  function r1Alle() { return (R1.svar || []).map(function (x) { return { k: x.k, init: x.init, svar: x.svar, skjema: "tryggleik", runde: 1 }; }); }
+  function r1Rader(utanRolle) {
+    return r1Alle().filter(function (r) {
+      if (tilstand.kunde !== "alle" && r.k !== tilstand.kunde) return false;
+      if (!utanRolle && tilstand.rolle !== "alle" && r.svar.F2 !== tilstand.rolle) return false;
+      return true;
+    });
+  }
+  function harR1() { return !!(R1.svar && R1.svar.length); }
+  // Runde 1 avgrensa til kundane som har svart no, så samanlikninga gjeld same bedrifter
+  function r1For(rr) {
+    var k = {}; rr.forEach(function (r) { k[r.k] = 1; });
+    return r1Rader().filter(function (r) { return !rr.length || k[r.k]; });
+  }
+
+  function soneCelle(st, tittel, tot) {
+    var z = soneS(st.snitt);
+    return el("td", { class: tot ? "tot" : null }, [el("div", {
+      class: "c " + (z ? z.id : "ingen"),
+      title: tittel + ": snittscore " + des(st.snitt) + (z ? ", " + z.namn.toLowerCase() + " sone" : "") + ", " + prosent(st.krit) + " oransje eller raude svar, " + st.folk + (st.folk === 1 ? " person" : " personar")
+    }, [st.snitt == null ? "–" : des(st.snitt, 1), st.snitt != null && st.folk < 5 ? el("small", { text: st.folk + " pers." }) : null])]);
+  }
+
+  function grupperFor(rr) {
+    var g = [];
+    if (tilstand.kunde === "alle") {
+      var kundar = {};
+      rr.forEach(function (r) { (kundar[r.k] = kundar[r.k] || []).push(r); });
+      Object.keys(kundar).sort(function (a, b) { return kundeNamn(a).localeCompare(kundeNamn(b)); }).forEach(function (k) { g.push({ namn: kundeNamn(k), rader: kundar[k] }); });
+    } else {
+      var rs = rolleSp(), roller = {}, minG = K.minGruppe || 3, skjult = 0;
+      rr.forEach(function (r) { var v = r.svar[rs.id] || "ukjend"; (roller[v] = roller[v] || []).push(r); });
+      rs.val.forEach(function (v) { var rad = roller[v.id]; if (!rad) return; if (rad.length < minG) { skjult += rad.length; return; } g.push({ namn: rolleKort(rs, v.id), rader: rad }); });
+      if (skjult) g.skjult = skjult;
+    }
+    return g;
+  }
+
+  function fordeling(rr) {
+    var t = {}; SN.forEach(function (z) { t[z.id] = 0; });
+    rr.forEach(function (r) { var z = soneP(personStat(r).snitt); if (z) t[z.id]++; });
+    return t;
+  }
+
+  function soneSeksjon(rr) {
+    var sek = el("section", { class: "del" });
+    sek.appendChild(el("h2", { text: "Soner" }));
+    sek.appendChild(el("p", { class: "under", text: "Same modell som Master_Analyse frå runde 1. Kvart svar har ein farge: grøn 0, gul 1, oransje 2, raud 3 poeng. Snittscoren er snittet av poenga, frå 0 (alt grønt) til 3 (alt raudt). Kritisk andel er delen av svara som er oransje eller raude." }));
+    var spL = skoraSp(), alle = stat(rr, spL), zA = soneS(alle.snitt);
+    var hero = el("div", { class: "hero" });
+    hero.appendChild(el("div", null, [el("div", { class: "stor", text: des(alle.snitt) }), el("div", { class: "etik", text: "snittscore av 3, " + (tilstand.kunde === "alle" ? "alle kundar" : kundeNamn(tilstand.kunde)) + (tilstand.rolle !== "alle" ? ", " + rolleKort(rolleSp(), tilstand.rolle).toLowerCase() : "") })]));
+    hero.appendChild(el("div", null, [soneChip(zA), el("div", { class: "etik", text: rr.length + (rr.length === 1 ? " svar" : " svar") + (rr.length && rr.length < 5 ? ". Få svar: éin person flyttar mykje." : "") })]));
+    hero.appendChild(el("div", null, [el("div", { class: "stor", text: prosent(alle.krit) }), el("div", { class: "etik", text: "kritisk andel (oransje og raude svar)" })]));
+    var fd = fordeling(rr), fdEl = el("div", { class: "fordeling" });
+    SN.forEach(function (z) { fdEl.appendChild(el("span", { class: "sone " + z.id }, [el("i"), z.namn + " ", el("b", { text: String(fd[z.id]) })])); });
+    hero.appendChild(el("div", null, [fdEl, el("div", { class: "etik", text: "tilsette per sone" })]));
+    if (harR1()) {
+      var r1 = stat(r1For(rr), spL);
+      if (r1.n) hero.appendChild(el("div", { class: "forr" }, [el("div", { class: "etik", text: "Runde 1" }), el("div", null, [el("b", { text: des(r1.snitt) + " " }), soneChip(soneS(r1.snitt)), el("span", { class: "etik", text: " · " + prosent(r1.krit) + " kritisk" })])]));
+    }
+    sek.appendChild(hero);
+
+    var fk = el("div", { class: "sone-forkl" });
+    fk.appendChild(el("span", { text: "Spørsmål og bedrift:" }));
+    SN.forEach(function (z, i) { fk.appendChild(el("span", { class: "sone " + z.id }, [el("i"), z.namn + " " + (i === 0 ? "til " + des(GRENSE_SAMLA[0], 1) : i === SN.length - 1 ? "over " + des(GRENSE_SAMLA[i - 1], 1) : des(GRENSE_SAMLA[i - 1], 1) + "–" + des(GRENSE_SAMLA[i], 1))])); });
+    sek.appendChild(fk);
+    var fk2 = el("div", { class: "sone-forkl" });
+    fk2.appendChild(el("span", { text: "Tilsett:" }));
+    SN.forEach(function (z, i) { fk2.appendChild(el("span", { class: "sone " + z.id }, [el("i"), z.namn + " " + (i === 0 ? "under " + des(GRENSE_PERSON[0], 1) : i === SN.length - 1 ? "frå " + des(GRENSE_PERSON[i - 1], 1) : des(GRENSE_PERSON[i - 1], 1) + "–" + des(GRENSE_PERSON[i], 1))])); });
+    sek.appendChild(fk2);
+
+    if (!rr.length) { sek.appendChild(el("p", { class: "tomt", text: "Ingen svar i dette utvalet enno." })); return sek; }
+    var g = grupperFor(rr);
+    var t = el("table", { class: "rute" });
+    var hr = el("tr", null, [el("th", { text: tilstand.kunde === "alle" ? "Kunde" : "Rolle" })]);
+    spL.forEach(function (s) { hr.appendChild(el("th", { class: "sp", text: s.kort || s.id, title: s.tekst.nn })); });
+    hr.appendChild(el("th", { class: "sp", text: "Samla", style: "font-weight:700" }));
+    hr.appendChild(el("th", { class: "sp", text: "Kritisk andel" }));
+    t.appendChild(el("thead", null, [hr]));
+    var tb = el("tbody");
+    function rad(namn, rader, ekstra) {
+      var tr = el("tr", ekstra, [el("th", { class: "radnamn" }, [namn, el("small", { text: " " + rader.length, style: "color:var(--faint);font-weight:400" })])]);
+      spL.forEach(function (s) { tr.appendChild(soneCelle(stat(rader, [s]), s.kort || s.id)); });
+      var st = stat(rader, spL);
+      tr.appendChild(soneCelle(st, "Samla", true));
+      tr.appendChild(el("td", { class: "krit", text: prosent(st.krit) }));
+      return tr;
+    }
+    g.forEach(function (gr) { tb.appendChild(rad(gr.namn, gr.rader)); });
+    if (g.length !== 1 || g.skjult) tb.appendChild(rad("Alle", rr, { class: "tot" }));
+    t.appendChild(tb);
+    sek.appendChild(el("div", { class: "rute-wrap" }, [t]));
+    sek.appendChild(el("p", { class: "n", text: "Tala i rutene er snittscoren for spørsmålet (0–3). Hald musa over ei rute for kritisk andel og tal personar." + (g.skjult ? " " + g.skjult + " svar frå roller med færre enn " + (K.minGruppe || 3) + " personar er berre med i «Alle»." : ""), style: "margin-top:10px;color:var(--faint);font-size:12.5px" }));
+    return sek;
+  }
+
+  /* ---------- Kakediagram for nøkkelspørsmåla ---------- */
+  var KAKER = ["F12", "F5", "F14", "F9", "F8", "F11", "F16", "F19"];
+  var FARGE_VAR = ["var(--s-gron)", "var(--s-gul)", "var(--s-oransje)", "var(--s-raud)"];
+  function kake(rr, s) {
+    var basis = svart(rr, s.id);
+    var d = el("div", { class: "kake" });
+    d.appendChild(el("h3", { text: s.kort || s.tekst.nn, title: s.tekst.nn }));
+    if (!basis.length) { d.appendChild(el("p", { class: "tomt", text: "Ingen svar enno." })); return d; }
+    var deler = s.val.map(function (v) { return { v: v, n: basis.filter(function (r) { return har(r, s.id, v.id); }).length, p: fargeAv(s, v.id) }; });
+    var kN = deler.filter(function (x) { return x.p >= 2; }).reduce(function (a, x) { return a + x.n; }, 0);
+    var C = 2 * Math.PI * 46, start = 0, NS = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 120 120"); svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", (s.kort || s.id) + ": " + kN + " av " + basis.length + " svar er oransje eller raude");
+    var spor = document.createElementNS(NS, "circle");
+    spor.setAttribute("cx", 60); spor.setAttribute("cy", 60); spor.setAttribute("r", 46); spor.setAttribute("fill", "none"); spor.setAttribute("stroke", "var(--bar-track)"); spor.setAttribute("stroke-width", 18);
+    svg.appendChild(spor);
+    deler.slice().sort(function (a, b) { return a.p - b.p; }).forEach(function (x) {
+      if (!x.n) return;
+      var len = C * x.n / basis.length;
+      var c = document.createElementNS(NS, "circle");
+      c.setAttribute("cx", 60); c.setAttribute("cy", 60); c.setAttribute("r", 46); c.setAttribute("fill", "none");
+      c.setAttribute("stroke", FARGE_VAR[x.p]); c.setAttribute("stroke-width", 18);
+      c.setAttribute("stroke-dasharray", Math.max(0, len - 1.5) + " " + C); c.setAttribute("stroke-dashoffset", String(-start));
+      c.setAttribute("transform", "rotate(-90 60 60)");
+      var ti = document.createElementNS(NS, "title"); ti.textContent = x.v.nn + ": " + x.n + " av " + basis.length; c.appendChild(ti);
+      svg.appendChild(c);
+      start += len;
+    });
+    var midt = document.createElementNS(NS, "text");
+    midt.setAttribute("x", 60); midt.setAttribute("y", 58); midt.setAttribute("text-anchor", "middle"); midt.setAttribute("class", "midt"); midt.textContent = pst(kN, basis.length) + " %";
+    svg.appendChild(midt);
+    var under = document.createElementNS(NS, "text");
+    under.setAttribute("x", 60); under.setAttribute("y", 73); under.setAttribute("text-anchor", "middle"); under.setAttribute("class", "midt-under"); under.textContent = "kritisk";
+    svg.appendChild(under);
+    d.appendChild(svg);
+    var ul = el("ul");
+    deler.forEach(function (x) {
+      ul.appendChild(el("li", { class: x.p >= 2 ? "vekt" : null }, [el("i", { style: "background:" + FARGE_VAR[x.p] }), el("span", { text: x.v.nn }), el("span", { class: "n", text: x.n + " · " + pst(x.n, basis.length) + " %" })]));
+    });
+    d.appendChild(ul);
+    var st = stat(basis, [s]), r1 = harR1() ? stat(r1For(rr), [s]) : null;
+    d.appendChild(el("div", { class: "n-svar" }, [basis.length + " svar · snittscore " + des(st.snitt) + " ", soneChip(soneS(st.snitt)), r1 && r1.n ? " · runde 1: " + des(r1.snitt) + ", " + prosent(r1.krit) + " kritisk" : ""]));
+    return d;
+  }
+  function kakeSeksjon(rr) {
+    var sek = el("section", { class: "del" });
+    sek.appendChild(el("h2", { text: "Nøkkelspørsmåla" }));
+    sek.appendChild(el("p", { class: "under", text: "Fargane er sonene frå reknearket. Talet i midten er kritisk andel: dei som svarte noko som gir oransje eller raud." }));
+    var g = el("div", { class: "kaker" });
+    KAKER.forEach(function (id) { var s = sp(id); if (s) g.appendChild(kake(rr, s)); });
+    sek.appendChild(g);
+    return sek;
+  }
+
+  /* ---------- Per tilsett ---------- */
+  function tilsettSeksjon(rr) {
+    var sek = el("section", { class: "del" });
+    sek.appendChild(el("h2", { text: "Svar per tilsett" }));
+    sek.appendChild(el("p", { class: "under", text: "Éi rad per person, sortert etter snittscore. «Runde 1» er same initialar i same bedrift i Forms-runden. «Oransje og raud» viser spørsmåla der svaret gav oransje eller raud, raude først." }));
+    if (!rr.length) { sek.appendChild(el("p", { class: "tomt", text: "Ingen svar i dette utvalet enno." })); return sek; }
+    var rs = rolleSp(), forr = {};
+    r1Alle().forEach(function (r) { if (r.init) forr[r.k + "|" + String(r.init).toUpperCase()] = personStat(r); });
+    var liste = rr.map(function (r) { return { r: r, p: personStat(r), f: r.svar.F1 ? forr[r.k + "|" + String(r.svar.F1).toUpperCase()] : null }; })
+      .sort(function (a, b) { return (b.p.snitt == null ? -1 : b.p.snitt) - (a.p.snitt == null ? -1 : a.p.snitt); });
+    var t = el("table", { class: "tilsette" });
+    var hr = el("tr", null, [el("th", { text: "Initialar" }), el("th", { text: "Rolle" })]);
+    if (tilstand.kunde === "alle") hr.appendChild(el("th", { text: "Kunde" }));
+    [["Snittscore", "num"], ["Sone", null], ["Runde 1", null], ["Oransje og raud", null]].forEach(function (c) { hr.appendChild(el("th", { class: c[1], text: c[0] })); });
+    t.appendChild(el("thead", null, [hr]));
+    var tb = el("tbody"), betre = 0, verre = 0, likt = 0;
+    liste.forEach(function (x) {
+      var tr = el("tr", null, [el("td", { class: "init", text: x.r.svar.F1 || "–" }), el("td", { text: x.r.svar[rs.id] ? rolleKort(rs, x.r.svar[rs.id]) : "–" })]);
+      if (tilstand.kunde === "alle") tr.appendChild(el("td", { text: kundeNamn(x.r.k) }));
+      tr.appendChild(el("td", { class: "num", text: des(x.p.snitt) }));
+      tr.appendChild(el("td", null, [soneChip(soneP(x.p.snitt))]));
+      if (x.f && x.f.snitt != null && x.p.snitt != null) {
+        var d = x.p.snitt - x.f.snitt;
+        if (d < -0.05) betre++; else if (d > 0.05) verre++; else likt++;
+        tr.appendChild(el("td", { class: "forr-celle" }, [soneChip(soneP(x.f.snitt), des(x.f.snitt)), el("span", { class: d < -0.05 ? "pil-ned" : d > 0.05 ? "pil-opp" : "", text: d < -0.05 ? " betre" : d > 0.05 ? " verre" : " likt" })]));
+      } else tr.appendChild(el("td", { text: "–", style: "color:var(--faint)" }));
+      tr.appendChild(el("td", { class: "merk-sp" }, x.p.merk.length ? x.p.merk.slice(0, 5).map(function (m, i) { return el("span", { class: "m" + m.p, text: (i ? ", " : "") + (m.s.kort || m.s.id) }); }).concat(x.p.merk.length > 5 ? [el("span", { text: " +" + (x.p.merk.length - 5) })] : []) : [el("span", { text: "–", style: "color:var(--faint)" })]));
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    if (betre + verre + likt) sek.appendChild(el("p", { class: "under", style: "margin-top:-6px", html: "Av dei <b>" + (betre + verre + likt) + "</b> som svarte begge gongene: <b class='pil-ned'>" + betre + " betre</b>, <b class='pil-opp'>" + verre + " verre</b>, " + likt + " omtrent likt." }));
+    sek.appendChild(el("div", { class: "tabell-wrap" }, [t]));
+    return sek;
+  }
+
+  /* ---------- Samanlikning med runde 1 ---------- */
+  function endringCelle(a, b, prosentpoeng) {
+    if (a == null || b == null) return el("td", { class: "num", text: "–" });
+    var d = b - a, tal = prosentpoeng ? Math.round(d * 100) : d;
+    var lik = prosentpoeng ? tal === 0 : Math.abs(d) < 0.05;
+    return el("td", { class: "num" }, [el("span", { class: lik ? "" : d < 0 ? "pil-ned" : "pil-opp", text: lik ? "likt" : (d > 0 ? "+" : "−") + (prosentpoeng ? Math.abs(tal) + " poeng" : des(Math.abs(d))) + (d < 0 ? ", betre" : ", verre") })]);
+  }
+  function statCelle(st) { return el("td", { class: "num" }, st.n ? [des(st.snitt) + " ", soneChip(soneS(st.snitt))] : ["–"]); }
+  function samanlikning(rr) {
+    var d = el("div");
+    var spL = skoraSp(), r1rr = r1Rader(), r1sam = r1For(rr);
+    if (tilstand.kunde === "alle") {
+      var kundar = {};
+      r1rr.concat(rr).forEach(function (r) { kundar[r.k] = 1; });
+      var t1 = el("table");
+      t1.appendChild(el("thead", null, [el("tr", null, ["Kunde", "Runde 1", "No", "Endring", "Kritisk andel runde 1", "Kritisk andel no", "Endring"].map(function (x, i) { return el("th", { class: i ? "num" : null, text: x }); }))]));
+      var tb1 = el("tbody");
+      Object.keys(kundar).sort(function (a, b) { return kundeNamn(a).localeCompare(kundeNamn(b)); }).forEach(function (k) {
+        var a = stat(r1rr.filter(function (r) { return r.k === k; }), spL), b = stat(rr.filter(function (r) { return r.k === k; }), spL);
+        tb1.appendChild(el("tr", null, [el("td", { text: kundeNamn(k) + " ", style: "font-weight:700" }, [el("small", { text: a.folk + " → " + b.folk + " pers.", style: "color:var(--faint);font-weight:400" })]), statCelle(a), statCelle(b), endringCelle(a.snitt, b.snitt), el("td", { class: "num", text: prosent(a.krit) }), el("td", { class: "num", text: prosent(b.krit) }), endringCelle(a.krit, b.krit, true)]));
+      });
+      t1.appendChild(tb1);
+      d.appendChild(el("h3", { text: "Per kunde", class: "mellomtittel" }));
+      d.appendChild(el("div", { class: "tabell-wrap" }, [t1]));
+    }
+    var t = el("table");
+    t.appendChild(el("thead", null, [el("tr", null, ["Spørsmål", "Runde 1", "No", "Endring", "Kritisk runde 1", "Kritisk no", "Endring"].map(function (x, i) { return el("th", { class: i ? "num" : null, text: x }); }))]));
+    var tb = el("tbody");
+    spL.forEach(function (s) {
+      var a = stat(r1sam, [s]), b = stat(rr, [s]);
+      tb.appendChild(el("tr", null, [el("td", { text: s.kort || s.id, title: s.tekst.nn }), statCelle(a), statCelle(b), endringCelle(a.snitt, b.snitt), el("td", { class: "num", text: prosent(a.krit) }), el("td", { class: "num", text: prosent(b.krit) }), endringCelle(a.krit, b.krit, true)]));
+    });
+    var A = stat(r1sam, spL), B = stat(rr, spL);
+    tb.appendChild(el("tr", { class: "sumrad" }, [el("td", { text: "Samla" }), statCelle(A), statCelle(B), endringCelle(A.snitt, B.snitt), el("td", { class: "num", text: prosent(A.krit) }), el("td", { class: "num", text: prosent(B.krit) }), endringCelle(A.krit, B.krit, true)]));
+    t.appendChild(tb);
+    var ikkjeMed = tilstand.kunde === "alle" ? Object.keys(r1rr.reduce(function (o, r) { o[r.k] = 1; return o; }, {})).filter(function (k) { return !r1sam.some(function (r) { return r.k === k; }); }) : [];
+    d.appendChild(el("h3", { text: "Per spørsmål", class: "mellomtittel" }));
+    if (ikkjeMed.length && rr.length) d.appendChild(el("p", { class: "n", text: "Berre kundar som har svart i begge rundane. Ikkje med enno: " + ikkjeMed.map(kundeNamn).join(", ") + ".", style: "color:var(--faint);font-size:12.5px;margin:0 0 6px" }));
+    d.appendChild(el("div", { class: "tabell-wrap" }, [t]));
+    return d;
+  }
+
+  /* ---------- Teikning ---------- */
+  var innhald = document.getElementById("innhald");
+
+  function teiknFanar() {
+    var f = document.getElementById("fanar"); f.innerHTML = "";
+    Object.keys(K.skjema).forEach(function (id) {
+      var n = tilstand.data.filter(function (r) { return r.skjema === id; }).length;
+      f.appendChild(el("button", { role: "tab", "aria-selected": String(tilstand.skjema === id), onclick: function () { tilstand.skjema = id; tilstand.rolle = "alle"; teikn(); } }, [K.skjema[id].kort.nn + " ", el("small", { text: "(" + n + ")", style: "font-weight:400;color:var(--faint)" })]));
+    });
+  }
+
+  function teiknFilter() {
+    var f = document.getElementById("filter"); f.innerHTML = "";
+    var alle = tilstand.data.filter(function (r) { return r.skjema === tilstand.skjema; });
+    var kundar = {};
+    alle.forEach(function (r) { kundar[r.k] = (kundar[r.k] || 0) + 1; });
+    var g = el("div", { class: "gruppe" }, [el("span", { class: "namn", text: "Kunde" })]);
+    g.appendChild(el("button", { class: "chip", "aria-pressed": String(tilstand.kunde === "alle"), onclick: function () { tilstand.kunde = "alle"; teikn(); } }, ["Alle", el("small", { text: alle.length })]));
+    Object.keys(kundar).sort(function (a, b) { return kundeNamn(a).localeCompare(kundeNamn(b)); }).forEach(function (k) {
+      g.appendChild(el("button", { class: "chip", "aria-pressed": String(tilstand.kunde === k), onclick: function () { tilstand.kunde = k; teikn(); } }, [kundeNamn(k), el("small", { text: kundar[k] })]));
+    });
+    f.appendChild(g);
+    var rs = rolleSp();
+    var rg = el("div", { class: "gruppe" }, [el("span", { class: "namn", text: "Rolle" })]);
+    rg.appendChild(el("button", { class: "chip", "aria-pressed": String(tilstand.rolle === "alle"), onclick: function () { tilstand.rolle = "alle"; teikn(); } }, ["Alle"]));
+    var minG = K.minGruppe || 3, skjult = 0;
+    rs.val.forEach(function (v) {
+      var n = rader(true).filter(function (r) { return r.svar[rs.id] === v.id; }).length;
+      if (!n) return;
+      if (n < minG) { skjult++; if (tilstand.rolle === v.id) tilstand.rolle = "alle"; return; }
+      rg.appendChild(el("button", { class: "chip", "aria-pressed": String(tilstand.rolle === v.id), onclick: function () { tilstand.rolle = v.id; teikn(); } }, [v.nn.split("/")[0].split(",")[0], el("small", { text: n })]));
+    });
+    if (skjult) rg.appendChild(el("small", { text: skjult + (skjult === 1 ? " rolle" : " roller") + " med færre enn " + minG + " svar er ikkje viste, for å verne anonymiteten.", style: "color:var(--faint);font-size:12.5px" }));
+    f.appendChild(rg);
+    if (!tilstand.demo) {
+      f.appendChild(el("div", { class: "lenkjer" }, [el("a", { href: "api/svar.csv?s=" + tilstand.skjema, text: "Last ned svar (CSV)" })]));
+    }
+  }
+
+  function barRader(rr, s, opt) {
+    opt = opt || {};
+    var basis = svart(rr, s.id);
+    var wrap = el("div");
+    var val = s.val.map(function (v) { return { v: v, n: basis.filter(function (r) { return har(r, s.id, v.id); }).length }; });
+    if (s.type === "multi" && !opt.fastRekkje) val.sort(function (a, b) { return b.n - a.n; });
+    var maks = Math.max.apply(null, val.map(function (x) { return x.n; }).concat([1]));
+    val.forEach(function (x) {
+      var rett = s.rett && s.rett.indexOf(x.v.id) > -1;
+      var p = pst(x.n, basis.length);
+      wrap.appendChild(el("div", { class: "rad", title: x.v.nn + ": " + x.n + " av " + basis.length + " (" + p + " %)" }, [
+        el("div", { class: "etikett" }, [x.v.nn, rett ? el("span", { class: "rett", text: "✓ rett" }) : null]),
+        el("div", { class: "spor" }, [el("div", { class: "fyll" + (rett ? " rett" : ""), style: "width:" + (100 * x.n / Math.max(basis.length, 1)) + "%" })]),
+        el("div", { class: "verdi" }, [el("b", { text: x.n }), " · " + p + " %"])
+      ]));
+    });
+    return wrap;
+  }
+
+  function skalaBlokk(rr, s) {
+    var basis = svart(rr, s.id);
+    var d = el("div");
+    var forkl = el("div", { class: "forklaring" });
+    for (var x = 1; x <= 5; x++) forkl.appendChild(el("span", null, [el("i", { style: "background:var(--d" + x + ")" }), String(x)]));
+    forkl.appendChild(el("span", { text: "(1 = " + s.skala.lav.nn.toLowerCase() + ", 5 = " + s.skala.hog.nn.toLowerCase() + ")" }));
+    d.appendChild(forkl);
+    s.rader.forEach(function (rad) {
+      var verdiar = basis.map(function (r) { return r.svar[s.id][rad.id]; }).filter(function (v) { return v != null; });
+      var stab = el("div", { class: "stabel" });
+      for (var x = 1; x <= 5; x++) {
+        var n = verdiar.filter(function (v) { return v === x; }).length;
+        if (n) stab.appendChild(el("span", { style: "flex:" + n + ";background:var(--d" + x + ")", title: x + ": " + n + " svar" }));
+      }
+      var snitt = verdiar.length ? (verdiar.reduce(function (a, b) { return a + b; }, 0) / verdiar.length) : null;
+      d.appendChild(el("div", { class: "skala-rad" }, [
+        el("div", { class: "etikett", text: rad.nn || "Svar" }),
+        stab,
+        el("div", { class: "snitt", text: snitt ? snitt.toFixed(1).replace(".", ",") : "–", title: "Snitt av " + verdiar.length + " svar" })
+      ]));
+    });
+    return d;
+  }
+
+  function sitat(rr, hent, maks) {
+    var liste = [];
+    rr.forEach(function (r) { var t = hent(r); if (t) liste.push({ t: t, k: r.k, rolle: r.svar[rolleId()] }); });
+    if (!liste.length) return null;
+    var ul = el("ul", { class: "sitat-liste" });
+    var rs = rolleSp();
+    var minG = K.minGruppe || 3, storleik = {};
+    rader(true).forEach(function (r) { var v = r.svar[rs.id]; if (v) storleik[v] = (storleik[v] || 0) + 1; });
+    liste.forEach(function (x) { if (!x.rolle || (storleik[x.rolle] || 0) < minG) x.rolle = null; });
+    function li(x) { return el("li", null, [x.t, el("span", { class: "kjelde", text: [tilstand.kunde === "alle" ? kundeNamn(x.k) : null, x.rolle ? valNamn(rs, x.rolle) : null].filter(Boolean).join(", ") })]); }
+    liste.slice(0, maks || 4).forEach(function (x) { ul.appendChild(li(x)); });
+    var d = el("div", null, [ul]);
+    if (liste.length > (maks || 4)) {
+      var meir = el("ul", { class: "sitat-liste" });
+      liste.slice(maks || 4).forEach(function (x) { meir.appendChild(li(x)); });
+      d.appendChild(el("details", null, [el("summary", { text: "Vis " + (liste.length - (maks || 4)) + " til" }), meir]));
+    }
+    return d;
+  }
+
+  function blokk(rr, s, brei) {
+    var basis = svart(rr, s.id);
+    var b = el("div", { class: "blokk" + (brei ? " brei" : "") });
+    b.appendChild(el("h3", { text: s.fasit ? s.fasit.tittel.nn : s.tekst.nn }));
+    if (s.fasit) b.appendChild(el("p", { class: "sp-tekst", text: s.tekst.nn }));
+    b.appendChild(el("div", { class: "n", text: basis.length + " svar" + (s.maks ? ", inntil " + s.maks + " val" : s.type === "multi" ? ", fleire val" : "") }));
+    if (!basis.length) { b.appendChild(el("p", { class: "tomt", text: "Ingen svar enno." })); return b; }
+    if (s.type === "single" || s.type === "multi") b.appendChild(barRader(rr, s));
+    else if (s.type === "scale") b.appendChild(skalaBlokk(rr, s));
+    else if (s.type === "nps") {
+      var v = basis.map(function (r) { return r.svar[s.id]; });
+      var fr = v.filter(function (x) { return x >= 9; }).length, kr = v.filter(function (x) { return x <= 6; }).length;
+      b.appendChild(el("div", null, [el("span", { class: "nps-tal", text: String(Math.round(100 * (fr - kr) / v.length)) }), el("span", { class: "verdi", text: "  NPS · " + fr + " tilrår, " + kr + " kritiske, snitt " + (v.reduce(function (a, c) { return a + c; }, 0) / v.length).toFixed(1).replace(".", ",") })]));
+    } else if (s.type === "text") {
+      var q = sitat(basis, function (r) { return r.svar[s.id]; }, 4);
+      if (q) b.appendChild(q);
+    }
+    if (s.fritekst) {
+      var fq = sitat(rr, function (r) { return r.fri && r.fri[s.id]; }, 3);
+      if (fq) { b.appendChild(el("div", { class: "n", text: "Fritekst", style: "margin:12px 0 0" })); b.appendChild(fq); }
+    }
+    return b;
+  }
+
+  function kiBruk(rr) {
+    var s7 = sp("K7");
+    var b7 = svart(rr, "K7"), b8 = svart(rr, "K8");
+    var d = el("div", { class: "blokk brei" });
+    d.appendChild(el("h3", { text: "Kor ofte dei brukar KI, i jobben og privat" }));
+    d.appendChild(el("div", { class: "n", text: b7.length + " svar om jobb, " + b8.length + " om privat" }));
+    d.appendChild(el("div", { class: "forklaring" }, [el("span", null, [el("i", { style: "background:var(--bar)" }), "I jobben"]), el("span", null, [el("i", { style: "background:var(--bar2)" }), "Privat"])]));
+    s7.val.forEach(function (v) {
+      var a = b7.filter(function (r) { return r.svar.K7 === v.id; }).length, b = b8.filter(function (r) { return r.svar.K8 === v.id; }).length;
+      d.appendChild(el("div", { class: "rad par", title: v.nn + ": jobb " + a + ", privat " + b }, [
+        el("div", { class: "etikett", text: v.nn }),
+        el("div", null, [el("div", { class: "spor" }, [el("div", { class: "fyll", style: "width:" + pst(a, b7.length) + "%" })]), el("div", { class: "spor" }, [el("div", { class: "fyll to", style: "width:" + pst(b, b8.length) + "%" })])]),
+        el("div", { class: "verdi" }, [el("b", { text: pst(a, b7.length) + " %" }), el("br"), pst(b, b8.length) + " %"])
+      ]));
+    });
+    return d;
+  }
+
+  function rutineBlokk(rr) {
+    var d = el("div", { class: "blokk brei" });
+    d.appendChild(el("h3", { text: "Rutineoppgåvene som tek mest tid" }));
+    var liste = tyngsteOppgaver(rr);
+    var s3 = sp("K3");
+    d.appendChild(el("div", { class: "n", text: svart(rr, "K16").length + " har valt kva oppgåve som er tyngst. Timane er eit anslag: kor ofte dei gjer ho × kor lang tid ho tek." }));
+    if (!liste.length) { d.appendChild(el("p", { class: "tomt", text: "Ingen svar enno." })); return d; }
+    var t = el("table", { class: "rutine" });
+    t.appendChild(el("thead", null, [el("tr", null, [el("th", { text: "Oppgåve" }), el("th", { class: "num", text: "Tyngst for" }), el("th", { class: "num", text: "Timar/veke, samla" }), el("th", { class: "num", text: "Kryssa av totalt" })])]));
+    var tb = el("tbody");
+    liste.forEach(function (x) {
+      var totalt = tel(rr, "K3", function (r) { return har(r, "K3", x.id); });
+      tb.appendChild(el("tr", null, [el("td", { text: x.namn }), el("td", { class: "num", text: x.folk + (x.folk === 1 ? " person" : " personar") }), el("td", { class: "num", text: x.medTid ? "≈ " + (x.timar < 10 ? x.timar.toFixed(1).replace(".", ",") : Math.round(x.timar)) : "–" }), el("td", { class: "num", text: String(totalt) })]));
+    });
+    t.appendChild(tb);
+    d.appendChild(el("div", { class: "tabell-wrap" }, [t]));
+    return d;
+  }
+
+  var LEIAR_KOL = {
+    tryggleik: [["B2", "Tolar stans", { t2: "h", dag: "m", d23: "g", veke: "g", vk: "m" }], ["B5", "IT-ansvar", { ingen: "h", vardahei: "m", tilsett: "g", dagleg: "g" }], ["B13", "Plan ved angrep", { skrive: "g", ide: "m", nei: "h", vardahei: "h" }], ["B12", "Backup testa", { siste: "g", lenge: "m", nei: "h", vk: "h" }], ["B9", "Sluttar", { vardahei: "g", sjolv: "g", etter: "h", vk: "h" }], ["B10", "Privat mobil", { reglar: "g", nei: "g", utan: "m", ikkje: "h" }], ["B18", "Nytt kontonr.", { ring: "g", to: "g", svar: "h", endrar: "h", rekneskap: "m", vk: "h" }], ["B11", "Delte innloggingar", {}], ["B16", "NPS", null]],
+    ki: [["L11", "Førespurnader/veke", {}], ["L4", "KI-reglar", { skrive: "g", uformelt: "m", nei: "h", vk: "h" }], ["L5", "Betaler for KI", { alle: "g", nokre: "g", gratis: "h", nei: "m", vk: "m" }], ["L7", "Første gevinst", {}], ["L8", "Når", { no: "g", halvar: "g", ar: "m", ikkje: "m" }], ["L10", "Vil ha ein prat", { ja: "g", seinare: "m", nei: "m" }]]
+  };
+
+  function leiartabell(L) {
+    var kol = LEIAR_KOL[tilstand.skjema];
+    var t = el("table");
+    var hr = el("tr", null, [el("th", { text: "Kunde" })]);
+    kol.forEach(function (c) { hr.appendChild(el("th", { text: c[1] })); });
+    t.appendChild(el("thead", null, [hr]));
+    var tb = el("tbody");
+    L.forEach(function (r) {
+      var tr = el("tr", null, [el("td", { text: kundeNamn(r.k), style: "font-weight:700" })]);
+      kol.forEach(function (c) {
+        var v = r.svar[c[0]];
+        if (v == null) { tr.appendChild(el("td", { text: "–", style: "color:var(--faint)" })); return; }
+        if (c[2] === null) { tr.appendChild(el("td", { class: "num", text: String(v) })); return; }
+        var liste = Array.isArray(v) ? v : [v];
+        var rang = { h: 3, m: 2, g: 1 };
+        var niv = liste.map(function (x) { return c[2][x]; }).filter(Boolean).sort(function (a, b) { return rang[b] - rang[a]; })[0];
+        tr.appendChild(el("td", null, [el("span", { class: "celle" + (niv ? " " + niv : "") }, [niv ? el("i") : null, liste.map(function (x) { return valNamn(sp(c[0]), x); }).join(", ")])]));
+      });
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    return el("div", { class: "tabell-wrap" }, [t]);
+  }
+
+  function teikn() {
+    teiknFanar(); teiknFilter();
+    document.getElementById("demo").hidden = !tilstand.demo;
+    var rr = rader();
+    var L = leiarRader();
+    var f = F();
+    document.getElementById("meta").textContent = rr.length + " svar" + (tilstand.kunde !== "alle" ? " frå " + kundeNamn(tilstand.kunde) : " frå " + Object.keys(rr.reduce(function (a, r) { a[r.k] = 1; return a; }, {})).length + " kundar") + ", " + L.length + " leiarar";
+    innhald.innerHTML = "";
+
+    // Funn
+    var funn = funnListe(rr);
+    var fs = el("section", { class: "del" });
+    fs.appendChild(el("h2", { text: tilstand.skjema === "ki" ? "Kvar KI kan hjelpe" : "Dette bør vi ta tak i" }));
+    fs.appendChild(el("p", { class: "under", text: tilstand.skjema === "ki" ? "Rekna ut frå svara. «Stor» når 30 % eller fleire kjenner seg att, «Verdt» frå 15 %. Leiarsvar er med nedst." : "Rekna ut frå svara. Raudt når 30 % eller fleire, gult frå 15 %, og alltid minst to personar. Leiarsvar er med nedst." }));
+    if (!funn.length) fs.appendChild(el("p", { class: "tomt", text: rr.length ? "Ingen tydelege funn i dette utvalet." : "Ingen svar i dette utvalet enno." }));
+    else {
+      var ul = el("ul", { class: "funn" });
+      funn.forEach(function (x) {
+        var nivTekst = tilstand.skjema === "ki" ? (x.niva === "h" ? "Stor" : "Verdt") : (x.niva === "h" ? "Høg" : "Middels");
+        ul.appendChild(el("li", null, [
+          el("span", { class: "niva " + x.niva }, [el("i"), nivTekst]),
+          el("div", null, [el("span", { class: "tal", text: x.tal }), " " + x.tekst]),
+          el("div", { class: "tiltak" }, [el("b", { text: "Forslag: " }), x.tiltak])
+        ]));
+      });
+      fs.appendChild(ul);
+    }
+    if (tilstand.skjema === "tryggleik") innhald.appendChild(soneSeksjon(rr));
+    innhald.appendChild(fs);
+
+    if (tilstand.skjema === "tryggleik") {
+      innhald.appendChild(kakeSeksjon(rr));
+      if (harR1()) {
+        innhald.appendChild(el("section", { class: "del" }, [el("h2", { text: "Samanlikning med runde 1" }), el("p", { class: "under", text: "Same spørsmål, same svarval og same fargemodell som i Forms-runden i januar (" + (R1.svar || []).length + " svar). Lågare snittscore og lågare kritisk andel er betre." }), samanlikning(rr)]));
+      }
+      innhald.appendChild(tilsettSeksjon(rr));
+    }
+
+    // Fellesdelen
+    var a = el("section", { class: "del" });
+    a.appendChild(el("h2", { text: "Svar frå alle tilsette" }));
+    a.appendChild(el("p", { class: "under", text: "Spørsmål for spørsmål, i same rekkjefølgje som i skjemaet." }));
+    if (tilstand.skjema === "tryggleik") a.lastChild.textContent = "Spørsmål for spørsmål, i same rekkjefølgje som i skjemaet (og som i Forms-runden).";
+    var g = el("div", { class: "rutenett" });
+    if (tilstand.skjema === "ki") { g.appendChild(kiBruk(rr)); g.appendChild(rutineBlokk(rr)); }
+    f.sporsmal.filter(function (s) { return s.del === "A" && s.id !== "K7" && s.id !== "K8" && s.id !== "F1"; }).forEach(function (s) {
+      g.appendChild(blokk(rr, s, s.type === "text" || s.id === "K3"));
+    });
+    a.appendChild(g);
+    innhald.appendChild(a);
+
+    // Leiardelen
+    var b = el("section", { class: "del" });
+    b.appendChild(el("h2", { text: "Leiarane" }));
+    b.appendChild(el("p", { class: "under", text: L.length ? "Leiarsvara er ikkje anonyme. Éi rad per leiar som har svart." : "Ingen leiarar har svart i dette utvalet enno." }));
+    if (L.length) {
+      b.appendChild(leiartabell(L));
+      var g2 = el("div", { class: "rutenett", style: "margin-top:18px" });
+      f.sporsmal.filter(function (s) { return s.del === "B"; }).forEach(function (s) { g2.appendChild(blokk(L, s, s.type === "text")); });
+      b.appendChild(g2);
+    }
+    innhald.appendChild(b);
+  }
+
+  fetch("api/meg", { credentials: "same-origin" })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (m) { if (m && m.epost) { document.getElementById("meg-epost").textContent = m.epost; document.getElementById("meg").hidden = false; } })
+    .catch(function () {});
+  fetch("api/svar", { credentials: "same-origin" })
+    .then(function (r) {
+      if (r.status === 401) { location.href = "logg-inn?til=/dashboard"; throw new Error("ut"); }
+      if (r.status === 403) { location.href = "byt-passord"; throw new Error("byt"); }
+      if (!r.ok) throw new Error(r.status); return r.json();
+    })
+    .then(function (d) { if (!Array.isArray(d)) throw new Error("form"); tilstand.data = d; tilstand.demo = false; teikn(); })
+    .catch(function (e) {
+      if (e && (e.message === "ut" || e.message === "byt")) return;
+      var meny = document.querySelector(".meny"); if (meny) meny.hidden = true; tilstand.data = demodata(); tilstand.demo = true; teikn(); });
+})();
+</script>

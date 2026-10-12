@@ -1,0 +1,10 @@
+# Svar, kodar, kontoar og hendingar
+kartlegging/data/
+# Kjeldefiler med personopplysningar (Master_Analyse.xlsx o.l.)
+kjelder/*
+!kjelder/LES-MEG.md
+# Brainstorm-loggar kan innehalde lange modellsvar
+astra/*-log.txt
+node_modules/
+test-resultat/
+.DS_Store
