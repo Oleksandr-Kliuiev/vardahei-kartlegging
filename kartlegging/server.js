@@ -347,13 +347,21 @@ function json(res, status, data) { send(res, status, JSON.stringify(data), "appl
 function vidaresend(res, til, ekstra) { res.writeHead(303, Object.assign({ Location: til, "Cache-Control": "no-store" }, ekstra || {})); res.end(); }
 function side(fil) { return skal(fs.readFileSync(path.join(__dirname, fil), "utf8")); }
 
+// Grenser per 10 minutt. Små bedrifter sit ofte bak éi felles IP-adresse, så grensene per IP
+// må tole at heile kontoret svarar samtidig. Feil koder blir tekne strengare.
+const GRENSE = { sjekk: 300, kodefeil: 20, svar: 100, framdriftIp: 3000, framdriftOkt: 300 };
+const VINDAUGE = 10 * 60e3;
 const treff = new Map();
-function forMange(nokkel, maks, vindauge) {
+function ferske(nokkel) {
   const no = Date.now();
-  const l = (treff.get(nokkel) || []).filter((t) => no - t < (vindauge || 10 * 60e3));
-  l.push(no); treff.set(nokkel, l);
-  return l.length > (maks || 10);
+  const l = (treff.get(nokkel) || []).filter((t) => no - t < VINDAUGE);
+  treff.set(nokkel, l);
+  return l;
 }
+function forMange(nokkel, maks) { const l = ferske(nokkel); l.push(Date.now()); return l.length > maks; }
+function kodeSperra(ip) { return ferske("kodefeil:" + ip).length >= GRENSE.kodefeil; }
+function kodeFeil(ip) { ferske("kodefeil:" + ip).push(Date.now()); }
+setInterval(() => { for (const n of treff.keys()) if (!ferske(n).length) treff.delete(n); }, VINDAUGE).unref();
 function lesBody(req, maks) {
   return new Promise((ok, feil) => {
     let b = "";
@@ -400,7 +408,8 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://x");
     const p = url.pathname.replace(/\/+$/, "") || "/";
-    const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
+    // Siste ledd i X-Forwarded-For er det Caddy la til. Det første kan klienten skrive sjølv.
+    const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",").pop().trim();
 
     /* ----- Offentleg: skjemaet ----- */
     if (req.method === "GET" && p === "/") return send(res, 200, side("public/index.html"), "text/html; charset=utf-8");
@@ -409,18 +418,18 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && p === "/sporsmal.js") return send(res, 200, fs.readFileSync(path.join(__dirname, "public/sporsmal.js")), "text/javascript; charset=utf-8");
 
     if (req.method === "GET" && p === "/api/sjekk") {
-      if (forMange("sjekk:" + ip, 30)) return send(res, 429, "For mange forsøk.");
+      if (kodeSperra(ip) || forMange("sjekk:" + ip, GRENSE.sjekk)) return send(res, 429, "For mange forsøk.");
       const k = (url.searchParams.get("k") || "").toLowerCase();
-      if (!gyldigKode(k, url.searchParams.get("t") || "")) { hending("ugyldig_lenkje", { k: K.kundar[k] ? k : null }); return send(res, 403, "Lenkja er ikkje gyldig."); }
+      if (!gyldigKode(k, url.searchParams.get("t") || "")) { kodeFeil(ip); hending("ugyldig_lenkje", { k: K.kundar[k] ? k : null }); return send(res, 403, "Lenkja er ikkje gyldig."); }
       if (!erOpen(k)) return send(res, 410, "Kartlegginga er avslutta.");
       return json(res, 200, { ok: true });
     }
 
     if (req.method === "POST" && p === "/api/svar") {
-      if (forMange("svar:" + ip, 10)) return send(res, 429, "For mange innsendingar. Prøv igjen om litt.");
+      if (kodeSperra(ip) || forMange("svar:" + ip, GRENSE.svar)) return send(res, 429, "For mange innsendingar. Prøv igjen om litt.");
       let d; try { d = JSON.parse(await lesBody(req)); } catch { return send(res, 400, "Ugyldig innhald."); }
       const rad = valider(d);
-      if (rad === "ugyldig") { hending("ugyldig_lenkje", {}); return send(res, 403, "Lenkja er ikkje gyldig."); }
+      if (rad === "ugyldig") { kodeFeil(ip); hending("ugyldig_lenkje", {}); return send(res, 403, "Lenkja er ikkje gyldig."); }
       if (rad === "stengd") return send(res, 410, "Kartlegginga er avslutta.");
       if (!rad) return send(res, 400, "Fann ingen gyldige svar.");
       fs.appendFileSync(F("svar.jsonl"), JSON.stringify(rad) + "\n");
@@ -429,10 +438,11 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && p === "/api/framdrift") {
-      if (forMange("fd:" + ip, 120)) return send(res, 429, "");
+      if (forMange("fd:" + ip, GRENSE.framdriftIp)) return send(res, 429, "");
       let d; try { d = JSON.parse(await lesBody(req, 2000)); } catch { return send(res, 400, ""); }
       const k = String(d.k || "").toLowerCase();
       if (!SPS[d.skjema] || !gyldigKode(k, d.t) || !erOpen(k) || !/^[a-f0-9]{16,32}$/.test(d.okt || "")) return send(res, 204, "");
+      if (forMange("fdokt:" + d.okt, GRENSE.framdriftOkt)) return send(res, 429, "");
       const sp = d.sp === "intro" || d.sp === "B-intro" || SPS[d.skjema][d.sp] ? d.sp : null;
       const no = Date.now();
       const o = FRAMDRIFT[d.okt] || { skjema: d.skjema, k, start: no };

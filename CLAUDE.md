@@ -27,6 +27,7 @@ node --check server.js
 T=<kode> K=daco node ../tools/test/skjema.test.js     # прогон опросника (Playwright)
 PW1=<pw> PW2=<pw> node ../tools/test/dashboard.test.js
 PW1=<pw> K=gasta node ../tools/test/admin.test.js     # админка; меняет код ссылки, только localhost
+T=<kode> K=gasta node ../tools/test/grenser.test.js   # лимиты; на свежем сервере, первым
 python3 tools/runde1_fra_excel.py kjelder/Master_Analyse.xlsx
 ```
 
