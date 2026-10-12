@@ -6,7 +6,8 @@
     "start": "node kartlegging/server.js",
     "sjekk": "node --check kartlegging/server.js",
     "test:skjema": "node tools/test/skjema.test.js",
-    "test:dashbord": "node tools/test/dashboard.test.js"
+    "test:dashbord": "node tools/test/dashboard.test.js",
+    "test:admin": "node tools/test/admin.test.js"
   },
   "devDependencies": {
     "playwright": "^1.48.0"

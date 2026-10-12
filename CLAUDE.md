@@ -26,6 +26,7 @@ node server.js --brukar namn@vardahei.no         # новая учётка / с�
 node --check server.js
 T=<kode> K=daco node ../tools/test/skjema.test.js     # прогон опросника (Playwright)
 PW1=<pw> PW2=<pw> node ../tools/test/dashboard.test.js
+PW1=<pw> K=gasta node ../tools/test/admin.test.js     # админка; меняет код ссылки, только localhost
 python3 tools/runde1_fra_excel.py kjelder/Master_Analyse.xlsx
 ```
 
@@ -38,7 +39,7 @@ python3 tools/runde1_fra_excel.py kjelder/Master_Analyse.xlsx
 - Опросник по безопасности не анонимный (инициалы, как в Forms). KI-опросник анонимный. Не смешивать.
 - Никаких секретов в коде, логах и документах. Пароли только как scrypt-хеши.
 - Деплой на VPS делает Oleksandr сам (`docs/kartlegging-teknisk.md`, раздел «Деплой»).
-- Перед тем как сказать «готово»: `node --check server.js`, прогнать оба теста, посмотреть скриншоты.
+- Перед тем как сказать «готово»: `node --check server.js`, прогнать тесты (опросник, дашборд, админка), посмотреть скриншоты.
 
 ## Коммиты
 
