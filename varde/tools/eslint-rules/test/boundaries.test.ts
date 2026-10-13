@@ -1,7 +1,7 @@
 // Import boundaries (0.2b step 4), checked with the real varde/eslint.config.js.
 // Each case writes a temporary file into the real package (type-aware lint needs the file
 // on disk inside a tsconfig) and removes it afterwards.
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, rmSync, rmdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
@@ -15,9 +15,21 @@ afterAll(() => {
   for (const path of created) {
     rmSync(path, { force: true });
     const dir = dirname(path);
-    if (dir.endsWith('__boundaries__')) rmSync(dir, { recursive: true, force: true });
+    if (dir.endsWith('__boundaries__')) {
+      rmSync(dir, { recursive: true, force: true });
+      removeIfEmpty(dirname(dir));
+    }
   }
 });
+
+/** A parent created only for the test (e.g. apps/api/src/modules/) must not be left behind. */
+function removeIfEmpty(dir: string): void {
+  try {
+    if (readdirSync(dir).length === 0) rmdirSync(dir);
+  } catch {
+    // already gone
+  }
+}
 
 async function ruleIds(rel: string, code: string): Promise<string[]> {
   const full = join(ROOT, rel);
