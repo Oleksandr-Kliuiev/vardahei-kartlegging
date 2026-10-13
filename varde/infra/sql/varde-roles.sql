@@ -1,9 +1,11 @@
 SET log_statement = 'none';
 SET log_min_error_statement = 'panic';
 SET log_min_duration_statement = -1;
+SET pg_stat_statements.track_utility = off;
 -- Varde roles and database (task 0.5, ADR-016, ADR-003). Instance level: run by a superuser
 -- in the database `postgres` (unix socket inside atlas-db-1, see infra/sql/README.md).
--- The three SET lines above keep the statements with passwords out of the server log.
+-- The SET lines above keep the statements with passwords out of the server log and out of
+-- pg_stat_statements (a dotted custom setting is accepted even when the extension is not loaded).
 --
 -- psql variables (fed on stdin by bootstrap.sh as \set lines, never in argv):
 --   app_pw, backup_pw  role passwords (hex); the server stores SCRAM verifiers

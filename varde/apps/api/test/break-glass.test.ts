@@ -65,6 +65,18 @@ function refused(port: number): Promise<string> {
   });
 }
 
+/** A process that dies with SIGKILL leaves its socket file behind. */
+async function staleSocket(): Promise<void> {
+  const child = spawn(process.execPath, [
+    '-e',
+    `require('net').createServer().listen(${JSON.stringify(SOCKET)}, () => console.log('up'))`,
+  ]);
+  await new Promise<void>((resolve) => child.stdout.once('data', () => resolve()));
+  child.kill('SIGKILL');
+  await new Promise((r) => child.once('exit', r));
+  expect(statSync(SOCKET).isSocket()).toBe(true);
+}
+
 describe('break-glass (0.8)', () => {
   it('off → main listener 404, no socket', async () => {
     const app = await start({});
@@ -137,6 +149,24 @@ describe('break-glass (0.8)', () => {
     expect(app.store.audits[0]?.details).toHaveProperty('until');
   });
 
+  it.each(['4h', 'abc', '0', '-1', '5'])(
+    'BREAK_GLASS_MAX_HOURS=%s → not enabled, rejected bad_max_hours',
+    async (max) => {
+      const app = await start({ ...on(iso(30 * 60_000)), BREAK_GLASS_MAX_HOURS: max });
+      expect(existsSync(SOCKET)).toBe(false);
+      expect(app.store.audits[0]).toMatchObject({
+        what: 'break_glass.rejected',
+        details: { reason: 'bad_max_hours' },
+      });
+    },
+  );
+
+  it('off at start removes a stale socket left by an earlier window', async () => {
+    await staleSocket();
+    await start({});
+    expect(existsSync(SOCKET)).toBe(false);
+  });
+
   it('a hash without $argon2id$ (mangled by Compose) → not enabled, rejected bad_hash', async () => {
     const app = await start({ ...on(), VARDE_BREAK_GLASS_PASSWORD_HASH: '=19=19456,t=2,p=1' });
     expect(existsSync(SOCKET)).toBe(false);
@@ -173,15 +203,7 @@ describe('break-glass (0.8)', () => {
   });
 
   it('a stale socket file does not block the start; the socket mode is 0660', async () => {
-    // A process that dies with SIGKILL leaves its socket file behind.
-    const child = spawn(process.execPath, [
-      '-e',
-      `require('net').createServer().listen(${JSON.stringify(SOCKET)}, () => console.log('up'))`,
-    ]);
-    await new Promise<void>((resolve) => child.stdout.once('data', () => resolve()));
-    child.kill('SIGKILL');
-    await new Promise((r) => child.once('exit', r));
-    expect(statSync(SOCKET).isSocket()).toBe(true);
+    await staleSocket();
     await start(on());
     expect(statSync(SOCKET).mode & 0o777).toBe(0o660);
     expect((await login(password)).status).toBe(200);

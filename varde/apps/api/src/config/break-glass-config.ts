@@ -25,7 +25,12 @@ export function readBreakGlassConfig(
     return { state: 'rejected', operator, details: { reason: 'bad_until' } };
   }
   if (until.getTime() <= now) return { state: 'off' };
-  const maxHours = Number(value(env, 'BREAK_GLASS_MAX_HOURS') || DEFAULT_MAX_HOURS);
+  const rawMax = value(env, 'BREAK_GLASS_MAX_HOURS');
+  const maxHours = rawMax === '' ? DEFAULT_MAX_HOURS : Number(rawMax);
+  // "4h", "abc", 0 or anything above the ADR limit must not open an unbounded window.
+  if (!Number.isFinite(maxHours) || maxHours <= 0 || maxHours > DEFAULT_MAX_HOURS) {
+    return { state: 'rejected', operator, details: { reason: 'bad_max_hours' } };
+  }
   if (until.getTime() > now + maxHours * 3600_000) {
     return { state: 'rejected', operator, details: { until: until.toISOString() } };
   }
@@ -40,4 +45,8 @@ export function readBreakGlassConfig(
     operator,
     socket: value(env, 'VARDE_BREAK_GLASS_SOCKET') || DEFAULT_SOCKET,
   };
+}
+
+export function socketPath(env: NodeJS.ProcessEnv = process.env): string {
+  return value(env, 'VARDE_BREAK_GLASS_SOCKET') || DEFAULT_SOCKET;
 }

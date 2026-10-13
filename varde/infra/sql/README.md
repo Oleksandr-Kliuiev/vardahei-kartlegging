@@ -7,24 +7,24 @@
 Superuser-сессия в примерах:
 
 ```bash
-SU='docker exec -i atlas-db-1 sh -c '\''exec psql -X -U "$POSTGRES_USER" -v ON_ERROR_STOP=1 "$@"'\'' psql'
-$SU -d postgres -tAc 'select 1'          # должно вернуть 1
+SU() { docker exec -i atlas-db-1 sh -c 'exec psql -X -U "$POSTGRES_USER" -v ON_ERROR_STOP=1 "$@"' psql "$@"; }
+SU -d postgres -tAc 'select 1'          # должно вернуть 1
 ```
 
-Имя роли раскрывается внутри контейнера. Если `local` в pg_hba не `trust` (psql спрашивает пароль), добавить `PGPASSWORD="$POSTGRES_PASSWORD"` перед `exec psql` в том же `sh -c` — значение не выводится. Тест (`test/bootstrap.test.sh`) подставляет свою команду через `VARDE_PSQL_CMD`.
+`SU` — функция shell (не переменная: кавычки в раскрытой переменной не работают). Имя роли раскрывается внутри контейнера. Если `local` в pg_hba не `trust` (psql спрашивает пароль), добавить `PGPASSWORD="$POSTGRES_PASSWORD"` перед `exec psql` в том же `sh -c` — значение не выводится. Тест (`test/bootstrap.test.sh`) подставляет свою команду через `VARDE_PSQL_CMD`.
 
 ## (а) Read-only проверки до bootstrap
 
 ```bash
 # rolsuper роли приложения Atlas (только для записи остаточного риска §9 п. 5, на процедуру не влияет)
-$SU -d postgres -tAc "select distinct usename, rolsuper from pg_stat_activity join pg_roles on rolname = usename where backend_type = 'client backend' and pid <> pg_backend_pid()"
+SU -d postgres -tAc "select distinct usename, rolsuper from pg_stat_activity join pg_roles on rolname = usename where backend_type = 'client backend' and pid <> pg_backend_pid()"
 # действующий pg_hba (может быть не $PGDATA/pg_hba.conf)
-$SU -d postgres -tAc 'show hba_file'
+SU -d postgres -tAc 'show hba_file'
 # запас соединений под 20 (varde_app) + 3 (varde_backup)
-$SU -d postgres -tAc 'show max_connections'
-$SU -d postgres -tAc 'select count(*) from pg_stat_activity'
+SU -d postgres -tAc 'show max_connections'
+SU -d postgres -tAc 'select count(*) from pg_stat_activity'
 # версия сервера: login event trigger требует 17
-$SU -d postgres -tAc 'show server_version'
+SU -d postgres -tAc 'show server_version'
 ```
 
 Если `max_connections − count` меньше 23 с запасом — остановиться: кодер снижает `role_connection_limit` в `config/db-budget.json` коммитом до bootstrap. Всё — в evidence.
@@ -46,7 +46,7 @@ cut -d= -f1 /etc/varde/app.env /etc/varde/backup.env       # только име
 ## (в) pg_hba
 
 ```bash
-HBA=$($SU -d postgres -tAc 'show hba_file')
+HBA=$(SU -d postgres -tAc 'show hba_file')
 TS=$(date -u +%Y%m%dT%H%M%SZ)
 docker exec atlas-db-1 sh -c "test -w '$HBA'" || echo 'READ-ONLY: стоп, вопрос в evidence'
 docker exec atlas-db-1 cp -p "$HBA" "$HBA.bak-$TS"
@@ -63,14 +63,14 @@ docker exec atlas-db-1 cat "$HBA" > "$W/old"
 diff "$W/old" "$W/new"                                    # ровно три добавленные строки
 docker exec -i atlas-db-1 sh -c "cat > '$HBA'" < "$W/new"  # тот же файл (inode, владелец, режим)
 docker exec atlas-db-1 grep -n -B1 -A3 'varde' "$HBA"   # три строки стоят перед общими host-строками
-$SU -d postgres -tAc 'select pg_reload_conf()'
-$SU -d postgres -tAc 'select count(*) from pg_hba_file_rules where error is not null'   # → 0
+SU -d postgres -tAc 'select pg_reload_conf()'
+SU -d postgres -tAc 'select count(*) from pg_hba_file_rules where error is not null'   # → 0
 ```
 
 Четыре проверки (повторяются в `0b-vps-evidence.md` и перед cutover 1.35):
 
 ```bash
-$SU -d varde -tAc 'select 1'                                         # 1) socket superuser → 1
+SU -d varde -tAc 'select 1'                                         # 1) socket superuser → 1
 docker exec atlas-db-1 sh -c 'psql -X -h 127.0.0.1 -U "$POSTGRES_USER" -d varde -c "select 1"' \
   # 2) → FATAL: pg_hba.conf rejects connection (reject до аутентификации, пароль не нужен)
 # после первого деплоя (0.6; контейнер backup — 0.10, отложен 13.10 → пока pending):
@@ -95,22 +95,22 @@ docker run --rm --network atlas_internal --env-file /etc/varde/backup.env postgr
 B='docker run --rm --network atlas_internal --env-file /etc/varde/backup.env postgres:17.6-bookworm psql -X'
 $B -c "insert into varde_audit.connection_log default values"   # → permission denied for table connection_log
 $B -c "select varde_audit.prune()"                              # → permission denied for function prune
-$SU -d varde -tAc "select count(*) from varde_audit.connection_log where role_name = 'varde_backup'"   # = K
+SU -d varde -tAc "select count(*) from varde_audit.connection_log where role_name = 'varde_backup'"   # = K
 $B -c 'select 1'
-$SU -d varde -tAc "select count(*) from varde_audit.connection_log where role_name = 'varde_backup'"   # = K + 1
+SU -d varde -tAc "select count(*) from varde_audit.connection_log where role_name = 'varde_backup'"   # = K + 1
 ```
 
 ## (д) Сбой триггера, запасной журнал
 
 - Вход не блокируется: ошибка вставки — `WARNING varde_audit: …` в `docker logs atlas-db-1`.
-- Отключить триггер: `$SU -d varde -c 'ALTER EVENT TRIGGER varde_login DISABLE'` (включить — `ENABLE`); аварийно для одной сессии — `PGOPTIONS='-c event_triggers=false'` у superuser.
+- Отключить триггер: `SU -d varde -c 'ALTER EVENT TRIGGER varde_login DISABLE'` (включить — `ENABLE`); аварийно для одной сессии — `PGOPTIONS='-c event_triggers=false'` у superuser.
 - Если event trigger не создаётся (сервер по факту < 17): `ALTER ROLE varde_app SET log_connections = on; ALTER ROLE varde_backup SET log_connections = on;` — записи в `docker logs atlas-db-1`; evidence называет действующий вариант.
 
 ## Откат bootstrap (только до появления данных Varde)
 
 ```bash
 docker compose -f /opt/varde/compose.yml stop app 2>/dev/null || true   # открытые сессии мешают DROP DATABASE
-$SU -d postgres < /opt/varde/sql/varde-teardown.sql
+SU -d postgres < /opt/varde/sql/varde-teardown.sql
 sed -i '/^DATABASE_URL=/d' /etc/varde/app.env
 sed -i '/^PG\(HOST\|PORT\|USER\|PASSWORD\|DATABASE\)=/d' /etc/varde/backup.env
 ```

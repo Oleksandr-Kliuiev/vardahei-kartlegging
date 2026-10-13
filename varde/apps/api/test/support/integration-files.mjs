@@ -9,4 +9,5 @@ export const INTEGRATION_FILES = [
   'test/admin-session.test.ts',
   'test/stub-submit.test.ts',
   'test/hold-connection.test.ts',
+  'test/break-glass-prisma.test.ts',
 ];

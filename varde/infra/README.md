@@ -20,6 +20,9 @@
 ```bash
 install -d -m 0755 /opt/varde /opt/varde/images
 install -d -m 0700 /etc/varde
+# uid 1000 — пользователь процесса в образе; кому он соответствует на хосте (держатель доступа к
+# каталогам ниже и к ключу Entra) — в evidence
+getent passwd 1000 || echo 'uid 1000: нет пользователя на хосте'
 # socket break-glass (0.8): uid 1000 — пользователь образа; setgid — socket получает группу docker
 install -d -m 2770 -o 1000 -g docker /var/lib/varde/run
 # экспорт журнала удалений (0.10e, отложен): короткая форма bind создала бы root 0755
@@ -43,9 +46,9 @@ docker buildx build --platform linux/amd64 -f infra/Dockerfile . \
 docker save varde-api:$SHA | gzip | ssh vardahei-vps "cat > /opt/varde/images/varde-api-$SHA.tar.gz"
 ssh -T vardahei-vps "gunzip -c /opt/varde/images/varde-api-$SHA.tar.gz | docker load"
 # varde-backup:<sha> (infra/backup/Dockerfile.backup) — с 0.10, отложен 13.10; собирается и переносится так же
-rsync -a varde/infra/ vardahei-vps:/opt/varde/            # из корня репозитория
-rsync -a varde/config/ vardahei-vps:/opt/varde/config/
-rsync -a varde/tools/metrics/ vardahei-vps:/opt/varde/metrics/
+rsync -a infra/ vardahei-vps:/opt/varde/                  # всё ещё из <checkout>/varde
+rsync -a config/ vardahei-vps:/opt/varde/config/
+rsync -a tools/metrics/ vardahei-vps:/opt/varde/metrics/
 ssh -T vardahei-vps "printf 'VARDE_SHA=%s\n' $SHA > /opt/varde/.env && echo $SHA > /opt/varde/VERSION"
 ssh -T vardahei-vps 'docker compose -f /opt/varde/compose.yml config --images'   # → varde-api:<sha>, varde-backup:<sha>
 ```
@@ -142,7 +145,10 @@ ID лежат в `/etc/varde/entra.env` (их вписал хостинг-опе
 ```bash
 chgrp 1000 /etc/varde/entra /etc/varde/entra/key.pem /etc/varde/entra/cert.pem
 chmod 0750 /etc/varde/entra; chmod 0640 /etc/varde/entra/key.pem; chmod 0644 /etc/varde/entra/cert.pem
-stat -c '%a %u:%g %n' /etc/varde/entra/*.pem
+stat -c '%a %U:%G %n' /etc/varde /etc/varde/entra /etc/varde/entra/key.pem /etc/varde/entra/cert.pem
+# → 700 root:root /etc/varde (bind монтирует сам каталог entra, родитель uid 1000 не проходит);
+#   750 root:<группа uid 1000> …/entra; 640 root:<…> key.pem; 644 root:<…> cert.pem
+getent passwd 1000; getent group 1000   # кто ещё на хосте читает key.pem — в список держателей
 ```
 
 В `/etc/varde/app.env` дописать (значения ID — из `entra.env`; файл не выводить):

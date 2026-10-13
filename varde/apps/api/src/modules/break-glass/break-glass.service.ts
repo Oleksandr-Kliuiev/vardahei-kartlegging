@@ -11,7 +11,7 @@ import {
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { configureApp } from '../../configure-app.js';
-import { readBreakGlassConfig } from '../../config/break-glass-config.js';
+import { readBreakGlassConfig, socketPath } from '../../config/break-glass-config.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { SessionStore } from '../auth/session.store.js';
 import { BreakGlassAppModule } from './break-glass-app.module.js';
@@ -45,6 +45,14 @@ export class BreakGlassService implements OnApplicationBootstrap, OnModuleDestro
 
   async onApplicationBootstrap(): Promise<void> {
     const config = readBreakGlassConfig();
+    if (config.state !== 'on') {
+      // A socket left by an earlier window (crash, OOM) must not survive a restart in off mode.
+      try {
+        removeStaleSocket(socketPath());
+      } catch (error) {
+        this.logger.warn(`stale socket not removed: ${(error as Error).message}`);
+      }
+    }
     if (config.state === 'off') return;
     const who = `break-glass:${config.operator}`;
     if (config.state === 'rejected') {

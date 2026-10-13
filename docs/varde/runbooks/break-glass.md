@@ -24,6 +24,8 @@ echo "VARDE_BREAK_GLASS_UNTIL=$(date -u -d '+30 min' +%Y-%m-%dT%H:%M:%SZ)" >> /e
 echo "VARDE_BREAK_GLASS_OPERATOR=<кто включил>" >> /etc/varde/app.env
 docker compose -f /opt/varde/compose.yml up -d
 stat -c %a /var/lib/varde/run/break-glass.sock      # → 660
+stat -c '%a %U:%G' /var/lib/varde/run              # → 2770 <uid 1000>:docker
+getent passwd 1000; getent group docker            # uid 1000 и члены docker — держатели доступа к socket
 docker logs varde-app 2>&1 | grep 'break-glass' | tail -2   # listening on /run/varde/break-glass.sock until …
 ```
 
@@ -50,10 +52,10 @@ curl -s -b /tmp/bg.cookies http://localhost:3001/auth/me                        
 ```bash
 sed -i '/^VARDE_BREAK_GLASS_\(UNTIL\|PASSWORD_HASH\|OPERATOR\)=/d' /etc/varde/app.env
 docker compose -f /opt/varde/compose.yml up -d
-test -e /var/lib/varde/run/break-glass.sock && echo 'socket остался' || echo 'socket закрыт'
+test -e /var/lib/varde/run/break-glass.sock && echo 'socket остался' || echo 'socket закрыт'   # → socket закрыт
 ```
 
-Без перезапуска окно закрывается само в `UNTIL`, но переменные всё равно удалить. Пароль одноразовый: при следующем включении CLI выпускает новый.
+Приложение при старте в выключенном режиме удаляет оставшийся socket (после падения или OOM), поэтому ожидается `socket закрыт`; `socket остался` — сбой, смотреть `docker logs varde-app | grep break-glass`. Без перезапуска окно закрывается само в `UNTIL`, но переменные всё равно удалить. Пароль одноразовый: при следующем включении CLI выпускает новый.
 
 ## Что смотреть в AuditLog
 
