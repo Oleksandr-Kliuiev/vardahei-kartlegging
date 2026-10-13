@@ -19,7 +19,8 @@
     "lint:privacy:selfcheck": "node tools/eslint-rules/selfcheck.mjs",
     "invariants:0a": "bash tools/invariants/run-0a.sh",
     "invariants:0b": "bash tools/invariants/run-0b.sh",
-    "invariants:0c": "bash tools/invariants/run-0c.sh"
+    "invariants:0c": "bash tools/invariants/run-0c.sh",
+    "parity:fixtures": "node tools/parity/generate.mjs"
   },
   "devDependencies": {
     "@types/node": "22.20.5",
