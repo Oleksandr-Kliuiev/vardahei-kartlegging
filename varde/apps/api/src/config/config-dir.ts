@@ -10,21 +10,7 @@ export function configDir(env: NodeJS.ProcessEnv = process.env): string {
   return dir === undefined || dir === '' ? DEFAULT_CONFIG_DIR : dir;
 }
 
-export interface DbBudget {
-  role_connection_limit: number;
-  prisma_pool: number;
-  pgboss_pool: number;
-  reserve: number;
-}
-
-export function readDbBudget(env: NodeJS.ProcessEnv = process.env): DbBudget {
-  const raw = JSON.parse(readFileSync(join(configDir(env), 'db-budget.json'), 'utf8')) as unknown;
-  const budget = raw as Partial<DbBudget>;
-  for (const key of ['role_connection_limit', 'prisma_pool', 'pgboss_pool', 'reserve'] as const) {
-    const value = budget[key];
-    if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
-      throw new Error(`db-budget.json: ${key} must be a non-negative integer`);
-    }
-  }
-  return budget as DbBudget;
+/** Parsed JSON file from the config directory. */
+export function readConfigJson(name: string, env: NodeJS.ProcessEnv = process.env): unknown {
+  return JSON.parse(readFileSync(join(configDir(env), name), 'utf8')) as unknown;
 }

@@ -5,4 +5,5 @@ export const INTEGRATION_FILES = [
   'test/seed.test.ts',
   'test/prisma-lazy.test.ts',
   'test/db-roles.test.ts',
+  'test/jobs.test.ts',
 ];

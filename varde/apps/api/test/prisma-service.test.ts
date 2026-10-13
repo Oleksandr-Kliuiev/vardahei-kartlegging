@@ -2,7 +2,8 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { configDir, readDbBudget } from '../src/config/config-dir.js';
+import { configDir } from '../src/config/config-dir.js';
+import { readDbBudget } from '../src/config/db-budget.js';
 import { withConnectionLimit } from '../src/prisma/prisma.service.js';
 
 describe('withConnectionLimit', () => {

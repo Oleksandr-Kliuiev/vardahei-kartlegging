@@ -6,7 +6,7 @@ import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import pg from 'pg';
-import { readDbBudget } from '../../src/config/config-dir.js';
+import { readDbBudget } from '../../src/config/db-budget.js';
 import { API_DIR, databaseUrl, withDatabase } from './prisma-cli.js';
 
 export const PG_IMAGE = 'postgres:17.6-bookworm';

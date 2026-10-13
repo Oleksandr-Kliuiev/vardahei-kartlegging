@@ -1,7 +1,7 @@
 // Task 0.5: Varde roles, isolation of the database, read-only backup, protected audit journal.
 import { randomBytes } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { readDbBudget } from '../src/config/config-dir.js';
+import { readDbBudget } from '../src/config/db-budget.js';
 import {
   createVardeDb,
   dropVardeDb,

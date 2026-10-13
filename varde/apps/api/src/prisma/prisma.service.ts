@@ -1,6 +1,6 @@
 import { Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { readDbBudget } from '../config/config-dir.js';
+import { readDbBudget } from '../config/db-budget.js';
 
 /**
  * Adds `connection_limit` from varde/config/db-budget.json (`prisma_pool`) to DATABASE_URL:
