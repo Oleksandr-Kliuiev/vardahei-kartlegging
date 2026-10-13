@@ -73,6 +73,16 @@ function rng(seed) {
   };
 }
 
+/** Fisher–Yates with the seeded rng (Array#sort with a random comparator depends on the engine). */
+export function shuffle(xs, r) {
+  const out = [...xs];
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(r() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 function uuid(r) {
   const hex = Array.from({ length: 32 }, () => Math.floor(r() * 16).toString(16)).join('');
   const variant = '89ab'[Math.floor(r() * 4)];
@@ -107,7 +117,7 @@ export function respond(
     if (q.type === 'single' && options.length) s[q.id] = pick(options).id;
     else if (q.type === 'multi' && options.length) {
       const n = 1 + Math.floor(r() * Math.min(q.maks ?? 3, options.length, 3));
-      const chosen = [...options].sort(() => r() - 0.5).slice(0, n);
+      const chosen = shuffle(options, r).slice(0, n);
       const alone = chosen.find((o) => o.aleine);
       s[q.id] = alone ? [alone.id] : chosen.map((o) => o.id);
     } else if (q.type === 'scale') {
@@ -159,7 +169,7 @@ export function generateFixtures() {
   const r = rng(SEED);
   const bank = currentBank();
   const old = oldBank();
-  const pool = [...INITIALS].sort(() => r() - 0.5);
+  const pool = shuffle(INITIALS, r);
   const take = () => pool.pop();
   const regular = [];
   for (const sid of ['tryggleik', 'ki']) {

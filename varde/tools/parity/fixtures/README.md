@@ -4,7 +4,7 @@
 
 | Файл | Что |
 | --- | --- |
-| `svar.synthetic.jsonl` | 150 строк формата kartlegging `svar.jsonl`; 6 клиентов; tryggleik 2026-10-12 и 2026-10-13, KI 2026-10-13 с K0, KI 2026-10-12 без K0; свободный текст у 21 строк |
+| `svar.synthetic.jsonl` | 150 строк формата kartlegging `svar.jsonl`; 6 клиентов; tryggleik 2026-10-12 и 2026-10-13, KI 2026-10-13 с K0, KI 2026-10-12 без K0; свободный текст у 23 строк |
 | `runde1.synthetic.js` | 40 записей раунда 1 в формате `tools/runde1_fra_excel.py` (`window.RUNDE1 = {namn, dato, svar: [{k, init, svar}]}`), 5 клиентов: daco 10, gasta 9, kviknes 8, maskinsenteret 7, sfhs 6; F2–F19, F15 массивом; 10 пар `(k, init)` совпадают с tryggleik раунда 2 (по 2 на клиента) |
 | `tilgang.json` | код ссылки на клиента, 10 символов, как `lagKode()` |
 | `kundar.json` | `tilsette`, `open`, `frist` (у sfhs `tilsette = null`) |
@@ -22,7 +22,7 @@
 
 ## Строки KI 2026-10-12 (анонимный раунд)
 
-7, 15, 18, 22, 29
+9, 10, 13, 42, 47
 
 ## Прогоны golden 1.2c
 
@@ -34,11 +34,11 @@
 ```json
 {
   "lines": 150,
-  "leiardel": 20,
+  "leiardel": 25,
   "rounds": {
     "tryggleik": {
       "common": 78,
-      "leader": 9,
+      "leader": 11,
       "clients": {
         "daco": 18,
         "gasta": 15,
@@ -60,7 +60,7 @@
     },
     "ki": {
       "common": 61,
-      "leader": 6,
+      "leader": 9,
       "clients": {
         "daco": 14,
         "gasta": 12,
@@ -87,4 +87,4 @@
 }
 ```
 
-Сверка: строк = common `accepted` (сумма по раундам) + `rejected.common`; строк с `leiardel = true` (20) = leader `accepted` + `rejected.leader`. Раунд 1 (1.9): `accepted 40`, leader 0.
+Сверка: строк = common `accepted` (сумма по раундам) + `rejected.common`; строк с `leiardel = true` (25) = leader `accepted` + `rejected.leader`. Раунд 1 (1.9): `accepted 40`, leader 0.
