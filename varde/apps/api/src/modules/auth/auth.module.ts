@@ -33,7 +33,7 @@ export class AuthModule {
         SessionService,
         AdminSessionGuard,
       ],
-      exports: [SessionService, SessionStore, AdminSessionGuard, LISTENER],
+      exports: [SessionService, SessionStore, AdminSessionGuard, LISTENER, ENTRA_SETTINGS],
     };
   }
 }
