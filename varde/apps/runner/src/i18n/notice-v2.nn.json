@@ -1,0 +1,14 @@
+{
+  "notice.identified.intro": "I dette spørjeskjemaet skriv du inn initialane dine. Då kan vi i Vardahei IT sjå korleis svara endrar seg frå runde til runde.",
+  "notice.identified.who_sees": "Svara per person ser berre Vardahei IT, det vil seie tre tilsette hos oss.",
+  "notice.identified.client_gets": "Bedrifta di får eit samla bilete utan initialar.",
+  "notice.identified.retention": "Vi tek vare på svara så lenge Vardahei IT driv kartlegginga. Det finst inga fast slettedato; svara blir sletta på førespurnad.",
+  "notice.identified.roles": "Bedrifta di er behandlingsansvarleg for svara, og Vardahei IT er databehandlar.",
+  "notice.identified.client_rights": "Som behandlingsansvarleg kan bedrifta krevje å få utlevert alle svara, også svara per person med initialar, eller krevje at alle svara blir sletta.",
+  "notice.anonymous.intro": "Du skriv ikkje inn namn eller initialar. Vardahei IT ser svara, men ikkje kven som svarte. Det du skriv i fritekst, kan likevel seie noko om kven du er.",
+  "notice.anonymous.client_gets": "Bedrifta di får eit samla bilete. Vi tek vare på svara utan fast slettedato og slettar dei på førespurnad. Bedrifta kan krevje å få utlevert svara eller at dei blir sletta.",
+  "notice.common.ai_processing": "Vi kan bruke ein KI-modell når vi arbeider med resultata. Modellen får berre samla tal, ikkje svar per person.",
+  "notice.common.exact_count": "Vi viser kor mange frå bedrifta som har svart. Talet seier at nokon har vore med, ikkje kva dei har svart.",
+  "notice.common.leader_not_anonymous": "Svara frå leiaren er ikkje anonyme. Vardahei IT brukar dei når vi set oss ned saman med leiinga, og dei er ikkje med i det samla biletet bedrifta får.",
+  "notice.common.small_groups": "Grupper med færre enn tre personar blir ikkje viste kvar for seg i det samla biletet."
+}

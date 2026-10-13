@@ -150,6 +150,9 @@ importers:
         specifier: 10.29.8
         version: 10.29.8
     devDependencies:
+      '@varde/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
       eslint:
         specifier: 9.39.5
         version: 9.39.5(jiti@2.7.0)

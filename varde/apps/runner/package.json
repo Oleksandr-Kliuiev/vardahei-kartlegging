@@ -12,6 +12,7 @@
     "preact": "10.29.8"
   },
   "devDependencies": {
+    "@varde/schema": "workspace:*",
     "eslint": "9.39.5",
     "jsdom": "26.1.0",
     "typescript": "5.9.3",
