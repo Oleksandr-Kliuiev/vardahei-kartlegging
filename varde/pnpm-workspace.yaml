@@ -1,0 +1,14 @@
+packages:
+  - apps/*
+  - packages/*
+  - tools/*
+
+# pnpm 11 reads settings only from this file (not from package.json "pnpm" field, not from .npmrc).
+# Required by `pnpm deploy --filter @varde/api` in infra/Dockerfile (0.2).
+injectWorkspacePackages: true
+
+# pnpm >= 10 does not run dependency build scripts unless allowed (0.4).
+allowBuilds:
+  prisma: true
+  '@prisma/engines': true
+  '@prisma/client': true
