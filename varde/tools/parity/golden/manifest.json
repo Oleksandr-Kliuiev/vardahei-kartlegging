@@ -1,0 +1,32 @@
+{
+  "kartlegging_tree": "153ba0c55a8633f99072fd13d36f5376b0d125e1",
+  "fixtures": {
+    "svar.synthetic.jsonl": "5bac2ed7564a12a3a94925457e1d1d94e42a441ecd9eda0acaa20d7bc31949ce",
+    "runde1.synthetic.js": "8a8337c85db7b823dd89de917ad6e3304ab9e3a72923e300cf057748cf058653",
+    "tilgang.json": "50caafa2103fc33c9a7b1ea46debb5a14eee60d531502e616e9c37008c05547e",
+    "kundar.json": "713e58cf49791cdee75d41196dc1e6e2f344af4842eed94012feb9e3d8db7b40",
+    "README.md": "33bc51fccc0653f635c3a028987257891cd564d138ab8f9c0e1eed37e296ec8b"
+  },
+  "files": {
+    "analyse.csv": "f33d54dc91e7c97cdea71a41bba821494cfdba7ff3de9a5f5b32e6b19f2b79a7",
+    "ki-2026-10-12/ki.alle.json": "5937b351a6a8a2805f20388125f96391fc442b6559027b987b6300e82fcd8b96",
+    "ki-2026-10-12/ki.daco.json": "5b60cbfa23c98da7a5d29f93583051c4af5a246e3133d2736a239d10ffe738b2",
+    "ki-2026-10-12/ki.gasta.json": "5716b29cb6d7e4e1d0394878d93016a85259587cf72177f25c211c6cd7128256",
+    "ki-2026-10-12/ki.kviknes.json": "6b9b020e2109e87aa6ca7ab713f802f1f7de4910c4a411051708c5aaf480a5ef",
+    "ki-2026-10-12/ki.sfhs.json": "265bd069ee3dfdcadf76d1ec67117c37e6a222497afa05c2ecfaf2efe359cb42",
+    "ki.alle.json": "e3bee71929c320814dd9156b38b9032a115f9210557c5b8961afa8bedfdcdd3e",
+    "ki.daco.json": "b76539a37c67f76a6005cd405913c3088cd362fa911e45d8c5667084fa74f7c8",
+    "ki.gasta.json": "89f4de48ca5eb981ff4d21372fcca7feaf92cd85e22df2198fd603028e8f333c",
+    "ki.kviknes.json": "a6d210ffa842dfa311241ff58b076c4676209ee8fdf7d127630c503ee412e640",
+    "ki.maskinsenteret.json": "18e6e37032b93bbaa8af866b4cb72aeb0e75fa5addfad2cec51376b4150cf7f9",
+    "ki.sfhs.json": "5b8f89306bc501176f3973c2cf9b27370ce3d37f8cd699ed8abc3a2646f2caf2",
+    "ki.tharaso.json": "5029a0ce62e288f002983743c12941c02fe0af3907122463375742b8ac58b4dc",
+    "tryggleik.alle.json": "e28e009292b2a39c49080903ffd0802a4a9397e7565e24799ea569391bf9d303",
+    "tryggleik.daco.json": "017fc6c9265be329476e2dba2e97a2afdf6fcb642d214ea78bb48761c2e032dc",
+    "tryggleik.gasta.json": "295599d5a07d105a3921ff0e7b2a17469c0e5d6e62f0f62eefa3bf79afeb35d9",
+    "tryggleik.kviknes.json": "c3c7f8239ce4253881303758a38b082ca88d3dd408d23e0a01aaa1316e647ee5",
+    "tryggleik.maskinsenteret.json": "cffc25870efed09565a697d1f7a39d9e466678e9c3b6d34c97ff112512ec5fde",
+    "tryggleik.sfhs.json": "23173e6092b2b4a68089cffdd13d739a5b0858d22638750abac5c3671aa7ffca",
+    "tryggleik.tharaso.json": "b8c9fae4a4cfbb261adc4c7fcbd971b31b57a97a2d40207aceaecfde2995fc23"
+  }
+}

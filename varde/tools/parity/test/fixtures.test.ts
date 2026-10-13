@@ -168,7 +168,9 @@ describe('synthetic fixtures (1.2b)', () => {
     const window: { RUNDE1?: { svar: { init: string }[] } } = {};
     vm.runInNewContext(read('runde1.synthetic.js'), { window });
     const used = [
-      ...rows.map((r) => (r.svar.F1 ?? r.svar.K0) as string | undefined).filter((x) => x !== undefined),
+      ...rows
+        .map((r) => (r.svar.F1 ?? r.svar.K0) as string | undefined)
+        .filter((x) => x !== undefined),
       ...window.RUNDE1!.svar.map((x) => x.init),
     ];
     for (const init of used) expect(list.has(init), init).toBe(true);
