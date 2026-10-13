@@ -107,6 +107,10 @@ jobs:
           docker stop "$cid"
       - name: Config files are in the image
         run: docker run --rm varde-api:ci test -f /out/config/db-budget.json
+      - name: '@varde/schema is built to dist in the image (1.4b)'
+        run: >-
+          test "$(docker run --rm varde-api:ci node -e
+          "import('@varde/schema/metrics/populations').then(()=>console.log('schema ok'))")" = 'schema ok'
       - name: migrate deploy from the image
         run: >-
           docker run --rm --network host
@@ -158,7 +162,7 @@ jobs:
           cache-dependency-path: varde/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @varde/api db:migrate
-      - run: pnpm --filter @varde/api build
+      - run: pnpm --filter "@varde/api..." build
       - run: pnpm --filter @varde/admin exec playwright install --with-deps chromium
       - run: pnpm --filter @varde/admin e2e
       - name: Golden of the old dashboard on synthetic fixtures (1.2c)

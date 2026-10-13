@@ -62,6 +62,7 @@ model TemplateVersion {
   id                     String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   template_id            String         @db.Uuid
   template               SurveyTemplate @relation(fields: [template_id], references: [id], onDelete: Restrict)
+  rounds                 Round[]
   label                  String
   version_no             Int
   status                 String         @default("draft")
@@ -80,4 +81,99 @@ model TemplateVersion {
   @@unique([template_id, version_no])
   @@unique([template_id, label])
   @@map("template_version")
+}
+
+/// Client (1.4b, ARCHITECTURE §4): mirror of Atlas; in stage 1 filled from kundar.json (1.7).
+model Client {
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug              String        @unique
+  name              String
+  industry          String?
+  employee_count    Int?
+  default_lang      String        @default("nn")
+  atlas_external_id String?
+  round_clients     RoundClient[]
+
+  @@map("client")
+}
+
+/// Round (1.4b, ADR-022, ADR-025). `template_version_id` and `identification` are fixed when the
+/// round leaves `draft` (CHECK round_mode_fixed, trigger round_freeze).
+/// `type` ∈ {regular, post_seminar, live, external_import}; `status` ∈ {draft, open, closed, archived}.
+model Round {
+  id                  String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String
+  type                String
+  template_version_id String?          @db.Uuid
+  template_version    TemplateVersion? @relation(fields: [template_version_id], references: [id], onDelete: Restrict)
+  identification      String?
+  status              String           @default("draft")
+  created_at          DateTime         @default(now()) @db.Timestamptz(6)
+  opened_at           DateTime?        @db.Timestamptz(6)
+  closed_at           DateTime?        @db.Timestamptz(6)
+  round_clients       RoundClient[]
+
+  @@map("round")
+}
+
+/// One client in one round (1.4b, ADR-022, ADR-009): code, snapshot of the population, deadline,
+/// lifecycle `draft → open → closed → archived`. `legacy_code_hash` = sha256 of the kartlegging code.
+model RoundClient {
+  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  round_id            String          @db.Uuid
+  round               Round           @relation(fields: [round_id], references: [id], onDelete: Restrict)
+  client_id           String          @db.Uuid
+  client              Client          @relation(fields: [client_id], references: [id], onDelete: Restrict)
+  code                String?
+  code_hash           String?         @unique
+  code_expires_at     DateTime?       @db.Timestamptz(6)
+  code_revoked_at     DateTime?       @db.Timestamptz(6)
+  legacy_code_hash    String?
+  population_snapshot Int?
+  deadline            DateTime?       @db.Date
+  status              String          @default("draft")
+  responses           Response[]
+  progress_events     ProgressEvent[]
+
+  @@unique([round_id, client_id])
+  @@map("round_client")
+}
+
+/// One part (common | leader) of one submission (1.4b, ADR-006, ADR-024, ADR-025). No names, IP
+/// or exact time; `respondent_key` only in rounds with identification = initials (trigger
+/// response_respondent_key_mode); the only FK is round_client. (source_id, part) is unique for
+/// imported rows (NULLs are distinct in Postgres, so live submissions are not constrained).
+model Response {
+  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  round_client_id String      @db.Uuid
+  round_client    RoundClient @relation(fields: [round_client_id], references: [id], onDelete: Restrict)
+  part            String
+  role            String?
+  lang            String
+  respondent_key  String?
+  answers         Json        @db.JsonB
+  free            Json        @default("{}") @db.JsonB
+  submission_id   String      @unique @db.Uuid
+  content_hash    String
+  source_id       String?
+  duration_s      Int?
+  submitted_day   DateTime    @db.Date
+
+  @@unique([source_id, part])
+  @@index([round_client_id, part])
+  @@map("response")
+}
+
+/// Anonymous progress of a runner session (1.4b; TTL 24 h, ADR-021): no link to Response.
+model ProgressEvent {
+  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  round_client_id String      @db.Uuid
+  round_client    RoundClient @relation(fields: [round_client_id], references: [id], onDelete: Restrict)
+  session_id      String
+  question_no     Int
+  finished        Boolean     @default(false)
+  at              DateTime    @default(now()) @db.Timestamptz(6)
+
+  @@index([round_client_id, at])
+  @@map("progress_event")
 }

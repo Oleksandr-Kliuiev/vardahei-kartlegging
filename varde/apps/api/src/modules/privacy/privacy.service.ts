@@ -1,10 +1,18 @@
 // The only release point for responses and aggregates (0.15, ADR-021): every other module
 // imports only this file (lint 0.2b). Types and errors of the module are re-exported here.
-import { Inject, Injectable, type Provider } from '@nestjs/common';
+import {
+  type DynamicModule,
+  Global,
+  Inject,
+  Injectable,
+  Module,
+  type Provider,
+} from '@nestjs/common';
 import type { Population } from '@varde/schema/metrics/populations';
 import { type PrivacyConfig, readPrivacyConfig } from '../../config/privacy-config.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { aggregate, assertAggregateQuery } from './aggregate.js';
+import { PrismaResponseSource } from './prisma-source.js';
 import {
   type ComputedCell,
   release,
@@ -28,6 +36,7 @@ export { RESPONSE_SOURCE } from './source.js';
 export type { ResponseSource, SourceQuery } from './source.js';
 export type { RowsDb } from './rows.js';
 export { ReleaseRejected } from './release.js';
+export { PrismaResponseSource } from './prisma-source.js';
 export type {
   ComputedCell,
   ReleaseActor,
@@ -110,8 +119,8 @@ export class PrivacyService {
 }
 
 /**
- * Providers of the module for a response source. Not mounted in AppModule in stage 0: the Prisma
- * source arrives with the Response table (1.4b); tests mount it with an in-memory source.
+ * Providers of the module for a response source; tests mount them with an in-memory source,
+ * the application with the Prisma source (`PrivacyModule.forApp()`, 1.4b).
  */
 export function privacyProviders(source: ResponseSource): Provider[] {
   return [
@@ -119,4 +128,30 @@ export function privacyProviders(source: ResponseSource): Provider[] {
     { provide: PRIVACY_CONFIG, useFactory: () => readPrivacyConfig() },
     PrivacyService,
   ];
+}
+
+/** Providers of the application: the Prisma response source (1.4b). */
+export function prismaPrivacyProviders(): Provider[] {
+  return [
+    {
+      provide: RESPONSE_SOURCE,
+      useFactory: (p: PrismaService) => new PrismaResponseSource(p),
+      inject: [PrismaService],
+    },
+    { provide: PRIVACY_CONFIG, useFactory: () => readPrivacyConfig() },
+    PrivacyService,
+  ];
+}
+
+/** The privacy module of the application (global: every domain module reads through it). */
+@Global()
+@Module({})
+export class PrivacyModule {
+  static forApp(): DynamicModule {
+    return {
+      module: PrivacyModule,
+      providers: prismaPrivacyProviders(),
+      exports: [PrivacyService],
+    };
+  }
 }

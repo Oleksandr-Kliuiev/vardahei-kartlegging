@@ -3,17 +3,60 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "exports": {
-    "./version": "./src/version.ts",
-    "./i18n/nn-stoplist": "./src/i18n/nn-stoplist.ts",
-    "./metrics/populations": "./src/metrics/populations.ts",
-    "./metrics/metric-definition": "./src/metrics/metric-definition.ts",
-    "./metrics/aggregate-snapshot": "./src/metrics/aggregate-snapshot.ts",
-    "./template/texts": "./src/template/texts.ts",
-    "./template/expression": "./src/template/expression.ts",
-    "./template/question": "./src/template/question.ts",
-    "./template/template": "./src/template/template.ts",
-    "./template/validate": "./src/template/validate.ts"
+    "./version": {
+      "types": "./src/version.ts",
+      "source": "./src/version.ts",
+      "default": "./dist/version.js"
+    },
+    "./i18n/nn-stoplist": {
+      "types": "./src/i18n/nn-stoplist.ts",
+      "source": "./src/i18n/nn-stoplist.ts",
+      "default": "./dist/i18n/nn-stoplist.js"
+    },
+    "./metrics/populations": {
+      "types": "./src/metrics/populations.ts",
+      "source": "./src/metrics/populations.ts",
+      "default": "./dist/metrics/populations.js"
+    },
+    "./metrics/metric-definition": {
+      "types": "./src/metrics/metric-definition.ts",
+      "source": "./src/metrics/metric-definition.ts",
+      "default": "./dist/metrics/metric-definition.js"
+    },
+    "./metrics/aggregate-snapshot": {
+      "types": "./src/metrics/aggregate-snapshot.ts",
+      "source": "./src/metrics/aggregate-snapshot.ts",
+      "default": "./dist/metrics/aggregate-snapshot.js"
+    },
+    "./template/texts": {
+      "types": "./src/template/texts.ts",
+      "source": "./src/template/texts.ts",
+      "default": "./dist/template/texts.js"
+    },
+    "./template/expression": {
+      "types": "./src/template/expression.ts",
+      "source": "./src/template/expression.ts",
+      "default": "./dist/template/expression.js"
+    },
+    "./template/question": {
+      "types": "./src/template/question.ts",
+      "source": "./src/template/question.ts",
+      "default": "./dist/template/question.js"
+    },
+    "./template/template": {
+      "types": "./src/template/template.ts",
+      "source": "./src/template/template.ts",
+      "default": "./dist/template/template.js"
+    },
+    "./template/validate": {
+      "types": "./src/template/validate.ts",
+      "source": "./src/template/validate.ts",
+      "default": "./dist/template/validate.js"
+    }
   },
   "scripts": {
     "lint": "eslint .",
