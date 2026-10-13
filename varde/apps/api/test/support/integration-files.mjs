@@ -4,4 +4,5 @@ export const INTEGRATION_FILES = [
   'test/audit-log.test.ts',
   'test/seed.test.ts',
   'test/prisma-lazy.test.ts',
+  'test/db-roles.test.ts',
 ];
