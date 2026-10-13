@@ -19,6 +19,7 @@ const CONFIG = { k: 3, exact_counts: ['responses_total'] };
 const AUTO = { type: 'auto', who: 'system' } as const;
 const F12 = 'tryggleik.f12_ja';
 const F5 = 'tryggleik.f5_ja';
+const B13 = 'tryggleik.b13';
 let r: TestRound;
 let slug: string;
 
@@ -154,7 +155,7 @@ describe('Prisma snapshot store and atomic release (1.4c)', () => {
     const t = await fresh('set');
     slug = t.slug;
     await service().release(t.round, 'round_client', [cell(5)], 'db', AUTO, {
-      metric_set: [`${F12}@1`, 'tryggleik.b13@1'],
+      metric_set: [`${F12}@1`, `${B13}@1`],
     });
     await expect(
       service().release(
@@ -170,7 +171,7 @@ describe('Prisma snapshot store and atomic release (1.4c)', () => {
       'leaders_all',
       [
         {
-          metric_key: 'tryggleik.b13',
+          metric_key: B13,
           metric_version: 1,
           group: 'all',
           n: 4,
@@ -184,7 +185,7 @@ describe('Prisma snapshot store and atomic release (1.4c)', () => {
     );
     expect(leaders.released).toHaveLength(1);
     const set = await prisma.roundMetricSet.findUniqueOrThrow({ where: { round_id: t.round } });
-    expect(set.metric_keys).toEqual([`${F12}@1`, 'tryggleik.b13@1']);
+    expect(set.metric_keys).toEqual([`${F12}@1`, `${B13}@1`]);
     slug = `${MARK}-kunde-a`;
   });
 
