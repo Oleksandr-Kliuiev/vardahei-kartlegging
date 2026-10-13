@@ -16,9 +16,10 @@ const need = { "/run/varde": "/var/lib/varde/run", "/var/lib/varde/ledger-out": 
 for (const [target, source] of Object.entries(need)) {
   const b = binds.find((v) => v.target === target);
   if (!b || b.source !== source) fail("bind " + target);
-  if (!b.bind || b.bind.create_host_path !== false) fail("create_host_path on " + target);
+  // Long syntax: create_host_path defaults to false; some compose versions omit false in JSON.
+  if (b.bind && b.bind.create_host_path === true) fail("create_host_path on " + target);
 }
-for (const b of binds) if (!b.bind || b.bind.create_host_path !== false) fail("create_host_path on " + b.target);
+for (const b of binds) if (b.bind && b.bind.create_host_path === true) fail("create_host_path on " + b.target);
 for (const t of ["/etc/varde/recipients.txt", "/etc/varde/entra"]) if (!binds.find((v) => v.target === t).read_only) fail(t + " must be ro");
 if (JSON.stringify(Object.keys(app.networks).sort()) !== JSON.stringify(["atlas_edge", "atlas_internal"])) fail("app networks");
 for (const n of ["atlas_edge", "atlas_internal"]) if (!c.networks[n].external) fail(n + " must be external");
@@ -26,4 +27,7 @@ if (app.logging.driver !== "json-file" || app.logging.options["max-size"] !== "1
 if (backup.entrypoint != null) fail("backup must not set entrypoint");
 if (JSON.stringify(backup.profiles) !== JSON.stringify(["backup"])) fail("backup profile");
 '
+# The source states it explicitly for every app bind (a missing directory is a loud error).
+[[ $(grep -c 'create_host_path: false' "$infra/compose.yml") -ge 4 ]] || { echo "compose test FAILED: create_host_path: false not explicit" >&2; exit 1; }
+if grep -Eq '^\s+- /[^:]+:/' "$infra/compose.yml"; then echo "compose test FAILED: short bind syntax" >&2; exit 1; fi
 echo "compose ok"
