@@ -1,0 +1,226 @@
+[
+  {
+    "key": "tryggleik.mean_score",
+    "version": 1,
+    "kind": "mean_score",
+    "part": "common",
+    "questions": [
+      { "key": "F3", "part": "common" },
+      { "key": "F4", "part": "common" },
+      { "key": "F5", "part": "common" },
+      { "key": "F6", "part": "common" },
+      { "key": "F7", "part": "common" },
+      { "key": "F8", "part": "common" },
+      { "key": "F9", "part": "common" },
+      { "key": "F10", "part": "common" },
+      { "key": "F11", "part": "common" },
+      { "key": "F12", "part": "common" },
+      { "key": "F13", "part": "common" },
+      { "key": "F14", "part": "common" },
+      { "key": "F16", "part": "common" },
+      { "key": "F17", "part": "common" },
+      { "key": "F18", "part": "common" },
+      { "key": "F19", "part": "common" }
+    ],
+    "options_mapping": {
+      "F3": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F4": { "ja": 3, "nei": 0, "usikker": 1 },
+      "F5": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F6": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F7": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F8": { "ja": 3, "delvis": 2, "nei": 0, "usikker": 1 },
+      "F9": { "ja": 0, "nei": 2, "usikker": 1 },
+      "F10": { "ja": 0, "oftast": 1, "sjeldan": 2, "nei": 2 },
+      "F11": { "ja": 0, "nei": 2, "usikker": 1 },
+      "F12": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F13": { "ja": 3, "nei": 0, "usikker": 1 },
+      "F14": { "ja": 0, "nei": 2, "usikker": 1 },
+      "F16": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F17": { "ja": 3, "avogtil": 2, "sjeldan": 1, "nei": 0, "usikker": 1 },
+      "F18": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F19": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 }
+    },
+    "scale": "risk-0-3",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered_scored",
+    "populations": ["round_client", "all_clients"],
+    "comparability": [
+      {
+        "to": "tryggleik.runde1_f_anchors@1",
+        "degree": "comparable",
+        "note": "Same spørsmål og svaralternativ som i runde 1 (Forms). Sjå tryggleik.runde1_f_anchors@1."
+      }
+    ]
+  },
+  {
+    "key": "tryggleik.critical_share",
+    "version": 1,
+    "kind": "critical_share",
+    "part": "common",
+    "questions": [
+      { "key": "F3", "part": "common" },
+      { "key": "F4", "part": "common" },
+      { "key": "F5", "part": "common" },
+      { "key": "F6", "part": "common" },
+      { "key": "F7", "part": "common" },
+      { "key": "F8", "part": "common" },
+      { "key": "F9", "part": "common" },
+      { "key": "F10", "part": "common" },
+      { "key": "F11", "part": "common" },
+      { "key": "F12", "part": "common" },
+      { "key": "F13", "part": "common" },
+      { "key": "F14", "part": "common" },
+      { "key": "F16", "part": "common" },
+      { "key": "F17", "part": "common" },
+      { "key": "F18", "part": "common" },
+      { "key": "F19", "part": "common" }
+    ],
+    "options_mapping": {
+      "F3": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F4": { "ja": 3, "nei": 0, "usikker": 1 },
+      "F5": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F6": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F7": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F8": { "ja": 3, "delvis": 2, "nei": 0, "usikker": 1 },
+      "F9": { "ja": 0, "nei": 2, "usikker": 1 },
+      "F10": { "ja": 0, "oftast": 1, "sjeldan": 2, "nei": 2 },
+      "F11": { "ja": 0, "nei": 2, "usikker": 1 },
+      "F12": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F13": { "ja": 3, "nei": 0, "usikker": 1 },
+      "F14": { "ja": 0, "nei": 2, "usikker": 1 },
+      "F16": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F17": { "ja": 3, "avogtil": 2, "sjeldan": 1, "nei": 0, "usikker": 1 },
+      "F18": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F19": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 }
+    },
+    "scale": "risk-0-3",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered_scored; numerator: score >= 2",
+    "populations": ["round_client", "all_clients"],
+    "comparability": [
+      {
+        "to": "tryggleik.runde1_f_anchors@1",
+        "degree": "comparable",
+        "note": "Same spørsmål og svaralternativ som i runde 1 (Forms). Sjå tryggleik.runde1_f_anchors@1."
+      }
+    ]
+  },
+  {
+    "key": "tryggleik.zone",
+    "version": 1,
+    "kind": "zone",
+    "part": "common",
+    "questions": [
+      { "key": "F3", "part": "common" },
+      { "key": "F4", "part": "common" },
+      { "key": "F5", "part": "common" },
+      { "key": "F6", "part": "common" },
+      { "key": "F7", "part": "common" },
+      { "key": "F8", "part": "common" },
+      { "key": "F9", "part": "common" },
+      { "key": "F10", "part": "common" },
+      { "key": "F11", "part": "common" },
+      { "key": "F12", "part": "common" },
+      { "key": "F13", "part": "common" },
+      { "key": "F14", "part": "common" },
+      { "key": "F16", "part": "common" },
+      { "key": "F17", "part": "common" },
+      { "key": "F18", "part": "common" },
+      { "key": "F19", "part": "common" }
+    ],
+    "options_mapping": {
+      "F3": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F4": { "ja": 3, "nei": 0, "usikker": 1 },
+      "F5": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F6": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F7": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F8": { "ja": 3, "delvis": 2, "nei": 0, "usikker": 1 },
+      "F9": { "ja": 0, "nei": 2, "usikker": 1 },
+      "F10": { "ja": 0, "oftast": 1, "sjeldan": 2, "nei": 2 },
+      "F11": { "ja": 0, "nei": 2, "usikker": 1 },
+      "F12": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F13": { "ja": 3, "nei": 0, "usikker": 1 },
+      "F14": { "ja": 0, "nei": 2, "usikker": 1 },
+      "F16": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F17": { "ja": 3, "avogtil": 2, "sjeldan": 1, "nei": 0, "usikker": 1 },
+      "F18": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F19": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 }
+    },
+    "scale": "risk-0-3",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered_scored",
+    "thresholds": {
+      "person": { "bounds": [1, 2, 3], "compare": ">=" },
+      "aggregate": { "bounds": [0.5, 1.5, 2.5], "compare": ">" },
+      "score_scale": "risk-0-3",
+      "levels": ["gron", "gul", "oransje", "raud"]
+    },
+    "populations": ["round_client", "all_clients"],
+    "comparability": [
+      {
+        "to": "tryggleik.runde1_f_anchors@1",
+        "degree": "comparable",
+        "note": "Same spørsmål og svaralternativ som i runde 1 (Forms). Sjå tryggleik.runde1_f_anchors@1."
+      }
+    ]
+  },
+  {
+    "key": "tryggleik.persons_per_zone",
+    "version": 1,
+    "kind": "persons_per_zone",
+    "part": "common",
+    "questions": [
+      { "key": "F3", "part": "common" },
+      { "key": "F4", "part": "common" },
+      { "key": "F5", "part": "common" },
+      { "key": "F6", "part": "common" },
+      { "key": "F7", "part": "common" },
+      { "key": "F8", "part": "common" },
+      { "key": "F9", "part": "common" },
+      { "key": "F10", "part": "common" },
+      { "key": "F11", "part": "common" },
+      { "key": "F12", "part": "common" },
+      { "key": "F13", "part": "common" },
+      { "key": "F14", "part": "common" },
+      { "key": "F16", "part": "common" },
+      { "key": "F17", "part": "common" },
+      { "key": "F18", "part": "common" },
+      { "key": "F19", "part": "common" }
+    ],
+    "options_mapping": {
+      "F3": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F4": { "ja": 3, "nei": 0, "usikker": 1 },
+      "F5": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F6": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F7": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F8": { "ja": 3, "delvis": 2, "nei": 0, "usikker": 1 },
+      "F9": { "ja": 0, "nei": 2, "usikker": 1 },
+      "F10": { "ja": 0, "oftast": 1, "sjeldan": 2, "nei": 2 },
+      "F11": { "ja": 0, "nei": 2, "usikker": 1 },
+      "F12": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F13": { "ja": 3, "nei": 0, "usikker": 1 },
+      "F14": { "ja": 0, "nei": 2, "usikker": 1 },
+      "F16": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F17": { "ja": 3, "avogtil": 2, "sjeldan": 1, "nei": 0, "usikker": 1 },
+      "F18": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 },
+      "F19": { "ja": 0, "delvis": 1, "nei": 2, "usikker": 1 }
+    },
+    "scale": "risk-0-3",
+    "recall_period": "as_worded",
+    "denominator_rule": "persons_with_scored_answers",
+    "thresholds": {
+      "person": { "bounds": [1, 2, 3], "compare": ">=" },
+      "aggregate": { "bounds": [0.5, 1.5, 2.5], "compare": ">" },
+      "score_scale": "risk-0-3",
+      "levels": ["gron", "gul", "oransje", "raud"]
+    },
+    "populations": ["round_client", "all_clients"],
+    "comparability": [
+      {
+        "to": "tryggleik.runde1_f_anchors@1",
+        "degree": "comparable",
+        "note": "Same spørsmål og svaralternativ som i runde 1 (Forms). Sjå tryggleik.runde1_f_anchors@1."
+      }
+    ]
+  }
+]

@@ -1,0 +1,34 @@
+[
+  {
+    "key": "ki.k7_x_k8",
+    "version": 1,
+    "kind": "cross",
+    "part": "common",
+    "questions": [
+      { "key": "K7", "part": "common" },
+      { "key": "K8", "part": "common" }
+    ],
+    "options_mapping": {
+      "K7": {
+        "aldri": "aldri",
+        "provd": "provd",
+        "avogtil": "avogtil",
+        "veke": "veke",
+        "dag": "dag"
+      },
+      "K8": {
+        "aldri": "aldri",
+        "provd": "provd",
+        "avogtil": "avogtil",
+        "veke": "veke",
+        "dag": "dag"
+      }
+    },
+    "scale": "frequency-5",
+    "recall_period": "current",
+    "denominator_rule": "answered_both",
+    "populations": ["round_client", "all_clients"],
+    "comparability": [],
+    "first_version": true
+  }
+]

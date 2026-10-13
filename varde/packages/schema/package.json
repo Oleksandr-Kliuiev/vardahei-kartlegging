@@ -5,7 +5,10 @@
   "type": "module",
   "exports": {
     "./version": "./src/version.ts",
-    "./i18n/nn-stoplist": "./src/i18n/nn-stoplist.ts"
+    "./i18n/nn-stoplist": "./src/i18n/nn-stoplist.ts",
+    "./metrics/populations": "./src/metrics/populations.ts",
+    "./metrics/metric-definition": "./src/metrics/metric-definition.ts",
+    "./metrics/aggregate-snapshot": "./src/metrics/aggregate-snapshot.ts"
   },
   "scripts": {
     "lint": "eslint .",

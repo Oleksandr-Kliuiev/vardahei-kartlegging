@@ -1,0 +1,18 @@
+[
+  {
+    "key": "tryggleik.leiar_b13.distribution",
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [{ "key": "B13", "part": "leader" }],
+    "options_mapping": {
+      "B13": { "skrive": "skrive", "ide": "ide", "nei": "nei", "vardahei": "vardahei" }
+    },
+    "scale": "categorical",
+    "recall_period": "current",
+    "denominator_rule": "answered",
+    "populations": ["leaders_all"],
+    "comparability": [],
+    "first_version": true
+  }
+]
