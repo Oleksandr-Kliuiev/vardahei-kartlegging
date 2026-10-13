@@ -17,7 +17,8 @@
     "budget": "node tools/context-budget/check.mjs",
     "budget:selfcheck": "node tools/context-budget/check.mjs --selfcheck",
     "lint:privacy:selfcheck": "node tools/eslint-rules/selfcheck.mjs",
-    "invariants:0a": "bash tools/invariants/run-0a.sh"
+    "invariants:0a": "bash tools/invariants/run-0a.sh",
+    "invariants:0b": "bash tools/invariants/run-0b.sh"
   },
   "devDependencies": {
     "@types/node": "22.20.5",

@@ -5,6 +5,7 @@
 ## Принципы как вопросы
 
 ### Продукт
+
 1. Всё, что сделала модель, — Proposal со статусом; публикация, рассылка и изменение живого раунда возможны только действием человека?
 2. Всё, что видит респондент или клиент, — на нюношке; английский перевод есть у клиентских опросов; букмол только по переключателю; нет букмола в нюношк-тексте?
 3. Вопросы без жаргона, ≤ 25 слов, без названий продуктов, «veit ikkje»/skip — нормальный ответ; `frozen`-якоря (F1–F22) не тронуты и не проверяются лимитом слов и стоп-списком?
@@ -12,6 +13,7 @@
 5. Изменение заменяет kartlegging (этап 1), а не строит рядом; ассистент и семинары не начаты до ворот G1? Визуальный стиль kartlegging сохранён?
 
 ### Приватность
+
 6. Всё, что уходит клиенту и во внешние каналы, идёт через `privacy` классом `aggregate` (n ≥ 3, дополнительное подавление, история выдач); класс `rows` — только админ-сессия под AuditLog?
 7. Response не ссылается на Contact, Registration, ProgressEvent; нет IP; время — с точностью до дня; `respondent_key` только в идентифицированных раундах и не лежит в `answers`?
 8. У каждого нового класса данных есть цель, срок или критерий и задача удаления; удаление по запросу идёт через `retention.forget` с `DeletionLedger`?
@@ -19,6 +21,7 @@
 10. Нет секретов в коде, тестах, CI, промптах, логах и документах; коды доступа не логируются; `.env.example` без значений?
 
 ### Инженерия
+
 11. Файлы ≤ 500 строк (потолок 700); перед расширением большого файла выделена ответственность?
 12. Модули по доменам, оркестрация тонкая, контроллеры не ходят в Prisma; нет god-модулей и «общих утилит»?
 13. Прямые импорты, нет barrel-файлов и `export *`; runner не тянет серверный код и `rules/findings`?
@@ -29,6 +32,7 @@
 18. Один провайдер модели за адаптером; версия модели и промпта записана в Proposal; живой eval перед сменой?
 
 ### Процесс
+
 19. Договорённости записаны в `docs/varde/`; язык документов — русский (runbooks restore/alerting — нюношк)?
 20. Модель и усилие исполнителя совпадают с пином и записаны в evidence; один писатель на checkout; кодер не трогал VPS и секреты?
 21. Спорные решения показаны человеку с двумя вариантами и ценой, а не решены молча?
@@ -36,28 +40,38 @@
 
 ## Таблица утечек
 
-| Утечка | Где проверяется (задача / тест) | Статус в этапе 0 |
-| --- | --- | --- |
-| Итог + видимая роль: разность итога и группы восстанавливает группу < k | 0.15 (`privacy` aggregate, дополнительное подавление), 0.19b, 1.32 на эндпоинтах | тест появится в 0.15 / 0.19b |
-| Малые клиенты: n < 3 в группе или во всём клиенте | 0.15 (порог k), 0.19b, 1.32 | тест появится в 0.15 / 0.19b |
-| Экспорт: клиентский CSV, Master_Analyse, handover выдают только разрешённый класс | 0.19b (контракт), 1.30b, 1.32 | тест появится в 0.19b / 1.32 |
-| Timestamps ответов точнее дня (`submitted_day`, прогресс только суммарно) | этап 1 (модель Response, 1.4a–c), 1.32 | вне этапа 0: моделей ответов нет |
-| `respondent_key` / инициалы вне класса `rows` | 0.15 (`privacy` rows), 0.19b, 1.32 | тест появится в 0.15 / 0.19b |
-| Строки leader вне leader-эндпоинта и вне `leaders_all` | 0.15, 0.19b, 1.32 | тест появится в 0.19b / 1.32 |
-| `leaders_all` во внешних каналах (клиент, CSV, ассистент, Atlas, отчёт) | 0.19b, 1.32 | тест появится в 0.19b / 1.32 |
-| История выдач (differencing между released-снимками, Δn < k) | 0.15b (`privacy.release()`), 1.32 | тест появится в 0.15b |
-| Payload pg-boss содержит данные, а не ссылки | 0.9 (ADR-003), 0.12b | тест появится в 0.9 / 0.12b |
-| Коды доступа в логах (query-string в Caddy и в логах api) | 0.6, 0.12b («query не в логах»), 1.32 | тест появится в 0.12b |
-| Подавленные ячейки несут числа (n, numerator) наружу | 0.15, 0.19b | тест появится в 0.15 / 0.19b |
-| Обход `privacy` прямым доступом к Prisma | 0.2b `varde/tools/eslint-rules/test/privacy-only-release.test.ts` (заглушка), 0.15 (реальные модели), 0.19b (ужесточение) | заглушка в 0a; полное правило в 0.15 |
+| Утечка                                                                            | Где проверяется (задача / тест)                                                                                                                                                             | Статус в этапе 0                                  |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| Итог + видимая роль: разность итога и группы восстанавливает группу < k           | 0.15 (`privacy` aggregate, дополнительное подавление), 0.19b, 1.32 на эндпоинтах                                                                                                            | тест появится в 0.15 / 0.19b                      |
+| Малые клиенты: n < 3 в группе или во всём клиенте                                 | 0.15 (порог k), 0.19b, 1.32                                                                                                                                                                 | тест появится в 0.15 / 0.19b                      |
+| Экспорт: клиентский CSV, Master_Analyse, handover выдают только разрешённый класс | 0.19b (контракт), 1.30b, 1.32                                                                                                                                                               | тест появится в 0.19b / 1.32                      |
+| Timestamps ответов точнее дня (`submitted_day`, прогресс только суммарно)         | этап 1 (модель Response, 1.4a–c), 1.32                                                                                                                                                      | вне этапа 0: моделей ответов нет                  |
+| `respondent_key` / инициалы вне класса `rows`                                     | 0.15 (`privacy` rows), 0.19b, 1.32                                                                                                                                                          | тест появится в 0.15 / 0.19b                      |
+| Строки leader вне leader-эндпоинта и вне `leaders_all`                            | 0.15, 0.19b, 1.32                                                                                                                                                                           | тест появится в 0.19b / 1.32                      |
+| `leaders_all` во внешних каналах (клиент, CSV, ассистент, Atlas, отчёт)           | 0.19b, 1.32                                                                                                                                                                                 | тест появится в 0.19b / 1.32                      |
+| История выдач (differencing между released-снимками, Δn < k)                      | 0.15b (`privacy.release()`), 1.32                                                                                                                                                           | тест появится в 0.15b                             |
+| Payload pg-boss содержит данные, а не ссылки                                      | 0.9 (ADR-003), 0.12b: `varde/apps/api/test/jobs.test.ts` (strict `{id, hash?}`, `answers` и JSON в `hash` → `JobPayloadRejected`)                                                           | тест есть с 0b                                    |
+| Коды доступа в логах (query-string в Caddy и в логах api)                         | 0.6, 0.12b: `varde/apps/api/test/log-no-query.test.ts`, `varde/infra/caddy/test/caddy-log.test.sh`; на VPS — `grep -c TESTQUERY` по логам app и Caddy (`varde/infra/README.md` §4–§5); 1.32 | тест есть с 0b; проверка Caddy на VPS — после DNS |
+| Подавленные ячейки несут числа (n, numerator) наружу                              | 0.15, 0.19b                                                                                                                                                                                 | тест появится в 0.15 / 0.19b                      |
+| Обход `privacy` прямым доступом к Prisma                                          | 0.2b `varde/tools/eslint-rules/test/privacy-only-release.test.ts` (заглушка), 0.15 (реальные модели), 0.19b (ужесточение)                                                                   | заглушка в 0a; полное правило в 0.15              |
 
 ## Инварианты по checkpoint
 
-| Инвариант | Тест | Checkpoint |
-| --- | --- | --- |
-| Context-budget: файл > 700 строк в `varde/**` валит CI | `varde/tools/context-budget/check.test.ts`; `pnpm budget`, `pnpm budget:selfcheck` | 0a (0.2b, 0.4b) |
-| Обход privacy (заглушка): прямой доступ к `response`/`aggregateSnapshot`, include/select, raw SQL, Prisma в контроллерах | `varde/tools/eslint-rules/test/privacy-only-release.test.ts`; `pnpm lint:privacy:selfcheck` | 0a (0.2b, 0.4b) |
-| Границы импорта: нет `export *` и barrel `index.ts`, runner не тянет серверный код и `rules/findings`, runner/findings не импортируют друг друга, privacy только через `privacy.service` | `varde/tools/eslint-rules/test/boundaries.test.ts`, `varde/packages/rules/test/entrypoints.test.ts` | 0a (0.1, 0.2b, 0.4b) |
-| Миграции вперёд/назад: deploy → `down.sql` в обратном порядке → пусто → deploy → нет разницы со схемой | `varde/apps/api/test/migrations.test.ts` | 0a (0.4, 0.4b) |
-| Секреты: gitleaks по `varde/` и истории путей Varde; selfcheck на сгенерированном ключе; `.env.example` без значений; в CI нет `secrets.` | `varde/tools/secrets/run.sh`, `varde/tools/secrets/selfcheck.sh`, `varde/tools/invariants/test/no-secrets-in-examples.test.ts`, `varde/tools/invariants/test/workflow.test.ts` | 0a (0.2, 0.4b) |
-| Все инварианты 0a одним прогоном | `pnpm invariants:0a` (`varde/tools/invariants/run-0a.sh`, job `integration`) | 0a (0.4b) |
+| Инвариант                                                                                                                                                                                                              | Тест                                                                                                                                                                           | Checkpoint            |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------- |
+| Context-budget: файл > 700 строк в `varde/**` валит CI                                                                                                                                                                 | `varde/tools/context-budget/check.test.ts`; `pnpm budget`, `pnpm budget:selfcheck`                                                                                             | 0a (0.2b, 0.4b)       |
+| Обход privacy (заглушка): прямой доступ к `response`/`aggregateSnapshot`, include/select, raw SQL, Prisma в контроллерах                                                                                               | `varde/tools/eslint-rules/test/privacy-only-release.test.ts`; `pnpm lint:privacy:selfcheck`                                                                                    | 0a (0.2b, 0.4b)       |
+| Границы импорта: нет `export *` и barrel `index.ts`, runner не тянет серверный код и `rules/findings`, runner/findings не импортируют друг друга, privacy только через `privacy.service`                               | `varde/tools/eslint-rules/test/boundaries.test.ts`, `varde/packages/rules/test/entrypoints.test.ts`                                                                            | 0a (0.1, 0.2b, 0.4b)  |
+| Миграции вперёд/назад: deploy → `down.sql` в обратном порядке → пусто → deploy → нет разницы со схемой                                                                                                                 | `varde/apps/api/test/migrations.test.ts`                                                                                                                                       | 0a (0.4, 0.4b)        |
+| Секреты: gitleaks по `varde/` и истории путей Varde; selfcheck на сгенерированном ключе; `.env.example` без значений; в CI нет `secrets.`                                                                              | `varde/tools/secrets/run.sh`, `varde/tools/secrets/selfcheck.sh`, `varde/tools/invariants/test/no-secrets-in-examples.test.ts`, `varde/tools/invariants/test/workflow.test.ts` | 0a (0.2, 0.4b)        |
+| Все инварианты 0a одним прогоном                                                                                                                                                                                       | `pnpm invariants:0a` (`varde/tools/invariants/run-0a.sh`, job `integration`)                                                                                                   | 0a (0.4b)             |
+| Коды в логах (приложение и error-лог Caddy): путь без query, runner-пути только при ≥ 400, без IP; фильтр `log default` убирает query, Cookie/Authorization/Referer/stub-токен, маскирует IP                           | `varde/apps/api/test/log-no-query.test.ts`, `varde/infra/caddy/test/caddy-log.test.sh`; VPS: `varde/infra/README.md` §4–§5                                                     | 0b (0.6, 0.12b)       |
+| Payload pg-boss: только `{id: uuid, hash?: sha256}`, timeout и предел повторов, `singleton` без параллельного выполнения, бюджет соединений, `pg_dump` ролью backup после pg-boss                                      | `varde/apps/api/test/jobs.test.ts`, `varde/apps/api/test/db-budget.test.ts`                                                                                                    | 0b (0.9, 0.12b)       |
+| Break-glass: 404 на публичном listener при любом флаге, Unix socket `0660` вместо TCP, окно ≤ 4 ч, сессия ≤ 1 ч и только на socket, AuditLog в одной транзакции со входом, hash переживает `env_file`                  | `varde/apps/api/test/break-glass.test.ts`, `varde/infra/test/break-glass-env.test.sh`; VPS: `docs/varde/runbooks/break-glass.md` «Проверка на VPS»                             | 0b (0.8, 0.12b)       |
+| Изоляция базы: чужая роль не входит в `varde`, `varde_backup` read-only, журнал подключений защищён от `varde_app`, `prune` только старше 12 мес и только от `varde_app`; pg_hba на VPS — три строки и четыре проверки | `varde/apps/api/test/db-roles.test.ts`, `varde/infra/sql/test/bootstrap.test.sh`; VPS: `varde/infra/sql/README.md` (в)–(г)                                                     | 0b (0.5, 0.5b, 0.12b) |
+| Restore + журнал удалений (roundtrip в job `image`)                                                                                                                                                                    | `roundtrip.sh --ci` — отложено 13.10 (0.10c)                                                                                                                                   | 0b — отложено 13.10   |
+| Ротация бэкапов и guard ключей age                                                                                                                                                                                     | `backup-rotate.test.sh`, `backup-guard.test.sh`, `ledger-export.test.ts` — отложено 13.10 (0.10, 0.10e)                                                                        | 0b — отложено 13.10   |
+| Cookie-сессия: подпись ID token по JWKS, `iss`/`aud`/`exp`/`nonce`, `state`, одноразовый `varde_oidc`, `HttpOnly; Secure; SameSite=Lax`, 403 без `groups`, logout отзывает сессию, срок 8 ч, старт без Entra           | `varde/apps/api/test/auth.test.ts`, `varde/apps/api/test/admin-session.test.ts`, `varde/apps/admin/e2e/login.spec.ts`                                                          | 0b (0.7, 0.7b, 0.12b) |
+| Stub выключен: 404 без флага, токена или срока, срок ≤ 4 ч; после стенда `POST /stub/submit` → 404 на VPS                                                                                                              | `varde/apps/api/test/stub-submit.test.ts`; VPS: `varde/infra/README.md` §8                                                                                                     | 0b (0.12, 0.12b)      |
+| `.env.example` без значений и со всеми переменными, которые читает api                                                                                                                                                 | `varde/tools/invariants/test/0b-env-example.test.ts`, `varde/tools/invariants/test/no-secrets-in-examples.test.ts`                                                             | 0b (0.12b)            |
+| Все инварианты 0b одним прогоном                                                                                                                                                                                       | `pnpm invariants:0b` (`varde/tools/invariants/run-0b.sh`, job `integration`)                                                                                                   | 0b (0.12b)            |
