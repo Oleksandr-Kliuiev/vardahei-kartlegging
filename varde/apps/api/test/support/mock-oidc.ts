@@ -82,6 +82,11 @@ export class MockOidc {
     return `${this.base}/${this.tenant}/v2.0`;
   }
 
+  /** Origin of the mock; POST /__scenario (JSON Scenario) switches the scenario (e2e). */
+  get origin(): string {
+    return this.base;
+  }
+
   get tokenEndpoint(): string {
     return `${this.base}/${this.tenant}/oauth2/v2.0/token`;
   }
@@ -118,6 +123,10 @@ export class MockOidc {
   ): Promise<{ status: number; body?: unknown; location?: string }> {
     const url = new URL(rawUrl, this.base);
     const prefix = `/${this.tenant}`;
+    if (url.pathname === '/__scenario' && method === 'POST') {
+      this.scenario = JSON.parse(await readBody(req)) as Scenario;
+      return { status: 204 };
+    }
     if (url.pathname === `${prefix}/v2.0/.well-known/openid-configuration`) {
       return {
         status: 200,

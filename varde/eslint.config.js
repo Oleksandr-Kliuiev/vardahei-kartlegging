@@ -29,7 +29,14 @@ function prismaPackages() {
 
 export default tseslint.config(
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/coverage/**', '**/.selfcheck/**'],
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/coverage/**',
+      '**/.selfcheck/**',
+      '**/playwright-report/**',
+      '**/test-results/**',
+    ],
   },
   ...tseslint.configs.recommendedTypeChecked,
   {
