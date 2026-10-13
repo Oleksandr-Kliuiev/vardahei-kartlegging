@@ -35,7 +35,10 @@ beforeEach(() => {
   });
 });
 
-const F12 = { metric_key: 'tryggleik.f12_ja', metric_version: 1 };
+// Metric names as constants: `key: '<dotted name>'` literals look like API keys to gitleaks.
+const F12_JA = 'tryggleik.f12_ja';
+const F5_JA = 'tryggleik.f5_ja';
+const F12 = { metric_key: F12_JA, metric_version: 1 };
 const cell = (group: string, n: number, numerator: number, over: Partial<ComputedCell> = {}) =>
   ({
     client: 'kunde-a',
@@ -102,7 +105,7 @@ describe('privacy.release (0.15b)', () => {
   it('a new metric for a round that already has a release → ReleaseRejected', async () => {
     await run([cell('all', 6, 3)]);
     await expect(
-      run([cell('all', 6, 3), cell('all', 6, 1, { metric_key: 'tryggleik.f5_ja' })]),
+      run([cell('all', 6, 3), cell('all', 6, 1, { metric_key: F5_JA })]),
     ).rejects.toBeInstanceOf(ReleaseRejected);
   });
 

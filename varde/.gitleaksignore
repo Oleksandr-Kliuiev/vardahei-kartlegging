@@ -3,3 +3,14 @@
 # old ARCHITECTURE.md revision: the field list that begins with the words key and
 # question/anchor mapping; no secret. Reviewed 13.10.2026 (task 0.2).
 161b7c19ee41646e0ee21f6e837af970fdff1e82:docs/varde/ARCHITECTURE.md:generic-api-key:57
+# generic-api-key on metric names (dotted lowercase identifiers such as tryggleik.f12_ja,
+# tryggleik.runde1_f_anchors, tryggleik.leiar_b13.distribution) after `key` / `metric_key` in
+# the 0.16 metric fixtures and the 0.15b/0.19b tests; no secret. The tests use constants since
+# the fix commit; the fixtures keep their `key` field. Reviewed 13.10.2026 (checkpoint 0c).
+/repo/varde/packages/schema/fixtures/metrics/comparability-f-anchors.v1.json:generic-api-key:2
+/repo/varde/packages/schema/fixtures/metrics/leaders-distribution.v1.json:generic-api-key:3
+93ea57ff043c989535af4bf7ba638e7045cdacd3:varde/packages/schema/fixtures/metrics/comparability-f-anchors.v1.json:generic-api-key:2
+93ea57ff043c989535af4bf7ba638e7045cdacd3:varde/packages/schema/fixtures/metrics/leaders-distribution.v1.json:generic-api-key:3
+07cc7150d3b532428024920cf377c0bf1b312a61:varde/apps/api/test/privacy/release.test.ts:generic-api-key:38
+07cc7150d3b532428024920cf377c0bf1b312a61:varde/apps/api/test/privacy/release.test.ts:generic-api-key:105
+81989ca13949cd221e51ad4f9a003dcacf2c25b0:varde/apps/api/test/invariants/0c-no-leak-keys.test.ts:generic-api-key:92

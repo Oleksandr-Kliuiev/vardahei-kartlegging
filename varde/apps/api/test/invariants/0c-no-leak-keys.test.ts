@@ -19,6 +19,8 @@ import {
 import { MemorySnapshotStore } from '../support/memory-snapshot-store.js';
 
 const FORBIDDEN = ['respondent_key', 'answers', 'submission_id', 'fritekst', ...FIXTURE_INITIALS];
+// Metric name as a constant: `key: '<dotted name>'` literals look like API keys to gitleaks.
+const F12_JA = 'tryggleik.f12_ja';
 const NUMBERS = ['n', 'numerator', 'denominator', 'missing'];
 const CONFIG = { k: 3, exact_counts: ['responses_total'] };
 const prisma = { auditLog: { create: () => Promise.resolve({}) } } as unknown as PrismaService;
@@ -89,7 +91,7 @@ describe('0c: no leak keys in privacy outputs (0.19b)', () => {
     const privacy = service();
     const cell = (group: string, n: number, numerator: number): ComputedCell => ({
       client: 'kunde-a',
-      metric_key: 'tryggleik.f12_ja',
+      metric_key: F12_JA,
       metric_version: 1,
       group,
       n,
