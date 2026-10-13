@@ -1,10 +1,10 @@
 # Evidence 0b — 2026-10-13
 
-- Commit: `15d79f5` (ветка `varde/0b`, последний коммит кода; этот файл и карта контекста — следующим коммитом); образ на VPS: **pending (хостинг-оператор)** — `varde-api:<sha последнего коммита ветки>` собирается и деплоится по `varde/infra/README.md` §2–§4
+- Commit: `75b7ccd` (ветка `varde/0b`, HEAD кода после исправлений приёмки I1 и m1–m6; этот файл обновлён следующим коммитом, и только он); образ на VPS: **pending (хостинг-оператор)** — `varde-api:<sha HEAD ветки>` собирается и деплоится по `varde/infra/README.md` §2–§4
 - Манифест одобренного пакета этапа: `872d7702b0c3cec578ef94cd1a28c733294f6bd64aed50f7c7c61b9e676ea1d9` (как в 0a); вычислен на commit командой §10: `872d7702b0c3cec578ef94cd1a28c733294f6bd64aed50f7c7c61b9e676ea1d9` — совпадает: да
 - `git diff 2f9ad0d --stat -- docs/varde/ARCHITECTURE.md docs/varde/PRINCIPLES.md docs/varde/STAGES.md docs/varde/adr docs/varde/stages` → пусто (база ветки `2f9ad0d` = `main` с 0a); `kartlegging/`, корневые `package.json`/`package-lock.json` не изменены
 - Модель и усилие кодера: claude-opus-5-5, medium; fallback/несоответствие: нет
-- CI (jobs `check`, `integration`, `e2e`, `image`, `secrets` — success): https://github.com/Oleksandr-Kliuiev/vardahei-kartlegging/actions/runs/38399420758 — `15d79f5`. Промежуточные зелёные run: 38392813513 (`47e8ab1`, 0.5), 38393542390 (`c80fe87`, 0.5b), 38394176067 (`45546cb`, 0.9), 38397882977 (`9f40885`, 0.6–0.8). Красные run `7b1bb12` (compose-тест, исправлен `620ec82`) и `6c27dde` (e2e на Node 22, исправлен `9f40885`); остальные отменены concurrency следующим push.
+- CI для HEAD кода `75b7ccd` (jobs `check`, `integration`, `e2e`, `image`, `secrets` — success): https://github.com/Oleksandr-Kliuiev/vardahei-kartlegging/actions/runs/38405364783. До приёмки: `15d79f5` — https://github.com/Oleksandr-Kliuiev/vardahei-kartlegging/actions/runs/38399420758, `d7dc7ef` (evidence) — https://github.com/Oleksandr-Kliuiev/vardahei-kartlegging/actions/runs/38400139673; промежуточные зелёные: 38392813513 (`47e8ab1`), 38393542390 (`c80fe87`), 38394176067 (`45546cb`), 38397882977 (`9f40885`). Красные `7b1bb12` (compose-тест, исправлен `620ec82`) и `6c27dde` (e2e на Node 22, исправлен `9f40885`); остальные отменены concurrency.
 
 Коммиты задач: хвост 0a `c424235`; 0.5 `47e8ab1`; 0.5b `c80fe87`; 0.9 `45546cb`; 0.6 `7b1bb12` (+ fix `620ec82`); 0.7 `a3ad89e`; 0.7b `6c27dde` (+ fix `9f40885`); 0.8 `351a97d`; 0.12 `ce020d9`; 0.12b `15d79f5`. **Не выполнялись (решение Oleksandr 13.10, отложено):** 0.10, 0.10e, 0.10c, 0.10d, 0.11, 0.10b.
 
@@ -70,6 +70,8 @@
 15. **Фильтры** `pnpm --filter @varde/api test[:integration] -- <имя>` не фильтруют (pnpm передаёт `--`, как в 0a); команды приёмки выполнены прямым `vitest run <файл>`.
 16. **Хвост приёмки 0a:** `boundaries.test.ts` удаляет и пустой родительский каталог (`apps/api/src/modules/`) — `c424235`.
 
+17. **Исправления приёмки 0b (`75b7ccd`).** I1: в `infra/sql/README.md` `SU` — функция shell, не переменная; шаги (а)–(в), проверки 1–2, триггер DISABLE/ENABLE и откат прогнаны на одноразовом контейнере `postgres:17.6-bookworm` с именем `atlas-db-1` — без расширений и с `shared_preload_libraries=pg_stat_statements` (+ `CREATE EXTENSION`): `bootstrap ok`, `pg_hba_file_rules` с ошибками → 0, `psql -h 127.0.0.1 … -d varde` → `pg_hba.conf rejects connection`, после teardown ролей Varde 0, в `pg_stat_statements` строк с `password` 0. m1: пути rsync от `<checkout>/varde`. m2: `BREAK_GLASS_MAX_HOURS` не число, ≤ 0 или > 4 → `rejected` (`bad_max_hours`), тест. m3: break-glass app получает Prisma client через Proxy без lifecycle-хуков; `test/break-glass-prisma.test.ts` (integration): после закрытия окна `$disconnect` основного клиента не вызывался (без Proxy тест падает), `/health` → 200. m4: при старте в режиме off/rejected оставшийся socket удаляется, тест; runbook описывает ожидаемый вывод. m5: `SET pg_stat_statements.track_utility = off` в `varde-roles.sql` (точечный custom-параметр принимается и без расширения). m6: `getent passwd 1000`, `stat -c '%a %U:%G'` для `/etc/varde`, `/etc/varde/entra`, `key.pem` и каталога socket в runbook'ах; uid 1000 и группа docker — в списке держателей.
+
 ## Внешние входы (§5a)
 
 | Вход                                                  | Статус                          | Где доказательство                                             |
@@ -120,4 +122,4 @@
 
 ## Держатели доступа (0.5b/0.8/0.10d/0.12b): SSH/root и группа docker на VPS; superuser atlas-db-1 (по имени); app.env и backup.env; приватные ключи age (где лежат: зашифрованный диск, без пароля); временные секреты проверок уничтожены (дата)
 
-pending (хостинг-оператор): списки SSH/root и группы docker на VPS, superuser `atlas-db-1` поимённо (Vardahei — Oleksandr и хостинг-оператор), держатели `/etc/varde/app.env` и `backup.env`, ключ Entra `/etc/varde/entra/key.pem`; отметки об уничтожении пароля break-glass и токена stub с датой. Ключи age — отложено 13.10. Кодер доступа к VPS и секретам не получал.
+pending (хостинг-оператор): списки SSH/root и группы docker на VPS, superuser `atlas-db-1` поимённо (Vardahei — Oleksandr и хостинг-оператор), держатели `/etc/varde/app.env` и `backup.env`, ключ Entra `/etc/varde/entra/key.pem` (включая пользователя/группу uid 1000 на хосте — `getent passwd 1000`, `getent group 1000`, `stat -c '%a %U:%G'`), члены группы docker (доступ к socket break-glass); отметки об уничтожении пароля break-glass и токена stub с датой. Ключи age — отложено 13.10. Кодер доступа к VPS и секретам не получал.
