@@ -53,15 +53,13 @@ beforeAll(async () => {
   await app.init();
   prisma = app.get(PrismaService);
   svc = app.get(SvarImportService);
-  await app
-    .get(SeedService)
-    .seedAll({
-      clients: clients(),
-      kundar: kundar(),
-      tilgang: tilgang(),
-      seedDir: SEED_DIR,
-      who: 'test:seed',
-    });
+  await app.get(SeedService).seedAll({
+    clients: clients(),
+    kundar: kundar(),
+    tilgang: tilgang(),
+    seedDir: SEED_DIR,
+    who: 'test:seed',
+  });
   await resetImports(prisma);
   first = await run(FILE);
   second = await run(FILE);
