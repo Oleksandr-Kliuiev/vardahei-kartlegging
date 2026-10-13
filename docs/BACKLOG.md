@@ -24,3 +24,15 @@
 12. **Delta архитектуры под изменения 12.10** (неанонимный опросник, модель зон, импорт раунда 1 по людям, сравнение по людям, хранение): бриф `astra/delta-12-10-brief.md`. Пишет Fable, проверяет Astra, обе модели одобряют один артефакт. Решения O1–O5 из брифа — за Oleksandr.
 13. ~~**Brainstorm с Astra, раунд 1**~~ — проведён 11.10 в локальной сессии Claude Code по rev 33 и коду kartlegging на 11.10: три раунда и три прохода одобрения. Итог — `docs/varde/` и `astra/final-summary.md`, перенесён в репо 12.10.
 14. Пакет этапа 0 (`stages/stage-0.md`) — после одобрения delta и ответов Oleksandr по воротам G2 и G3 (`docs/varde/STAGES.md`).
+
+## Varde: условия к задачам этапа 1 (из приёмки 0c, 13.10.2026)
+
+Источник — приёмка checkpoint 0c (Opus 5.5 xhigh), minor; закрыть в указанной задаче.
+
+- **1.4b** `@varde/schema` и `@varde/rules` отдают `.ts`: собрать в `dist` до подключения privacy к `AppModule`.
+- **1.4c** `release()` неатомарен (supersede → save): хранилище снимков в одной транзакции с AuditLog; история ячейки — со всеми прежними released, набор метрик — на уровне раунда (ADR-021 п. 2, 4).
+- **1.10** `release.ts`: проверять форму ячеек по population (`leaders_all` без client/role, `client` только в `round_client`); исключение точного счётчика — только `responses_total` × `round_client` × `all`.
+- **1.10** `rows.ts`: тест с `respondent_key` у анонимных строк (модуль обязан срезать); `who` для break-glass — оператор, а не `break_glass:<sid>`.
+- **1.10** `ReleasedSnapshot`: brand-тип и lint на приведение вне privacy; refine `first_version ⇒ version === 1` в MetricDefinition.
+- **1.32** связь `round_client` X ↔ `all_clients client:X` в истории выдач.
+- **этап 1** удалить stub `/stub/submit` (0.12 не планируется).
