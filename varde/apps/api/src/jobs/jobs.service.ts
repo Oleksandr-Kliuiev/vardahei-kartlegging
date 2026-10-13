@@ -29,6 +29,7 @@ export class JobsService implements OnApplicationBootstrap, OnModuleDestroy {
   private boss: PgBoss | undefined;
   private retryTimer: NodeJS.Timeout | undefined;
   private stopped = false;
+  private ready = false;
 
   constructor(
     types: JobType[],
@@ -61,8 +62,9 @@ export class JobsService implements OnApplicationBootstrap, OnModuleDestroy {
     }
   }
 
+  /** True once pg-boss is started and every queue exists (enqueue before that throws). */
   get running(): boolean {
-    return this.boss !== undefined;
+    return this.ready;
   }
 
   async start(): Promise<void> {
@@ -96,6 +98,7 @@ export class JobsService implements OnApplicationBootstrap, OnModuleDestroy {
       }
     }
     for (const name of this.handlers.keys()) await this.work(name);
+    this.ready = true;
   }
 
   /** `settings` of a type from config/jobs.json (e.g. sleepSeconds, holdUrl). */
@@ -131,6 +134,7 @@ export class JobsService implements OnApplicationBootstrap, OnModuleDestroy {
     const type = this.type(name);
     const parsed = JobPayloadSchema.safeParse(payload);
     if (!parsed.success) throw new JobPayloadRejected(name);
+    if (!this.ready) throw new Error('jobs are not running');
     return this.requireBoss().send(name, parsed.data, {
       singletonKey: type.idempotency(parsed.data),
       ...queueLimits(type),
@@ -143,6 +147,7 @@ export class JobsService implements OnApplicationBootstrap, OnModuleDestroy {
 
   async stop(): Promise<void> {
     this.stopped = true;
+    this.ready = false;
     if (this.retryTimer !== undefined) clearTimeout(this.retryTimer);
     const boss = this.boss;
     this.boss = undefined;

@@ -1,6 +1,7 @@
 // Demo job types of stage 0 (task 0.9): demo.sleep for tests, demo.hold-connection for the
 // load stand 0.12 (holds a pool connection inside a transaction while it waits for /stub/slow).
 import { Injectable, type OnModuleInit } from '@nestjs/common';
+import { stubToken } from '../config/stub-config.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { JobsService } from './jobs.service.js';
 
@@ -38,7 +39,7 @@ export class DemoJobs implements OnModuleInit {
     });
     const holdUrl = setting<string>(this.jobs, 'demo.hold-connection', 'holdUrl');
     await this.jobs.register('demo.hold-connection', () =>
-      holdConnection(this.prisma, holdUrl, process.env.VARDE_STUB_TOKEN),
+      holdConnection(this.prisma, holdUrl, stubToken()),
     );
   }
 }

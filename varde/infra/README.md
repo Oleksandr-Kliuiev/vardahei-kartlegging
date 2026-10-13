@@ -169,7 +169,23 @@ SESSION_TTL_SECONDS=28800
 
 ## 8. Метрики и стенд (0.12)
 
-`tools/metrics/README.md` (cron на 7 дней, сводка `sort`/`awk`) и `tools/load/README.md` (k6 только с Mac через публичный хост, окно, stub, очистка).
+Неделя метрик — `tools/metrics/README.md` (cron на 7 дней, сводка `sort`/`awk`). Стенд — `tools/load/README.md` (k6 только с Mac через публичный хост, после DNS). Включение stub на окно (≤ 4 ч), значения пишет оператор; токен виден ему и уничтожается после стенда:
+
+```bash
+TOKEN=$(openssl rand -hex 24)        # показать себе один раз, в evidence не писать
+{ echo VARDE_STUB_SUBMIT=1; echo "VARDE_STUB_UNTIL=$(date -u -d '+3 hours' +%Y-%m-%dT%H:%M:%SZ)"; echo "VARDE_STUB_TOKEN=$TOKEN"; } >> /etc/varde/app.env
+docker compose -f /opt/varde/compose.yml up -d
+docker run --rm --network atlas_edge curlimages/curl:8.17.0 -s -o /dev/null -w '%{http_code}\n' -X POST http://varde-app:3000/stub/submit   # без токена → 404
+```
+
+После стенда:
+
+```bash
+sed -i '/^VARDE_STUB_\(SUBMIT\|UNTIL\|TOKEN\)=/d' /etc/varde/app.env; unset TOKEN
+docker compose -f /opt/varde/compose.yml up -d
+docker exec -i atlas-db-1 sh -c 'psql -X -U "$POSTGRES_USER" -d varde -c "TRUNCATE stub_submission"'   # вывод в evidence
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://varde.vardahei.tech/stub/submit   # → 404
+```
 
 ## Откат деплоя
 
