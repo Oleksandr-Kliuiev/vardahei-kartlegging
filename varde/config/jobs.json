@@ -9,9 +9,6 @@
     "pollingIntervalSeconds": 2
   },
   "types": {
-    "demo.sleep": { "settings": { "sleepSeconds": 5 } },
-    "demo.hold-connection": {
-      "settings": { "holdUrl": "http://127.0.0.1:3000/stub/slow" }
-    }
+    "demo.sleep": { "settings": { "sleepSeconds": 5 } }
   }
 }

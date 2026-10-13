@@ -7,8 +7,7 @@ export const INTEGRATION_FILES = [
   'test/db-roles.test.ts',
   'test/jobs.test.ts',
   'test/admin-session.test.ts',
-  'test/stub-submit.test.ts',
-  'test/hold-connection.test.ts',
+  'test/stub-removed.test.ts',
   'test/break-glass-prisma.test.ts',
   'test/privacy/rows.test.ts',
 ];

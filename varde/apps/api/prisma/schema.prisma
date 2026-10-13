@@ -40,14 +40,3 @@ model AdminSession {
   @@index([expires_at])
   @@map("admin_session")
 }
-
-/// Load stand of 0.12 only (ADR-016): synthetic submissions written like the future Submission
-/// API (1.16). Removed together with modules/stub by a migration in 1.33.
-model StubSubmission {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  submission_id String   @unique @db.Uuid
-  answers       Json     @db.JsonB
-  created_at    DateTime @default(now()) @db.Timestamptz(6)
-
-  @@map("stub_submission")
-}

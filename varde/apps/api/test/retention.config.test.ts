@@ -17,7 +17,6 @@ const CLASSES = [
   'admin_session',
   'connection_log',
   'pgboss_jobs',
-  'stub_submission',
   'backup',
 ];
 

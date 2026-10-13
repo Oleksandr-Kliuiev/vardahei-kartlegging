@@ -46,7 +46,6 @@ export const RetentionClasses = z.strictObject({
   admin_session: z.strictObject({ after_expiry_days: days }),
   connection_log: z.strictObject({ ttl_months: days }),
   pgboss_jobs: z.strictObject({ ttl_days: days }),
-  stub_submission: z.strictObject({ kind: z.literal('until_task'), task: z.string().min(1) }),
   backup: Backup,
 });
 

@@ -124,8 +124,6 @@ jobs:
         run: bash infra/test/compose-config.test.sh
       - name: Caddy fragments validate; error log has no query
         run: bash infra/caddy/test/caddy-log.test.sh
-      - name: k6 scripts of the 0.12 stand (inspect, no load)
-        run: bash tools/load/test/k6-inspect.test.sh
       - name: VPS metrics sampler on fixtures
         run: bash tools/metrics/test/vps-sample.test.sh
 

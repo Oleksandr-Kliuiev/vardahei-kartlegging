@@ -39,10 +39,6 @@
     "pgboss_jobs": {
       "ttl_days": 7
     },
-    "stub_submission": {
-      "kind": "until_task",
-      "task": "1.33"
-    },
     "backup": {
       "rotation_days": 35,
       "recycle_bin_days": 93,
