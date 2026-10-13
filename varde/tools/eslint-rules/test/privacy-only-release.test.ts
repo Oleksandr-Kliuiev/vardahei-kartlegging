@@ -1,3 +1,6 @@
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_ALLOW, globToRegExp, privacyOnlyRelease } from '../rules/privacy-only-release.js';
 import { FIXTURE_ROOT, PRISMA_TYPES, typedRuleTester } from './rule-tester.js';
@@ -21,7 +24,23 @@ const txAccess = code(
   `void prisma.$transaction((tx: TransactionClient) => tx.response.findMany());`,
 );
 
+const VARDE = fileURLToPath(new URL('../../../', import.meta.url));
+
 describe('allow-list', () => {
+  it.each(['apps/api/src/modules/rounds/rounds.service.ts', 'apps/api/src/main.ts'])(
+    'varde/eslint.config.js enables the rule with exactly DEFAULT_ALLOW for %s',
+    async (file) => {
+      const eslint = new ESLint({ cwd: VARDE });
+      const config = (await eslint.calculateConfigForFile(join(VARDE, file))) as {
+        rules?: Record<string, unknown>;
+      };
+      expect(config.rules?.['varde/privacy-only-release']).toEqual([
+        2,
+        { allow: [...DEFAULT_ALLOW] },
+      ]);
+    },
+  );
+
   it('is fixed', () => {
     expect(DEFAULT_ALLOW).toEqual(['apps/api/src/modules/privacy/**', 'apps/api/prisma/**']);
   });
