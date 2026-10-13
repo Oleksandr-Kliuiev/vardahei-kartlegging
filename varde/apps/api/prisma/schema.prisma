@@ -74,6 +74,8 @@ model TemplateVersion {
   created_at             DateTime       @default(now()) @db.Timestamptz(6)
   published_at           DateTime?      @db.Timestamptz(6)
   published_by           String?
+  /// Marks of changed frozen questions at publication: [{id, kind: orthographic|semantic}] (ADR-005).
+  frozen_changes         Json?          @db.JsonB
 
   @@unique([template_id, version_no])
   @@unique([template_id, label])

@@ -81,7 +81,9 @@ describe('template_version (1.4a)', () => {
     await version(4);
     await expect(version(4, { label: 'other' })).rejects.toThrow();
     await expect(version(5, { label: 'v4' })).rejects.toThrow();
-    await expect(version(6, { status: 'archived', published_at: new Date() })).rejects.toThrow(/status_check/);
+    await expect(version(6, { status: 'archived', published_at: new Date() })).rejects.toThrow(
+      /status_check/,
+    );
     await expect(version(7, { origin: 'ai' })).rejects.toThrow(/origin_check/);
     await expect(version(8, { status: 'published' })).rejects.toThrow(/published_check/);
   });
