@@ -11,7 +11,7 @@
 #
 # Environment (defaults are the production values; the test overrides them):
 #   VARDE_PSQL_CMD     superuser psql prefix; "-d <db>" is appended. Default: unix socket inside
-#                      atlas-db-1 (docker exec … psql -U "$POSTGRES_USER", no -h)
+#                      atlas-db-1 (docker exec … psql -U "${POSTGRES_USER:-postgres}", no -h)
 #   VARDE_CONFIG_DIR   directory with db-budget.json (/opt/varde/config)
 #   VARDE_APP_ENV      /etc/varde/app.env       VARDE_BACKUP_ENV  /etc/varde/backup.env
 #   VARDE_DB_HOST      host in the URLs (atlas-db-1)   VARDE_DB_PORT  5432
@@ -37,7 +37,7 @@ psql_su() {
   else
     # Local socket in the container; if `local` in pg_hba is not trust, add
     # PGPASSWORD="$POSTGRES_PASSWORD" inside the same sh -c (the value is never printed).
-    docker exec -i atlas-db-1 sh -c 'exec psql -X -q -U "$POSTGRES_USER" -v ON_ERROR_STOP=1 -d "$1"' psql "$db"
+    docker exec -i atlas-db-1 sh -c 'exec psql -X -q -U "${POSTGRES_USER:-postgres}" -v ON_ERROR_STOP=1 -d "$1"' psql "$db"
   fi
 }
 

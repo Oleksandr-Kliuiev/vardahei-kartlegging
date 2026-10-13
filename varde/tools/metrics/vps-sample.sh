@@ -37,7 +37,7 @@ busy=$(awk -v a="$t1" -v b="$t2" -v x="$i1" -v y="$i2" 'BEGIN { d = b - a; print
 dios=$((io2 - io1))
 latency=$(awk -v n="$dios" -v m="$((ms2 - ms1))" 'BEGIN { printf "%.2f", (n > 0 ? m / n : 0) }')
 
-pg=$($docker exec atlas-db-1 sh -c 'psql -X -U "$POSTGRES_USER" -d postgres -tA -F: -c "select coalesce(usename, backend_type), count(*) from pg_stat_activity group by 1 order by 1"' 2>/dev/null |
+pg=$($docker exec atlas-db-1 sh -c 'psql -X -U "${POSTGRES_USER:-postgres}" -d postgres -tA -F: -c "select coalesce(usename, backend_type), count(*) from pg_stat_activity group by 1 order by 1"' 2>/dev/null |
   tr '\n' ';' | sed 's/;$//')
 ct=$($docker stats --no-stream --format '{{.Name}}:{{.CPUPerc}}:{{.MemUsage}}' 2>/dev/null |
   sed 's/ \/ .*//; s/ //g' | tr '\n' ';' | sed 's/;$//')

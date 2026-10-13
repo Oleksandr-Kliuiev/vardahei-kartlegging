@@ -7,11 +7,11 @@
 Superuser-сессия в примерах:
 
 ```bash
-SU() { docker exec -i atlas-db-1 sh -c 'exec psql -X -U "$POSTGRES_USER" -v ON_ERROR_STOP=1 "$@"' psql "$@"; }
+SU() { docker exec -i atlas-db-1 sh -c 'exec psql -X -U "${POSTGRES_USER:-postgres}" -v ON_ERROR_STOP=1 "$@"' psql "$@"; }
 SU -d postgres -tAc 'select 1'          # должно вернуть 1
 ```
 
-`SU` — функция shell (не переменная: кавычки в раскрытой переменной не работают). Имя роли раскрывается внутри контейнера. Если `local` в pg_hba не `trust` (psql спрашивает пароль), добавить `PGPASSWORD="$POSTGRES_PASSWORD"` перед `exec psql` в том же `sh -c` — значение не выводится. Тест (`test/bootstrap.test.sh`) подставляет свою команду через `VARDE_PSQL_CMD`.
+`SU` — функция shell (не переменная: кавычки в раскрытой переменной не работают). Имя роли раскрывается внутри контейнера. В `atlas-db-1` переменная `POSTGRES_USER` не задана (проверено 13.10), поэтому везде `${POSTGRES_USER:-postgres}` — суперпользователь официального образа. Если `local` в pg_hba не `trust` (psql спрашивает пароль), добавить `PGPASSWORD="$POSTGRES_PASSWORD"` перед `exec psql` в том же `sh -c` — значение не выводится. Тест (`test/bootstrap.test.sh`) подставляет свою команду через `VARDE_PSQL_CMD`.
 
 ## (а) Read-only проверки до bootstrap
 
@@ -71,7 +71,7 @@ SU -d postgres -tAc 'select count(*) from pg_hba_file_rules where error is not n
 
 ```bash
 SU -d varde -tAc 'select 1'                                         # 1) socket superuser → 1
-docker exec atlas-db-1 sh -c 'psql -X -h 127.0.0.1 -U "$POSTGRES_USER" -d varde -c "select 1"' \
+docker exec atlas-db-1 sh -c 'psql -X -h 127.0.0.1 -U "${POSTGRES_USER:-postgres}" -d varde -c "select 1"' \
   # 2) → FATAL: pg_hba.conf rejects connection (reject до аутентификации, пароль не нужен)
 # после первого деплоя (0.6; контейнер backup — 0.10, отложен 13.10 → пока pending):
 docker compose -f /opt/varde/compose.yml run --rm backup psql -c 'select 1'              # 3) → 1

@@ -24,9 +24,9 @@ install -d -m 0700 /etc/varde
 # каталогам ниже и к ключу Entra) — в evidence
 getent passwd 1000 || echo 'uid 1000: нет пользователя на хосте'
 # socket break-glass (0.8): uid 1000 — пользователь образа; setgid — socket получает группу docker
-install -d -m 2770 -o 1000 -g docker /var/lib/varde/run
+install -d -m 2770 /var/lib/varde/run && chown 1000:docker /var/lib/varde/run && chmod 2770 /var/lib/varde/run   # install -o не принимает uid без пользователя на хосте
 # экспорт журнала удалений (0.10e, отложен): короткая форма bind создала бы root 0755
-install -d -m 0750 -o 1000 /var/lib/varde/ledger-out
+install -d -m 0750 /var/lib/varde/ledger-out && chown 1000:0 /var/lib/varde/ledger-out
 # публичные ключи age (0.10, отложен): до получения ключей — заглушка без ключей
 test -e /etc/varde/recipients.txt || printf '# age recipients: pending (backup deferred 13.10)\n' > /etc/varde/recipients.txt
 chmod 0644 /etc/varde/recipients.txt
@@ -165,7 +165,7 @@ SESSION_TTL_SECONDS=28800
 
 `SESSION_SECRET` уже записал `bootstrap.sh`. Затем `docker compose -f /opt/varde/compose.yml up -d`.
 
-Проверки: без DNS — `docker run --rm --network atlas_edge curlimages/curl:8.17.0 -sI http://varde-app:3000/auth/login` → `302`, `Location: https://login.microsoftonline.com/<tenant>/oauth2/v2.0/authorize?…`; после DNS — `curl -sI https://varde.vardahei.tech/auth/login` → то же; после реального входа Oleksandr-а — `docker exec -i atlas-db-1 sh -c 'psql -X -U "$POSTGRES_USER" -d varde -tAc "select via, count(*) from admin_session group by 1"'` → `entra|1` (без имён).
+Проверки: без DNS — `docker run --rm --network atlas_edge curlimages/curl:8.17.0 -sI http://varde-app:3000/auth/login` → `302`, `Location: https://login.microsoftonline.com/<tenant>/oauth2/v2.0/authorize?…`; после DNS — `curl -sI https://varde.vardahei.tech/auth/login` → то же; после реального входа Oleksandr-а — `docker exec -i atlas-db-1 sh -c 'psql -X -U "${POSTGRES_USER:-postgres}" -d varde -tAc "select via, count(*) from admin_session group by 1"'` → `entra|1` (без имён).
 
 Откат: удалить строки `ENTRA_*` из `app.env`, `up -d` → `/auth/login` отвечает `503 auth not configured`, `/health` — 200.
 
@@ -189,7 +189,7 @@ docker run --rm --network atlas_edge curlimages/curl:8.17.0 -s -o /dev/null -w '
 ```bash
 sed -i '/^VARDE_STUB_\(SUBMIT\|UNTIL\|TOKEN\)=/d' /etc/varde/app.env; unset TOKEN
 docker compose -f /opt/varde/compose.yml up -d
-docker exec -i atlas-db-1 sh -c 'psql -X -U "$POSTGRES_USER" -d varde -c "TRUNCATE stub_submission"'   # вывод в evidence
+docker exec -i atlas-db-1 sh -c 'psql -X -U "${POSTGRES_USER:-postgres}" -d varde -c "TRUNCATE stub_submission"'   # вывод в evidence
 curl -s -o /dev/null -w '%{http_code}\n' -X POST https://varde.vardahei.tech/stub/submit   # → 404
 ```
 
@@ -199,7 +199,7 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST https://varde.vardahei.tech/stu
 printf 'VARDE_SHA=%s\n' <предыдущий sha> > /opt/varde/.env && echo <предыдущий sha> > /opt/varde/VERSION
 docker compose -f /opt/varde/compose.yml up -d
 # миграция назад — down.sql задачи (socket):
-docker exec -i atlas-db-1 sh -c 'psql -X -U "$POSTGRES_USER" -d varde -v ON_ERROR_STOP=1' < /opt/varde/<down.sql из репо>
+docker exec -i atlas-db-1 sh -c 'psql -X -U "${POSTGRES_USER:-postgres}" -d varde -v ON_ERROR_STOP=1' < /opt/varde/<down.sql из репо>
 ```
 
 `down.sql` лежит в `varde/apps/api/prisma/migrations/<имя>/down.sql` репозитория (в `/opt/varde` его нет — скопировать `scp`). Caddyfile — вернуть `.bak` и reload.

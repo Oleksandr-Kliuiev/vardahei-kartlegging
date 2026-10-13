@@ -62,7 +62,7 @@ test -e /var/lib/varde/run/break-glass.sock && echo 'socket остался' || e
 Superuser через socket (`infra/sql/README.md`):
 
 ```bash
-docker exec -i atlas-db-1 sh -c 'psql -X -U "$POSTGRES_USER" -d varde -c "select what, who, at from audit_log where who like '"'"'break-glass%'"'"' order by at"'
+docker exec -i atlas-db-1 sh -c 'psql -X -U "${POSTGRES_USER:-postgres}" -d varde -c "select what, who, at from audit_log where who like '"'"'break-glass%'"'"' order by at"'
 ```
 
 Ожидается: один `break_glass.enabled` на каждое включение, `login` / `login_failed` по попыткам, `closed` в конце окна (если процесс дожил до `UNTIL`). Неожиданный `login_failed` — повод сменить пароль (выключить, удалить строку hash, включить заново).
