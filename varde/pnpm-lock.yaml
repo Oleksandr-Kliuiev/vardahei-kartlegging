@@ -146,6 +146,9 @@ importers:
 
   apps/runner:
     dependencies:
+      '@varde/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
       preact:
         specifier: 10.29.8
         version: 10.29.8
@@ -170,6 +173,10 @@ importers:
         version: 4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
 
   packages/rules:
+    dependencies:
+      '@varde/schema':
+        specifier: workspace:*
+        version: link:../schema
     devDependencies:
       eslint:
         specifier: 9.39.5

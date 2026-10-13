@@ -73,6 +73,15 @@ describe('import boundaries', () => {
     },
   );
 
+  it('apps/runner may import @varde/rules/runner (1.6)', async () => {
+    expect(
+      await ruleIds(
+        'apps/runner/src/__boundaries__rules_runner.ts',
+        `import { evaluate } from '@varde/rules/runner';\n\nexport const e = evaluate;\n`,
+      ),
+    ).toEqual([]);
+  });
+
   it('rules/runner must not import rules/findings', async () => {
     expect(
       await ruleIds(

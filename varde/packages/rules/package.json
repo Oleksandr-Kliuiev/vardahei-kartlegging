@@ -12,6 +12,9 @@
     "test": "vitest run",
     "build": "tsc -p tsconfig.build.json"
   },
+  "dependencies": {
+    "@varde/schema": "workspace:*"
+  },
   "devDependencies": {
     "eslint": "9.39.5",
     "typescript": "5.9.3",
