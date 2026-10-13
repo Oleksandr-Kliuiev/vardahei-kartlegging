@@ -121,6 +121,15 @@ describe('TemplateVersion schema (1.1)', () => {
     );
   });
 
+  it('admin-facing short_label is nn only; a respondent text still needs en', () => {
+    const r = ok(
+      edit(
+        (t) => (q(t, 'Q2').texts = { text: { nn: 'R', en: 'R' }, short_label: { nn: 'Rolle' } }),
+      ),
+    );
+    expect(r.success, JSON.stringify(r.error?.issues)).toBe(true);
+  });
+
   it('choices_from: source single or later in order → rejected', () => {
     rejected(
       edit((t) => (q(t, 'Q4').choices_from = 'Q2')),

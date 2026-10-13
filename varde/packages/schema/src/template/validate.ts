@@ -189,7 +189,10 @@ export function validateTemplate(c: TemplateContent): TemplateIssue[] {
     if (!langs.has(lang)) issue(`${c.audience} requires ${lang}`, ['required_languages']);
   }
   for (const { path, text } of templateTexts(c)) {
-    for (const lang of requireLanguages(text, c.required_languages)) issue(`missing ${lang}`, path);
+    // Admin-facing labels (dashboard short label, zone names) are nn only (kartlegging `kort`, SONER).
+    const adminLabel = path.includes('short_label') || path[0] === 'score_scale';
+    const langs = adminLabel ? (['nn'] as Lang[]) : c.required_languages;
+    for (const lang of requireLanguages(text, langs)) issue(`missing ${lang}`, path);
   }
   return issues;
 }
