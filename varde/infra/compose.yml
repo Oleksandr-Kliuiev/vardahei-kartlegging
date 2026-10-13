@@ -1,0 +1,57 @@
+# Production compose of Varde on the shared VPS (task 0.6). Lives in /opt/varde/compose.yml.
+# Image tags = commit sha: VARDE_SHA in /opt/varde/.env (written by the deploy, infra/README.md).
+#   docker compose -f /opt/varde/compose.yml up -d
+# CI: docker compose -f infra/compose.yml --env-file infra/ci.env config
+name: varde
+
+services:
+  app:
+    image: varde-api:${VARDE_SHA:-unset}
+    container_name: varde-app
+    restart: unless-stopped
+    # Compose >= 2.24: `config` works without the file (CI, a fresh machine).
+    env_file:
+      - path: /etc/varde/app.env
+        required: false
+    networks: [atlas_edge, atlas_internal]
+    # No published ports: Caddy reaches varde-app:3000 by container name.
+    volumes:
+      # Break-glass socket directory (0.8): a missing directory is a loud error, not root 0755.
+      - type: bind
+        source: /var/lib/varde/run
+        target: /run/varde
+        bind: { create_host_path: false }
+      # Export of the deletion ledger (0.10e, deferred 13.10), written by uid 1000.
+      - type: bind
+        source: /var/lib/varde/ledger-out
+        target: /var/lib/varde/ledger-out
+        bind: { create_host_path: false }
+      # Public age keys for the ledger export (0.10e, deferred 13.10).
+      - type: bind
+        source: /etc/varde/recipients.txt
+        target: /etc/varde/recipients.txt
+        read_only: true
+        bind: { create_host_path: false }
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: '3' }
+    mem_limit: 512m
+
+  # Backup (0.10, deferred 13.10): not started by `up -d`; CMD (not ENTRYPOINT) is backup.sh,
+  # so `docker compose run --rm backup psql …` runs psql. Volumes come with 0.10.
+  backup:
+    image: varde-backup:${VARDE_SHA:-unset}
+    profiles: [backup]
+    env_file:
+      - path: /etc/varde/backup.env
+        required: false
+    networks: [atlas_internal]
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: '3' }
+
+networks:
+  atlas_edge:
+    external: true
+  atlas_internal:
+    external: true

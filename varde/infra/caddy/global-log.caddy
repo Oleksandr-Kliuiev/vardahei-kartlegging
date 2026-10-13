@@ -1,0 +1,24 @@
+# Global option for the default logger (task 0.6): goes INSIDE the single global options block
+# of /etc/atlas-edge/Caddyfile (procedure in infra/README.md). reverse_proxy errors (502/504)
+# are written by the default logger with the full uri and headers; the filter drops the query,
+# secret headers and masks client IPs. `wrap json` keeps the format Caddy uses without a TTY.
+log default {
+	format filter {
+		wrap json
+		fields {
+			request>uri regexp \?.*$ ""
+			request>headers>Referer delete
+			request>headers>Cookie delete
+			request>headers>Authorization delete
+			request>headers>X-Varde-Stub-Token delete
+			request>remote_ip ip_mask {
+				ipv4 24
+				ipv6 48
+			}
+			request>client_ip ip_mask {
+				ipv4 24
+				ipv6 48
+			}
+		}
+	}
+}

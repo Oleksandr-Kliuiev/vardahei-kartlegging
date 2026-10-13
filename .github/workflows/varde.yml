@@ -93,7 +93,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build api image (linux/amd64, no push)
-        run: docker buildx build --platform linux/amd64 -f infra/Dockerfile . -t varde-api:ci --load
+        run: >-
+          docker buildx build --platform linux/amd64 -f infra/Dockerfile .
+          --build-arg VARDE_VERSION=ci -t varde-api:ci --load
       - name: Container starts without a database
         run: |
           cid=$(docker run --rm -d --network host -e DATABASE_URL=postgresql://x:x@127.0.0.1:1/x varde-api:ci)
@@ -107,6 +109,18 @@ jobs:
           docker run --rm --network host
           -e DATABASE_URL=postgresql://varde:varde-ci@127.0.0.1:5432/varde_ci
           varde-api:ci node node_modules/prisma/build/index.js migrate deploy
+      - name: GET /health from the image → 200 with version
+        run: |
+          cid=$(docker run --rm -d --network host -e PORT=3999 \
+            -e DATABASE_URL=postgresql://varde:varde-ci@127.0.0.1:5432/varde_ci varde-api:ci)
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:3999/health && break; sleep 1; done
+          body=$(curl -s http://127.0.0.1:3999/health)
+          docker stop "$cid"
+          test "$body" = '{"status":"ok","version":"ci","db":"ok"}'
+      - name: compose config (prod compose without /etc/varde files)
+        run: bash infra/test/compose-config.test.sh
+      - name: Caddy fragments validate; error log has no query
+        run: bash infra/caddy/test/caddy-log.test.sh
 
   secrets:
     runs-on: ubuntu-24.04

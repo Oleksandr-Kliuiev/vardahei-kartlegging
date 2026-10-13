@@ -1,6 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module.js';
+import { QuerySafeExceptionFilter } from './logging/query-safe-exception.filter.js';
+import { registerRequestLog } from './logging/request-log.js';
 
 export const DEFAULT_PORT = 3000;
 /**
@@ -9,8 +11,17 @@ export const DEFAULT_PORT = 3000;
  */
 export const LISTEN_HOST = '0.0.0.0';
 
-export function createApp(): Promise<NestFastifyApplication> {
-  return NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+/** Request log without query (0.6) and the query-safe exception filter on every listener. */
+export function configureApp<T extends NestFastifyApplication>(app: T): T {
+  registerRequestLog(app.getHttpAdapter().getInstance());
+  app.useGlobalFilters(new QuerySafeExceptionFilter());
+  return app;
+}
+
+export async function createApp(): Promise<NestFastifyApplication> {
+  return configureApp(
+    await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter()),
+  );
 }
 
 export function resolvePort(env: NodeJS.ProcessEnv): number {

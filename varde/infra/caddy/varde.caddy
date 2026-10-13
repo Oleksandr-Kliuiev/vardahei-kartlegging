@@ -1,0 +1,6 @@
+# Varde site block (task 0.6), appended to /etc/atlas-edge/Caddyfile after the DNS record exists.
+# No `log` directive: Varde has no Caddy access log (stage-0 §9 p. 8); errors of reverse_proxy
+# go to the default logger, filtered by global-log.caddy.
+varde.vardahei.tech {
+	reverse_proxy varde-app:3000
+}

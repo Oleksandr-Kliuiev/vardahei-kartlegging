@@ -1,0 +1,6 @@
+# Both fragments together for `caddy validate` in CI (task 0.6).
+{
+	import ../global-log.caddy
+}
+
+import ../varde.caddy
