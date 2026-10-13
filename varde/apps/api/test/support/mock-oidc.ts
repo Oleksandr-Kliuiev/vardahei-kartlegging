@@ -8,15 +8,13 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import {
-  type CryptoKey,
-  decodeProtectedHeader,
-  exportJWK,
-  generateKeyPair,
-  importX509,
-  jwtVerify,
-  SignJWT,
-} from 'jose';
+import type { CryptoKey } from 'jose';
+
+// jose is ESM-only; a dynamic import keeps this file loadable from CommonJS transforms
+// (Playwright's loader on Node 22 cannot require() it: "module not been linked").
+type Jose = typeof import('jose');
+let josePromise: Promise<Jose> | undefined;
+const jose = (): Promise<Jose> => (josePromise ??= import('jose'));
 
 export interface Scenario {
   groups?: string[] | null;
@@ -92,6 +90,7 @@ export class MockOidc {
   }
 
   async start(): Promise<void> {
+    const { exportJWK, generateKeyPair } = await jose();
     const kp = await generateKeyPair('RS256');
     this.signing = kp.privateKey;
     this.foreign = (await generateKeyPair('RS256')).privateKey;
@@ -183,6 +182,7 @@ export class MockOidc {
     ) {
       return fail('invalid_client');
     }
+    const { decodeProtectedHeader, importX509, jwtVerify } = await jose();
     const assertion = form.get('client_assertion') ?? '';
     const certPem = readFileSync(this.certFile, 'utf8');
     try {
@@ -223,6 +223,7 @@ export class MockOidc {
       claims._claim_names = { groups: 'src1' };
       claims._claim_sources = { src1: { endpoint: 'https://graph.microsoft.com/v1.0/x' } };
     }
+    const { SignJWT } = await jose();
     return new SignJWT(claims)
       .setProtectedHeader({ alg: 'RS256', kid: 'k1', typ: 'JWT' })
       .setIssuer(s.iss ?? this.issuer)
