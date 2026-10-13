@@ -8,3 +8,5 @@ test-results/
 playwright-report/
 .selfcheck/
 *.tsbuildinfo
+**/__selfcheck__/
+**/__boundaries__*

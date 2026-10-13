@@ -13,7 +13,10 @@
     "check": "pnpm -r lint && pnpm -r test && pnpm -r build",
     "format": "prettier --write .",
     "secrets": "bash tools/secrets/run.sh",
-    "secrets:selfcheck": "bash tools/secrets/selfcheck.sh"
+    "secrets:selfcheck": "bash tools/secrets/selfcheck.sh",
+    "budget": "node tools/context-budget/check.mjs",
+    "budget:selfcheck": "node tools/context-budget/check.mjs --selfcheck",
+    "lint:privacy:selfcheck": "node tools/eslint-rules/selfcheck.mjs"
   },
   "devDependencies": {
     "@types/node": "22.20.5",
