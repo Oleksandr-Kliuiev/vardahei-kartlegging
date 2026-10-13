@@ -19,4 +19,5 @@ export const INTEGRATION_FILES = [
   'test/imports/svar-import.test.ts',
   'test/imports/runde1-import.test.ts',
   'test/metrics/parity.test.ts',
+  'test/invariants/1a-completeness.test.ts',
 ];

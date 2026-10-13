@@ -78,6 +78,7 @@ jobs:
       - run: pnpm invariants:0a
       - run: pnpm invariants:0b
       - run: pnpm invariants:0c
+      - run: pnpm invariants:1a
 
   image:
     runs-on: ubuntu-24.04
