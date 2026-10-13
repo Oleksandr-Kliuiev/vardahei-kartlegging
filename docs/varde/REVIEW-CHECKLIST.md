@@ -49,10 +49,15 @@
 | Payload pg-boss содержит данные, а не ссылки | 0.9 (ADR-003), 0.12b | тест появится в 0.9 / 0.12b |
 | Коды доступа в логах (query-string в Caddy и в логах api) | 0.6, 0.12b («query не в логах»), 1.32 | тест появится в 0.12b |
 | Подавленные ячейки несут числа (n, numerator) наружу | 0.15, 0.19b | тест появится в 0.15 / 0.19b |
-| Обход `privacy` прямым доступом к Prisma | 0.2b (`varde/privacy-only-release`, заглушка), 0.15 (реальные модели) | заглушка 0.2b; полное правило в 0.15 |
+| Обход `privacy` прямым доступом к Prisma | 0.2b `varde/tools/eslint-rules/test/privacy-only-release.test.ts` (заглушка), 0.15 (реальные модели), 0.19b (ужесточение) | заглушка в 0a; полное правило в 0.15 |
 
 ## Инварианты по checkpoint
 
 | Инвариант | Тест | Checkpoint |
 | --- | --- | --- |
-| _(строки дописывают задачи инвариантов: 0.4b, 0.12b, 0.19b, …)_ | | |
+| Context-budget: файл > 700 строк в `varde/**` валит CI | `varde/tools/context-budget/check.test.ts`; `pnpm budget`, `pnpm budget:selfcheck` | 0a (0.2b, 0.4b) |
+| Обход privacy (заглушка): прямой доступ к `response`/`aggregateSnapshot`, include/select, raw SQL, Prisma в контроллерах | `varde/tools/eslint-rules/test/privacy-only-release.test.ts`; `pnpm lint:privacy:selfcheck` | 0a (0.2b, 0.4b) |
+| Границы импорта: нет `export *` и barrel `index.ts`, runner не тянет серверный код и `rules/findings`, runner/findings не импортируют друг друга, privacy только через `privacy.service` | `varde/tools/eslint-rules/test/boundaries.test.ts`, `varde/packages/rules/test/entrypoints.test.ts` | 0a (0.1, 0.2b, 0.4b) |
+| Миграции вперёд/назад: deploy → `down.sql` в обратном порядке → пусто → deploy → нет разницы со схемой | `varde/apps/api/test/migrations.test.ts` | 0a (0.4, 0.4b) |
+| Секреты: gitleaks по `varde/` и истории путей Varde; selfcheck на сгенерированном ключе; `.env.example` без значений; в CI нет `secrets.` | `varde/tools/secrets/run.sh`, `varde/tools/secrets/selfcheck.sh`, `varde/tools/invariants/test/no-secrets-in-examples.test.ts`, `varde/tools/invariants/test/workflow.test.ts` | 0a (0.2, 0.4b) |
+| Все инварианты 0a одним прогоном | `pnpm invariants:0a` (`varde/tools/invariants/run-0a.sh`, job `integration`) | 0a (0.4b) |

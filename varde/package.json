@@ -16,7 +16,8 @@
     "secrets:selfcheck": "bash tools/secrets/selfcheck.sh",
     "budget": "node tools/context-budget/check.mjs",
     "budget:selfcheck": "node tools/context-budget/check.mjs --selfcheck",
-    "lint:privacy:selfcheck": "node tools/eslint-rules/selfcheck.mjs"
+    "lint:privacy:selfcheck": "node tools/eslint-rules/selfcheck.mjs",
+    "invariants:0a": "bash tools/invariants/run-0a.sh"
   },
   "devDependencies": {
     "@types/node": "22.20.5",
