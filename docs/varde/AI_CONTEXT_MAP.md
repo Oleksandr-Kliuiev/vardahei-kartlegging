@@ -4,7 +4,7 @@
 
 | Задача | Файлы входа |
 | --- | --- |
-| Добавить модуль api | `varde/apps/api/src/app.module.ts`, `varde/apps/api/src/bootstrap.ts`, `varde/apps/api/src/modules/` (появится в 0.7), `docs/varde/ARCHITECTURE.md` §2 |
+| Добавить модуль api | `varde/apps/api/src/app.module.ts`, `varde/apps/api/src/bootstrap.ts`, `varde/apps/api/src/modules/auth/`, `docs/varde/ARCHITECTURE.md` §2 |
 | Изменить схему шаблона | `varde/packages/schema/src/version.ts`, `varde/packages/schema/src/template/` (появится в этапе 1), `docs/varde/adr/ADR-005-template-format.md`, `docs/varde/adr/ADR-019-languages-and-translation-gate.md` |
 | Добавить метрику | `varde/packages/rules/src/findings/index.ts`, `varde/packages/schema/src/metrics/` (появится в 0.16), `docs/varde/adr/ADR-020-metric-contract.md`, `docs/varde/adr/ADR-026-zone-model-and-findings-inventory.md` |
 | Изменить privacy | `varde/apps/api/src/modules/privacy/` (появится в 0.15), `varde/tools/eslint-rules/rules/privacy-only-release.js`, `varde/tools/eslint-rules/boundaries.js`, `docs/varde/adr/ADR-021-privacy-contract.md`, `docs/varde/adr/ADR-025-identification-and-person-channel.md`, `docs/varde/REVIEW-CHECKLIST.md` |

@@ -6,4 +6,5 @@ export const INTEGRATION_FILES = [
   'test/prisma-lazy.test.ts',
   'test/db-roles.test.ts',
   'test/jobs.test.ts',
+  'test/admin-session.test.ts',
 ];

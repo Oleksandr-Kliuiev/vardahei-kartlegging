@@ -25,3 +25,18 @@ model AuditLog {
   @@index([what, at])
   @@map("audit_log")
 }
+
+/// Server-side admin session (0.7, ADR-008). The cookie `varde_session` carries only the signed
+/// `sid`. `via` ∈ {entra, break_glass} (CHECK in the migration); no respondent data.
+model AdminSession {
+  sid        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  oid        String?
+  name       String?
+  via        String
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  expires_at DateTime  @db.Timestamptz(6)
+  revoked_at DateTime? @db.Timestamptz(6)
+
+  @@index([expires_at])
+  @@map("admin_session")
+}

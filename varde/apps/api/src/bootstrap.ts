@@ -1,6 +1,9 @@
+import { randomBytes } from 'node:crypto';
+import fastifyCookie from '@fastify/cookie';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module.js';
+import { sessionSecret } from './config/auth-config.js';
 import { QuerySafeExceptionFilter } from './logging/query-safe-exception.filter.js';
 import { registerRequestLog } from './logging/request-log.js';
 
@@ -11,10 +14,16 @@ export const DEFAULT_PORT = 3000;
  */
 export const LISTEN_HOST = '0.0.0.0';
 
-/** Request log without query (0.6) and the query-safe exception filter on every listener. */
-export function configureApp<T extends NestFastifyApplication>(app: T): T {
+/**
+ * Every listener: request log without query (0.6), query-safe exception filter, signed cookies
+ * (0.7; without SESSION_SECRET a random per-process key — auth is then not configured anyway).
+ */
+export async function configureApp<T extends NestFastifyApplication>(app: T): Promise<T> {
   registerRequestLog(app.getHttpAdapter().getInstance());
   app.useGlobalFilters(new QuerySafeExceptionFilter());
+  await app.register(fastifyCookie, {
+    secret: sessionSecret() ?? randomBytes(32).toString('hex'),
+  });
   return app;
 }
 

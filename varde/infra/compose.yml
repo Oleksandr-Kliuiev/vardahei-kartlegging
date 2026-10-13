@@ -32,6 +32,12 @@ services:
         target: /etc/varde/recipients.txt
         read_only: true
         bind: { create_host_path: false }
+      # Entra client key and certificate (0.7, private_key_jwt), group 1000 may read.
+      - type: bind
+        source: /etc/varde/entra
+        target: /etc/varde/entra
+        read_only: true
+        bind: { create_host_path: false }
     logging:
       driver: json-file
       options: { max-size: 10m, max-file: '3' }

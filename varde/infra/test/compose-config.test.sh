@@ -12,14 +12,14 @@ if (!app || !backup) fail("services app and backup expected");
 if (app.container_name !== "varde-app") fail("container_name");
 if (app.ports && app.ports.length) fail("app must not publish ports");
 const binds = (app.volumes || []).filter((v) => v.type === "bind");
-const need = { "/run/varde": "/var/lib/varde/run", "/var/lib/varde/ledger-out": "/var/lib/varde/ledger-out", "/etc/varde/recipients.txt": "/etc/varde/recipients.txt" };
+const need = { "/run/varde": "/var/lib/varde/run", "/var/lib/varde/ledger-out": "/var/lib/varde/ledger-out", "/etc/varde/recipients.txt": "/etc/varde/recipients.txt", "/etc/varde/entra": "/etc/varde/entra" };
 for (const [target, source] of Object.entries(need)) {
   const b = binds.find((v) => v.target === target);
   if (!b || b.source !== source) fail("bind " + target);
   if (!b.bind || b.bind.create_host_path !== false) fail("create_host_path on " + target);
 }
 for (const b of binds) if (!b.bind || b.bind.create_host_path !== false) fail("create_host_path on " + b.target);
-if (!binds.find((v) => v.target === "/etc/varde/recipients.txt").read_only) fail("recipients.txt must be ro");
+for (const t of ["/etc/varde/recipients.txt", "/etc/varde/entra"]) if (!binds.find((v) => v.target === t).read_only) fail(t + " must be ro");
 if (JSON.stringify(Object.keys(app.networks).sort()) !== JSON.stringify(["atlas_edge", "atlas_internal"])) fail("app networks");
 for (const n of ["atlas_edge", "atlas_internal"]) if (!c.networks[n].external) fail(n + " must be external");
 if (app.logging.driver !== "json-file" || app.logging.options["max-size"] !== "10m" || app.logging.options["max-file"] !== "3") fail("logging");
