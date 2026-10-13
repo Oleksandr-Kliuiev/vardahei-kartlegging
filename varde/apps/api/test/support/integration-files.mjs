@@ -14,4 +14,5 @@ export const INTEGRATION_FILES = [
   'test/surveys/publish.test.ts',
   'test/response-constraints.test.ts',
   'test/privacy/prisma-source.test.ts',
+  'test/privacy/prisma-snapshot-store.test.ts',
 ];

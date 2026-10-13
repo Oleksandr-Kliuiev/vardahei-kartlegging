@@ -17,6 +17,8 @@ export function typedRuleTester(): RuleTester {
         projectService: {
           allowDefaultProject: ['apps/api/src/modules/*/*.ts', 'apps/api/prisma/*.ts'],
           defaultProject: 'tsconfig.json',
+          // One fixture file per allow-list entry and case (more since 1.4b/1.4c).
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 16,
         },
         tsconfigRootDir: FIXTURE_ROOT,
       },

@@ -10,6 +10,7 @@ const rounds = `${FIXTURE_ROOT}apps/api/src/modules/rounds/rounds.repository.ts`
 const privacy = `${FIXTURE_ROOT}apps/api/src/modules/privacy/privacy.service.ts`;
 const privacySource = `${FIXTURE_ROOT}apps/api/src/modules/privacy/source.ts`;
 const prismaSource = `${FIXTURE_ROOT}apps/api/src/modules/privacy/prisma-source.ts`;
+const snapshotStore = `${FIXTURE_ROOT}apps/api/src/modules/privacy/prisma-snapshot-store.ts`;
 const privacyOther = `${FIXTURE_ROOT}apps/api/src/modules/privacy/aggregate.ts`;
 const prismaSeed = `${FIXTURE_ROOT}apps/api/prisma/seed.ts`;
 const controller = `${FIXTURE_ROOT}apps/api/src/modules/rounds/rounds.controller.ts`;
@@ -49,6 +50,7 @@ describe('allow-list', () => {
       'apps/api/src/modules/privacy/privacy.service.ts',
       'apps/api/src/modules/privacy/source.ts',
       'apps/api/src/modules/privacy/prisma-source.ts',
+      'apps/api/src/modules/privacy/prisma-snapshot-store.ts',
       'apps/api/prisma/**',
     ]);
   });
@@ -81,6 +83,11 @@ typedRuleTester().run('privacy-only-release', rule, {
       name: 'privacy/prisma-source.ts (1.4b) may read responses',
       filename: prismaSource,
       code: txAccess,
+    },
+    {
+      name: 'privacy/prisma-snapshot-store.ts (1.4c) may write snapshots',
+      filename: snapshotStore,
+      code: code(`void prisma.$transaction((tx: TransactionClient) => tx.aggregateSnapshot.findMany());`),
     },
     { name: 'privacy module: this.prisma', filename: privacy, code: thisPrisma },
     {

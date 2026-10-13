@@ -177,3 +177,128 @@ model ProgressEvent {
   @@index([round_client_id, at])
   @@map("progress_event")
 }
+
+/// Versioned measurement contract (1.4c, ADR-020); `definition` is the MetricDefinition JSON.
+model MetricDefinition {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key        String
+  version    Int
+  definition Json   @db.JsonB
+
+  @@unique([key, version])
+  @@map("metric_definition")
+}
+
+/// Released aggregate cell (1.4c, ADR-020, ADR-021). Written only by privacy.release() through
+/// modules/privacy/prisma-snapshot-store.ts. A released row may only become `superseded` with a
+/// reason (other columns unchanged); released and superseded rows are never deleted (trigger
+/// aggregate_snapshot_released). `status` ∈ {computed, released, superseded}.
+model AggregateSnapshot {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  round_id          String    @db.Uuid
+  population        String
+  round_client_id   String?   @db.Uuid
+  client_id         String?   @db.Uuid
+  metric_key        String
+  metric_version    Int
+  group             String
+  n                 Int
+  numerator         Float
+  denominator       Float
+  missing           Int
+  suppressed        Boolean
+  stale             Boolean   @default(false)
+  status            String
+  computed_at       DateTime  @db.Date
+  released_at       DateTime? @db.Date
+  superseded_at     DateTime? @db.Timestamptz(6)
+  superseded_reason String?
+  release_id        String    @db.Uuid
+
+  @@index([round_id, population, status])
+  @@index([release_id])
+  @@map("aggregate_snapshot")
+}
+
+/// Metric set of a round, fixed by the first release of any population (1.4c, ADR-021 rule 4).
+model RoundMetricSet {
+  round_id    String   @id @db.Uuid
+  metric_keys String[]
+  fixed_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("round_metric_set")
+}
+
+/// FUNN rule (1.4c, ADR-026): `channel` ∈ {aggregate, leader}.
+model FindingRule {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key        String
+  version    Int
+  channel    String
+  definition Json   @db.JsonB
+
+  @@unique([key, version])
+  @@map("finding_rule")
+}
+
+/// A finding computed over released snapshots (1.4c; retention as released snapshots).
+model Finding {
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  round_id     String  @db.Uuid
+  client_id    String? @db.Uuid
+  rule_key     String
+  rule_version Int
+  numbers      Json    @db.JsonB
+  release_id   String  @db.Uuid
+
+  @@index([round_id])
+  @@map("finding")
+}
+
+/// Provable import (1.4c, ADR-024): counts and rejected line numbers with reasons, never answers
+/// or initials. `source` ∈ {svar, runde1}, `status` ∈ {ok, failed}.
+model ImportManifest {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  source      String
+  source_hash String
+  round_ids   String[]
+  counts      Json     @db.JsonB
+  rejected    Json     @db.JsonB
+  status      String
+  started_by  String
+  at          DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("import_manifest")
+}
+
+/// Deletion on request (1.4c, ADR-017): `scope` ∈ {client, respondent, submissions}.
+model DeletionRequest {
+  id           String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  requested_by String
+  reason       String
+  scope        String
+  scope_ref    Json                @db.JsonB
+  at           DateTime            @default(now()) @db.Timestamptz(6)
+  tombstones   DeletionTombstone[]
+
+  @@map("deletion_request")
+}
+
+/// Tombstone of a deleted Response part: keeps import, restore and rollback from bringing it
+/// back (ADR-017, ADR-024). No answers.
+model DeletionTombstone {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  request_id     String          @db.Uuid
+  request        DeletionRequest @relation(fields: [request_id], references: [id], onDelete: Restrict)
+  submission_id  String          @db.Uuid
+  content_hash   String
+  round_id       String          @db.Uuid
+  client_id      String          @db.Uuid
+  part           String
+  source_id      String?
+  respondent_key String?
+
+  @@index([source_id, part])
+  @@index([submission_id])
+  @@map("deletion_tombstone")
+}

@@ -12,11 +12,13 @@ import type { Population } from '@varde/schema/metrics/populations';
 import { type PrivacyConfig, readPrivacyConfig } from '../../config/privacy-config.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { aggregate, assertAggregateQuery } from './aggregate.js';
+import { PrismaSnapshotStore } from './prisma-snapshot-store.js';
 import { PrismaResponseSource } from './prisma-source.js';
 import {
   type ComputedCell,
   release,
   type ReleaseActor,
+  type ReleaseOptions,
   type ReleaseResult,
   type SnapshotStore,
 } from './release.js';
@@ -39,6 +41,8 @@ export { ReleaseRejected } from './release.js';
 export { PrismaResponseSource } from './prisma-source.js';
 export type {
   ComputedCell,
+  HistoricCell,
+  ReleaseOptions,
   ReleaseActor,
   ReleaseAudit,
   ReleaseResult,
@@ -102,19 +106,48 @@ export class PrivacyService {
 
   /**
    * privacy.release(): the only way to released snapshots (history of releases, ADR-021).
-   * Manual (admin action) and automatic (round closed) differ only in `actor`.
+   * Manual (admin action) and automatic (round closed) differ only in `actor`. With `store =
+   * 'db'` (the application) supersede, save, the metric set and AuditLog run in ONE Prisma
+   * transaction (1.4c); an explicit store (tests) is used as given.
    */
   release(
     round: string,
     population: Population,
     cells: readonly ComputedCell[],
-    store: SnapshotStore,
+    store: SnapshotStore | 'db',
     actor: ReleaseActor,
+    opts: ReleaseOptions = {},
   ): Promise<ReleaseResult> {
-    return release(round, population, cells, store, actor, {
-      config: this.config,
-      audit: { write: async (data) => void (await this.prisma.auditLog.create({ data })) },
-    });
+    if (store !== 'db') {
+      return release(
+        round,
+        population,
+        cells,
+        store,
+        actor,
+        {
+          config: this.config,
+          audit: { write: async (data) => void (await this.prisma.auditLog.create({ data })) },
+        },
+        opts,
+      );
+    }
+    return this.prisma.$transaction(
+      (tx) =>
+        release(
+          round,
+          population,
+          cells,
+          new PrismaSnapshotStore(tx),
+          actor,
+          {
+            config: this.config,
+            audit: { write: async (data) => void (await tx.auditLog.create({ data })) },
+          },
+          opts,
+        ),
+      { timeout: 120_000, maxWait: 10_000 },
+    );
   }
 }
 

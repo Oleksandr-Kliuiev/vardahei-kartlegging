@@ -1,15 +1,18 @@
 // privacy.release() (0.15b, ADR-021 "Подавление с учётом истории выдач"): the only way to a
 // released snapshot. Unit: (round, population, metric_version, group) with (n, numerator).
 //  (1) n ≥ k, plus complementary suppression inside the new release;
-//  (2) against the previous released snapshot of the same (round, population): Δn = 0 or
-//      |Δn| ≥ k, otherwise the previous released value is carried forward with `stale`;
+//  (2) against EVERY earlier release of the same (round, population), superseded ones included
+//      (1.4c): Δn = 0 or |Δn| ≥ k, otherwise the current released value is carried forward
+//      with `stale`;
 //  (3) complementary suppression on the differences (Δtotal − Δrole A < k → carry-forward of
-//      the total or role A as well);
-//  (4) the metric set is fixed by the first release: a new metric → ReleaseRejected;
+//      the total or role A as well), against every earlier release too;
+//  (4) the metric set is fixed on the ROUND by its first release of any population (1.4c):
+//      a metric outside the set → ReleaseRejected for every population;
 //  (5) manual and automatic release are this function with an actor and an AuditLog entry;
 //  (6) progress cells follow the same rules; exact counts (`responses_total`) are the named
 //      exception and are released as they are.
 // computed → released happens only in `markReleased`, which is not exported.
+import { randomUUID } from 'node:crypto';
 import {
   type ComputedSnapshot,
   type ReleasedSnapshot,
@@ -34,11 +37,31 @@ export interface ComputedCell {
 
 export type ReleaseActor = { type: 'manual'; who: string } | { type: 'auto'; who: 'system' };
 
+/** One cell of an earlier release (released or later superseded). */
+export interface HistoricCell {
+  client?: string | undefined;
+  metric_key: string;
+  metric_version: number;
+  group: string;
+  n: number;
+  suppressed: boolean;
+}
+
 export interface SnapshotStore {
   /** Current released snapshots (not superseded) of one (round, population). */
   listReleased(round: string, population: Population): Promise<ReleasedSnapshot[]>;
-  save(snapshots: readonly ReleasedSnapshot[]): Promise<void>;
+  /** Every earlier release of one (round, population), superseded ones included (1.4c). */
+  listHistory(round: string, population: Population): Promise<readonly (readonly HistoricCell[])[]>;
+  /** Metric set (`key@version`) fixed on the round, or null before its first release. */
+  metricSet(round: string): Promise<readonly string[] | null>;
+  fixMetricSet(round: string, metrics: readonly string[]): Promise<void>;
+  save(snapshots: readonly ReleasedSnapshot[], releaseId: string): Promise<void>;
   supersede(snapshots: readonly SupersededSnapshot[]): Promise<void>;
+}
+
+export interface ReleaseOptions {
+  /** Full metric set of the round, fixed by its first release (default: the offered cells). */
+  metric_set?: readonly string[];
 }
 
 export interface ReleaseAudit {
@@ -66,7 +89,7 @@ export class ReleaseRejected extends PrivacyViolation {
   override readonly name: string = 'ReleaseRejected';
 }
 
-const metricOf = (c: { metric_key: string; metric_version: number }) =>
+export const metricOf = (c: { metric_key: string; metric_version: number }): string =>
   `${c.metric_key}@${c.metric_version}`;
 const blockOf = (c: { client?: string | undefined } & Parameters<typeof metricOf>[0]) =>
   `${c.client ?? ''}|${metricOf(c)}`;
@@ -106,6 +129,22 @@ function carriedByDiff(deltas: Map<string, number>, k: number): Set<string> {
 
 const day = (): string => new Date().toISOString().slice(0, 10);
 
+/** Rule 4 (1.4c): the set is per round; returns the set to fix now, or null if already fixed. */
+async function checkMetricSet(
+  round: string,
+  cells: readonly ComputedCell[],
+  store: SnapshotStore,
+  opts: ReleaseOptions,
+): Promise<string[] | null> {
+  const fixed = await store.metricSet(round);
+  const set = fixed ?? opts.metric_set ?? [...new Set(cells.map(metricOf))];
+  const outside = [...new Set(cells.map(metricOf))].filter((m) => !set.includes(m));
+  if (outside.length > 0) {
+    throw new ReleaseRejected(`metric set of the round is fixed: ${outside.join(', ')}`);
+  }
+  return fixed === null ? [...set] : null;
+}
+
 export async function release(
   round: string,
   population: Population,
@@ -113,19 +152,16 @@ export async function release(
   store: SnapshotStore,
   actor: ReleaseActor,
   deps: { audit: ReleaseAudit; config: ReleaseConfig },
+  opts: ReleaseOptions = {},
 ): Promise<ReleaseResult> {
   const who = assertActor(actor);
   const { k, exact_counts } = deps.config;
+  const toFix = await checkMetricSet(round, cells, store, opts);
   const previous = await store.listReleased(round, population);
   const prevByUnit = new Map(previous.map((s) => [unitOf(s), s]));
-
-  if (previous.length > 0) {
-    const fixed = new Set(previous.map(metricOf));
-    const added = cells.map(metricOf).filter((m) => !fixed.has(m));
-    if (added.length > 0) {
-      throw new ReleaseRejected(`metric set is fixed by the first release: ${added.join(', ')}`);
-    }
-  }
+  const history = (await store.listHistory(round, population)).map(
+    (h) => new Map(h.map((c) => [unitOf(c), c.suppressed ? 0 : c.n])),
+  );
 
   const blocks = new Map<string, ComputedCell[]>();
   for (const c of cells) blocks.set(blockOf(c), [...(blocks.get(blockOf(c)) ?? []), c]);
@@ -145,18 +181,16 @@ export async function release(
       : total === undefined
         ? new Set(parts.filter((c) => c.n < k).map((c) => c.group))
         : suppressedGroups(total, parts, k);
-    // Rules 2 and 3 against the previous released values.
-    const deltas = new Map<string, number>();
-    for (const c of block) {
-      const prev = prevByUnit.get(unitOf(c));
-      deltas.set(c.group, c.n - (prev !== undefined && !prev.suppressed ? prev.n : 0));
-    }
-    const carry =
-      exact || previous.length === 0
-        ? new Set<string>()
-        : total === undefined
-          ? new Set([...deltas].filter(([, d]) => d !== 0 && Math.abs(d) < k).map(([g]) => g))
+    // Rules 2 and 3 against every earlier release (|Δn|: after a deletion n goes down).
+    const carry = new Set<string>();
+    for (const earlier of exact ? [] : history) {
+      const deltas = new Map(block.map((c) => [c.group, c.n - (earlier.get(unitOf(c)) ?? 0)]));
+      const hit =
+        total === undefined
+          ? [...deltas].filter(([, d]) => d !== 0 && Math.abs(d) < k).map(([g]) => g)
           : carriedByDiff(deltas, k);
+      for (const g of hit) carry.add(g);
+    }
 
     for (const c of block) {
       const base = {
@@ -209,8 +243,9 @@ export async function release(
   }
 
   const superseded = previous.map((s) => transition(s, 'superseded', { reason: 'new release' }));
+  if (toFix !== null) await store.fixMetricSet(round, toFix);
   await store.supersede(superseded);
-  await store.save(out);
+  await store.save(out, randomUUID());
   await deps.audit.write({
     who: who.type === 'manual' ? who.who : 'system',
     what: who.type === 'manual' ? 'privacy.release.manual' : 'privacy.release.auto',
