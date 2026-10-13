@@ -230,6 +230,7 @@ tr.sumrad td { font-weight: 700; border-top: 1.5px solid var(--line); }
 
 <script src="sporsmal.js"></script>
 <script src="runde1.js"></script>
+<script src="ki-tilsett.js"></script>
 <script>
 (function () {
   "use strict";
@@ -920,6 +921,7 @@ tr.sumrad td { font-weight: 700; border-top: 1.5px solid var(--line); }
     }
     if (tilstand.skjema === "tryggleik") innhald.appendChild(soneSeksjon(rr));
     innhald.appendChild(fs);
+    if (tilstand.skjema === "ki" && window.KiTilsett) innhald.appendChild(window.KiTilsett.seksjon(rr, { el: el, kundeNamn: kundeNamn, visKunde: tilstand.kunde === "alle", forrige: window.KI_FORRIGE && window.KI_FORRIGE.svar }));
 
     if (tilstand.skjema === "tryggleik") {
       innhald.appendChild(kakeSeksjon(rr));

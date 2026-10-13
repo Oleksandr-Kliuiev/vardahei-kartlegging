@@ -489,7 +489,7 @@ ${feil === "1" ? '<p class="feil">Feil e-post eller passord.</p>' : feil === "2"
     const brukar = innlogga(req);
     const erApi = p.startsWith("/api/");
     if (!brukar) {
-      if (erApi || p === "/runde1.js") return json(res, 401, { feil: "Ikkje innlogga" });
+      if (erApi || p === "/runde1.js" || p === "/ki-tilsett.js") return json(res, 401, { feil: "Ikkje innlogga" });
       if (p === "/dashboard" || p === "/admin" || p === "/byt-passord") return vidaresend(res, "/logg-inn?til=" + encodeURIComponent(p === "/byt-passord" ? "/admin" : p));
       return send(res, 404, "Fann ikkje sida.");
     }
@@ -528,6 +528,7 @@ ${tekst ? `<p class="feil">${tekst}</p>` : ""}<button type="submit">Lagre passor
     if (req.method === "GET" && p === "/admin") return send(res, 200, side("private/admin.html"), "text/html; charset=utf-8");
     if (req.method === "GET" && p === "/runde1.js") return send(res, 200, fs.readFileSync(path.join(__dirname, "private/runde1.js")), "text/javascript; charset=utf-8");
     if (req.method === "GET" && p === "/api/meg") return json(res, 200, { epost: brukar.epost });
+    if (req.method === "GET" && p === "/ki-tilsett.js") return send(res, 200, fs.readFileSync(path.join(__dirname, "private/ki-tilsett.js")), "text/javascript; charset=utf-8");
     if (req.method === "GET" && p === "/api/svar") return json(res, 200, lesAlle());
     if (req.method === "GET" && p === "/api/svar.csv") {
       const sid = K.skjema[url.searchParams.get("s")] ? url.searchParams.get("s") : "tryggleik";

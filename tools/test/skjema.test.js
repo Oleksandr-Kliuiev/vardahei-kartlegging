@@ -1,63 +1,10 @@
 // Køyr: T=<kode frå node server.js --lenkjer> K=daco node tools/test/skjema.test.js  (krev playwright og ein server på BASE)
 // Går gjennom tryggleiksskjemaet som ein tilsett og som ein leiar, og sjekkar at svara kjem fram.
 const { chromium } = require("playwright");
+const { svarAlle } = require("./stotte.js");
 const BASE = process.env.BASE || "http://127.0.0.1:3099";
 const T = process.env.T;
 const K = process.env.K || "daco";
-
-async function svarAlle(page, opts) {
-  const sett = {};
-  for (let i = 0; i < 80; i++) {
-    const skjerm = await page.evaluate(() => {
-      const h = document.querySelector("h2.sp, .mellom h2, .slutt h1");
-      const inp = Array.from(document.querySelectorAll('main input[type="text"], main textarea')).filter((x) => x.id.indexOf('tekst-') === 0)[0];
-      const opts = Array.from(document.querySelectorAll("main .opt")).map((b) => b.getAttribute("data-id"));
-      const skala = document.querySelectorAll("main .skala-knappar").length;
-      return { h: h ? h.textContent : "", inp: !!inp, inpId: inp ? inp.id : null, opts, skala, slutt: !!document.querySelector(".slutt"), bintro: !!document.querySelector(".mellom"), hopp: !document.getElementById("hopp").hidden, vidare: !document.getElementById("vidare").hidden };
-    });
-    if (skjerm.slutt) return sett;
-    if (skjerm.bintro) { await page.click(opts.leiar ? "#vidare" : "#hopp"); await page.waitForTimeout(150); continue; }
-    if (skjerm.inp) {
-      const id = skjerm.inpId.replace("tekst-", "");
-      const val = id === "F1" ? (opts.init || "olnor") : "Testsvar " + id;
-      await page.fill("#" + skjerm.inpId, val);
-      sett[id] = val;
-      await page.waitForTimeout(120);
-      const st = await page.evaluate(() => ({ h: document.querySelector("h2.sp") && document.querySelector("h2.sp").id, vid: document.getElementById("vidare").disabled, val: (document.querySelector("main input, main textarea") || {}).value }));
-      if (st.vid) throw new Error("Vidare sperra etter utfylling: " + JSON.stringify(st));
-      await page.click("#vidare");
-      await page.waitForTimeout(150);
-      continue;
-    }
-    if (skjerm.opts.length) {
-      const sp = await page.evaluate(() => document.querySelector("h2.sp").id.replace("sp-", ""));
-      let vel = skjerm.opts[0];
-      if (sp === "F2") vel = opts.leiar ? "leiar" : "kontor";
-      else if (opts.svar && opts.svar[sp]) vel = opts.svar[sp];
-      else vel = skjerm.opts[Math.min(skjerm.opts.length - 1, opts.vel || 0)];
-      const erMulti = await page.evaluate(() => !!document.querySelector('main .opt[role="checkbox"]'));
-      await page.click(`main .opt[data-id="${vel}"]`);
-      sett[sp] = vel;
-      await page.waitForTimeout(erMulti ? 100 : 400);
-      if (erMulti || (await page.evaluate(() => !document.getElementById("vidare").hidden && !document.getElementById("vidare").disabled && document.querySelector("h2.sp")))) {
-        const still = await page.evaluate((sp) => { const h = document.querySelector("h2.sp"); return h && h.id === "sp-" + sp; }, sp);
-        if (still) await page.click("#vidare");
-      }
-      await page.waitForTimeout(150);
-      continue;
-    }
-    if (skjerm.skala) {
-      await page.evaluate(() => document.querySelectorAll("main .skala-knappar").forEach((k) => k.children[2].click()));
-      await page.waitForTimeout(100);
-      await page.click("#vidare");
-      await page.waitForTimeout(150);
-      continue;
-    }
-    if (skjerm.vidare) { await page.click("#vidare"); await page.waitForTimeout(150); continue; }
-    throw new Error("Veit ikkje kva eg skal gjere: " + JSON.stringify(skjerm));
-  }
-  throw new Error("For mange steg");
-}
 
 (async () => {
   const browser = await chromium.launch();
