@@ -1,0 +1,10 @@
+**/node_modules
+**/dist
+**/coverage
+**/.selfcheck
+**/test-results
+**/playwright-report
+**/.env
+**/.env.*
+!**/.env.example
+.git

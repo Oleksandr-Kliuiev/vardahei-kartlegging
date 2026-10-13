@@ -1,0 +1,1 @@
+{ "role_connection_limit": 20, "prisma_pool": 8, "pgboss_pool": 4, "reserve": 8 }

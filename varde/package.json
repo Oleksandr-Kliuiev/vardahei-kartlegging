@@ -11,7 +11,9 @@
     "test": "pnpm -r test",
     "build": "pnpm -r build",
     "check": "pnpm -r lint && pnpm -r test && pnpm -r build",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "secrets": "bash tools/secrets/run.sh",
+    "secrets:selfcheck": "bash tools/secrets/selfcheck.sh"
   },
   "devDependencies": {
     "@types/node": "22.20.5",

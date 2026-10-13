@@ -1,0 +1,21 @@
+# Secret-scan for Varde (stage 0, task 0.2). Run via `pnpm secrets` (tools/secrets/run.sh).
+title = "varde"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Outside the Varde scan scope"
+# Decision (stage-0.md §9 p. 13): legacy kartlegging (incl. deploy/brukarar.seed.json with
+# hashes and private/runde1.js), kjelder/ and astra/ are outside stage 0; cleaning them is
+# Oleksandr's task outside stage 0. Generated output and dependencies are not scan scope.
+# No `^` anchors: the dir scan reports paths like /repo/varde/...
+# There is deliberately no allowlist for *.example (values there are caught by 0.4b).
+paths = [
+  '''(^|/)kartlegging/''',
+  '''(^|/)kjelder/''',
+  '''(^|/)astra/''',
+  '''(^|/)node_modules/''',
+  '''(^|/)dist/''',
+  '''(^|/)coverage/''',
+]

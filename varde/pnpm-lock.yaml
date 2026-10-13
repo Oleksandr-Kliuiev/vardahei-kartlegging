@@ -32,7 +32,7 @@ importers:
         version: 8.71.1(eslint@9.39.5)(typescript@5.9.3)
       vitest:
         specifier: 4.1.11
-        version: 4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5))
+        version: 4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5)(yaml@2.9.1))
 
   apps/admin:
     dependencies:
@@ -51,7 +51,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitejs/plugin-react':
         specifier: 6.1.2
-        version: 6.1.2(vite@8.3.4(@types/node@22.20.5))
+        version: 6.1.2(vite@8.3.4(@types/node@22.20.5)(yaml@2.9.1))
       eslint:
         specifier: 9.39.5
         version: 9.39.5
@@ -63,10 +63,10 @@ importers:
         version: 5.9.3
       vite:
         specifier: 8.3.4
-        version: 8.3.4(@types/node@22.20.5)
+        version: 8.3.4(@types/node@22.20.5)(yaml@2.9.1)
       vitest:
         specifier: 4.1.11
-        version: 4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5))
+        version: 4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5)(yaml@2.9.1))
 
   apps/api:
     dependencies:
@@ -100,7 +100,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: 4.1.11
-        version: 4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5))
+        version: 4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5)(yaml@2.9.1))
 
   apps/runner:
     dependencies:
@@ -119,10 +119,10 @@ importers:
         version: 5.9.3
       vite:
         specifier: 8.3.4
-        version: 8.3.4(@types/node@22.20.5)
+        version: 8.3.4(@types/node@22.20.5)(yaml@2.9.1)
       vitest:
         specifier: 4.1.11
-        version: 4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5))
+        version: 4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5)(yaml@2.9.1))
 
   packages/rules:
     devDependencies:
@@ -134,7 +134,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: 4.1.11
-        version: 4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5))
+        version: 4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5)(yaml@2.9.1))
 
   packages/schema:
     dependencies:
@@ -150,7 +150,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: 4.1.11
-        version: 4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5))
+        version: 4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5)(yaml@2.9.1))
 
   tools/docs:
     devDependencies:
@@ -162,7 +162,22 @@ importers:
         version: 5.9.3
       vitest:
         specifier: 4.1.11
-        version: 4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5))
+        version: 4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5)(yaml@2.9.1))
+
+  tools/invariants:
+    devDependencies:
+      eslint:
+        specifier: 9.39.5
+        version: 9.39.5
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 4.1.11
+        version: 4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5)(yaml@2.9.1))
+      yaml:
+        specifier: 2.9.1
+        version: 2.9.1
 
 packages:
 
@@ -1999,6 +2014,11 @@ packages:
   xmlchars@2.2.0:
     resolution: {integrity: sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==}
 
+  yaml@2.9.1:
+    resolution: {integrity: sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
@@ -2368,10 +2388,10 @@ snapshots:
       '@typescript-eslint/types': 8.71.1
       eslint-visitor-keys: 5.0.1
 
-  '@vitejs/plugin-react@6.1.2(vite@8.3.4(@types/node@22.20.5))':
+  '@vitejs/plugin-react@6.1.2(vite@8.3.4(@types/node@22.20.5)(yaml@2.9.1))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
-      vite: 8.3.4(@types/node@22.20.5)
+      vite: 8.3.4(@types/node@22.20.5)(yaml@2.9.1)
 
   '@vitest/expect@4.1.11':
     dependencies:
@@ -2382,13 +2402,13 @@ snapshots:
       chai: 6.3.0
       tinyrainbow: 3.2.0
 
-  '@vitest/mocker@4.1.11(vite@8.3.4(@types/node@22.20.5))':
+  '@vitest/mocker@4.1.11(vite@8.3.4(@types/node@22.20.5)(yaml@2.9.1))':
     dependencies:
       '@vitest/spy': 4.1.11
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 8.3.4(@types/node@22.20.5)
+      vite: 8.3.4(@types/node@22.20.5)(yaml@2.9.1)
 
   '@vitest/pretty-format@4.1.11':
     dependencies:
@@ -3827,7 +3847,7 @@ snapshots:
     dependencies:
       punycode: 2.3.1
 
-  vite@8.3.4(@types/node@22.20.5):
+  vite@8.3.4(@types/node@22.20.5)(yaml@2.9.1):
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.7
@@ -3837,11 +3857,12 @@ snapshots:
     optionalDependencies:
       '@types/node': 22.20.5
       fsevents: 2.3.3
+      yaml: 2.9.1
 
-  vitest@4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5)):
+  vitest@4.1.11(@types/node@22.20.5)(jsdom@26.1.0)(vite@8.3.4(@types/node@22.20.5)(yaml@2.9.1)):
     dependencies:
       '@vitest/expect': 4.1.11
-      '@vitest/mocker': 4.1.11(vite@8.3.4(@types/node@22.20.5))
+      '@vitest/mocker': 4.1.11(vite@8.3.4(@types/node@22.20.5)(yaml@2.9.1))
       '@vitest/pretty-format': 4.1.11
       '@vitest/runner': 4.1.11
       '@vitest/snapshot': 4.1.11
@@ -3858,7 +3879,7 @@ snapshots:
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
       tinyrainbow: 3.2.0
-      vite: 8.3.4(@types/node@22.20.5)
+      vite: 8.3.4(@types/node@22.20.5)(yaml@2.9.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 22.20.5
@@ -3940,6 +3961,8 @@ snapshots:
   xml-name-validator@5.0.0: {}
 
   xmlchars@2.2.0: {}
+
+  yaml@2.9.1: {}
 
   yocto-queue@0.1.0: {}
 

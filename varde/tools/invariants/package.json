@@ -1,0 +1,17 @@
+{
+  "name": "@varde/tools-invariants",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "eslint": "9.39.5",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11",
+    "yaml": "2.9.1"
+  }
+}
