@@ -92,15 +92,15 @@ export interface RowsResult {
 
 /** A query that would release something the contract forbids (part × population). */
 export class PrivacyViolation extends ForbiddenException {
-  override readonly name = 'PrivacyViolation';
+  override readonly name: string = 'PrivacyViolation';
 }
 
 /** No admin session (→ 401). */
 export class UnauthorizedError extends UnauthorizedException {
-  override readonly name = 'UnauthorizedError';
+  override readonly name: string = 'UnauthorizedError';
 }
 
 /** The view does not exist in this round (anonymous round → 404, ADR-025). */
 export class NotFoundError extends NotFoundException {
-  override readonly name = 'NotFoundError';
+  override readonly name: string = 'NotFoundError';
 }

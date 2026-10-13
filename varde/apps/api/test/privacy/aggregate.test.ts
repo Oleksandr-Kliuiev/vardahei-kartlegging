@@ -16,7 +16,10 @@ const NUMBERS = ['n', 'numerator', 'denominator', 'missing'];
 const ROW_KEYS = ['respondent_key', 'answers', 'submission_id'];
 
 function service(source = new FixtureSource()): PrivacyService {
-  return new PrivacyService({} as PrismaService, source, { k: 3 });
+  return new PrivacyService({} as PrismaService, source, {
+    k: 3,
+    exact_counts: ['responses_total'],
+  });
 }
 
 type Over = { [K in keyof AggregateQuery]?: AggregateQuery[K] | undefined };

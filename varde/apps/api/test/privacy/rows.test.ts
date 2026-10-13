@@ -44,7 +44,8 @@ function failingAudit(): RowsDb {
   };
 }
 
-const service = (db: RowsDb = prisma) => new PrivacyService(db as PrismaService, source, { k: 3 });
+const service = (db: RowsDb = prisma) =>
+  new PrivacyService(db as PrismaService, source, { k: 3, exact_counts: ['responses_total'] });
 const audits = () => prisma.auditLog.findMany({ where: { who: WHO }, orderBy: { at: 'asc' } });
 
 beforeEach(async () => {

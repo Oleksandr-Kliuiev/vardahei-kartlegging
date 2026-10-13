@@ -1,9 +1,17 @@
 // The only release point for responses and aggregates (0.15, ADR-021): every other module
 // imports only this file (lint 0.2b). Types and errors of the module are re-exported here.
 import { Inject, Injectable, type Provider } from '@nestjs/common';
+import type { Population } from '@varde/schema/metrics/populations';
 import { type PrivacyConfig, readPrivacyConfig } from '../../config/privacy-config.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { aggregate, assertAggregateQuery } from './aggregate.js';
+import {
+  type ComputedCell,
+  release,
+  type ReleaseActor,
+  type ReleaseResult,
+  type SnapshotStore,
+} from './release.js';
 import { masterAnalyseExport, perEmployee, rows, type RowsContext } from './rows.js';
 import { RESPONSE_SOURCE, type ResponseSource } from './source.js';
 import type {
@@ -19,6 +27,14 @@ export const PRIVACY_CONFIG = Symbol('PRIVACY_CONFIG');
 export { RESPONSE_SOURCE } from './source.js';
 export type { ResponseSource, SourceQuery } from './source.js';
 export type { RowsDb } from './rows.js';
+export { ReleaseRejected } from './release.js';
+export type {
+  ComputedCell,
+  ReleaseActor,
+  ReleaseAudit,
+  ReleaseResult,
+  SnapshotStore,
+} from './release.js';
 export { NotFoundError, PrivacyViolation, UnauthorizedError } from './types.js';
 export type {
   AggregateQuery,
@@ -73,6 +89,23 @@ export class PrivacyService {
     session: PrivacySession | null | undefined,
   ): Promise<RowsResult> {
     return masterAnalyseExport(query, session, this.ctx);
+  }
+
+  /**
+   * privacy.release(): the only way to released snapshots (history of releases, ADR-021).
+   * Manual (admin action) and automatic (round closed) differ only in `actor`.
+   */
+  release(
+    round: string,
+    population: Population,
+    cells: readonly ComputedCell[],
+    store: SnapshotStore,
+    actor: ReleaseActor,
+  ): Promise<ReleaseResult> {
+    return release(round, population, cells, store, actor, {
+      config: this.config,
+      audit: { write: async (data) => void (await this.prisma.auditLog.create({ data })) },
+    });
   }
 }
 

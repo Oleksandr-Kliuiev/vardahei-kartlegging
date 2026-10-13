@@ -1,1 +1,1 @@
-{ "k": 3 }
+{ "k": 3, "exact_counts": ["responses_total"] }
