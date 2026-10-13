@@ -76,8 +76,8 @@
 | Каталоги socket и ledger-out, заглушка `/etc/varde/recipients.txt`, сети, перенос обоих образов, `config/` и `metrics/`, миграции, `up -d`, `/health` из сети Docker, проверки, откат; после DNS — Caddyfile (блок Varde и глобальный фильтр — процедура слияния) и проверки по HTTPS — `infra/README.md` | 0.6, 0.8 |
 | `app.env` (идентификаторы Entra, `PUBLIC_URL`, `VARDE_LEDGER_OUT`, `VARDE_AGE_RECIPIENTS`; пароли и `SESSION_SECRET` — `bootstrap.sh`), перезапуск, проверка редиректа на Entra | 0.7, 0.10e |
 | `/etc/varde/recipients.txt` (три публичных ключа от держателей), `backup.env` (кроме client secret), однократный `ledger export`, первый прогон, листинг библиотеки, heartbeat, cron, проверка гранта на `--onedrive-hard-delete` | 0.10, 0.10e, 0.11 |
-| Неделя метрик (cron `/opt/varde/metrics/vps-sample.sh`), окно стенда (Atlas — внутренняя платформа Vardahei, отдельного согласования нет), эталонный эндпоинт Atlas, k6 с Mac, выключение stub и очистка таблицы | 0.12 |
-| OpenAPI Atlas и пример observation — из репозитория Atlas; если недоступно к началу 0.17 — `draft` | 0.17 |
+| Неделя метрик (cron `/opt/varde/metrics/vps-sample.sh`), окно стенда (Atlas — внутренняя платформа Vardahei, отдельного согласования нет), эталонный эндпоинт Atlas, k6 с Mac, выключение stub и очистка таблицы | не планируется 13.10 |
+| OpenAPI Atlas и пример observation — из репозитория Atlas; если недоступно к началу 0.17 — `draft` | перенесено в этап 4, 13.10 |
 | Списки держателей для evidence: SSH/root и группа docker на VPS; `app.env`, `backup.env`; superuser `atlas-db-1` (поимённо: Vardahei — Oleksandr и хостинг-оператор); приватные ключи age (где лежат: зашифрованный диск держателя, без пароля) | 0.5b, 0.8, 0.10d |
 
 ## 6. Протокол checkpoint и шаблон evidence

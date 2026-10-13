@@ -22,7 +22,7 @@
 - Без DNS: `/health` 200 `{"status":"ok","version":"f37712c14515","db":"ok"}`; `TESTQUERY` в логах приложения — 0; строка лога `{"method":"GET","path":"/r/x","status":404}` (без query и IP).
 - DNS (Hostinger API, `overwrite=false`): `varde` A `179.198.210.22`, AAAA `2a02:4780:7e:808a::1`, TTL 300 — как у `kartlegging`.
 - Caddy: добавлен только блок `varde.vardahei.tech { reverse_proxy varde-app:3000 }`; копия `Caddyfile.bak-20261013T135818Z`; `validate` → `Valid configuration`; reload; сертификат Let's Encrypt получен. По HTTPS: `/health` 200, `TESTQUERY` в логах Caddy — 0.
-- **Pending (решение Oleksandr):** глобальный фильтр логов `caddy/global-log.caddy` не установлен — он меняет логгер ошибок всех сайтов VPS (Atlas, kartlegging).
+- Глобальный фильтр логов (`caddy/global-log.caddy`) установлен 13.10 по решению Oleksandr: глобальный блок в начале Caddyfile, копия `Caddyfile.bak-20261013T173220Z`, `validate` ok, единственный логгер `default`. Проверка: при остановленном `varde-app` запрос `/r/x?c=TESTQUERY2` с cookie → 502; в логе Caddy `uri` = `/r/x`, `TESTQUERY2` и cookie — 0, IP маскирован (`…0`). Остальные сайты без изменений (`admin` 503 и `muligheter` 401 — их штатное состояние).
 
 ## 0.7 Entra
 
@@ -41,7 +41,7 @@
 
 ## 0.12 Стенд нагрузки и неделя метрик
 
-**Pending до начала 1.33** (решение 13.10 «Шаги 0b … могут быть pending»): нужно решение о swap на VPS (7.9 GB, swap нет) и окно для стенда рядом с Atlas.
+**Не планируется** (решение Oleksandr 13.10): пиковой нагрузки в сотни одновременных респондентов не бывает; стенд, неделя метрик и swap не нужны.
 
 ## Отложено 13.10
 
