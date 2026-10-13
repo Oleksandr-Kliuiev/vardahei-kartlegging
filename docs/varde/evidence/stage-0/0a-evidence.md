@@ -1,11 +1,15 @@
 # Evidence 0a — 2026-10-13
-- Commit: `1755fbb7d01f45565497e4131745f3485a47bcdc` (ветка `varde/0a`, последний коммит кода; этот файл добавлен следующим коммитом и только он); образ на VPS: не применимо (VPS с 0b)
-- Манифест одобренного пакета этапа: значение одобрения в репозитории не найдено (в `astra/` есть только `delta-12-10-approval.md` прежнего артефакта) — **pending, сообщает оркестратор**; вычислен на commit командой §10: `872d7702b0c3cec578ef94cd1a28c733294f6bd64aed50f7c7c61b9e676ea1d9` — совпадает: не проверено (нет эталона)
+- Commit: `70ca284e3694c32777694c3e1e8f21c446dd01b6` (ветка `varde/0a`, последний коммит кода после исправлений приёмки; этот файл обновлён следующим коммитом, и только он); образ на VPS: не применимо (VPS с 0b)
+- Манифест одобренного пакета этапа: `872d7702b0c3cec578ef94cd1a28c733294f6bd64aed50f7c7c61b9e676ea1d9` (эталон — пакет на `2ee5524`, принят оркестратором по решению 13.10); вычислен на commit командой §10: `872d7702b0c3cec578ef94cd1a28c733294f6bd64aed50f7c7c61b9e676ea1d9` — совпадает: да
 - `git diff 2ee5524 --stat -- docs/varde/ARCHITECTURE.md docs/varde/PRINCIPLES.md docs/varde/STAGES.md docs/varde/adr docs/varde/stages` → пусто (база ветки `2ee5524`); `kartlegging/`, корневые `package.json`/`package-lock.json` не изменены
 - Модель и усилие кодера: claude-opus-5-5, medium; fallback/несоответствие: нет
-- CI: https://github.com/Oleksandr-Kliuiev/vardahei-kartlegging/actions/runs/38388094618 — success на `1755fbb`, jobs `check`, `integration`, `image`, `secrets` зелёные. Ветка запушена один раз в конце, поэтому промежуточные коммиты задач отдельного run не имеют.
+- CI (все jobs `check`, `integration`, `image`, `secrets` — success):
+  - https://github.com/Oleksandr-Kliuiev/vardahei-kartlegging/actions/runs/38388094618 — `1755fbb` (0.4b)
+  - https://github.com/Oleksandr-Kliuiev/vardahei-kartlegging/actions/runs/38388627494 — `cd8ffc0` (первая версия evidence)
+  - https://github.com/Oleksandr-Kliuiev/vardahei-kartlegging/actions/runs/38391108325 — `70ca284` (исправления приёмки I1 и minor)
+  - Ветка пушилась пачками, поэтому у промежуточных коммитов задач отдельных run нет.
 
-Коммиты задач: 0.1 `05d02f5`, 0.2 `5e86209`, 0.2b `a9ddf4e`, 0.3 `072ffdc`, 0.4 `6055c15`, 0.4b `1755fbb`.
+Коммиты задач: 0.1 `05d02f5`, 0.2 `5e86209`, 0.2b `a9ddf4e`, 0.3 `072ffdc`, 0.4 `6055c15`, 0.4b `1755fbb`; evidence `cd8ffc0`; исправления приёмки: I1 `ecd038b`, minor `70ca284`; I2 — этот коммит evidence.
 
 ## Команды проверки (из пакета) и фактический выход
 
@@ -22,7 +26,7 @@
 | `pnpm budget` | exit 0, «0 files over 700» | exit 0, `53 files scanned, 0 files over 700` |
 | `pnpm budget:selfcheck` | exit 0, `selfcheck: 701-line file rejected` | то же |
 | `pnpm lint:privacy:selfcheck` | exit 0, `selfcheck: bypass rejected` | то же |
-| `pnpm --filter @varde/tools-eslint-rules test` | 2 файла, зелёные | 2 files, 33 tests passed |
+| `pnpm --filter @varde/tools-eslint-rules test` | 2 файла, зелёные | 2 files, 38 tests passed (на `70ca284`) |
 | `pnpm --filter @varde/tools-docs test` | 3 файла, зелёные | 3 files, 9 tests passed |
 | `ls ../docs/varde/REVIEW-CHECKLIST.md ../docs/varde/AI_CONTEXT_MAP.md ../docs/varde/WORKFLOW.md ../docs/AI_CONTEXT_MAP.md` | все есть | все есть |
 | `docker compose -f infra/compose.dev.yml up -d` | Postgres поднят | healthy (с `VARDE_DEV_PG_PORT=5434`) |
@@ -41,7 +45,7 @@
 ## Отклонения паритета / принятые отступления
 1. **Путь evidence.** Бриф оркестратора назвал `docs/varde/stages/stage-0/0a-evidence.md`; пакет (0a.md §0.4b, stage-0.md §2, §6, §10) — `docs/varde/evidence/stage-0/0a-evidence.md`. Взят путь пакета: `stages/` входит в манифест, файл там изменил бы его значение.
 2. **Evidence отдельным коммитом** после зелёного CI: в evidence нужен URL run того коммита, на который он ссылается.
-3. **Ложное срабатывание gitleaks в истории.** `generic-api-key` на прозе таблицы модели данных в старой ревизии `docs/varde/ARCHITECTURE.md` (commit `161b7c1`, строка 57, «key, kind (…)»), секрета нет. Подавлено точным fingerprint в `varde/.gitleaksignore`; флаг `--gitleaks-ignore-path /repo/varde/.gitleaksignore` добавлен во все прогоны одинаково (CI и локально). Правила и пути не ослаблены.
+3. **Ложное срабатывание gitleaks в истории.** `generic-api-key` в старой ревизии `docs/varde/ARCHITECTURE.md` (commit `161b7c1`, строка 57 — строка `MetricDefinition` таблицы модели данных, перечень полей, начинающийся словами key и question/anchor mapping); секрета нет. Подавлено точным fingerprint в `varde/.gitleaksignore`; флаг `--gitleaks-ignore-path /repo/varde/.gitleaksignore` добавлен во все прогоны одинаково (CI и локально). Правила и пути не ослаблены. Комментарий в `.gitleaksignore` сформулирован так, чтобы сам не попадал под то же правило: dir-скан читает и этот файл.
 4. **Монтирование git worktree.** `tools/secrets/lib.sh` при работе из worktree дополнительно монтирует общий `.git` read-only по его абсолютному пути и задаёт `safe.directory` через `GIT_CONFIG_*` (контейнер с другим uid). В CI (обычный checkout) это не используется.
 5. **Порт dev-Postgres.** На машине кодера `127.0.0.1:5433` занят чужим контейнером; в `compose.dev.yml` порт стал `${VARDE_DEV_PG_PORT:-5433}` — по умолчанию 5433, как в пакете.
 6. **Версии зависимостей.** pnpm 11 (`minimumReleaseAge`) отклонил свежие typescript-eslint 8.71.2 и zod 4.6.7 — взяты 8.71.1 и 4.6.5 вместо добавления исключений. NestJS — 11.2.7 (dist-tag `legacy`, как требует пакет; latest — 12). TypeScript 5.9.3 (typescript-eslint не поддерживает 7.x), ESLint 9.39.5 (eslint-plugin-import не поддерживает 10), jsdom 26.1.0 (30.x не ставится на Node 25 у кодера), Preact 10.29.8.
@@ -55,7 +59,7 @@
 | Вход | Статус | Где доказательство |
 | --- | --- | --- |
 | GitHub Actions включены в приватном репозитории | готово | run 38388094618 |
-| Факты о VPS (`atlas-db-1` 17.6, Caddy, сети, compose) | не требуется в 0a; подтверждает хостинг-оператор к 0.6 | — |
+| Факты о VPS (`atlas-db-1` 17.6, Caddy, сети, compose) | подтверждены хостинг-оператором 2026-10-13T11:30:43Z | §5b ниже |
 
 ## Инварианты, проверенные в этом checkpoint
 | Инвариант | Тест (файл::имя) |
@@ -70,7 +74,18 @@
 | Приложение стартует без базы, слушает `0.0.0.0` | `varde/apps/api/test/prisma-lazy.test.ts`, `varde/apps/api/test/main-listen.test.ts`; job `image` |
 
 ## Шаги хостинг-оператора на VPS (§5b): runbook-шаг, вывод команд без секретов, тег образа, выполненный откат (если был)
-В 0a шагов на VPS нет.
+Изменений на VPS в 0a нет. Хостинг-оператор (Claude, `ssh vardahei-vps`, только чтение) собрал факты для пинов 2026-10-13T11:30:43Z; вывод передан оркестратором, вставлен дословно:
+
+```
+docker inspect -f '{{.Name}} {{.Config.Image}}' → /atlas-db-1 postgres:17.6-bookworm ; /atlas-edge-caddy-1 caddy:2.10.2-alpine
+docker exec atlas-db-1 postgres --version → postgres (PostgreSQL) 17.6 (Debian 17.6-2.pgdg12+1)
+docker exec atlas-edge-caddy-1 caddy version → v2.10.2
+docker network ls → atlas_edge, atlas_internal
+docker network inspect -f '{{.Name}} Internal={{.Internal}}' atlas_internal atlas_edge → atlas_internal Internal=false ; atlas_edge Internal=false
+docker compose version --short → 5.5.1 ; docker --version → 29.8.1
+```
+
+Вывод: пины `postgres:17.6-bookworm` (CI service, `infra/compose.dev.yml`) и `caddy:2.10.2-alpine` (0.6) подтверждены, менять не нужно; Docker Compose 5.5.1 ≥ 2.24 (`env_file … required: false`); обе сети не internal, поэтому контейнер `backup` при включении бэкапа (0.10) выйдет наружу через `atlas_internal`, без подключения к `atlas_edge`. Откат не выполнялся.
 
 ## Держатели доступа (0.5b/0.8/0.10d/0.12b): SSH/root и группа docker на VPS; superuser atlas-db-1 (по имени); app.env и backup.env; приватные ключи age (где лежат: зашифрованный диск, без пароля); временные секреты проверок уничтожены (дата)
 Не применимо в 0a. Кодер не получал доступа к VPS и секретам; тестовые пароли — литералы локального dev/CI Postgres (`varde-dev`, `varde-ci`), синтетический ключ selfcheck генерируется при запуске и удаляется.
