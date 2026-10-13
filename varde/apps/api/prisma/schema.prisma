@@ -40,3 +40,42 @@ model AdminSession {
   @@index([expires_at])
   @@map("admin_session")
 }
+
+/// Survey template (1.4a, ARCHITECTURE §4): one per questionnaire; versions carry the content.
+/// `audience` ∈ {client_survey, seminar_live, seminar_after} (CHECK in the migration).
+model SurveyTemplate {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key                String            @unique
+  audience           String
+  required_languages String[]
+  created_at         DateTime          @default(now()) @db.Timestamptz(6)
+  versions           TemplateVersion[]
+
+  @@map("survey_template")
+}
+
+/// Version of a template (1.4a, ADR-005, ADR-019, ADR-025). A published version is immutable:
+/// trigger `template_version_immutable` rejects UPDATE and DELETE once `status = published`.
+/// `status` ∈ {draft, published}, `identification` ∈ {initials, none},
+/// `origin` ∈ {authored, kartlegging, external_import} (CHECKs in the migration).
+model TemplateVersion {
+  id                     String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  template_id            String         @db.Uuid
+  template               SurveyTemplate @relation(fields: [template_id], references: [id], onDelete: Restrict)
+  label                  String
+  version_no             Int
+  status                 String         @default("draft")
+  identification         String         @default("initials")
+  required_languages     String[]
+  content                Json           @db.JsonB
+  translation_acceptance Json           @default("{}") @db.JsonB
+  origin                 String
+  content_hash           String
+  created_at             DateTime       @default(now()) @db.Timestamptz(6)
+  published_at           DateTime?      @db.Timestamptz(6)
+  published_by           String?
+
+  @@unique([template_id, version_no])
+  @@unique([template_id, label])
+  @@map("template_version")
+}

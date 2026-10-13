@@ -10,4 +10,5 @@ export const INTEGRATION_FILES = [
   'test/stub-removed.test.ts',
   'test/break-glass-prisma.test.ts',
   'test/privacy/rows.test.ts',
+  'test/surveys/template-version.test.ts',
 ];
