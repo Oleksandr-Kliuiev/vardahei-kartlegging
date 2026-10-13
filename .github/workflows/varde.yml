@@ -73,6 +73,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @varde/api db:migrate
       - run: pnpm --filter @varde/api test:integration
+      - run: bash infra/sql/test/bootstrap.test.sh
       - run: pnpm invariants:0a
 
   image:
