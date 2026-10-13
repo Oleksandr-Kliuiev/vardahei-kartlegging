@@ -78,7 +78,7 @@ describe('notice v2 (0.18)', () => {
   });
 
   it('the identified texts name three people at Vardahei IT and the client rights', () => {
-    expect(nn['notice.identified.who_sees']).toMatch(/Svara per person ser berre Vardahei IT/);
+    expect(nn['notice.identified.who_sees']).toMatch(/I det daglege arbeidet ser berre Vardahei IT svara per person/);
     expect(nn['notice.identified.who_sees']).toMatch(/tre tilsette/);
     expect(nn['notice.identified.client_gets']).toMatch(/samla bilete utan initialar/);
     expect(nn['notice.identified.client_rights']).toMatch(/utlevert/);

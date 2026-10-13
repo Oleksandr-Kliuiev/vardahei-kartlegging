@@ -1,6 +1,6 @@
 # Уведомление респондентам v2 (0.18) — на утверждение Oleksandr (ворота G2)
 
-**Статус: pending (Oleksandr).** Утверждение — ответом в этом файле (строка «Утверждение» внизу). При правках кодер обновляет JSON, тест и hash; после утверждения — отдельный evidence `docs/varde/evidence/stage-0/0.18-approval.md` с hash JSON-файлов. Утверждение нужно к 1.13d (показ в runner).
+**Статус: утверждено Oleksandr 13.10.2026** (с правками по вопросам 1–3 и замечаниям приёмки 0c). Утверждение — ответом в этом файле (строка «Утверждение» внизу). При правках кодер обновляет JSON, тест и hash; после утверждения — отдельный evidence `docs/varde/evidence/stage-0/0.18-approval.md` с hash JSON-файлов. Утверждение нужно к 1.13d (показ в runner).
 
 Файлы: `varde/apps/runner/src/i18n/notice-v2.nn.json`, `notice-v2.en.json`, `notice-v2.nb.json` (ровно `{}`: букмол появится по переключателю шаблона, задача 1.3). Кода runner ещё нет — файлы подключит 1.12. Текущий раунд kartlegging не трогаем. Тест — `varde/apps/runner/test/notice-v2.test.ts` (ключи nn = en, стоп-список букмола, нет `anonym` в `notice.identified.*`, нет обещаний удаления по сроку и «aldri/never» рядом с «bedrifta/company»).
 
@@ -29,14 +29,14 @@
 2. В анонимном режиме хранение и право клиента записаны в `notice.anonymous.client_gets` (отдельных ключей в пакете нет). Если хотите отдельные строки — добавлю ключи `notice.anonymous.retention` и `notice.anonymous.client_rights`.
 3. Ручные выдержки свободного текста для ассистента (ADR-011) в тексте не упомянуты: их пока нет (этап 2b). Если их нужно назвать сразу — допишу предложение в `ai_processing`.
 
-## Hash текущей версии (не утверждена)
+## Hash утверждённой версии
 
 | Файл | sha256 |
 | --- | --- |
-| `notice-v2.nn.json` | `f67c26530a91c5617f63ef6a550076afd821353276873d4465dc011631e33d88` |
-| `notice-v2.en.json` | `dcbecbecdab92896dd9e9e58b89008d01285288494d6b904220f7d49c4b90d81` |
+| `notice-v2.nn.json` | `fbf1e60a26a331be27f9e7f8d555f30f4179afe9c71fdfb0d5b146b48fe50ad3` |
+| `notice-v2.en.json` | `37e9892128da4a9e7b661645456e9022f7dfa1eaacace5acf7ea5478b4c7c185` |
 | `notice-v2.nb.json` | `ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356` |
 
 ## Утверждение
 
-- Утверждено Oleksandr: **pending** (дата: —)
+- Утверждено Oleksandr: **да** (дата: 13.10.2026). Правки: `who_sees` — «I det daglege arbeidet …»; `ai_processing` — названы выдержки fritekst, проверенные человеком (ADR-011); `anonymous.client_gets` — оговорка об удалении анонимных ответов одного человека.

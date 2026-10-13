@@ -1,13 +1,13 @@
 {
   "notice.identified.intro": "In this survey you enter your initials. This lets us at Vardahei IT see how the answers change from round to round.",
-  "notice.identified.who_sees": "Only Vardahei IT sees the answers per person, that is, three people on our staff.",
+  "notice.identified.who_sees": "In day-to-day work, only Vardahei IT sees the answers per person, that is, three people on our staff.",
   "notice.identified.client_gets": "Your company gets an overall picture without initials.",
   "notice.identified.retention": "We keep the answers for as long as Vardahei IT runs the survey programme. There is no fixed deletion date; the answers are deleted on request.",
   "notice.identified.roles": "Your company is the data controller for the answers, and Vardahei IT is the data processor.",
   "notice.identified.client_rights": "As the data controller, the company can require us to hand over all answers, including the answers per person with initials, or require that all answers are deleted.",
   "notice.anonymous.intro": "You do not enter your name or initials. Vardahei IT sees the answers, but not who answered. What you write in free text may still say something about who you are.",
-  "notice.anonymous.client_gets": "Your company gets an overall picture. We keep the answers without a fixed deletion date and delete them on request. The company can require us to hand over the answers or delete them.",
-  "notice.common.ai_processing": "We may use an AI model when we work with the results. The model only gets combined figures, not answers per person.",
+  "notice.anonymous.client_gets": "Your company gets an overall picture. We keep the answers without a fixed deletion date and delete them on request. The company can require us to hand over the answers or delete them. We can only delete one person's anonymous answers if we can find them, for example from what you wrote in free text.",
+  "notice.common.ai_processing": "We may use an AI model when we work with the results. The model gets combined figures and excerpts from free-text answers that we have reviewed and stripped of identifying details, not answers per person.",
   "notice.common.exact_count": "We show how many people from the company have answered. The number shows that someone took part, not what they answered.",
   "notice.common.leader_not_anonymous": "The manager's answers are not anonymous. Vardahei IT uses them when we sit down with the management, and they are not part of the overall picture the company gets.",
   "notice.common.small_groups": "Groups of fewer than three people are not shown on their own in the overall picture."
