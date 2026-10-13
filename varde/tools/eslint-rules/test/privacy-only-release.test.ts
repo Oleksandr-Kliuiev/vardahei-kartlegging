@@ -7,7 +7,9 @@ import { FIXTURE_ROOT, PRISMA_TYPES, typedRuleTester } from './rule-tester.js';
 
 const rule = privacyOnlyRelease as never;
 const rounds = `${FIXTURE_ROOT}apps/api/src/modules/rounds/rounds.repository.ts`;
-const privacy = `${FIXTURE_ROOT}apps/api/src/modules/privacy/privacy.repository.ts`;
+const privacy = `${FIXTURE_ROOT}apps/api/src/modules/privacy/privacy.service.ts`;
+const privacySource = `${FIXTURE_ROOT}apps/api/src/modules/privacy/source.ts`;
+const privacyOther = `${FIXTURE_ROOT}apps/api/src/modules/privacy/aggregate.ts`;
 const prismaSeed = `${FIXTURE_ROOT}apps/api/prisma/seed.ts`;
 const controller = `${FIXTURE_ROOT}apps/api/src/modules/rounds/rounds.controller.ts`;
 const gateway = `${FIXTURE_ROOT}apps/api/src/modules/rounds/rounds.gateway.ts`;
@@ -42,7 +44,11 @@ describe('allow-list', () => {
   );
 
   it('is fixed', () => {
-    expect(DEFAULT_ALLOW).toEqual(['apps/api/src/modules/privacy/**', 'apps/api/prisma/**']);
+    expect(DEFAULT_ALLOW).toEqual([
+      'apps/api/src/modules/privacy/privacy.service.ts',
+      'apps/api/src/modules/privacy/source.ts',
+      'apps/api/prisma/**',
+    ]);
   });
 
   it('matches paths by glob', () => {
@@ -60,9 +66,14 @@ describe('allow-list', () => {
 typedRuleTester().run('privacy-only-release', rule, {
   valid: [
     {
-      name: 'privacy module may read responses',
+      name: 'privacy.service may read responses',
       filename: privacy,
       code: code(`void prisma.response.findMany();`),
+    },
+    {
+      name: 'privacy/source.ts may read responses in a transaction',
+      filename: privacySource,
+      code: txAccess,
     },
     { name: 'privacy module: this.prisma', filename: privacy, code: thisPrisma },
     {
@@ -97,6 +108,12 @@ typedRuleTester().run('privacy-only-release', rule, {
     },
   ],
   invalid: [
+    {
+      name: 'other files of modules/privacy may not read responses (0.15)',
+      filename: privacyOther,
+      code: code(`void prisma.response.findMany();`),
+      errors: [{ messageId: 'model' }],
+    },
     {
       name: 'prisma.response.findMany',
       filename: rounds,

@@ -10,4 +10,5 @@ export const INTEGRATION_FILES = [
   'test/stub-submit.test.ts',
   'test/hold-connection.test.ts',
   'test/break-glass-prisma.test.ts',
+  'test/privacy/rows.test.ts',
 ];

@@ -1,4 +1,4 @@
-// Rule `varde/privacy-only-release` (stub until 0.15, already type-aware).
+// Rule `varde/privacy-only-release` (type-aware; allow-list tightened in 0.15).
 // The `privacy` module is the only release point for responses and aggregate snapshots
 // (ADR-021, ADR-018). Outside the allow-list the rule reports:
 //  (a) access to `response` / `aggregateSnapshot` on a PrismaClient / TransactionClient value;
@@ -7,9 +7,13 @@
 //  (d) `PrismaService` / `@prisma/client` imports in `*.controller.ts` and `*.gateway.ts`.
 // Types are matched by name (not module): stage 0 has no such models yet.
 
-/** Fixed allow-list; every entry has its own test (privacy-only-release.test.ts). */
+/**
+ * Fixed allow-list; every entry has its own test (privacy-only-release.test.ts). Since 0.15
+ * only the facade and the response source of modules/privacy may read these models.
+ */
 export const DEFAULT_ALLOW = Object.freeze([
-  'apps/api/src/modules/privacy/**',
+  'apps/api/src/modules/privacy/privacy.service.ts',
+  'apps/api/src/modules/privacy/source.ts',
   'apps/api/prisma/**',
 ]);
 
