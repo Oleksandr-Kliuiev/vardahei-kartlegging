@@ -38,7 +38,7 @@
 
 | Файл | Содержимое |
 | --- | --- |
-| `svar.jsonl` | `{id, tid, skjema, k, lang, versjon, leiardel, sekund, svar:{id: значение}, fri:{id: текст}}`. Без IP. В опроснике по безопасности есть инициалы (`F1`) |
+| `svar.jsonl` | `{id, tid, skjema, k, lang, versjon, leiardel, sekund, svar:{id: значение}, fri:{id: текст}}`. Без IP. Инициалы в обоих опросниках: `F1` (безопасность), `K0` (KI); id вопроса с инициалами — `skjema.<id>.initialar` в `sporsmal.js` |
 | `framdrift.json` | Где сейчас каждая сессия (анонимно) |
 | `tilgang.json` | Код в ссылке для каждого клиента |
 | `kundar.json` | Число сотрудников, открыт/закрыт, срок |

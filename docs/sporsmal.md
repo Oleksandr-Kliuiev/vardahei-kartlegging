@@ -59,6 +59,7 @@ Vi vil gjerne forstå korleis arbeidsdagen din ser ut: kva som tek tid, kva som 
 
 | id | Дел | Тип | Вопрос | Варианты |
 |---|---|---|---|---|
+| K0 | A | text (обязательный, верхний регистр, до 8 знаков) | Skriv inn initialane dine: 2 første og 3 siste. Eksempel: Ola Nordman = OLNOR |  |
 | K1 | A | single (якорь) | Kva rolle har du i bedrifta? | Leiar / Administrasjon/kontor / Produksjon/drift / Sal / Kundeservice / IT / superbrukar / Anna |
 | K2 | A | multi | Kva går mesteparten av arbeidsdagen din til? | Kundar, telefon og e-post / Skrive tilbod, rapportar eller andre tekstar / Tal, rekneskap og fakturaer / Planlegging, vakter og bemanning / Registrere informasjon i system / Møte og samordning / Praktisk arbeid: produksjon, verkstad, service eller reinhald / Undervisning eller oppfølging av elevar og deltakarar / Anna |
 | K3 | A | multi | Kva oppgåver tek tid, men kjennest som rutine? | Svare på dei same spørsmåla og e-postane om att og om att / Skrive referat, notat eller rapportar / Lage tilbod eller ordrar / Kopiere informasjon frå eitt system til eit anna / Leite etter dokument eller informasjon / Fakturering, bilag og purringar / Setje opp vakter, ruter eller timeplanar / Omsetje tekst / Føre timar eller timelister / Fylle ut sjekklister og skjema, til dømes HMS / Dokumentere utført arbeid med tekst eller bilete / Bestille delar eller varer / Eg har lite slikt arbeid |
