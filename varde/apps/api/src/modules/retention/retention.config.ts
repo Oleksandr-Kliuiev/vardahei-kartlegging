@@ -53,7 +53,10 @@ export const RetentionClasses = z.strictObject({
   round: z.strictObject({ kind: z.literal('forever') }),
   metric_definition: z.strictObject({ kind: z.literal('forever') }),
   /** Counts and rejected line numbers only — never answers or initials (ADR-024). */
-  import_manifest: z.strictObject({ kind: z.literal('forever'), content: z.literal('counts_only') }),
+  import_manifest: z.strictObject({
+    kind: z.literal('forever'),
+    content: z.literal('counts_only'),
+  }),
   backup: Backup,
 });
 

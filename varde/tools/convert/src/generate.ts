@@ -6,6 +6,7 @@ import type { TemplateContent } from '@varde/schema/template/template';
 import { convertSkjema } from './convert.js';
 import type { Kartlegging } from './kartlegging.js';
 import { loadKartlegging } from './load.js';
+import { metricDefinitions } from './metrics.js';
 
 export interface SeedTemplate {
   label: string;
@@ -39,6 +40,12 @@ export function seedFiles(current: Kartlegging, old: Kartlegging): Map<string, s
     json(Object.entries(current.kundar).map(([slug, name]) => ({ slug, name }))),
   );
   files.set('import-map.json', json(IMPORT_MAP));
+  // MetricDefinitions (1.10): one file per template key, from the current version.
+  // Keyed by metric key (a `"key": "<dotted name>"` line looks like an API key to gitleaks).
+  const byKey = (defs: ReturnType<typeof metricDefinitions>) =>
+    Object.fromEntries(defs.map(({ key, ...rest }) => [key, rest]));
+  files.set('metrics/tryggleik.json', json(byKey(metricDefinitions(convertSkjema(current, 'tryggleik')))));
+  files.set('metrics/ki.json', json(byKey(metricDefinitions(convertSkjema(current, 'ki')))));
   return files;
 }
 

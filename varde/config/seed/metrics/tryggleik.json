@@ -1,0 +1,1728 @@
+{
+  "tryggleik.f2.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F2",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F2": {
+        "leiar": "leiar",
+        "kontor": "kontor",
+        "prod": "prod",
+        "sal": "sal",
+        "it": "it",
+        "anna": "anna"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.f3.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F3",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F3": {
+        "ja": "ja",
+        "delvis": "delvis",
+        "nei": "nei",
+        "usikker": "usikker"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.f4.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F4",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F4": {
+        "ja": "ja",
+        "nei": "nei",
+        "usikker": "usikker"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.f5.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F5",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F5": {
+        "ja": "ja",
+        "delvis": "delvis",
+        "nei": "nei",
+        "usikker": "usikker"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.f6.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F6",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F6": {
+        "ja": "ja",
+        "delvis": "delvis",
+        "nei": "nei",
+        "usikker": "usikker"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.f7.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F7",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F7": {
+        "ja": "ja",
+        "delvis": "delvis",
+        "nei": "nei",
+        "usikker": "usikker"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.f8.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F8",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F8": {
+        "ja": "ja",
+        "delvis": "delvis",
+        "nei": "nei",
+        "usikker": "usikker"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.f9.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F9",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F9": {
+        "ja": "ja",
+        "nei": "nei",
+        "usikker": "usikker"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.f10.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F10",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F10": {
+        "ja": "ja",
+        "oftast": "oftast",
+        "sjeldan": "sjeldan",
+        "nei": "nei"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.f11.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F11",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F11": {
+        "ja": "ja",
+        "nei": "nei",
+        "usikker": "usikker"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.f12.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F12",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F12": {
+        "ja": "ja",
+        "delvis": "delvis",
+        "nei": "nei",
+        "usikker": "usikker"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.f13.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F13",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F13": {
+        "ja": "ja",
+        "nei": "nei",
+        "usikker": "usikker"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.f14.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F14",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F14": {
+        "ja": "ja",
+        "nei": "nei",
+        "usikker": "usikker"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.f15.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F15",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F15": {
+        "m365": "m365",
+        "vpn": "vpn",
+        "erp": "erp",
+        "crm": "crm",
+        "andre": "andre",
+        "usikker": "usikker"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.f16.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F16",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F16": {
+        "ja": "ja",
+        "delvis": "delvis",
+        "nei": "nei",
+        "usikker": "usikker"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.f17.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F17",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F17": {
+        "ja": "ja",
+        "avogtil": "avogtil",
+        "sjeldan": "sjeldan",
+        "nei": "nei",
+        "usikker": "usikker"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.f18.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F18",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F18": {
+        "ja": "ja",
+        "delvis": "delvis",
+        "nei": "nei",
+        "usikker": "usikker"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.f19.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F19",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F19": {
+        "ja": "ja",
+        "delvis": "delvis",
+        "nei": "nei",
+        "usikker": "usikker"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b2.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B2",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B2": {
+        "t2": "t2",
+        "dag": "dag",
+        "d23": "d23",
+        "veke": "veke",
+        "vk": "vk"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b4.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B4",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B4": {
+        "stans": "stans",
+        "tap": "tap",
+        "lekkasje": "lekkasje",
+        "svindel": "svindel",
+        "omdome": "omdome"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b17.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B17",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B17": {
+        "kunde": "kunde",
+        "id": "id",
+        "helse": "helse",
+        "tilsette": "tilsette",
+        "barn": "barn",
+        "betaling": "betaling",
+        "andre": "andre",
+        "forretning": "forretning",
+        "vk": "vk"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b5.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B5",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B5": {
+        "dagleg": "dagleg",
+        "tilsett": "tilsett",
+        "vardahei": "vardahei",
+        "ingen": "ingen"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b19.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B19",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B19": {
+        "fag": "fag",
+        "nett": "nett",
+        "okonomi": "okonomi",
+        "booking": "booking",
+        "some": "some",
+        "anna": "anna",
+        "ingen": "ingen",
+        "vk": "vk"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b7.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B7",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B7": {
+        "ja": "ja",
+        "ventar": "ventar",
+        "nei": "nei",
+        "vk": "vk"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b8.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B8",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B8": {
+        "ofte": "ofte",
+        "ar": "ar",
+        "sjeldan": "sjeldan"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b9.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B9",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B9": {
+        "vardahei": "vardahei",
+        "sjolv": "sjolv",
+        "etter": "etter",
+        "vk": "vk"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b10.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B10",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B10": {
+        "reglar": "reglar",
+        "utan": "utan",
+        "nei": "nei",
+        "ikkje": "ikkje"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b11.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B11",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B11": {
+        "ingen": "ingen",
+        "1-10": "1-10",
+        "11-50": "11-50",
+        "o50": "o50",
+        "vk": "vk"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b12.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B12",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B12": {
+        "siste": "siste",
+        "lenge": "lenge",
+        "nei": "nei",
+        "vk": "vk"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b13.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B13",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B13": {
+        "skrive": "skrive",
+        "ide": "ide",
+        "nei": "nei",
+        "vardahei": "vardahei"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b18.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B18",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B18": {
+        "ring": "ring",
+        "svar": "svar",
+        "to": "to",
+        "endrar": "endrar",
+        "rekneskap": "rekneskap",
+        "vk": "vk"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b14_kjenner.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B14.kjenner",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B14.kjenner": {
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "5"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b15.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B15",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B15": {
+        "mote": "mote",
+        "rapport": "rapport",
+        "opplaering": "opplaering",
+        "rad": "rad",
+        "raskare": "raskare",
+        "avtale": "avtale",
+        "fungerer": "fungerer"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b16.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B16",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B16": {
+        "0": "0",
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "5",
+        "6": "6",
+        "7": "7",
+        "8": "8",
+        "9": "9",
+        "10": "10"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.mean_score": {
+    "version": 1,
+    "kind": "mean_score",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F3",
+        "part": "common"
+      },
+      {
+        "key": "F4",
+        "part": "common"
+      },
+      {
+        "key": "F5",
+        "part": "common"
+      },
+      {
+        "key": "F6",
+        "part": "common"
+      },
+      {
+        "key": "F7",
+        "part": "common"
+      },
+      {
+        "key": "F8",
+        "part": "common"
+      },
+      {
+        "key": "F9",
+        "part": "common"
+      },
+      {
+        "key": "F10",
+        "part": "common"
+      },
+      {
+        "key": "F11",
+        "part": "common"
+      },
+      {
+        "key": "F12",
+        "part": "common"
+      },
+      {
+        "key": "F13",
+        "part": "common"
+      },
+      {
+        "key": "F14",
+        "part": "common"
+      },
+      {
+        "key": "F16",
+        "part": "common"
+      },
+      {
+        "key": "F17",
+        "part": "common"
+      },
+      {
+        "key": "F18",
+        "part": "common"
+      },
+      {
+        "key": "F19",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F3": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F4": {
+        "ja": 3,
+        "nei": 0,
+        "usikker": 1
+      },
+      "F5": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F6": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F7": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F8": {
+        "ja": 3,
+        "delvis": 2,
+        "nei": 0,
+        "usikker": 1
+      },
+      "F9": {
+        "ja": 0,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F10": {
+        "ja": 0,
+        "oftast": 1,
+        "sjeldan": 2,
+        "nei": 2
+      },
+      "F11": {
+        "ja": 0,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F12": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F13": {
+        "ja": 3,
+        "nei": 0,
+        "usikker": 1
+      },
+      "F14": {
+        "ja": 0,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F16": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F17": {
+        "ja": 3,
+        "avogtil": 2,
+        "sjeldan": 1,
+        "nei": 0,
+        "usikker": 1
+      },
+      "F18": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F19": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      }
+    },
+    "scale": "risk-0-3",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered_scored",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [
+      {
+        "to": "tryggleik.runde1_f_anchors@1",
+        "degree": "comparable",
+        "note": "Same spørsmål og svaralternativ som i runde 1 (Forms). Sjå tryggleik.runde1_f_anchors@1."
+      }
+    ]
+  },
+  "tryggleik.critical_share": {
+    "version": 1,
+    "kind": "critical_share",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F3",
+        "part": "common"
+      },
+      {
+        "key": "F4",
+        "part": "common"
+      },
+      {
+        "key": "F5",
+        "part": "common"
+      },
+      {
+        "key": "F6",
+        "part": "common"
+      },
+      {
+        "key": "F7",
+        "part": "common"
+      },
+      {
+        "key": "F8",
+        "part": "common"
+      },
+      {
+        "key": "F9",
+        "part": "common"
+      },
+      {
+        "key": "F10",
+        "part": "common"
+      },
+      {
+        "key": "F11",
+        "part": "common"
+      },
+      {
+        "key": "F12",
+        "part": "common"
+      },
+      {
+        "key": "F13",
+        "part": "common"
+      },
+      {
+        "key": "F14",
+        "part": "common"
+      },
+      {
+        "key": "F16",
+        "part": "common"
+      },
+      {
+        "key": "F17",
+        "part": "common"
+      },
+      {
+        "key": "F18",
+        "part": "common"
+      },
+      {
+        "key": "F19",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F3": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F4": {
+        "ja": 3,
+        "nei": 0,
+        "usikker": 1
+      },
+      "F5": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F6": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F7": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F8": {
+        "ja": 3,
+        "delvis": 2,
+        "nei": 0,
+        "usikker": 1
+      },
+      "F9": {
+        "ja": 0,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F10": {
+        "ja": 0,
+        "oftast": 1,
+        "sjeldan": 2,
+        "nei": 2
+      },
+      "F11": {
+        "ja": 0,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F12": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F13": {
+        "ja": 3,
+        "nei": 0,
+        "usikker": 1
+      },
+      "F14": {
+        "ja": 0,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F16": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F17": {
+        "ja": 3,
+        "avogtil": 2,
+        "sjeldan": 1,
+        "nei": 0,
+        "usikker": 1
+      },
+      "F18": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F19": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      }
+    },
+    "scale": "risk-0-3",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered_scored; numerator: score >= 2",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [
+      {
+        "to": "tryggleik.runde1_f_anchors@1",
+        "degree": "comparable",
+        "note": "Same spørsmål og svaralternativ som i runde 1 (Forms). Sjå tryggleik.runde1_f_anchors@1."
+      }
+    ]
+  },
+  "tryggleik.zone": {
+    "version": 1,
+    "kind": "zone",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F3",
+        "part": "common"
+      },
+      {
+        "key": "F4",
+        "part": "common"
+      },
+      {
+        "key": "F5",
+        "part": "common"
+      },
+      {
+        "key": "F6",
+        "part": "common"
+      },
+      {
+        "key": "F7",
+        "part": "common"
+      },
+      {
+        "key": "F8",
+        "part": "common"
+      },
+      {
+        "key": "F9",
+        "part": "common"
+      },
+      {
+        "key": "F10",
+        "part": "common"
+      },
+      {
+        "key": "F11",
+        "part": "common"
+      },
+      {
+        "key": "F12",
+        "part": "common"
+      },
+      {
+        "key": "F13",
+        "part": "common"
+      },
+      {
+        "key": "F14",
+        "part": "common"
+      },
+      {
+        "key": "F16",
+        "part": "common"
+      },
+      {
+        "key": "F17",
+        "part": "common"
+      },
+      {
+        "key": "F18",
+        "part": "common"
+      },
+      {
+        "key": "F19",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F3": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F4": {
+        "ja": 3,
+        "nei": 0,
+        "usikker": 1
+      },
+      "F5": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F6": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F7": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F8": {
+        "ja": 3,
+        "delvis": 2,
+        "nei": 0,
+        "usikker": 1
+      },
+      "F9": {
+        "ja": 0,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F10": {
+        "ja": 0,
+        "oftast": 1,
+        "sjeldan": 2,
+        "nei": 2
+      },
+      "F11": {
+        "ja": 0,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F12": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F13": {
+        "ja": 3,
+        "nei": 0,
+        "usikker": 1
+      },
+      "F14": {
+        "ja": 0,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F16": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F17": {
+        "ja": 3,
+        "avogtil": 2,
+        "sjeldan": 1,
+        "nei": 0,
+        "usikker": 1
+      },
+      "F18": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F19": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      }
+    },
+    "scale": "risk-0-3",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered_scored",
+    "thresholds": {
+      "person": {
+        "bounds": [
+          1,
+          2,
+          3
+        ],
+        "compare": ">="
+      },
+      "aggregate": {
+        "bounds": [
+          0.5,
+          1.5,
+          2.5
+        ],
+        "compare": ">"
+      },
+      "score_scale": "risk-0-3",
+      "levels": [
+        "gron",
+        "gul",
+        "oransje",
+        "raud"
+      ]
+    },
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [
+      {
+        "to": "tryggleik.runde1_f_anchors@1",
+        "degree": "comparable",
+        "note": "Same spørsmål og svaralternativ som i runde 1 (Forms). Sjå tryggleik.runde1_f_anchors@1."
+      }
+    ]
+  },
+  "tryggleik.persons_per_zone": {
+    "version": 1,
+    "kind": "persons_per_zone",
+    "part": "common",
+    "questions": [
+      {
+        "key": "F3",
+        "part": "common"
+      },
+      {
+        "key": "F4",
+        "part": "common"
+      },
+      {
+        "key": "F5",
+        "part": "common"
+      },
+      {
+        "key": "F6",
+        "part": "common"
+      },
+      {
+        "key": "F7",
+        "part": "common"
+      },
+      {
+        "key": "F8",
+        "part": "common"
+      },
+      {
+        "key": "F9",
+        "part": "common"
+      },
+      {
+        "key": "F10",
+        "part": "common"
+      },
+      {
+        "key": "F11",
+        "part": "common"
+      },
+      {
+        "key": "F12",
+        "part": "common"
+      },
+      {
+        "key": "F13",
+        "part": "common"
+      },
+      {
+        "key": "F14",
+        "part": "common"
+      },
+      {
+        "key": "F16",
+        "part": "common"
+      },
+      {
+        "key": "F17",
+        "part": "common"
+      },
+      {
+        "key": "F18",
+        "part": "common"
+      },
+      {
+        "key": "F19",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "F3": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F4": {
+        "ja": 3,
+        "nei": 0,
+        "usikker": 1
+      },
+      "F5": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F6": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F7": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F8": {
+        "ja": 3,
+        "delvis": 2,
+        "nei": 0,
+        "usikker": 1
+      },
+      "F9": {
+        "ja": 0,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F10": {
+        "ja": 0,
+        "oftast": 1,
+        "sjeldan": 2,
+        "nei": 2
+      },
+      "F11": {
+        "ja": 0,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F12": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F13": {
+        "ja": 3,
+        "nei": 0,
+        "usikker": 1
+      },
+      "F14": {
+        "ja": 0,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F16": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F17": {
+        "ja": 3,
+        "avogtil": 2,
+        "sjeldan": 1,
+        "nei": 0,
+        "usikker": 1
+      },
+      "F18": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      },
+      "F19": {
+        "ja": 0,
+        "delvis": 1,
+        "nei": 2,
+        "usikker": 1
+      }
+    },
+    "scale": "risk-0-3",
+    "recall_period": "as_worded",
+    "denominator_rule": "persons_with_scored_answers",
+    "thresholds": {
+      "person": {
+        "bounds": [
+          1,
+          2,
+          3
+        ],
+        "compare": ">="
+      },
+      "aggregate": {
+        "bounds": [
+          0.5,
+          1.5,
+          2.5
+        ],
+        "compare": ">"
+      },
+      "score_scale": "risk-0-3",
+      "levels": [
+        "gron",
+        "gul",
+        "oransje",
+        "raud"
+      ]
+    },
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [
+      {
+        "to": "tryggleik.runde1_f_anchors@1",
+        "degree": "comparable",
+        "note": "Same spørsmål og svaralternativ som i runde 1 (Forms). Sjå tryggleik.runde1_f_anchors@1."
+      }
+    ]
+  }
+}

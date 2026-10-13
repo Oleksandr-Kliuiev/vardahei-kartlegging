@@ -1,0 +1,994 @@
+{
+  "ki.k1.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K1",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K1": {
+        "leiar": "leiar",
+        "kontor": "kontor",
+        "prod": "prod",
+        "sal": "sal",
+        "it": "it",
+        "anna": "anna"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k2.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K2",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K2": {
+        "kundar": "kundar",
+        "tekst": "tekst",
+        "tal": "tal",
+        "planlegging": "planlegging",
+        "registrering": "registrering",
+        "mote": "mote",
+        "praktisk": "praktisk",
+        "undervisning": "undervisning",
+        "anna": "anna"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k3.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K3",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K3": {
+        "epost": "epost",
+        "referat": "referat",
+        "tilbod": "tilbod",
+        "kopiere": "kopiere",
+        "leite": "leite",
+        "faktura": "faktura",
+        "plan": "plan",
+        "omsetje": "omsetje",
+        "timar": "timar",
+        "sjekkliste": "sjekkliste",
+        "dokumentere": "dokumentere",
+        "delar": "delar",
+        "ingen": "ingen"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k16.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K16",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K16": {
+        "epost": "epost",
+        "referat": "referat",
+        "tilbod": "tilbod",
+        "kopiere": "kopiere",
+        "leite": "leite",
+        "faktura": "faktura",
+        "plan": "plan",
+        "omsetje": "omsetje",
+        "timar": "timar",
+        "sjekkliste": "sjekkliste",
+        "dokumentere": "dokumentere",
+        "delar": "delar"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k17.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K17",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K17": {
+        "fleiredag": "fleiredag",
+        "dag": "dag",
+        "veke": "veke",
+        "sjeldnare": "sjeldnare"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k18.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K18",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K18": {
+        "u5": "u5",
+        "5-15": "5-15",
+        "15-30": "15-30",
+        "30-60": "30-60",
+        "o60": "o60",
+        "vk": "vk"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k4.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K4",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K4": {
+        "u1": "u1",
+        "1-3": "1-3",
+        "3-5": "3-5",
+        "5-10": "5-10",
+        "o10": "o10",
+        "vk": "vk"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k5.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K5",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K5": {
+        "m365": "m365",
+        "okonomi": "okonomi",
+        "crm": "crm",
+        "bransje": "bransje",
+        "rekneark": "rekneark",
+        "some": "some",
+        "portal": "portal",
+        "anna": "anna"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k6.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K6",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K6": {
+        "fleiredag": "fleiredag",
+        "dag": "dag",
+        "veke": "veke",
+        "sjeldan": "sjeldan"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k20.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K20",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K20": {
+        "epost": "epost",
+        "filer": "filer",
+        "system": "system",
+        "kollega": "kollega",
+        "papir": "papir"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k7.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K7",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K7": {
+        "aldri": "aldri",
+        "provd": "provd",
+        "avogtil": "avogtil",
+        "veke": "veke",
+        "dag": "dag"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k8.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K8",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K8": {
+        "aldri": "aldri",
+        "provd": "provd",
+        "avogtil": "avogtil",
+        "veke": "veke",
+        "dag": "dag"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k9.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K9",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K9": {
+        "n0": "n0",
+        "n1": "n1",
+        "n2": "n2",
+        "n3": "n3",
+        "n4": "n4"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k11.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K11",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K11": {
+        "skrive": "skrive",
+        "epost": "epost",
+        "samandrag": "samandrag",
+        "omsetje": "omsetje",
+        "idear": "idear",
+        "tal": "tal",
+        "sok": "sok",
+        "bilete": "bilete",
+        "laere": "laere",
+        "anna": "anna"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k21.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K21",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K21": {
+        "lim": "lim",
+        "fjern": "fjern",
+        "jobb": "jobb",
+        "utan": "utan",
+        "vk": "vk"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k19.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K19",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K19": {
+        "jobb": "jobb",
+        "privat": "privat",
+        "begge": "begge",
+        "nei": "nei",
+        "vk": "vk"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k12_sporje.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K12.sporje",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K12.sporje": {
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "5"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k12_vurdere.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K12.vurdere",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K12.vurdere": {
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "5"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k12_spart.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K12.spart",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K12.spart": {
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "5"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k13.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K13",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K13": {
+        "kva": "kva",
+        "lov": "lov",
+        "data": "data",
+        "stolar": "stolar",
+        "tid": "tid",
+        "tilgang": "tilgang",
+        "passar": "passar",
+        "ingenting": "ingenting"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k14.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K14",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K14": {
+        "gler": "gler",
+        "nysgjerrig": "nysgjerrig",
+        "noytral": "noytral",
+        "skeptisk": "skeptisk",
+        "uroa": "uroa"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.leiar_l2.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "L2",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "L2": {
+        "forespurnad": "forespurnad",
+        "planlegging": "planlegging",
+        "innkjop": "innkjop",
+        "gjennomforing": "gjennomforing",
+        "faktura": "faktura",
+        "rapport": "rapport",
+        "opplaering": "opplaering",
+        "kundeservice": "kundeservice"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.leiar_l11.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "L11",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "L11": {
+        "u10": "u10",
+        "10-30": "10-30",
+        "31-100": "31-100",
+        "o100": "o100",
+        "vk": "vk"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.leiar_l4.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "L4",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "L4": {
+        "skrive": "skrive",
+        "uformelt": "uformelt",
+        "nei": "nei",
+        "vk": "vk"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.leiar_l5.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "L5",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "L5": {
+        "alle": "alle",
+        "nokre": "nokre",
+        "gratis": "gratis",
+        "nei": "nei",
+        "vk": "vk"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.leiar_l6.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "L6",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "L6": {
+        "tilsetje": "tilsetje",
+        "lokale": "lokale",
+        "system": "system",
+        "utstyr": "utstyr",
+        "farten": "farten",
+        "ki": "ki",
+        "ingen": "ingen"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.leiar_l7.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "L7",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "L7": {
+        "tid": "tid",
+        "kundar": "kundar",
+        "oversikt": "oversikt",
+        "feil": "feil",
+        "opplaering": "opplaering",
+        "vk": "vk"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.leiar_l8.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "L8",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "L8": {
+        "no": "no",
+        "halvar": "halvar",
+        "ar": "ar",
+        "ikkje": "ikkje"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.leiar_l10.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "L10",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "L10": {
+        "ja": "ja",
+        "seinare": "seinare",
+        "nei": "nei"
+      }
+    },
+    "scale": "categorical",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": [
+      "leaders_all"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.k7_x_k8": {
+    "version": 1,
+    "kind": "cross",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K7",
+        "part": "common"
+      },
+      {
+        "key": "K8",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K7": {
+        "aldri": "aldri",
+        "provd": "provd",
+        "avogtil": "avogtil",
+        "veke": "veke",
+        "dag": "dag"
+      },
+      "K8": {
+        "aldri": "aldri",
+        "provd": "provd",
+        "avogtil": "avogtil",
+        "veke": "veke",
+        "dag": "dag"
+      }
+    },
+    "scale": "frequency-5",
+    "recall_period": "current",
+    "denominator_rule": "answered_both",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.routine_hours_week": {
+    "version": 1,
+    "kind": "routine_hours_week",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K4",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K4": {
+        "u1": 0.5,
+        "1-3": 2,
+        "3-5": 4,
+        "5-10": 7.5,
+        "o10": 12
+      }
+    },
+    "scale": "hours-week",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered_mapped",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  },
+  "ki.heaviest_task": {
+    "version": 1,
+    "kind": "heaviest_task",
+    "part": "common",
+    "questions": [
+      {
+        "key": "K16",
+        "part": "common"
+      },
+      {
+        "key": "K17",
+        "part": "common"
+      },
+      {
+        "key": "K18",
+        "part": "common"
+      }
+    ],
+    "options_mapping": {
+      "K16": {
+        "epost": "epost",
+        "referat": "referat",
+        "tilbod": "tilbod",
+        "kopiere": "kopiere",
+        "leite": "leite",
+        "faktura": "faktura",
+        "plan": "plan",
+        "omsetje": "omsetje",
+        "timar": "timar",
+        "sjekkliste": "sjekkliste",
+        "dokumentere": "dokumentere",
+        "delar": "delar"
+      },
+      "K17": {
+        "fleiredag": 15,
+        "dag": 5,
+        "veke": 3,
+        "sjeldnare": 0.5
+      },
+      "K18": {
+        "u5": 3,
+        "5-15": 10,
+        "15-30": 22,
+        "30-60": 45,
+        "o60": 75
+      }
+    },
+    "scale": "hours-week",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered_task; time when K17 and K18 are mapped",
+    "populations": [
+      "round_client",
+      "all_clients"
+    ],
+    "comparability": [],
+    "first_version": true
+  }
+}

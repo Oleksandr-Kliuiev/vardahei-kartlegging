@@ -2,13 +2,21 @@
 import { Module, type Type } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ImportsModule } from '../modules/imports/imports.module.js';
+import { MetricsModule } from '../modules/metrics/metrics.module.js';
 import { PrivacyModule } from '../modules/privacy/privacy.service.js';
 import { RoundsModule } from '../modules/rounds/rounds.module.js';
 import { SurveysModule } from '../modules/surveys/surveys.module.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 
 @Module({
-  imports: [PrismaModule, PrivacyModule.forApp(), SurveysModule, RoundsModule, ImportsModule],
+  imports: [
+    PrismaModule,
+    PrivacyModule.forApp(),
+    SurveysModule,
+    RoundsModule,
+    ImportsModule,
+    MetricsModule,
+  ],
 })
 export class CliModule {}
 

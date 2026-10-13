@@ -8,10 +8,13 @@ import {
   Module,
   type Provider,
 } from '@nestjs/common';
+import { cells as metricCells } from '@varde/rules/findings';
+import type { MetricDefinition } from '@varde/schema/metrics/metric-definition';
 import type { Population } from '@varde/schema/metrics/populations';
 import { type PrivacyConfig, readPrivacyConfig } from '../../config/privacy-config.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { aggregate, assertAggregateQuery } from './aggregate.js';
+import { PrivacyViolation } from './types.js';
 import { PrismaSnapshotStore } from './prisma-snapshot-store.js';
 import { PrismaResponseSource } from './prisma-source.js';
 import { ResponseStore } from './response-store.js';
@@ -92,6 +95,35 @@ export class PrivacyService {
         : {}),
     });
     return aggregate(query, read, this.config.k);
+  }
+
+  /**
+   * Cells of metric definitions for one population (1.10): rows are read by the source and
+   * counted by @varde/rules/findings inside this module; only cells leave it. `client` (slug)
+   * is required for round_client.
+   */
+  async computeCells(
+    round: string,
+    population: Population,
+    defs: readonly MetricDefinition[],
+    client?: string,
+  ): Promise<ComputedCell[]> {
+    if (population === 'round_client' && client === undefined) {
+      throw new PrivacyViolation('round_client cells need a client');
+    }
+    const read = await this.source.read({
+      round,
+      ...(population === 'round_client' && client !== undefined ? { client } : {}),
+    });
+    const rows = read.map((r) => ({
+      client: r.client,
+      role: r.role,
+      part: r.part,
+      answers: r.answers,
+    }));
+    return defs.flatMap((d) =>
+      metricCells(d, rows, population, population === 'round_client' ? client : undefined),
+    );
   }
 
   /** Class `rows`: admin session, AuditLog in the same transaction as the read. */

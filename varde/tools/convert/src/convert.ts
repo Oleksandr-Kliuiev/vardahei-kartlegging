@@ -42,8 +42,7 @@ function question(skjema: Skjema, q: Sporsmal): Record<string, unknown> {
       placeholder: q.plasshaldar && text(q.plasshaldar),
       short_label: q.kort === undefined ? undefined : nnOnly(q.kort),
     }),
-    visible_if:
-      q.vis === undefined ? undefined : (expressionFor(`vis:${q.id}`, q.vis)),
+    visible_if: q.vis === undefined ? undefined : expressionFor(`vis:${q.id}`, q.vis),
     optional: q.valfri ? true : undefined,
     required: q.paakravd ? true : undefined,
     role: q.rolle ? true : undefined,

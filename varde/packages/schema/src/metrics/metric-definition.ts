@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { Part, Population, populationAllows } from './populations.js';
 
-/** The one place where metric kinds are listed (extended in 1.10). */
+/** The one place where metric kinds are listed (1.10: routine_hours_week, heaviest_task). */
 export const METRIC_KINDS = [
   'distribution',
   'mean_score',
@@ -11,6 +11,8 @@ export const METRIC_KINDS = [
   'zone',
   'persons_per_zone',
   'cross',
+  'routine_hours_week',
+  'heaviest_task',
 ] as const;
 export const MetricKind = z.enum(METRIC_KINDS);
 export type MetricKind = z.infer<typeof MetricKind>;
