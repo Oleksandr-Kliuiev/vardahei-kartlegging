@@ -1,0 +1,40 @@
+# Astra: проверка delta Varde 12.10 после итерации 6
+
+Ты — GPT-6 Astra (xhigh), сессия read-only. Отвечай по-русски, технические термины — по-английски, коротко, со ссылками `file:line`. Не читай `kartlegging/data/`, `kjelder/` и содержимое `kartlegging/private/runde1.js`. Не цитируй инициалы и ответы конкретных людей.
+
+## Что прочитать
+
+1. `astra/delta-12-10-brief.md` — задача, решения Oleksandr (§3, п. 1–16), все O1–O5 решены (§3, п. 12–16), конфликты K1–K13 (§5).
+2. Свои прошлые ответы: `astra/round-delta-reply.md` (по `7283588`) и `astra/round-delta2-reply.md` (по `d30ab1e`) , `astra/round-delta3-reply.md` (по `8a40859`) , `astra/round-delta4-reply.md` (по `34f421f`) , `astra/round-delta5-reply.md` (по `adff125`) и `astra/round-delta6-reply.md` (по `df4028e`), все Reject.
+3. Исправления Fable в итерации 3: `git --no-optional-locks diff df4028e 5057fc6 -- docs/varde` и `astra/delta-12-10-summary.md`. Вся delta от базы артефакта: `git --no-optional-locks diff 161b7c1 5057fc6 -- docs/varde`. Если git в sandbox недоступен, читай файлы `docs/varde/` целиком.
+4. Текущий продукт для сверки — `kartlegging/` и `docs/`.
+
+## Задача
+
+Проверь, что блокер из `round-delta6-reply.md` закрыт (replay в kartlegging после rollback — правилом «после rollback только на чтение»), таблица путей возврата удалённого в ADR-024 полна и что решения O3–O5 (§3, п. 14–16) отражены честно, без оставшихся `[On]` и `[21]`. Проверяй затронутые инварианты целиком, а не только изменённые строки. Убедись, что ранее закрытые пункты не сломались, исправления не внесли новых противоречий и не добавили решений, которых Oleksandr не принимал. Манифест артефакта на `5057fc6` начинается с `c59190de51b7da28`:
+
+```bash
+cd docs/varde && find ARCHITECTURE.md PRINCIPLES.md STAGES.md adr -type f | sort | xargs shasum -a 256 | shasum -a 256
+```
+
+Итерация разрешена Oleksandr сверх двух. Помечай как блокер только реальное противоречие или дыру в контракте, а остальное — как non-blocking.
+
+## Формат ответа (строго)
+
+### 1. Блокеры прошлой проверки
+
+| Пункт | закрыто / не закрыто | причина (`file:line`) |
+| --- | --- | --- |
+
+### 2. K1–K13, итог
+
+| K | закрыто / не закрыто | причина (`file:line`) |
+| --- | --- | --- |
+
+### 3. Новые противоречия
+
+Список с пометкой blocking / non-blocking, или «нет».
+
+### 4. Вердикт
+
+**Approve** или **Reject: <список блокеров>**.
