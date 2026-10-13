@@ -1,0 +1,84 @@
+{
+  "classes": {
+    "progress_event": {
+      "ttl_hours": 24
+    },
+    "response": {
+      "kind": "on_request"
+    },
+    "aggregate_snapshot_released": {
+      "min_years": 3,
+      "review": "yearly"
+    },
+    "contact": {
+      "kind": "relationship"
+    },
+    "registration": {
+      "after_seminar_days": 90
+    },
+    "proposal": {
+      "ttl_months": 12
+    },
+    "audit_log": {
+      "ttl_months": 12
+    },
+    "deletion_ledger": {
+      "kind": "forever",
+      "export": "after_each_write"
+    },
+    "app_logs": {
+      "kind": "size_bounded",
+      "max_mb": 30
+    },
+    "admin_session": {
+      "after_expiry_days": 30
+    },
+    "connection_log": {
+      "ttl_months": 12
+    },
+    "pgboss_jobs": {
+      "ttl_days": 7
+    },
+    "stub_submission": {
+      "kind": "until_task",
+      "task": "1.33"
+    },
+    "backup": {
+      "rotation_days": 35,
+      "recycle_bin_days": 93,
+      "effective_max_days": 128
+    }
+  },
+  "external_copies": [
+    {
+      "name": "runde1-js-git",
+      "owner": "Oleksandr",
+      "procedure": "kartlegging/private/runde1.js в приватном git: ручная чистка по tombstone; история git остаётся (остаточный риск)"
+    },
+    {
+      "name": "master-analyse-xlsx",
+      "owner": "Oleksandr",
+      "procedure": "Master_Analyse.xlsx вне git: ручное удаление строк по tombstone"
+    },
+    {
+      "name": "kartlegging-data-backups",
+      "owner": "Oleksandr",
+      "procedure": "бэкапы kartlegging/data до cutover: ручная чистка по tombstone"
+    },
+    {
+      "name": "cutover-archive",
+      "owner": "Oleksandr",
+      "procedure": "зашифрованный архив svar.jsonl + runde1.js после cutover: удаляется после отчёта клиентам, не позднее 90 дней после cutover (1.36)"
+    },
+    {
+      "name": "varde-backup-copies",
+      "owner": "хостинг-оператор (Claude)",
+      "procedure": "копии бэкапов Varde в окне 128 дней: истекают по ADR-016; до истечения — ручная чистка по tombstone"
+    },
+    {
+      "name": "restore-kopi",
+      "owner": "исполнитель восстановления",
+      "procedure": "копия восстановления: удаляется после проверки в тот же день, отметка в evidence"
+    }
+  ]
+}
