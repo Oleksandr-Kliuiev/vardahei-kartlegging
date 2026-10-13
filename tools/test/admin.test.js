@@ -94,7 +94,8 @@ async function loggInn(page) {
   let k = await kunde();
   const nn = await tekstfelt("tryggleik").inputValue();
   sjekk("utsendingstekst nn med rett lenkje", nn.startsWith("Hei alle!") && nn.includes(k.skjema.tryggleik.url) && !/[{}]/.test(nn), nn.slice(0, 80));
-  sjekk("KI-teksten seier anonymt", (await tekstfelt("ki").inputValue()).includes("anonymt"));
+  const kiTekst = await tekstfelt("ki").inputValue();
+  sjekk("KI-teksten nemner initialar og kven som ser svara, og lovar ikkje anonymitet", kiTekst.includes("initialane") && kiTekst.includes("berre Vardahei IT") && !/anonym/i.test(kiTekst));
   await page.getByRole("button", { name: "English" }).click();
   sjekk("engelsk tekst", (await tekstfelt("tryggleik").inputValue()).startsWith("Hi everyone"));
   await page.getByRole("button", { name: "Nynorsk" }).click();

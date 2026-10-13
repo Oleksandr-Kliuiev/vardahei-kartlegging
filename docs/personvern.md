@@ -10,7 +10,7 @@
 | Ответы руководителей (блок B) | там же | Руководитель в фирме обычно один-два, опросник говорит об этом прямо |
 | Инициалы и ответы 57 человек раунда 1 | `private/runde1.js` (в git), исходник `kjelder/Master_Analyse.xlsx` (не в git) | То же |
 | Почта трёх сотрудников Vardahei, входы, действия в админке | `data/brukarar.json`, `data/hendingar.jsonl` | Учётки и журнал |
-| Ответы KI-опросника | `data/svar.jsonl` | Без имён. Свободный текст теоретически может что-то выдать |
+| Инициалы (K0) + фирма + роль + ответы, KI-опросник | `data/svar.jsonl` | С 13.10 KI-опросник тоже с инициалами, как F1. Свободный текст может выдать больше |
 
 Не сохраняем: IP-адреса (ни в ответах, ни в журнале), прогресс в админке привязан к случайной сессии.
 
@@ -37,9 +37,9 @@ Vardahei работает как MSP: опрос проводится для к�
 
 > **Kartlegging av IT-tryggleik og KI-bruk hos kundar**
 > - **Rolle:** Vardahei IT er databehandlar for kunden (behandlingsansvarleg).
-> - **Føremål:** Finne kva IT-tryggleiken i kvardagen manglar hos kunden, sjå utviklinga frå runde til runde og føreslå tiltak. Det anonyme KI-skjemaet skal finne arbeidsoppgåver der KI kan hjelpe.
+> - **Føremål:** Finne kva IT-tryggleiken i kvardagen manglar hos kunden, sjå utviklinga frå runde til runde og føreslå tiltak. KI-skjemaet skal finne arbeidsoppgåver der KI kan hjelpe.
 > - **Kven det gjeld:** Tilsette hos kundane.
-> - **Opplysningar:** Initialar (2 første og 3 siste bokstavar), bedrift, rolle og svar på 22 spørsmål om IT-vanar. Leiarar svarar i tillegg på spørsmål om rutinar i bedrifta. KI-skjemaet: anonyme svar utan namn. Ingen IP-adresser.
+> - **Opplysningar:** Initialar (2 første og 3 siste bokstavar), bedrift, rolle og svar på 22 spørsmål om IT-vanar. Leiarar svarar i tillegg på spørsmål om rutinar i bedrifta. KI-skjemaet: initialar, bedrift, rolle og svar om arbeidsoppgåver og KI-bruk. Ingen IP-adresser.
 > - **Kven ser opplysningane:** Tre tilsette i Vardahei IT med eiga innlogging. Bedrifta får eit samla bilete utan initialar.
 > - **Lagring:** Eigen server hos Hostinger i Düsseldorf (EU). Kryptert overføring (HTTPS), passord lagra som scrypt-hash, datamappa er berre lesbar for tenesta.
 > - **Sletting:** Så lenge kundeforholdet varer. Innan tre månader etter at avtalen med kunden sluttar.

@@ -230,6 +230,7 @@ tr.sumrad td { font-weight: 700; border-top: 1.5px solid var(--line); }
 
 <script src="sporsmal.js"></script>
 <script src="runde1.js"></script>
+<script src="ki-tilsett.js"></script>
 <script>
 (function () {
   "use strict";
@@ -290,7 +291,7 @@ tr.sumrad td { font-weight: 700; border-top: 1.5px solid var(--line); }
           f.sporsmal.forEach(function (s) {
             if (s.del === "B" && !leiar) return;
             if (s.rolle) { svar[s.id] = leiar ? "leiar" : vel(["kontor", 4, "sal", 2, "prod", 4, "anna", 1]); return; }
-            if (s.id === "F1") { var bok = "ABEFGHIKLMNORSTV"; var ini = ""; for (var q = 0; q < 5; q++) ini += bok[Math.floor(rnd() * bok.length)]; svar.F1 = ini; return; }
+            if (s.id === f.initialar) { var bok = "ABEFGHIKLMNORSTV"; var ini = ""; for (var q = 0; q < 5; q++) ini += bok[Math.floor(rnd() * bok.length)]; svar[s.id] = ini; return; }
             if (s.vis && !s.vis(svar)) return;
             if (s.type === "single") {
               var vekt = { F3: ["ja", 5, "delvis", 3, "nei", 1, "usikker", 1], F4: ["ja", 5, "nei", 4, "usikker", 1], F5: ["ja", 3, "delvis", 3, "nei", 2, "usikker", 3], F6: ["ja", 2, "delvis", 3, "nei", 3, "usikker", 3],
@@ -734,7 +735,7 @@ tr.sumrad td { font-weight: 700; border-top: 1.5px solid var(--line); }
     if (skjult) rg.appendChild(el("small", { text: skjult + (skjult === 1 ? " rolle" : " roller") + " med færre enn " + minG + " svar er ikkje viste, for å verne anonymiteten.", style: "color:var(--faint);font-size:12.5px" }));
     f.appendChild(rg);
     if (!tilstand.demo) {
-      f.appendChild(el("div", { class: "lenkjer" }, [el("a", { href: "api/svar.csv?s=" + tilstand.skjema, text: "Last ned svar (CSV)" })]));
+      f.appendChild(el("div", { class: "lenkjer" }, [el("a", { href: "api/svar.csv?s=" + tilstand.skjema, text: "Last ned svar (CSV)" }), el("a", { href: "api/analyse.csv", id: "analyse-eksport", title: "Éi rad per person og spørsmål, begge skjema, same oppsett som PQ_Detalj_Risiko", text: "Til Master_Analyse (CSV)" })]));
     }
   }
 
@@ -920,6 +921,7 @@ tr.sumrad td { font-weight: 700; border-top: 1.5px solid var(--line); }
     }
     if (tilstand.skjema === "tryggleik") innhald.appendChild(soneSeksjon(rr));
     innhald.appendChild(fs);
+    if (tilstand.skjema === "ki" && window.KiTilsett) innhald.appendChild(window.KiTilsett.seksjon(rr, { el: el, kundeNamn: kundeNamn, visKunde: tilstand.kunde === "alle", forrige: window.KI_FORRIGE && window.KI_FORRIGE.svar }));
 
     if (tilstand.skjema === "tryggleik") {
       innhald.appendChild(kakeSeksjon(rr));
@@ -936,7 +938,7 @@ tr.sumrad td { font-weight: 700; border-top: 1.5px solid var(--line); }
     if (tilstand.skjema === "tryggleik") a.lastChild.textContent = "Spørsmål for spørsmål, i same rekkjefølgje som i skjemaet (og som i Forms-runden).";
     var g = el("div", { class: "rutenett" });
     if (tilstand.skjema === "ki") { g.appendChild(kiBruk(rr)); g.appendChild(rutineBlokk(rr)); }
-    f.sporsmal.filter(function (s) { return s.del === "A" && s.id !== "K7" && s.id !== "K8" && s.id !== "F1"; }).forEach(function (s) {
+    f.sporsmal.filter(function (s) { return s.del === "A" && s.id !== "K7" && s.id !== "K8" && s.id !== f.initialar; }).forEach(function (s) {
       g.appendChild(blokk(rr, s, s.type === "text" || s.id === "K3"));
     });
     a.appendChild(g);

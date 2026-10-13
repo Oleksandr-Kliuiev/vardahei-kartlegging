@@ -431,6 +431,13 @@
 
   var KI_SP = [
     {
+      id: "K0", del: "A", type: "text", einlinje: true, stor: true, paakravd: true, maksLengd: 8,
+      ingress: { nn: "Identifikasjon", en: "Identification" },
+      tekst: { nn: "Skriv inn initialane dine: 2 første og 3 siste. Eksempel: Ola Nordman = OLNOR", en: "Enter your initials: first 2 and last 3 letters. Example: Ola Nordman = OLNOR" },
+      hjelp: { nn: "Initialane gjer at vi kan sjå svara per tilsett og samanlikne med neste runde. Svara per person ser berre Vardahei IT.", en: "Your initials let us see answers per employee and compare with the next round. Only Vardahei IT sees answers per person." },
+      plasshaldar: { nn: "OLNOR", en: "OLNOR" }
+    },
+    {
       id: "K1", del: "A", type: "single", rolle: true, anker: true,
       tekst: { nn: "Kva rolle har du i bedrifta?", en: "What is your role at work?" },
       val: ROLLER
@@ -833,6 +840,7 @@
       namn: { nn: "IT-sikkerheit i kvardagen", en: "IT security in everyday work" },
       kort: { nn: "IT-sikkerheit", en: "IT security" },
       minutt: 5,
+      initialar: "F1", // spørsmålet med initialane, for tabellen per tilsett og eksporten
       brev: {
         nn: ["Vi i Vardahei IT vil gjerne vite korleis IT-sikkerheita er i kvardagen hos dykk: kva rutinar som finst, korleis de held styr på passord og innlogging, og kva de gjer om noko går gale.",
              "Spørsmåla er dei same som i førre runde, slik at vi kan sjå kva som har endra seg. Svara blir brukte til å finne ut kva vi bør gjere betre i verksemda."],
@@ -854,12 +862,14 @@
       namn: { nn: "Arbeidsdagen og KI", en: "Your working day and AI" },
       kort: { nn: "Arbeidsdag og KI", en: "Work and AI" },
       minutt: 7,
+      initialar: "K0",
       brev: {
         nn: ["Vi vil gjerne forstå korleis arbeidsdagen din ser ut: kva som tek tid, kva som går av seg sjølv, og korleis du brukar KI i dag. Om du brukar det i det heile.",
              "Svara hjelper oss å finne ut kvar KI faktisk kan gjere jobben lettare hos dykk, og kvar det ikkje gir meining."],
         en: ["We'd like to understand what your working day looks like: what takes time, what runs smoothly, and how you use AI today. If you use it at all.",
              "Your answers help us find where AI can actually make work easier at your company, and where it makes no sense."]
       },
+      fakta2: { nn: "Du skriv inn initialane dine først, slik at vi kan sjå endringa til neste runde. Svara per person ser berre Vardahei IT. Bedrifta får eit samla bilete utan initialar.", en: "You enter your initials first, so we can see the change by the next round. Only Vardahei IT sees answers per person. Your company gets an overall picture without initials." },
       fakta3: { nn: "Ingen feil svar. Har du aldri brukt KI, er det like nyttig å vite.", en: "No wrong answers. If you've never used AI, that's just as useful to know." },
       fakta4: { nn: "Til slutt får du nokre KI-tips som passar for deg.", en: "At the end you get a few AI tips that suit you." },
       leiar: {
@@ -884,7 +894,7 @@
   };
 
   window.KARTLEGGING = {
-    versjon: "2026-10-12",
+    versjon: "2026-10-13",
     soner: SONER,
     // Dashbordet skal ikkje vise svar delt på rolle når ei rolle har færre svar enn dette
     minGruppe: 3,

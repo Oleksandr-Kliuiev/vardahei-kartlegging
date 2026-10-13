@@ -313,8 +313,8 @@ tr.utsending > td { background: var(--bg); padding: 16px 14px 18px; }
       en: "Hi everyone,\n\nVardahei IT, who help us with IT, would like to know what IT security looks like in our everyday work: which routines we have, how we keep track of passwords and sign-ins, and what we do if something goes wrong.\n\nThe questions are the same as last round, so we can see what has changed. You enter your initials first; apart from that there are no names. Only Vardahei IT sees answers per person, and the company gets an overall picture. It takes about {minutt} minutes, and \u201cnot sure\u201d is a perfectly fine answer.\n\n{lenkje}\n\nThe link goes to kartlegging.vardahei.tech, so it's safe to open.{frist}\n\nThanks!"
     },
     ki: {
-      nn: "Hei alle!\n\nVi vil gjerne finne ut kva som tek tid i arbeidsdagen vår, og om KI kan gjere noko av det enklare. Vardahei IT har laga ei kort undersøking om det. Har du aldri brukt KI, er svaret ditt like nyttig.\n\nDet tek om lag {minutt} minutt og er anonymt.\n\n{lenkje}\n\nLenkja går til kartlegging.vardahei.tech, så du kan trygt opne ho.{frist}\n\nTakk!",
-      en: "Hi everyone,\n\nWe'd like to find out what takes time in our working day, and whether AI could make some of it easier. Vardahei IT has made a short survey about it. If you've never used AI, your answer is just as useful.\n\nIt takes about {minutt} minutes and is anonymous.\n\n{lenkje}\n\nThe link goes to kartlegging.vardahei.tech, so it's safe to open.{frist}\n\nThanks!"
+      nn: "Hei alle!\n\nVi vil gjerne finne ut kva som tek tid i arbeidsdagen vår, og om KI kan gjere noko av det enklare. Vardahei IT har laga ei kort undersøking om det. Har du aldri brukt KI, er svaret ditt like nyttig.\n\nDu skriv inn initialane dine først, elles er det ingen namn. Svara per person ser berre Vardahei IT, og bedrifta får eit samla bilete. Det tek om lag {minutt} minutt.\n\n{lenkje}\n\nLenkja går til kartlegging.vardahei.tech, så du kan trygt opne ho.{frist}\n\nTakk!",
+      en: "Hi everyone,\n\nWe'd like to find out what takes time in our working day, and whether AI could make some of it easier. Vardahei IT has made a short survey about it. If you've never used AI, your answer is just as useful.\n\nYou enter your initials first; apart from that there are no names. Only Vardahei IT sees answers per person, and the company gets an overall picture. It takes about {minutt} minutes.\n\n{lenkje}\n\nThe link goes to kartlegging.vardahei.tech, so it's safe to open.{frist}\n\nThanks!"
     }
   };
   function lagTekst(k, sid, l) {
@@ -388,6 +388,7 @@ tr.utsending > td { background: var(--bg); padding: 16px 14px 18px; }
       case "kunde_endra": return [ "admin", h.epost + " endra " + kunde + ": " + (h.open ? "open" : "stengd") + (h.tilsette ? ", " + h.tilsette + " tilsette" : "") + (h.frist ? ", frist " + h.frist : "") ];
       case "ny_kode": return [ "admin", h.epost + " laga ny lenkjekode for " + kunde ];
       case "eksport": return [ "admin", h.epost + " lasta ned svar (" + sk + ")" ];
+      case "eksport_analyse": return [ "admin", h.epost + " lasta ned svar per person til Master_Analyse (" + (sk || "begge skjema") + ")" ];
       default: return [ "", h.type ];
     }
   }

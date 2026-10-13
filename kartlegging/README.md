@@ -91,11 +91,15 @@ Soner, same modell som Master_Analyse.xlsx:
 
 Tre små skilnader frå reknearket: «Skjelden» på PC-lås tel som oransje (reknearket hoppa over det), og fritekstsvar som «nei» tel ikkje. Det flyttar tre personar i runde 1 éi sone.
 
+## Eksport til Master_Analyse
+
+«Til Master_Analyse (CSV)» i dashbordet (eller `/api/analyse.csv`, `?s=tryggleik` eller `?s=ki` for eitt skjema) gir éi rad per person og spørsmål for begge skjema. Dei seks første kolonnene er som arket `PQ_Detalj_Risiko`: Initialar, Kunde, Spørsmål, Svar, Risiko, Rang. Risiko og rang (Grøn 1 … Raud 4) kjem frå fargane i `sporsmal.js` og er berre fylte ut for spørsmål med farge. Etter dei kjem Rolle, Skjema, Del, Spørsmål-ID, Svar-ID, Dato og Svar-nr. Fila er UTF-8 med BOM og semikolon, så ho opnar rett i Excel og i Power Query. Kvar nedlasting blir loggført med e-post i `hendingar.jsonl` og i loggen i adminpanelet.
+
 ## Personvern
 
 - Tryggleiksskjemaet spør om initialar (`F1`), som i Forms-runden, for å kunne sjå svar per tilsett og endring frå førre runde. `private/runde1.js` har initialane frå runde 1 og ligg berre bak innlogginga. Initialar er personopplysningar: ta det med i oversikta over behandlingar, og slett svara når kartlegginga er ferdig og rapportert.
-- KI-skjemaet er anonymt: ingen namn.
+- KI-skjemaet spør òg om initialar (`K0`), i same format som `F1` (avgjerd 13.10). Svara per person ser berre Vardahei IT; bedrifta får eit samla bilete utan initialar. Skjemaet og teksten under «Send ut» seier det same.
 - Ingen IP-adresser blir lagra med svara.
 - Framdrifta i adminpanelet er anonym: berre kva spørsmål ei økt er på, aldri svara.
 - Dashbordet viser ikkje rolle når ei rolle har færre enn 3 svar (`minGruppe` i `sporsmal.js`).
-- Leiardelen er ikkje anonym i praksis, og skjemaet seier det rett ut.
+- Leiardelen: det er lett å sjå kven som har svart, og skjemaet seier det rett ut.

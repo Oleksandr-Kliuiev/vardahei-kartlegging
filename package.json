@@ -8,7 +8,9 @@
     "test:skjema": "node tools/test/skjema.test.js",
     "test:dashbord": "node tools/test/dashboard.test.js",
     "test:admin": "node tools/test/admin.test.js",
-    "test:grenser": "node tools/test/grenser.test.js"
+    "test:grenser": "node tools/test/grenser.test.js",
+    "test:ki": "node tools/test/ki.test.js",
+    "test:eksport": "node tools/test/eksport.test.js"
   },
   "devDependencies": {
     "playwright": "^1.48.0"

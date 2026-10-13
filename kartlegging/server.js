@@ -7,12 +7,12 @@
 //   node server.js --brukar <e-post>         legg til eller nullstill ein brukar (spør etter passord)
 //
 // Data (i DATA_DIR, standard ./data):
-//   svar.jsonl       eitt svar per linje. Ingen IP-adresser. Tryggleiksskjemaet har initialar (F1), KI-skjemaet er anonymt.
+//   svar.jsonl       eitt svar per linje. Ingen IP-adresser. Begge skjema har initialar (F1 i tryggleik, K0 i KI).
 //   framdrift.json   kor langt kvar økt har kome (anonymt), for adminpanelet
 //   tilgang.json     koden i lenkja for kvar kunde
 //   kundar.json      tal tilsette, open/stengd og frist per kunde
 //   brukarar.json    kontoar til dashbordet (passord lagra som scrypt-hash)
-//   hendingar.jsonl  innloggingar og endringar i adminpanelet
+//   hendingar.jsonl  innloggingar, endringar i adminpanelet og nedlastingar (eksport, eksport_analyse)
 "use strict";
 const http = require("http");
 const fs = require("fs");
@@ -272,6 +272,7 @@ function status() {
 
 /* ---------------- Plakat med QR-kode ---------------- */
 const qrcode = require("./lib/qrcode.js");
+const { analyseCsv } = require("./lib/analyse-eksport.js");
 function qrSvg(tekst) {
   const qr = qrcode(0, "M"); qr.addData(tekst); qr.make();
   const n = qr.getModuleCount(), m = 2;
@@ -319,7 +320,7 @@ p.ingress { font-size: 15pt; line-height: 1.4; margin: 0 0 9mm; max-width: 150mm
       <li><b>1.</b> Opne kameraet på mobilen</li>
       <li><b>2.</b> Sikt på ruta</li>
       <li><b>3.</b> Trykk på lenkja som dukkar opp</li>
-      <li style="margin-top:7mm">${sid === "tryggleik" ? "Same spørsmål som sist. Ingen feil svar." : "Anonymt. Ingen feil svar."}${fristTekst ? `<br>Svar innan <b>${esc(fristTekst)}</b>.` : ""}</li>
+      <li style="margin-top:7mm">${sid === "tryggleik" ? "Same spørsmål som sist. Ingen feil svar." : "Ingen feil svar."}${fristTekst ? `<br>Svar innan <b>${esc(fristTekst)}</b>.` : ""}</li>
     </ol>
   </div>
   <p class="en">${esc(t.en)} Scan the code with your phone camera.</p>
@@ -489,7 +490,7 @@ ${feil === "1" ? '<p class="feil">Feil e-post eller passord.</p>' : feil === "2"
     const brukar = innlogga(req);
     const erApi = p.startsWith("/api/");
     if (!brukar) {
-      if (erApi || p === "/runde1.js") return json(res, 401, { feil: "Ikkje innlogga" });
+      if (erApi || p === "/runde1.js" || p === "/ki-tilsett.js") return json(res, 401, { feil: "Ikkje innlogga" });
       if (p === "/dashboard" || p === "/admin" || p === "/byt-passord") return vidaresend(res, "/logg-inn?til=" + encodeURIComponent(p === "/byt-passord" ? "/admin" : p));
       return send(res, 404, "Fann ikkje sida.");
     }
@@ -527,12 +528,21 @@ ${tekst ? `<p class="feil">${tekst}</p>` : ""}<button type="submit">Lagre passor
     if (req.method === "GET" && p === "/dashboard") return send(res, 200, side("private/dashboard.html"), "text/html; charset=utf-8");
     if (req.method === "GET" && p === "/admin") return send(res, 200, side("private/admin.html"), "text/html; charset=utf-8");
     if (req.method === "GET" && p === "/runde1.js") return send(res, 200, fs.readFileSync(path.join(__dirname, "private/runde1.js")), "text/javascript; charset=utf-8");
+    if (req.method === "GET" && p === "/ki-tilsett.js") return send(res, 200, fs.readFileSync(path.join(__dirname, "private/ki-tilsett.js")), "text/javascript; charset=utf-8");
     if (req.method === "GET" && p === "/api/meg") return json(res, 200, { epost: brukar.epost });
     if (req.method === "GET" && p === "/api/svar") return json(res, 200, lesAlle());
     if (req.method === "GET" && p === "/api/svar.csv") {
       const sid = K.skjema[url.searchParams.get("s")] ? url.searchParams.get("s") : "tryggleik";
       hending("eksport", { epost: brukar.epost, skjema: sid });
       return send(res, 200, csv(lesAlle(), sid), "text/csv; charset=utf-8", { "Content-Disposition": `attachment; filename="kartlegging-${sid}.csv"` });
+    }
+    if (req.method === "GET" && p === "/api/analyse.csv") {
+      // Til Master_Analyse: éi rad per person og spørsmål, begge skjema med mindre s= er sett
+      const s = url.searchParams.get("s");
+      const ids = K.skjema[s] ? [s] : Object.keys(K.skjema);
+      const { tekst, rader } = analyseCsv(lesAlle(), K, ids);
+      hending("eksport_analyse", { epost: brukar.epost, skjema: K.skjema[s] ? s : null, rader });
+      return send(res, 200, tekst, "text/csv; charset=utf-8", { "Content-Disposition": `attachment; filename="kartlegging-analyse-${K.skjema[s] ? s + "-" : ""}${new Date().toISOString().slice(0, 10)}.csv"` });
     }
     if (req.method === "GET" && p === "/api/lenkjer") return json(res, 200, lenkjer());
     if (req.method === "GET" && p === "/plakat") {
