@@ -1,9 +1,10 @@
-// CLI of the api image: `node dist/cli.js break-glass-hash` (0.8), `seed` (1.7).
+// CLI of the api image: `node dist/cli.js break-glass-hash` (0.8), `seed` (1.7), `import` (1.8, 1.9).
 // Generates a ≥ 128-bit password, prints it once to stderr, and prints to stdout only the line
 // VARDE_BREAK_GLASS_PASSWORD_HASH='$argon2id$…' (single quotes: Compose leaves $ alone), so
 // stdout can be appended to app.env as is. Takes no input from argv besides the command.
 import { randomBytes } from 'node:crypto';
 import { hash } from '@node-rs/argon2';
+import { importCommand } from './cli/import.js';
 import { seedCommand } from './cli/seed.js';
 
 export const PASSWORD_BYTES = 24;
@@ -17,11 +18,13 @@ export async function breakGlassHash(): Promise<{ password: string; line: string
 
 const USAGE = `usage: node dist/cli.js break-glass-hash
        node dist/cli.js seed --clients <path> --kundar <path> --tilgang <path>
+       node dist/cli.js import svar|runde1 --file <path> [--dry-run]
 `;
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;
   if (command === 'seed') return seedCommand(rest);
+  if (command === 'import') return importCommand(rest);
   if (command !== 'break-glass-hash' || rest.length > 0) {
     process.stderr.write(USAGE);
     return 2;

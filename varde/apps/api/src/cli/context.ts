@@ -1,12 +1,15 @@
 // Nest application context of the CLI commands (1.7+): database modules only, no HTTP, no jobs.
 import { Module, type Type } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { ImportsModule } from '../modules/imports/imports.module.js';
 import { PrivacyModule } from '../modules/privacy/privacy.service.js';
 import { RoundsModule } from '../modules/rounds/rounds.module.js';
 import { SurveysModule } from '../modules/surveys/surveys.module.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 
-@Module({ imports: [PrismaModule, PrivacyModule.forApp(), SurveysModule, RoundsModule] })
+@Module({
+  imports: [PrismaModule, PrivacyModule.forApp(), SurveysModule, RoundsModule, ImportsModule],
+})
 export class CliModule {}
 
 export async function withContext<T>(

@@ -16,6 +16,7 @@ export const DEFAULT_ALLOW = Object.freeze([
   'apps/api/src/modules/privacy/source.ts',
   'apps/api/src/modules/privacy/prisma-source.ts',
   'apps/api/src/modules/privacy/prisma-snapshot-store.ts',
+  'apps/api/src/modules/privacy/response-store.ts',
   'apps/api/prisma/**',
 ]);
 

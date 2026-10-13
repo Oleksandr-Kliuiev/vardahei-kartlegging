@@ -14,6 +14,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { aggregate, assertAggregateQuery } from './aggregate.js';
 import { PrismaSnapshotStore } from './prisma-snapshot-store.js';
 import { PrismaResponseSource } from './prisma-source.js';
+import { ResponseStore } from './response-store.js';
 import {
   type ComputedCell,
   release,
@@ -39,6 +40,8 @@ export type { ResponseSource, SourceQuery } from './source.js';
 export type { RowsDb } from './rows.js';
 export { ReleaseRejected } from './release.js';
 export { PrismaResponseSource } from './prisma-source.js';
+export { ResponseStore } from './response-store.js';
+export type { ResponsePart } from './response-store.js';
 export type {
   ComputedCell,
   HistoricCell,
@@ -70,6 +73,9 @@ export class PrivacyService {
     @Inject(RESPONSE_SOURCE) private readonly source: ResponseSource,
     @Inject(PRIVACY_CONFIG) private readonly config: PrivacyConfig,
   ) {}
+
+  /** The only write path of Response (import 1.8, Submission API 1.16). */
+  readonly store = new ResponseStore();
 
   private get ctx(): RowsContext {
     return { db: this.prisma, source: this.source };
