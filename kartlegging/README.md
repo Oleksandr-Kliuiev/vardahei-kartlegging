@@ -94,8 +94,8 @@ Tre små skilnader frå reknearket: «Skjelden» på PC-lås tel som oransje (re
 ## Personvern
 
 - Tryggleiksskjemaet spør om initialar (`F1`), som i Forms-runden, for å kunne sjå svar per tilsett og endring frå førre runde. `private/runde1.js` har initialane frå runde 1 og ligg berre bak innlogginga. Initialar er personopplysningar: ta det med i oversikta over behandlingar, og slett svara når kartlegginga er ferdig og rapportert.
-- KI-skjemaet er anonymt: ingen namn.
+- KI-skjemaet spør òg om initialar (`K0`), i same format som `F1` (avgjerd 13.10). Svara per person ser berre Vardahei IT; bedrifta får eit samla bilete utan initialar. Skjemaet og teksten under «Send ut» seier det same.
 - Ingen IP-adresser blir lagra med svara.
 - Framdrifta i adminpanelet er anonym: berre kva spørsmål ei økt er på, aldri svara.
 - Dashbordet viser ikkje rolle når ei rolle har færre enn 3 svar (`minGruppe` i `sporsmal.js`).
-- Leiardelen er ikkje anonym i praksis, og skjemaet seier det rett ut.
+- Leiardelen: det er lett å sjå kven som har svart, og skjemaet seier det rett ut.

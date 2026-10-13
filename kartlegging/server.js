@@ -7,7 +7,7 @@
 //   node server.js --brukar <e-post>         legg til eller nullstill ein brukar (spør etter passord)
 //
 // Data (i DATA_DIR, standard ./data):
-//   svar.jsonl       eitt svar per linje. Ingen IP-adresser. Tryggleiksskjemaet har initialar (F1), KI-skjemaet er anonymt.
+//   svar.jsonl       eitt svar per linje. Ingen IP-adresser. Begge skjema har initialar (F1 i tryggleik, K0 i KI).
 //   framdrift.json   kor langt kvar økt har kome (anonymt), for adminpanelet
 //   tilgang.json     koden i lenkja for kvar kunde
 //   kundar.json      tal tilsette, open/stengd og frist per kunde
@@ -319,7 +319,7 @@ p.ingress { font-size: 15pt; line-height: 1.4; margin: 0 0 9mm; max-width: 150mm
       <li><b>1.</b> Opne kameraet på mobilen</li>
       <li><b>2.</b> Sikt på ruta</li>
       <li><b>3.</b> Trykk på lenkja som dukkar opp</li>
-      <li style="margin-top:7mm">${sid === "tryggleik" ? "Same spørsmål som sist. Ingen feil svar." : "Anonymt. Ingen feil svar."}${fristTekst ? `<br>Svar innan <b>${esc(fristTekst)}</b>.` : ""}</li>
+      <li style="margin-top:7mm">${sid === "tryggleik" ? "Same spørsmål som sist. Ingen feil svar." : "Ingen feil svar."}${fristTekst ? `<br>Svar innan <b>${esc(fristTekst)}</b>.` : ""}</li>
     </ol>
   </div>
   <p class="en">${esc(t.en)} Scan the code with your phone camera.</p>

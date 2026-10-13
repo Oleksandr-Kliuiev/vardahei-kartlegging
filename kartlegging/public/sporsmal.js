@@ -869,6 +869,7 @@
         en: ["We'd like to understand what your working day looks like: what takes time, what runs smoothly, and how you use AI today. If you use it at all.",
              "Your answers help us find where AI can actually make work easier at your company, and where it makes no sense."]
       },
+      fakta2: { nn: "Du skriv inn initialane dine først, slik at vi kan sjå endringa til neste runde. Svara per person ser berre Vardahei IT. Bedrifta får eit samla bilete utan initialar.", en: "You enter your initials first, so we can see the change by the next round. Only Vardahei IT sees answers per person. Your company gets an overall picture without initials." },
       fakta3: { nn: "Ingen feil svar. Har du aldri brukt KI, er det like nyttig å vite.", en: "No wrong answers. If you've never used AI, that's just as useful to know." },
       fakta4: { nn: "Til slutt får du nokre KI-tips som passar for deg.", en: "At the end you get a few AI tips that suit you." },
       leiar: {
