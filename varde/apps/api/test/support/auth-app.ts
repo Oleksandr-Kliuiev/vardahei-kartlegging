@@ -4,7 +4,7 @@ import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fa
 import { Test } from '@nestjs/testing';
 import type { LightMyRequestResponse } from 'fastify';
 import { AppModule } from '../../src/app.module.js';
-import { configureApp } from '../../src/bootstrap.js';
+import { configureApp } from '../../src/configure-app.js';
 import { SessionStore } from '../../src/modules/auth/session.store.js';
 import { MemorySessionStore } from './memory-session-store.js';
 

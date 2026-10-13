@@ -117,6 +117,8 @@ jobs:
           body=$(curl -s http://127.0.0.1:3999/health)
           docker stop "$cid"
           test "$body" = '{"status":"ok","version":"ci","db":"ok"}'
+      - name: Break-glass hash survives Compose env parsing (CLI inside the image)
+        run: VARDE_IMAGE=varde-api:ci bash infra/test/break-glass-env.test.sh
       - name: compose config (prod compose without /etc/varde files)
         run: bash infra/test/compose-config.test.sh
       - name: Caddy fragments validate; error log has no query
