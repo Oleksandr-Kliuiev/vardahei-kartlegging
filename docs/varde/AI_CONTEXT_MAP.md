@@ -14,7 +14,7 @@
 | Context-budget, lint, границы импорта | `varde/tools/context-budget/check.mjs`, `varde/tools/eslint-rules/boundaries.js`, `varde/eslint.config.js` |
 | Бэкап / restore | `varde/infra/backup/` (появится в 0.10), `docs/varde/runbooks/` (появится в 0.10d), `docs/varde/adr/ADR-016-hosting-and-backup.md`, `docs/varde/adr/ADR-017-retention-by-data-class.md` |
 | Добавить ADR | `docs/varde/adr/`, `docs/varde/ARCHITECTURE.md` §13 (индекс ADR), `docs/varde/WORKFLOW.md` (одобрение через Fable) |
-| Checkpoint: evidence и приёмка | `docs/varde/WORKFLOW.md`, `docs/varde/REVIEW-CHECKLIST.md`, `docs/varde/evidence/` (появится в 0a, 0.4b), `docs/varde/stages/stage-0.md` §6, §10 |
+| Checkpoint: evidence и приёмка | `docs/varde/WORKFLOW.md`, `docs/varde/REVIEW-CHECKLIST.md`, `docs/varde/evidence/stage-0/0a-evidence.md`, `docs/varde/stages/stage-0.md` §6, §10 |
 
 ## Не читать
 
