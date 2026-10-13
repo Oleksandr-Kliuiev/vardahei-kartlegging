@@ -735,7 +735,7 @@ tr.sumrad td { font-weight: 700; border-top: 1.5px solid var(--line); }
     if (skjult) rg.appendChild(el("small", { text: skjult + (skjult === 1 ? " rolle" : " roller") + " med færre enn " + minG + " svar er ikkje viste, for å verne anonymiteten.", style: "color:var(--faint);font-size:12.5px" }));
     f.appendChild(rg);
     if (!tilstand.demo) {
-      f.appendChild(el("div", { class: "lenkjer" }, [el("a", { href: "api/svar.csv?s=" + tilstand.skjema, text: "Last ned svar (CSV)" })]));
+      f.appendChild(el("div", { class: "lenkjer" }, [el("a", { href: "api/svar.csv?s=" + tilstand.skjema, text: "Last ned svar (CSV)" }), el("a", { href: "api/analyse.csv", id: "analyse-eksport", title: "Éi rad per person og spørsmål, begge skjema, same oppsett som PQ_Detalj_Risiko", text: "Til Master_Analyse (CSV)" })]));
     }
   }
 

@@ -388,6 +388,7 @@ tr.utsending > td { background: var(--bg); padding: 16px 14px 18px; }
       case "kunde_endra": return [ "admin", h.epost + " endra " + kunde + ": " + (h.open ? "open" : "stengd") + (h.tilsette ? ", " + h.tilsette + " tilsette" : "") + (h.frist ? ", frist " + h.frist : "") ];
       case "ny_kode": return [ "admin", h.epost + " laga ny lenkjekode for " + kunde ];
       case "eksport": return [ "admin", h.epost + " lasta ned svar (" + sk + ")" ];
+      case "eksport_analyse": return [ "admin", h.epost + " lasta ned svar per person til Master_Analyse (" + (sk || "begge skjema") + ")" ];
       default: return [ "", h.type ];
     }
   }

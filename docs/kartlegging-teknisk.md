@@ -12,6 +12,8 @@
 | `private/dashboard.html` | Дашборд: зоны, выводы, круговые, по сотрудникам, сравнение с раундом 1, по вопросам, руководители. Без сервера — демоданные |
 | `private/admin.html` | Админка: процент ответов, кто отвечает сейчас, где бросают, открыть/закрыть, срок, новый код, тексты рассылки, плакат |
 | `private/runde1.js` | 57 ответов раунда 1 с инициалами. Генерируется `tools/runde1_fra_excel.py` |
+| `private/ki-tilsett.js` | Таблица «Svar per tilsett» для KI в дашборде (`window.KiTilsett`). Столбец «Førre runde» появится, если будет `window.KI_FORRIGE.svar` с прошлым KI-раундом |
+| `lib/analyse-eksport.js` | CSV для Master_Analyse: строка на человека и вопрос, первые шесть столбцов как `PQ_Detalj_Risiko` |
 | `private/logo.b64` | Логотип для плаката |
 | `lib/qrcode.js` | qrcode-generator 1.4.4 (MIT, Kazuhiko Arase) |
 | `deploy/` | `compose.yaml`, `installer.sh`, `brukarar.seed.json` |
@@ -27,8 +29,8 @@
 - `GET/POST /logg-inn`, `POST /logg-ut`, `GET/POST /byt-passord`
 
 После входа:
-- `/dashboard`, `/admin`, `/runde1.js`, `/plakat?k&s`
-- `GET /api/meg`, `/api/svar`, `/api/svar.csv?s=`, `/api/lenkjer`, `/api/admin/status`
+- `/dashboard`, `/admin`, `/runde1.js`, `/ki-tilsett.js`, `/plakat?k&s`
+- `GET /api/meg`, `/api/svar`, `/api/svar.csv?s=`, `/api/analyse.csv[?s=]` (Master_Analyse, событие `eksport_analyse`), `/api/lenkjer`, `/api/admin/status`
 - `GET /api/admin/straum` — SSE, событие `oppdatert`
 - `POST /api/admin/kunde {k, tilsette, open, frist}`, `POST /api/admin/nykode {k}`
 
@@ -69,7 +71,11 @@ BASE=http://127.0.0.1:3099 T=$T K=daco node tools/test/skjema.test.js
 BASE=http://127.0.0.1:3099 PW1='<стартовый>' PW2='<новый>' node tools/test/dashboard.test.js
 BASE=http://127.0.0.1:3099 PW1='<текущий>' K=gasta node tools/test/admin.test.js
 BASE=http://127.0.0.1:3099 T=<код gasta> K=gasta node tools/test/grenser.test.js   # на свежезапущенном сервере
+BASE=http://127.0.0.1:3099 T=<код kviknes> K=kviknes PW1='<текущий>' node tools/test/ki.test.js
+BASE=http://127.0.0.1:3099 PW1='<текущий>' node tools/test/eksport.test.js   # после skjema и ki
 ```
+
+`ki.test.js`: KI-опросник с инициалами (интро nn/en без обещания анонимности, K0 первым и обязательным, верхний регистр и обрезка до 8 знаков на сервере), таблица KI «Svar per tilsett» в дашборде. `eksport.test.js`: `/api/analyse.csv` — 401 без входа, BOM, `;`, столбцы `PQ_Detalj_Risiko`, цвет и ранг, KI с инициалами, защита от формул, запись в журнал. Общие помощники тестов — `tools/test/stotte.js`.
 
 `skjema.test.js` проходит опросник за четырёх людей (один — руководитель) и проверяет, что всё дошло. `dashboard.test.js` входит, при необходимости меняет пароль, проверяет дашборд на реальных и на демоданных и снимает скриншоты. `admin.test.js` проходит админку на клиенте `K`: число сотрудников, тексты «Send ut» (nn/en, копирование), плакат, срок (в т.ч. просроченный → 410 и «avslutta» в опроснике), закрыть/открыть, «Ny kode» (старая ссылка → 403), обновление «I gang no» через SSE и лог событий. Падает с кодом 1 при любой ошибке, в конце возвращает настройки клиента. Код ссылки вернуть нельзя, поэтому тест запускается только против localhost. `grenser.test.js` без браузера: 30 человек за одним IP проходят опросник одновременно (всё должно дойти), 20 неверных кодов с подменённым `X-Forwarded-For` (21-й → 429), лимит на сессию. Он пишет 30 тестовых ответов и выбирает лимиты на 10 минут, поэтому его запускают на свежем сервере первым, а остальные тесты — после него.
 

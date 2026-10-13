@@ -12,7 +12,7 @@
 //   tilgang.json     koden i lenkja for kvar kunde
 //   kundar.json      tal tilsette, open/stengd og frist per kunde
 //   brukarar.json    kontoar til dashbordet (passord lagra som scrypt-hash)
-//   hendingar.jsonl  innloggingar og endringar i adminpanelet
+//   hendingar.jsonl  innloggingar, endringar i adminpanelet og nedlastingar (eksport, eksport_analyse)
 "use strict";
 const http = require("http");
 const fs = require("fs");
@@ -272,6 +272,7 @@ function status() {
 
 /* ---------------- Plakat med QR-kode ---------------- */
 const qrcode = require("./lib/qrcode.js");
+const { analyseCsv } = require("./lib/analyse-eksport.js");
 function qrSvg(tekst) {
   const qr = qrcode(0, "M"); qr.addData(tekst); qr.make();
   const n = qr.getModuleCount(), m = 2;
@@ -527,13 +528,21 @@ ${tekst ? `<p class="feil">${tekst}</p>` : ""}<button type="submit">Lagre passor
     if (req.method === "GET" && p === "/dashboard") return send(res, 200, side("private/dashboard.html"), "text/html; charset=utf-8");
     if (req.method === "GET" && p === "/admin") return send(res, 200, side("private/admin.html"), "text/html; charset=utf-8");
     if (req.method === "GET" && p === "/runde1.js") return send(res, 200, fs.readFileSync(path.join(__dirname, "private/runde1.js")), "text/javascript; charset=utf-8");
-    if (req.method === "GET" && p === "/api/meg") return json(res, 200, { epost: brukar.epost });
     if (req.method === "GET" && p === "/ki-tilsett.js") return send(res, 200, fs.readFileSync(path.join(__dirname, "private/ki-tilsett.js")), "text/javascript; charset=utf-8");
+    if (req.method === "GET" && p === "/api/meg") return json(res, 200, { epost: brukar.epost });
     if (req.method === "GET" && p === "/api/svar") return json(res, 200, lesAlle());
     if (req.method === "GET" && p === "/api/svar.csv") {
       const sid = K.skjema[url.searchParams.get("s")] ? url.searchParams.get("s") : "tryggleik";
       hending("eksport", { epost: brukar.epost, skjema: sid });
       return send(res, 200, csv(lesAlle(), sid), "text/csv; charset=utf-8", { "Content-Disposition": `attachment; filename="kartlegging-${sid}.csv"` });
+    }
+    if (req.method === "GET" && p === "/api/analyse.csv") {
+      // Til Master_Analyse: éi rad per person og spørsmål, begge skjema med mindre s= er sett
+      const s = url.searchParams.get("s");
+      const ids = K.skjema[s] ? [s] : Object.keys(K.skjema);
+      const { tekst, rader } = analyseCsv(lesAlle(), K, ids);
+      hending("eksport_analyse", { epost: brukar.epost, skjema: K.skjema[s] ? s : null, rader });
+      return send(res, 200, tekst, "text/csv; charset=utf-8", { "Content-Disposition": `attachment; filename="kartlegging-analyse-${K.skjema[s] ? s + "-" : ""}${new Date().toISOString().slice(0, 10)}.csv"` });
     }
     if (req.method === "GET" && p === "/api/lenkjer") return json(res, 200, lenkjer());
     if (req.method === "GET" && p === "/plakat") {
