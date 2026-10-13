@@ -1,28 +1,34 @@
-// Fixture for `pnpm lint:privacy:selfcheck`: a privacy bypass with no other lint errors.
-// Copied to apps/api/src/modules/__selfcheck__/bypass.ts at run time, then removed.
-// Types are declared here by name: stage 0 has no Response model in Prisma yet.
+// Fixture for `pnpm lint:privacy:selfcheck`: privacy bypasses from a dashboard module with no
+// other lint errors (0.19b). Copied to apps/api/src/modules/dashboard/__selfcheck__/bypass.ts at
+// run time, then removed. Types are declared here by name: stage 0 has no Response model yet.
 
 interface ResponseDelegate {
   findMany(): Promise<unknown[]>;
 }
 
+interface RoundClientDelegate {
+  findMany(args: { include: { responses: boolean } }): Promise<unknown[]>;
+}
+
 interface PrismaClient {
   response: ResponseDelegate;
+  roundClient: RoundClientDelegate;
   $transaction<T>(fn: (tx: TransactionClient) => Promise<T>): Promise<T>;
 }
 
 interface TransactionClient {
   response: ResponseDelegate;
+  roundClient: RoundClientDelegate;
 }
 
-export class BypassRepository {
+export class DashboardBypass {
   constructor(private readonly prisma: PrismaClient) {}
-
-  all(): Promise<unknown[]> {
-    return this.prisma.response.findMany();
-  }
 
   inTransaction(): Promise<unknown[]> {
     return this.prisma.$transaction((tx: TransactionClient) => tx.response.findMany());
+  }
+
+  throughInclude(): Promise<unknown[]> {
+    return this.prisma.roundClient.findMany({ include: { responses: true } });
   }
 }

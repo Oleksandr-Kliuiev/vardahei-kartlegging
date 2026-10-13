@@ -75,6 +75,7 @@ jobs:
       - run: pnpm --filter @varde/api test:integration
       - run: pnpm invariants:0a
       - run: pnpm invariants:0b
+      - run: pnpm invariants:0c
 
   image:
     runs-on: ubuntu-24.04
