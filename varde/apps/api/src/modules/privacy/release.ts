@@ -97,7 +97,11 @@ const unitOf = (c: Parameters<typeof blockOf>[0] & { group: string }) => `${bloc
 
 /** The only computed → released transition; module-private on purpose (0.16, 0.15b). */
 function markReleased(snapshot: ComputedSnapshot, releasedAt: string): ReleasedSnapshot {
-  return Object.freeze({ ...snapshot, status: 'released', released_at: releasedAt });
+  return Object.freeze({
+    ...snapshot,
+    status: 'released',
+    released_at: releasedAt,
+  }) as ReleasedSnapshot;
 }
 
 function assertActor(actor: unknown): ReleaseActor {
@@ -145,6 +149,23 @@ async function checkMetricSet(
   return fixed === null ? [...set] : null;
 }
 
+/** Shape of cells by population (1.10b, ADR-020): leaders_all only `all` without a client;
+ * round_client needs a client; all_clients has none (groups `client:<slug>` instead). */
+function assertShape(population: Population, cells: readonly ComputedCell[]): void {
+  for (const c of cells) {
+    const bad =
+      population === 'leaders_all'
+        ? c.client !== undefined || c.group !== TOTAL
+        : population === 'round_client'
+          ? c.client === undefined
+          : c.client !== undefined;
+    if (bad)
+      throw new ReleaseRejected(
+        `cell ${c.metric_key}/${c.group} does not fit population ${population}`,
+      );
+  }
+}
+
 export async function release(
   round: string,
   population: Population,
@@ -155,6 +176,7 @@ export async function release(
   opts: ReleaseOptions = {},
 ): Promise<ReleaseResult> {
   const who = assertActor(actor);
+  assertShape(population, cells);
   const { k, exact_counts } = deps.config;
   const toFix = await checkMetricSet(round, cells, store, opts);
   const previous = await store.listReleased(round, population);
@@ -170,26 +192,32 @@ export async function release(
   const out: ReleasedSnapshot[] = [];
   let carried = 0;
   for (const block of blocks.values()) {
-    const exact = exact_counts.includes(block[0]?.metric_key ?? '');
+    // The exact counter is the named exception only as round_client × group `all` (1.10b);
+    // its other groups and other populations follow the general rules.
+    const exact =
+      population === 'round_client' && exact_counts.includes(block[0]?.metric_key ?? '');
     const byGroup = new Map(block.map((c) => [c.group, c]));
     const total = byGroup.get(TOTAL);
     const parts = block.filter((c) => c.group !== TOTAL);
     // Rule 1 and complementary suppression inside the new release; a block without a total
     // (e.g. drop-out per question) has no subtraction relation between its groups.
-    const suppressed = exact
-      ? new Set<string>()
-      : total === undefined
+    const suppressed =
+      total === undefined
         ? new Set(parts.filter((c) => c.n < k).map((c) => c.group))
         : suppressedGroups(total, parts, k);
     // Rules 2 and 3 against every earlier release (|Δn|: after a deletion n goes down).
     const carry = new Set<string>();
-    for (const earlier of exact ? [] : history) {
+    for (const earlier of history) {
       const deltas = new Map(block.map((c) => [c.group, c.n - (earlier.get(unitOf(c)) ?? 0)]));
       const hit =
         total === undefined
           ? [...deltas].filter(([, d]) => d !== 0 && Math.abs(d) < k).map(([g]) => g)
           : carriedByDiff(deltas, k);
       for (const g of hit) carry.add(g);
+    }
+    if (exact) {
+      suppressed.delete(TOTAL);
+      carry.delete(TOTAL);
     }
 
     for (const c of block) {

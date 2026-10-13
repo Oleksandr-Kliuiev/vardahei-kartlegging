@@ -139,4 +139,24 @@ describe('privacy rows (0.15)', () => {
       for (const initials of FIXTURE_INITIALS) expect(text).not.toContain(initials);
     }
   });
+
+  it('a respondent_key the source returns for an anonymous row is cut off (1.10b)', async () => {
+    const anon = source.rounds.get(ROUND_ANONYMOUS)!;
+    anon.rows.forEach((row, i) =>
+      Object.assign(row, { respondent_key: FIXTURE_INITIALS[i % FIXTURE_INITIALS.length] }),
+    );
+    const r = await service().rows({ round: ROUND_ANONYMOUS }, session);
+    expect(r.rows.length).toBeGreaterThan(0);
+    expect(r.rows.some((row) => 'respondent_key' in row)).toBe(false);
+  });
+
+  it('who of a break-glass read is the operator of the window, not break_glass:<sid> (1.10b)', async () => {
+    const who = `break-glass:${MARK}-operator`;
+    const bg: PrivacySession = { sid: 'sid-bg', oid: null, name: who, via: 'break_glass' };
+    await service().rows({ round: ROUND_INITIALS }, bg);
+    const entries = await prisma.auditLog.findMany({ where: { who } });
+    expect(entries).toHaveLength(1);
+    expect(await prisma.auditLog.count({ where: { who: 'break_glass:sid-bg' } })).toBe(0);
+    await prisma.auditLog.deleteMany({ where: { who } });
+  });
 });

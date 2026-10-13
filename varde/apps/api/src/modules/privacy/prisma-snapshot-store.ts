@@ -52,24 +52,25 @@ export class PrismaSnapshotStore implements SnapshotStore {
       orderBy: { id: 'asc' },
     });
     const slugs = await this.slugs(rows);
-    return rows.map((r) =>
-      Object.freeze({
-        round,
-        population,
-        ...(r.client_id === null ? {} : { client: slugs.get(r.client_id) ?? r.client_id }),
-        metric_key: r.metric_key,
-        metric_version: r.metric_version,
-        group: r.group,
-        n: r.n,
-        numerator: r.numerator,
-        denominator: r.denominator,
-        missing: r.missing,
-        suppressed: r.suppressed,
-        ...(r.stale ? { stale: true } : {}),
-        computed_at: date(r.computed_at),
-        status: 'released' as const,
-        released_at: date(r.released_at),
-      }),
+    return rows.map(
+      (r) =>
+        Object.freeze({
+          round,
+          population,
+          ...(r.client_id === null ? {} : { client: slugs.get(r.client_id) ?? r.client_id }),
+          metric_key: r.metric_key,
+          metric_version: r.metric_version,
+          group: r.group,
+          n: r.n,
+          numerator: r.numerator,
+          denominator: r.denominator,
+          missing: r.missing,
+          suppressed: r.suppressed,
+          ...(r.stale ? { stale: true } : {}),
+          computed_at: date(r.computed_at),
+          status: 'released' as const,
+          released_at: date(r.released_at),
+        }) as ReleasedSnapshot, // rows released earlier by markReleased; read back inside privacy
     );
   }
 

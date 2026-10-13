@@ -29,11 +29,12 @@ const computed: ComputedSnapshot = {
   status: 'computed',
 };
 // Built by hand here: in production only privacy.release() produces this object (0.15b).
-const released: ReleasedSnapshot = Object.freeze({
+// The schema's own tests may assert the brand (lint allows packages/schema/test, 1.10b).
+const released = Object.freeze({
   ...computed,
   status: 'released',
   released_at: '2026-10-13',
-});
+}) as ReleasedSnapshot;
 
 describe('AggregateSnapshot (0.16)', () => {
   it('the snapshot schema accepts all three statuses and rejects extra keys', () => {

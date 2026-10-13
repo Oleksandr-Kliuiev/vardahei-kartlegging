@@ -93,6 +93,9 @@ export const MetricDefinition = z
     if (KINDS_WITH_THRESHOLDS.includes(m.kind) && m.thresholds === undefined) {
       issue(`${m.kind} needs thresholds`, ['thresholds']);
     }
+    if (m.first_version === true && m.version !== 1) {
+      issue('first_version: true requires version 1', ['first_version']);
+    }
     if (m.comparability.length === 0 && m.first_version !== true) {
       issue('empty comparability is allowed only with first_version: true', ['comparability']);
     }

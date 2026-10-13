@@ -46,7 +46,14 @@ export const AggregateSnapshotSchema = z.discriminatedUnion('status', [
 ]);
 
 export type ComputedSnapshot = z.infer<typeof ComputedSnapshotSchema>;
-export type ReleasedSnapshot = Readonly<z.infer<typeof ReleasedSnapshotSchema>>;
+declare const RELEASED: unique symbol;
+/**
+ * A released snapshot is a brand type (1.10b): only `markReleased` in apps/api modules/privacy
+ * builds one; `as ReleasedSnapshot` / `<ReleasedSnapshot>` elsewhere is a lint error.
+ */
+export type ReleasedSnapshot = Readonly<z.infer<typeof ReleasedSnapshotSchema>> & {
+  readonly [RELEASED]: true;
+};
 export type SupersededSnapshot = Readonly<z.infer<typeof SupersededSnapshotSchema>>;
 export type AggregateSnapshot = ComputedSnapshot | ReleasedSnapshot | SupersededSnapshot;
 

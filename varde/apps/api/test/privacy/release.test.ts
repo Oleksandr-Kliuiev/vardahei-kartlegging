@@ -154,3 +154,70 @@ describe('privacy.release (0.15b)', () => {
     expect(store.all).toEqual([]);
   });
 });
+
+describe('cell shape by population and the exact counter (1.10b)', () => {
+  const leader = (over: Partial<ComputedCell> = {}) =>
+    ({
+      metric_key: F12_JA,
+      metric_version: 1,
+      group: 'all',
+      n: 4,
+      numerator: 2,
+      denominator: 4,
+      missing: 0,
+      ...over,
+    });
+
+  it('a leaders_all cell with a client (or a role group) → ReleaseRejected', async () => {
+    await expect(
+      privacy.release(ROUND, 'leaders_all', [leader({ client: 'kunde-a' })], store, AUTO),
+    ).rejects.toThrow(ReleaseRejected);
+    await expect(
+      privacy.release(ROUND, 'leaders_all', [leader({ group: 'role:leiar' })], store, AUTO),
+    ).rejects.toThrow(ReleaseRejected);
+  });
+
+  it('a round_client cell without a client → ReleaseRejected', async () => {
+    await expect(privacy.release(ROUND, 'round_client', [leader()], store, AUTO)).rejects.toThrow(
+      ReleaseRejected,
+    );
+  });
+
+  it('an all_clients cell with a client field → ReleaseRejected (groups client:<slug> instead)', async () => {
+    await expect(
+      privacy.release(ROUND, 'all_clients', [cell('all', 6, 3)], store, AUTO),
+    ).rejects.toThrow(ReleaseRejected);
+    const ok = await privacy.release(
+      ROUND,
+      'all_clients',
+      [leader({ group: 'client:kunde-a', n: 6 }), leader({ n: 6 })],
+      store,
+      AUTO,
+    );
+    expect(ok.released).toHaveLength(2);
+  });
+
+  it('responses_total in all_clients is suppressed by the general rules', async () => {
+    const r = await privacy.release(
+      ROUND,
+      'all_clients',
+      [leader({ metric_key: 'responses_total', n: 2, numerator: 2, denominator: 2 })],
+      store,
+      AUTO,
+    );
+    expect(r.released[0]).toMatchObject({ suppressed: true, n: 0 });
+  });
+
+  it('responses_total in round_client: group all exact, role groups by the general rules', async () => {
+    const t = (group: string, n: number) => cell(group, n, n, { metric_key: 'responses_total' });
+    const r = await privacy.release(
+      ROUND,
+      'round_client',
+      [t('all', 2), t('role:sal', 2)],
+      store,
+      AUTO,
+    );
+    expect(find(r, 'all')).toMatchObject({ suppressed: false, n: 2 });
+    expect(find(r, 'role:sal')).toMatchObject({ suppressed: true, n: 0 });
+  });
+});
