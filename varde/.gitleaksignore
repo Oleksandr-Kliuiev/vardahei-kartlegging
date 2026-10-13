@@ -1,4 +1,5 @@
 # Reviewed false positives (exact gitleaks fingerprints only; never whole paths or rules).
-# generic-api-key on prose "key, kind (distribution | …)" in the data-model table of an old
-# ARCHITECTURE.md revision; no secret. Reviewed 13.10.2026 (task 0.2).
+# generic-api-key on prose in the MetricDefinition row of the data-model table (line 57) of an
+# old ARCHITECTURE.md revision: the field list that begins with the words key and
+# question/anchor mapping; no secret. Reviewed 13.10.2026 (task 0.2).
 161b7c19ee41646e0ee21f6e837af970fdff1e82:docs/varde/ARCHITECTURE.md:generic-api-key:57

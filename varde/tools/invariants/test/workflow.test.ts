@@ -40,10 +40,8 @@ describe('.github/workflows/varde.yml', () => {
     for (const job of Object.values(workflow.jobs)) expect(job['timeout-minutes']).toBe(15);
   });
 
-  it('checks out full history in the secrets job', () => {
-    const checkout = workflow.jobs.secrets?.steps.find((s) =>
-      s.uses?.startsWith('actions/checkout@'),
-    );
+  it.each(['secrets', 'integration'])('checks out full history in the %s job', (job) => {
+    const checkout = workflow.jobs[job]?.steps.find((s) => s.uses?.startsWith('actions/checkout@'));
     expect(checkout?.with?.['fetch-depth']).toBe(0);
   });
 });

@@ -24,12 +24,17 @@ function exampleFiles(dir: string): string[] {
   return found;
 }
 
-/** Returns offending lines (`KEY=value` outside the allow-list, or anything not `KEY=`). */
+/**
+ * Returns offending lines: `KEY=value` outside the allow-list, anything not `KEY=`, and
+ * commented-out values (`# KEY=value`).
+ */
 export function violations(text: string): string[] {
   return text
     .split('\n')
     .map((line) => line.trim())
-    .filter((line) => line !== '' && !line.startsWith('#'))
+    .filter(
+      (line) => line !== '' && !(line.startsWith('#') && !/^#\s*[A-Z][A-Z0-9_]*=\S/.test(line)),
+    )
     .filter((line) => !/^[A-Z][A-Z0-9_]*=$/.test(line) && !ALLOWED_VALUES.has(line));
 }
 
@@ -46,10 +51,8 @@ describe('.env examples contain names only', () => {
 
   it('rejects values, allows the fixed exceptions', () => {
     expect(violations('# c\nDATABASE_URL=\nPORT=3000\n')).toEqual([]);
-    expect(violations('SESSION_SECRET=abc\nPORT=8080\nexport X=\n')).toEqual([
-      'SESSION_SECRET=abc',
-      'PORT=8080',
-      'export X=',
-    ]);
+    expect(
+      violations('SESSION_SECRET=abc\nPORT=8080\nexport X=\n# TOKEN=xyz\n# note: KEY= only\n'),
+    ).toEqual(['SESSION_SECRET=abc', 'PORT=8080', 'export X=', '# TOKEN=xyz']);
   });
 });

@@ -1,6 +1,7 @@
 // Import boundaries (task 0.2b, PRINCIPLES §12–13). Used by varde/eslint.config.js.
 // Blocks that target the same files replace each other's rule options, so every block
-// that sets `no-restricted-syntax` repeats the global `export *` ban.
+// that sets `no-restricted-syntax` repeats the global `export *` ban, and every block that
+// sets `no-restricted-imports` repeats the privacy-internal ban (it applies to any module).
 
 const EXPORT_ALL = {
   selector: 'ExportAllDeclaration',
@@ -24,6 +25,10 @@ export const boundaries = [
     rules: { 'no-restricted-syntax': ['error', EXPORT_ALL] },
   },
   {
+    ignores: ['apps/api/src/modules/privacy/**'],
+    rules: { 'no-restricted-imports': ['error', { patterns: [PRIVACY_INTERNAL] }] },
+  },
+  {
     files: ['packages/*/src/**/index.ts'],
     ignores: ['packages/rules/src/runner/index.ts', 'packages/rules/src/findings/index.ts'],
     rules: { 'no-restricted-syntax': ['error', EXPORT_ALL, BARREL_INDEX] },
@@ -35,6 +40,7 @@ export const boundaries = [
         'error',
         {
           patterns: [
+            PRIVACY_INTERNAL,
             {
               regex: '^(@varde/api(/.*)?|@nestjs/.*|@prisma/.*|node:.*|@varde/rules/findings)$',
               message: 'apps/runner must not pull server code or @varde/rules/findings.',
@@ -51,6 +57,7 @@ export const boundaries = [
         'error',
         {
           patterns: [
+            PRIVACY_INTERNAL,
             {
               regex: '(^|/)findings(/|$)',
               message: 'rules/runner must not import rules/findings.',
@@ -67,6 +74,7 @@ export const boundaries = [
         'error',
         {
           patterns: [
+            PRIVACY_INTERNAL,
             {
               regex: '(^|/)runner(/|$)',
               message: 'rules/findings must not import rules/runner.',
@@ -75,10 +83,5 @@ export const boundaries = [
         },
       ],
     },
-  },
-  {
-    files: ['apps/api/src/**/*.ts'],
-    ignores: ['apps/api/src/modules/privacy/**'],
-    rules: { 'no-restricted-imports': ['error', { patterns: [PRIVACY_INTERNAL] }] },
   },
 ];

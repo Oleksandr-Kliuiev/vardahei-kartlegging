@@ -12,7 +12,11 @@ const eslint = new ESLint({ cwd: ROOT, overrideConfigFile: join(ROOT, 'eslint.co
 const created: string[] = [];
 
 afterAll(() => {
-  for (const path of created) rmSync(path, { recursive: true, force: true });
+  for (const path of created) {
+    rmSync(path, { force: true });
+    const dir = dirname(path);
+    if (dir.endsWith('__boundaries__')) rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 async function ruleIds(rel: string, code: string): Promise<string[]> {
@@ -71,6 +75,19 @@ describe('import boundaries', () => {
       await ruleIds(
         'packages/rules/src/findings/__boundaries__.ts',
         `import { normalizeEmpty } from '../runner/index.js';\nexport const n = normalizeEmpty;\n`,
+      ),
+    ).toContain('no-restricted-imports');
+  });
+
+  it.each([
+    'apps/admin/src/__boundaries__privacy.ts',
+    'apps/runner/src/__boundaries__privacy.ts',
+    'packages/rules/src/runner/__boundaries__privacy.ts',
+  ])('privacy internals are off-limits from %s too', async (rel) => {
+    expect(
+      await ruleIds(
+        rel,
+        `import { x } from '../../api/src/modules/privacy/privacy.repository.js';\nexport { x };\n`,
       ),
     ).toContain('no-restricted-imports');
   });
