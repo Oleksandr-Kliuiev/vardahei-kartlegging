@@ -12,3 +12,5 @@ allowBuilds:
   prisma: true
   '@prisma/engines': true
   '@prisma/client': true
+  # tsx -> esbuild: its postinstall only verifies the platform binary (optional dependency).
+  esbuild: false

@@ -1,0 +1,27 @@
+// Varde database schema (stage 0: AuditLog only). Migrations: prisma/migrations (see CLAUDE.md).
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Who did what, when, to which target (ARCHITECTURE §4, ADR-025).
+/// `details` holds the release volume (round, client, count) — never secrets, never respondent
+/// answers and never `respondent_key` (test in 0.15).
+model AuditLog {
+  id      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  at      DateTime @default(now()) @db.Timestamptz(6)
+  who     String
+  what    String
+  target  String?
+  details Json?    @db.JsonB
+
+  @@index([at])
+  @@index([what, at])
+  @@map("audit_log")
+}

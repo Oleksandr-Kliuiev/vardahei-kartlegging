@@ -8,7 +8,7 @@
 | Изменить схему шаблона | `varde/packages/schema/src/version.ts`, `varde/packages/schema/src/template/` (появится в этапе 1), `docs/varde/adr/ADR-005-template-format.md`, `docs/varde/adr/ADR-019-languages-and-translation-gate.md` |
 | Добавить метрику | `varde/packages/rules/src/findings/index.ts`, `varde/packages/schema/src/metrics/` (появится в 0.16), `docs/varde/adr/ADR-020-metric-contract.md`, `docs/varde/adr/ADR-026-zone-model-and-findings-inventory.md` |
 | Изменить privacy | `varde/apps/api/src/modules/privacy/` (появится в 0.15), `varde/tools/eslint-rules/rules/privacy-only-release.js`, `varde/tools/eslint-rules/boundaries.js`, `docs/varde/adr/ADR-021-privacy-contract.md`, `docs/varde/adr/ADR-025-identification-and-person-channel.md`, `docs/varde/REVIEW-CHECKLIST.md` |
-| Добавить миграцию | `varde/apps/api/prisma/schema.prisma` (появится в 0.4), `varde/apps/api/prisma/migrations/CLAUDE.md` (появится в 0.4), `docs/varde/adr/ADR-018-tests-and-live-eval.md` |
+| Добавить миграцию | `varde/apps/api/prisma/schema.prisma`, `varde/apps/api/prisma/migrations/CLAUDE.md`, `varde/apps/api/src/prisma/prisma.service.ts`, `varde/infra/compose.dev.yml`, `docs/varde/adr/ADR-018-tests-and-live-eval.md` |
 | Изменить runner | `varde/apps/runner/src/app.ts`, `varde/apps/runner/src/main.ts`, `varde/packages/rules/src/runner/index.ts`, `docs/varde/adr/ADR-006-runner-draft-and-submission.md` |
 | Изменить CI | `.github/workflows/varde.yml`, `varde/tools/invariants/test/workflow.test.ts`, `varde/tools/secrets/run.sh`, `varde/.gitleaks.toml`, `varde/infra/Dockerfile` |
 | Context-budget, lint, границы импорта | `varde/tools/context-budget/check.mjs`, `varde/tools/eslint-rules/boundaries.js`, `varde/eslint.config.js` |
