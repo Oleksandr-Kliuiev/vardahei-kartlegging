@@ -8,7 +8,12 @@
     "./i18n/nn-stoplist": "./src/i18n/nn-stoplist.ts",
     "./metrics/populations": "./src/metrics/populations.ts",
     "./metrics/metric-definition": "./src/metrics/metric-definition.ts",
-    "./metrics/aggregate-snapshot": "./src/metrics/aggregate-snapshot.ts"
+    "./metrics/aggregate-snapshot": "./src/metrics/aggregate-snapshot.ts",
+    "./template/texts": "./src/template/texts.ts",
+    "./template/expression": "./src/template/expression.ts",
+    "./template/question": "./src/template/question.ts",
+    "./template/template": "./src/template/template.ts",
+    "./template/validate": "./src/template/validate.ts"
   },
   "scripts": {
     "lint": "eslint .",
