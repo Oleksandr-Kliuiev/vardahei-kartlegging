@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "lint": "eslint .",
+    "lint": "eslint . ../cutover ../staging",
     "test": "vitest run",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && tsc -p ../cutover/tsconfig.json && tsc -p ../staging/tsconfig.json",
     "test:golden": "vitest run --config vitest.golden.config.mts"
   },
   "devDependencies": {

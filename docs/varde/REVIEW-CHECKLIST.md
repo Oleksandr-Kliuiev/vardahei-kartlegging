@@ -89,3 +89,17 @@
 | Released-снимки = golden старого дашборда (исключения — номера §6 пакета)                                                                                                                                              | `varde/apps/api/test/metrics/parity.test.ts`                                                                                                                                   | 1a (1.10)             |
 | Полнота: снимки = расчёт по raw; после `TRUNCATE response` снимки не меняются, `rows` пуст с AuditLog                                                                                                                  | `varde/apps/api/test/invariants/1a-completeness.test.ts`                                                                                                                       | 1a (1.11)             |
 | Все инварианты 1a одним прогоном                                                                                                                                                                                       | `pnpm invariants:1a` (`varde/tools/invariants/run-1a.sh`, job `integration`)                                                                                                   | 1a (1.11)             |
+
+## Дополнение checkpoint 1c
+
+| Инвариант / путь утечки | Проверка |
+| --- | --- |
+| Экспорт: aggregate без строк, rows/admin и Master_Analyse без Del B; handover одного клиента | `test/exports/csv.test.ts`, `master-analyse.test.ts`, `test/retention/handover.test.ts`, `test/invariants/1c-no-leak-routes.test.ts` |
+| leaders_all во внешних каналах; чужие строки в handover | Расшифровка AES-256 ZIP в `test/retention/handover.test.ts`; `samla.csv` только released round_client |
+| История выдач round_client X ↔ all_clients client:X, включая superseded | `test/privacy/release-cross-population.test.ts`; автоматический и ручной release — реальные маршруты в `test/invariants/1c-no-leak-routes.test.ts` |
+| Итог + видимая роль на эндпоинтах | `test/dashboard/privacy-filters.test.ts`, `test/invariants/1c-no-leak-routes.test.ts` |
+| Forget ↔ replay, тот же advisory lock; повторный импорт; снимки неизменны | `test/retention/forget.test.ts`; реальный dump/restore `forget-restore.test.ts` (`VARDE_RESTORE_DOCKER=1`) |
+| Rollback не возвращает common, leader или runde1 и не теряет ответ в окне | `bash tools/cutover/rehearsal.sh --ci` (отдельная синтетическая БД); `tools/test/lesemodus.test.js` |
+| Контекст ассистента, отчёт клиенту, ObservationOutbox | В этапе 1 отсутствуют; отрицательные тесты остаются за этапами 4–5 |
+
+Полный прогон: `pnpm invariants:1c`; production cutover — отдельный pending чек-лист, не результат кодерских тестов.

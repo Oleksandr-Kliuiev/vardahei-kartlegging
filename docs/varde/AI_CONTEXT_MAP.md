@@ -27,6 +27,12 @@
 | Главная страница `GET /` (заглушка)      | `varde/apps/api/src/home/home.controller.ts`, `varde/apps/api/src/home/home-page.ts`, `varde/apps/api/test/home.test.ts`, `varde/apps/admin/e2e/home.spec.ts`                                                                                                                                                                                                                                                |
 | Checkpoint: evidence и приёмка           | `docs/varde/WORKFLOW.md`, `docs/varde/REVIEW-CHECKLIST.md`, `docs/varde/evidence/stage-0/0a-evidence.md`, `docs/varde/evidence/stage-0/0b-evidence.md`, `docs/varde/evidence/stage-0/0c-evidence.md`, `docs/varde/stages/stage-0.md` §6, §10                                                                                                                                                                 |
 
+| Дашборд и виды админа | `varde/apps/api/src/modules/dashboard/`, `varde/apps/api/test/dashboard/`, `varde/tools/parity/golden/`; ADR-021/025/026 |
+| Экспорт и handover | `varde/apps/api/src/modules/exports/`, `varde/apps/api/src/modules/retention/handover.ts`, `varde/apps/api/src/modules/privacy/handover.ts`, `varde/apps/api/test/exports/`, `varde/apps/api/test/retention/handover.test.ts`; ADR-017/025 |
+| Удаление по запросу | `varde/apps/api/src/modules/retention/forget.service.ts`, `varde/apps/api/src/modules/retention/ledger.ts`, `varde/apps/api/src/modules/privacy/response-store.ts`, `varde/apps/api/test/retention/forget.test.ts`, `varde/apps/api/test/retention/forget-restore.test.ts`; ADR-024 таблица путей |
+| Cutover и rollback | `varde/tools/cutover/`, `varde/tools/staging/`, `varde/infra/caddy/`, `docs/varde/runbooks/cutover.md`, `docs/varde/evidence/stage-1/cutover.md`, `tools/test/lesemodus.test.js` |
+| Админка (UI) | `varde/apps/admin/src/`, `varde/apps/admin/e2e/`; API через PrivacyService; subprocess `e2e/server.cjs` |
+
 ## Не читать
 
 - `kartlegging/data/` — ответы респондентов, коды, учётки.

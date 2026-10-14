@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import type { TemplateContent } from '@varde/schema/template/template';
 import { normalizeAnswers, normalizeFree, prune, visibleQuestions } from '@varde/rules/runner';
+import { EventsService } from '../events/events.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { PrivacyService } from '../privacy/privacy.service.js';
 import { CodesService, requireCode } from '../rounds/codes.js';
@@ -18,6 +19,7 @@ import { Submission } from './submission.schema.js';
 export class SubmissionService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly events: EventsService,
     private readonly codes: CodesService,
     private readonly privacy: PrivacyService,
     private readonly quotas: QuotaService,
@@ -30,6 +32,7 @@ export class SubmissionService {
     const hash = contentHash(payload);
     const initial = requireCode(await this.codes.resolveCode(code));
     let undo: (() => void) | undefined;
+    let inserted = false;
     try {
       await this.prisma.$transaction(async (tx) => {
         // UUID-wide serialization also covers concurrent requests on different clients.
@@ -123,12 +126,17 @@ export class SubmissionService {
             submitted_day: new Date().toISOString().slice(0, 10),
           },
         ]);
+        inserted = true;
       });
     } catch (error) {
       undo?.(); // process-window reservations are rolled back when the insert fails
       if (error instanceof HttpException) throw error;
       // Prisma errors can contain answers/initials. Never pass them to the exception logger.
       throw new ServiceUnavailableException('Svara kom ikkje fram. Prøv igjen.');
+    }
+    if (inserted) {
+      this.events.changed('responses');
+      this.events.changed('progress');
     }
     return { ok: true, submission_id };
   }

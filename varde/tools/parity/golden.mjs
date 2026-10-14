@@ -5,7 +5,6 @@
 // (survey × client filter, role «alle») is scraped section by section: title, tables, text lines.
 //   node tools/parity/golden.mjs           write golden/
 //   node tools/parity/golden.mjs --check   regenerate into a temporary folder and compare
-import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   mkdirSync,
@@ -24,6 +23,7 @@ import { chromium } from '@playwright/test';
 import { REPO } from './bank.mjs';
 import { FIXTURES } from './generate.mjs';
 import { browserPaths, pathsJson } from './runner-paths.mjs';
+import { kartleggingTree } from './kartlegging-tree.mjs';
 import { startOldServer } from './old-server.mjs';
 
 export const GOLDEN = fileURLToPath(new URL('./golden/', import.meta.url));
@@ -124,7 +124,10 @@ async function run(svar, skjemaIds, withCsv) {
       const res = await page.request.get(`${server.base}/api/analyse.csv`);
       if (!res.ok()) throw new Error(`analyse.csv: ${res.status()}`);
       out.set('analyse.csv', await res.text());
-      out.set('paths.json', pathsJson(await browserPaths(server, JSON.parse(fixture('tilgang.json')))));
+      out.set(
+        'paths.json',
+        pathsJson(await browserPaths(server, JSON.parse(fixture('tilgang.json')))),
+      );
     }
     return out;
   } finally {
@@ -139,9 +142,7 @@ export async function generateGolden() {
   const { a, b } = runInputs();
   const files = await run(a, ['tryggleik', 'ki'], true);
   for (const [name, body] of await run(b, ['ki'], false)) files.set(`ki-2026-10-12/${name}`, body);
-  const tree = execFileSync('git', ['-C', REPO, 'rev-parse', 'HEAD:kartlegging'], {
-    encoding: 'utf8',
-  }).trim();
+  const tree = kartleggingTree();
   const manifest = {
     kartlegging_tree: tree,
     fixtures: Object.fromEntries(FIXTURE_FILES.map((f) => [f, sha256(fixture(f))])),
@@ -172,6 +173,18 @@ export function writeFiles(dir, files) {
 }
 
 async function main() {
+  if (process.argv.includes('--refresh-manifest')) {
+    const file = join(GOLDEN, 'manifest.json');
+    const manifest = JSON.parse(readFileSync(file, 'utf8'));
+    // Browser values remain untouched. This flag verifies their existing SHA256 first.
+    for (const [name, hash] of Object.entries(manifest.files))
+      if (sha256(readFileSync(join(GOLDEN, name))) !== hash)
+        throw new Error(`golden checksum differs: ${name}`);
+    manifest.kartlegging_tree = kartleggingTree();
+    writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n');
+    console.log('golden manifest refreshed; browser parity remains pending');
+    return;
+  }
   const files = await generateGolden();
   if (!process.argv.includes('--check')) {
     rmSync(GOLDEN, { recursive: true, force: true });

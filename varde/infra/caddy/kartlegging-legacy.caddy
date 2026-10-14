@@ -1,0 +1,13 @@
+kartlegging.vardahei.tech {
+ encode zstd gzip
+ header Strict-Transport-Security "max-age=31536000"
+ redir /admin* https://varde.vardahei.tech/admin 302
+ redir /dashboard* https://varde.vardahei.tech/admin 302
+ handle / {
+  rewrite * /r/legacy?{query}
+  reverse_proxy varde-app:3000
+ }
+ handle {
+  respond 404
+ }
+}

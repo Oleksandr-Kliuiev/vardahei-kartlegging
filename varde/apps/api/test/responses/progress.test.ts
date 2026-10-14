@@ -62,6 +62,9 @@ type View = {
   clients: {
     round_client_id: string;
     started: Cell;
+    population_snapshot: number | null;
+    responses_total: number;
+    last_response_day: string | null;
     in_progress: Cell;
     abandoned: Cell;
     stopped: Record<string, Cell>;
@@ -184,6 +187,48 @@ describe('live progress aggregates (1.20)', () => {
     expect((await get(f.round.id)).json<View>().clients[0]!.median_duration_s).toEqual({
       suppressed: false,
       value: 20,
+    });
+  });
+  it('exact totals and last day are common only; unknown population stays null; even median is upper middle', async () => {
+    const f = await fresh();
+    await t.prisma.roundClient.update({
+      where: { id: f.rc.id },
+      data: { population_snapshot: null },
+    });
+    expect((await get(f.round.id)).json<View>().clients[0]).toMatchObject({
+      responses_total: 0,
+      last_response_day: null,
+      population_snapshot: null,
+    });
+    for (const duration_s of [10, 20, 30, 40])
+      expect(
+        (await postSubmission(t, f.code, { ...submissionBody(), duration_s })).statusCode,
+      ).toBe(201);
+    expect(
+      (
+        await postSubmission(t, f.code, {
+          ...submissionBody(),
+          part: 'leader',
+          role: f.content.leader_roles[0],
+          duration_s: 900,
+        })
+      ).statusCode,
+    ).toBe(201);
+    const result = await get(f.round.id);
+    expect(result.json<View>().clients[0]).toMatchObject({
+      population_snapshot: null,
+      responses_total: 4,
+      last_response_day: new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z',
+      median_duration_s: { suppressed: false, value: 30 },
+    });
+    expect(result.body).not.toMatch(/answers|respondent_key|session_id|submission_id/);
+  });
+  it('the live window excludes events older than 24 hours', async () => {
+    const f = await fresh();
+    for (let i = 0; i < 3; i++) await aged(f.rc.id, 24 * 60 + 1);
+    expect((await get(f.round.id)).json<View>().clients[0]).toMatchObject({
+      started: { suppressed: true },
+      stopped: { '4': { suppressed: true } },
     });
   });
   it('per-session sliding limit returns 429, without persisting IP', async () => {

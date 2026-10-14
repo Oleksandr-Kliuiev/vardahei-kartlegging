@@ -9,17 +9,18 @@ import {
   NotFoundException,
   type Provider,
 } from '@nestjs/common';
-import { cells as metricCells } from '@varde/rules/findings';
+import { zone, cells as metricCells } from '@varde/rules/findings';
 import type { MetricDefinition } from '@varde/schema/metrics/metric-definition';
 import type { Population } from '@varde/schema/metrics/populations';
 import { type PrivacyConfig, readPrivacyConfig } from '../../config/privacy-config.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { aggregate, assertAggregateQuery } from './aggregate.js';
+import { suppressedGroups, aggregate, assertAggregateQuery } from './aggregate.js';
+import { liveCells, type ViewCell } from './view-cells.js';
 import { PrivacyViolation } from './types.js';
 import { PrismaSnapshotStore } from './prisma-snapshot-store.js';
-import { PrismaResponseSource } from './prisma-source.js';
+import { PrismaResponseSource, progressView } from './prisma-source.js';
+import { handover } from './handover.js';
 import { ResponseStore } from './response-store.js';
-import { progressCells } from './progress.js';
 import {
   type ComputedCell,
   release,
@@ -28,7 +29,14 @@ import {
   type ReleaseResult,
   type SnapshotStore,
 } from './release.js';
-import { masterAnalyseExport, perEmployee, rows, type RowsContext } from './rows.js';
+import {
+  employeeHistory,
+  leaderAnswers,
+  masterAnalyseExport,
+  perEmployee,
+  rows,
+  type RowsContext,
+} from './rows.js';
 import { RESPONSE_SOURCE, type ResponseSource } from './source.js';
 import type {
   AggregateQuery,
@@ -42,8 +50,9 @@ const PRIVACY_CONFIG = Symbol('PRIVACY_CONFIG');
 
 export type { ResponseSource, SourceQuery } from './source.js';
 export type { RowsDb } from './rows.js';
+export type { ViewCell } from './view-cells.js';
 export { ReleaseRejected } from './release.js';
-export type { ResponsePart } from './response-store.js';
+export type { DeleteScope, DeleteCounts, ResponsePart } from './response-store.js';
 export type {
   ComputedCell,
   HistoricCell,
@@ -81,24 +90,207 @@ export class PrivacyService {
 
   /** Live progress is always aggregate; session IDs and duration rows never leave privacy. */
   progress(round: string, now = new Date()) {
-    return this.prisma.$transaction(async (tx) => {
-      const found = await tx.round.findUnique({ where: { id: round }, select: { template_version: { select: { content: true } } } });
-      if (!found) throw new NotFoundException('Runden finst ikkje.');
-      const content = found.template_version?.content as { questions?: unknown[] } | undefined;
-      const questionCount = content?.questions?.length ?? 0;
-      const clients = await tx.roundClient.findMany({ where: { round_id: round }, select: { id: true } });
-      const events = await tx.progressEvent.findMany({ where: { round_client: { round_id: round }, at: { gte: new Date(now.getTime() - 24 * 3600_000) } },
-        select: { round_client_id: true, session_id: true, question_no: true, finished: true, at: true } });
-      const durations = await tx.response.findMany({ where: { round_client: { round_id: round }, part: 'common', duration_s: { not: null } }, select: { round_client_id: true, duration_s: true } });
-      return { class: 'aggregate' as const, clients: clients.map((rc) => ({
-        round_client_id: rc.id,
-        ...progressCells(events.filter((e) => e.round_client_id === rc.id), durations.filter((d) => d.round_client_id === rc.id).map((d) => d.duration_s!), now, this.config.k, questionCount),
-      })) };
-    }, { isolationLevel: 'RepeatableRead' });
+    return progressView(this.prisma, this.config.k, round, now);
   }
 
   private get ctx(): RowsContext {
     return { db: this.prisma, source: this.source };
+  }
+
+  /** Dashboard: closed/archived rounds never fall back to raw, even before release. */
+  async viewCells(
+    round: string,
+    population: Population,
+    defs: readonly MetricDefinition[],
+    client?: string,
+    releasedOnly = false,
+  ): Promise<ViewCell[]> {
+    const r = await this.prisma.round.findUnique({ where: { id: round } });
+    if (!r) throw new NotFoundException('Runden finst ikkje.');
+    if (population === 'round_client' && !client)
+      throw new PrivacyViolation('round_client needs a client');
+    if (population !== 'round_client' && client)
+      throw new PrivacyViolation('population cannot have client');
+    if (!releasedOnly && r.status !== 'closed' && r.status !== 'archived') {
+      return liveCells(await this.computeCells(round, population, defs, client), this.config.k);
+    }
+    const c = client ? await this.prisma.client.findUnique({ where: { slug: client } }) : null;
+    if (client && !c) throw new NotFoundException('Kunden finst ikkje.');
+    const allowed = new Set(
+      defs.filter((d) => d.populations.includes(population)).map((d) => `${d.key}@${d.version}`),
+    );
+    const found = await this.prisma.aggregateSnapshot.findMany({
+      where: { round_id: round, population, status: 'released', client_id: c?.id ?? null },
+      orderBy: [{ metric_key: 'asc' }, { group: 'asc' }],
+    });
+    return found
+      .filter((s) =>
+        [...allowed].some((key) => {
+          const [base, version] = key.split('@');
+          return (
+            s.metric_version === Number(version) &&
+            (s.metric_key === base || s.metric_key.startsWith(`${base}.`))
+          );
+        }),
+      )
+      .map((s): ViewCell => {
+        const base = { metric_key: s.metric_key, metric_version: s.metric_version, group: s.group };
+        return s.suppressed
+          ? { ...base, suppressed: true }
+          : {
+              ...base,
+              suppressed: false,
+              n: s.n,
+              numerator: s.numerator,
+              denominator: s.denominator,
+              missing: s.missing,
+              stale: s.stale,
+              release_id: s.release_id,
+            };
+      });
+  }
+
+  /** Role × client intersections also form a partition of the round's role total.
+   * Recheck subtraction against that total; independently safe client cells alone do not suffice. */
+  async roleClientCells(
+    round: string,
+    defs: readonly MetricDefinition[],
+    role: string,
+  ): Promise<ViewCell[]> {
+    const common = defs.filter((d) => d.part === 'common');
+    const totals = (await this.viewCells(round, 'all_clients', common)).filter(
+      (c) => c.group === `role:${role}`,
+    );
+    const clients = await this.prisma.roundClient.findMany({
+      where: { round_id: round },
+      include: { client: true },
+    });
+    const parts = (
+      await Promise.all(
+        clients.map(async (rc) =>
+          (await this.viewCells(round, 'round_client', common, rc.client.slug))
+            .filter((c) => c.group === `role:${role}`)
+            .map((c) => ({ ...c, group: `client:${rc.client.slug}` })),
+        ),
+      )
+    ).flat();
+    return totals.flatMap((total): ViewCell[] => {
+      const own = parts.filter(
+        (c) => c.metric_key === total.metric_key && c.metric_version === total.metric_version,
+      );
+      if (total.suppressed)
+        return [
+          { ...total, group: 'all' },
+          ...own.map((c): ViewCell => ({
+            metric_key: c.metric_key,
+            metric_version: c.metric_version,
+            group: c.group,
+            suppressed: true,
+          })),
+        ];
+      const visible = own.filter(
+        (c): c is Extract<ViewCell, { suppressed: false }> => !c.suppressed,
+      );
+      const hidden = suppressedGroups({ ...total, group: 'all' }, visible, this.config.k);
+      return [
+        { ...total, group: 'all' },
+        ...own.map((c): ViewCell =>
+          hidden.has(c.group)
+            ? {
+                metric_key: c.metric_key,
+                metric_version: c.metric_version,
+                group: c.group,
+                suppressed: true,
+              }
+            : c,
+        ),
+      ];
+    });
+  }
+
+  /** Filter a historical population using already released client cells. Hidden components
+   * cannot be treated as zero or reconstructed by subtracting from the historical total. */
+  async cohortCells(
+    round: string,
+    clients: readonly string[],
+    defs: readonly MetricDefinition[],
+    role?: string,
+  ): Promise<ViewCell[]> {
+    const r = await this.prisma.round.findUnique({ where: { id: round } });
+    if (!r || !['closed', 'archived'].includes(r.status))
+      throw new NotFoundException('Førre runde er ikkje publisert.');
+    const all = await this.viewCells(
+      round,
+      'all_clients',
+      defs.filter((d) => d.part === 'common'),
+    );
+    const participants = [
+      ...new Set(all.filter((c) => c.group.startsWith('client:')).map((c) => c.group.slice(7))),
+    ];
+    const selected = participants.filter((c) => clients.includes(c));
+    const group = role ? `role:${role}` : 'all';
+    if (!selected.length) return [];
+    if (selected.length === participants.length)
+      return all.filter((c) => c.group === group).map((c) => ({ ...c, group: 'all' }));
+    const parts = await Promise.all(
+      selected.map((c) =>
+        this.viewCells(
+          round,
+          'round_client',
+          defs.filter((d) => d.part === 'common'),
+          c,
+        ),
+      ),
+    );
+    const keys = [...new Set(all.map((c) => c.metric_key))];
+    const values: ViewCell[] = keys
+      .filter((key) => !key.includes('.zone.'))
+      .map((key): ViewCell => {
+        const inputs = parts.map((p) => p.find((c) => c.group === group && c.metric_key === key));
+        const base = {
+          metric_key: key,
+          metric_version: inputs.find((c) => c)?.metric_version ?? 1,
+          group: 'all',
+        };
+        if (inputs.some((c) => !c || c.suppressed)) return { ...base, suppressed: true };
+        const sum = (key: 'n' | 'numerator' | 'denominator' | 'missing') =>
+          inputs.reduce((s, c) => s + (c && !c.suppressed ? c[key] : 0), 0);
+        return {
+          ...base,
+          suppressed: false,
+          n: sum('n'),
+          numerator: sum('numerator'),
+          denominator: sum('denominator'),
+          missing: sum('missing'),
+        };
+      });
+    const zoneDef = defs.find((d) => d.kind === 'zone');
+    if (zoneDef)
+      for (const mean of values.filter((c) =>
+        c.metric_key.startsWith(`${zoneDef.key.replace(/zone$/, 'mean_score')}.`),
+      )) {
+        const base = {
+          metric_key: mean.metric_key.replace('.mean_score.', '.zone.'),
+          metric_version: zoneDef.version,
+          group: 'all',
+        };
+        values.push(
+          mean.suppressed || !mean.denominator
+            ? { ...base, suppressed: true }
+            : {
+                ...base,
+                suppressed: false,
+                n: mean.n,
+                numerator: zone(
+                  mean.numerator / mean.denominator,
+                  zoneDef.thresholds!.aggregate.bounds,
+                ),
+                denominator: 1,
+                missing: mean.missing,
+              },
+        );
+      }
+    return values;
   }
 
   /** Class `aggregate`: live view of the admins and the input of release(); never rows. */
@@ -143,9 +335,30 @@ export class PrivacyService {
     );
   }
 
+  handover(client: string, reason: string, recipient: string, session: PrivacySession | undefined) {
+    return handover(client, reason, recipient, session, this.ctx);
+  }
+
   /** Class `rows`: admin session, AuditLog in the same transaction as the read. */
   rows(query: RowsQuery, session: PrivacySession | null | undefined): Promise<RowsResult> {
     return rows(query, session, this.ctx);
+  }
+
+  get minimumGroupSize(): number {
+    return this.config.k;
+  }
+
+  employeeHistory(
+    query: RowsQuery,
+    previous: string | undefined,
+    session: PrivacySession | null | undefined,
+    audit: 'privacy.rows' | 'exports.master_analyse' = 'privacy.rows',
+  ) {
+    return employeeHistory(query, previous, session, this.ctx, audit);
+  }
+
+  leaderAnswers(query: RowsQuery & { client: string }, session: PrivacySession | null | undefined) {
+    return leaderAnswers(query, session, this.ctx);
   }
 
   perEmployee(query: RowsQuery, session: PrivacySession | null | undefined): Promise<RowsResult> {
@@ -188,8 +401,9 @@ export class PrivacyService {
       );
     }
     return this.prisma.$transaction(
-      (tx) =>
-        release(
+      async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${'privacy.release:' + round}, 0))`;
+        return release(
           round,
           population,
           cells,
@@ -200,7 +414,8 @@ export class PrivacyService {
             audit: { write: async (data) => void (await tx.auditLog.create({ data })) },
           },
           opts,
-        ),
+        );
+      },
       { timeout: 120_000, maxWait: 10_000 },
     );
   }

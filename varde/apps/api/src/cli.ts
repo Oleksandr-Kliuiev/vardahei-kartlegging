@@ -4,6 +4,9 @@
 // stdout can be appended to app.env as is. Takes no input from argv besides the command.
 import { randomBytes } from 'node:crypto';
 import { hash } from '@node-rs/argon2';
+import { cutoverCommand } from './cli/cutover.js';
+import { ledgerCommand } from './cli/ledger.js';
+import { retentionCommand } from './cli/retention.js';
 import { importCommand } from './cli/import.js';
 import { roundsCommand } from './cli/rounds.js';
 import { seedCommand } from './cli/seed.js';
@@ -25,6 +28,9 @@ const USAGE = `usage: node dist/cli.js break-glass-hash
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;
+  if (command === 'cutover') return cutoverCommand(rest);
+  if (command === 'ledger') return ledgerCommand(rest);
+  if (command === 'retention') return retentionCommand(rest);
   if (command === 'seed') return seedCommand(rest);
   if (command === 'import') return importCommand(rest);
   if (command === 'rounds') return roundsCommand(rest);

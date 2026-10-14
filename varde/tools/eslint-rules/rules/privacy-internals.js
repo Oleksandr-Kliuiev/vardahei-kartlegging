@@ -13,7 +13,10 @@ export const privacyInternals = {
     const filename = context.filename.replaceAll('\\', '/');
     const test = filename.includes('/apps/api/test/');
     function check(node, source) {
-      const path = source?.value;
+      const path =
+        source?.type === 'TemplateLiteral' && source.expressions.length === 0
+          ? source.quasis[0]?.value.cooked
+          : source?.value;
       if (typeof path !== 'string') return;
       const internal = /(?:^|\/)privacy\/(.+)$/.exec(path)?.[1];
       if (internal === undefined || /^privacy\.service(?:\.[cm]?[jt]s)?$/.test(internal)) return;

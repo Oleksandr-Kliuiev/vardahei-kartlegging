@@ -61,6 +61,7 @@ export const STAGE0_JOBS: Idempotency = {
 };
 export const APPLICATION_JOBS: Idempotency = {
   ...STAGE0_JOBS,
+  'retention.run': (p) => `retention.run:${p.id}`,
   'retention.progress-ttl': (p) => `retention.progress-ttl:${p.id}`,
 };
 

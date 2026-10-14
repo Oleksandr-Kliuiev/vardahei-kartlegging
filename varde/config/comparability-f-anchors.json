@@ -1,0 +1,39 @@
+{
+  "key": "tryggleik.runde1_f_anchors",
+  "version": 1,
+  "degree": "comparable",
+  "between": ["runde1 (Microsoft Forms, 2026-01)", "Varde"],
+  "anchors": [
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6",
+    "F7",
+    "F8",
+    "F9",
+    "F10",
+    "F11",
+    "F12",
+    "F13",
+    "F14",
+    "F15",
+    "F16",
+    "F17",
+    "F18",
+    "F19"
+  ],
+  "option_mapping": {
+    "Ja": "ja",
+    "Nei": "nei",
+    "Delvis": "delvis",
+    "Usikker": "usikker",
+    "Oftast": "oftast",
+    "Skjelden": "sjeldan",
+    "Sjeldan": "sjeldan",
+    "Av og til": "avogtil"
+  },
+  "not_scored": ["F15", "F20", "F21", "F22"],
+  "languages": { "from": ["nn"], "to": ["nn", "en", "nb"] },
+  "note": "Spørsmåla og svaralternativa er dei same som i runde 1 (Forms, januar 2026); berre rettskrivinga er retta. Svara frå runde 1 er kopla til alternativa slik tools/runde1_fra_excel.py gjer det, til dømes «Skjelden» → sjeldan. F15 og F20–F22 gir ikkje poeng, og fritekstsvara F20–F22 frå runde 1 er ikkje henta inn. Runde 1 gjekk berre på nynorsk, med nokre skrivefeil; i Varde kan ein òg svare på engelsk og, når brytaren er på, på bokmål."
+}

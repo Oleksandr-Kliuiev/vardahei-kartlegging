@@ -4,7 +4,17 @@
     "noEmit": true,
     "allowJs": true,
     "checkJs": false,
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["test", "*.mjs", "*.config.mts"]
+  "include": [
+    "test",
+    "*.mjs",
+    "*.config.mts",
+    "../cutover/test",
+    "../cutover/*.mjs",
+    "../staging/*.mts",
+    "../staging/*.mjs"
+  ]
 }

@@ -1,6 +1,8 @@
 // Nest application context of the CLI commands (1.7+): database modules only, no HTTP, no jobs.
 import { Module, type Type } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { CutoverCoreModule } from '../modules/cutover/cutover.module.js';
+import { RetentionCoreModule } from '../modules/retention/retention.module.js';
 import { ImportsModule } from '../modules/imports/imports.module.js';
 import { MetricsModule } from '../modules/metrics/metrics.module.js';
 import { PrivacyModule } from '../modules/privacy/privacy.service.js';
@@ -16,6 +18,8 @@ import { PrismaModule } from '../prisma/prisma.module.js';
     RoundsCoreModule,
     ImportsModule,
     MetricsModule,
+    RetentionCoreModule,
+    CutoverCoreModule,
   ],
 })
 export class CliModule {}

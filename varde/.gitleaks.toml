@@ -4,7 +4,7 @@ title = "varde"
 [extend]
 useDefault = true
 
-[allowlist]
+[[allowlists]]
 description = "Outside the Varde scan scope"
 # Decision (stage-0.md §9 p. 13): legacy kartlegging (incl. deploy/brukarar.seed.json with
 # hashes and private/runde1.js), kjelder/ and astra/ are outside stage 0; cleaning them is
@@ -19,3 +19,12 @@ paths = [
   '''(^|/)dist/''',
   '''(^|/)coverage/''',
 ]
+
+# Metric and finding keys of the Varde data model ("tryggleik.f12", "ki.k13.distribution") look
+# like high-entropy keys to generic-api-key. Only values of exactly that dotted lowercase shape
+# under the two questionnaire prefixes are exempt; reviewed 14.10.2026 (checkpoint 1c).
+[[allowlists]]
+description = "Varde metric and finding keys"
+targetRules = ["generic-api-key"]
+regexTarget = "secret"
+regexes = ['''^(tryggleik|ki)\.[a-z0-9_.]+$''']

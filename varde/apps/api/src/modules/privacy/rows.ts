@@ -4,6 +4,7 @@
 // mode initials. Views on rows (per employee, Master_Analyse export) are 404 in anonymous
 // rounds; their real implementation is 1.27b / 1.30b.
 import type { Prisma } from '@prisma/client';
+import { auditWho } from '../auth/audit-who.js';
 import type { ResponseSource } from './source.js';
 import {
   NotFoundError,
@@ -30,15 +31,13 @@ export interface RowsContext {
 
 export const ROWS_AUDIT = 'privacy.rows';
 
-/** Who reads: entra:<oid>; for break-glass the operator of the window (session name), 1.10b. */
-export function auditWho(session: PrivacySession): string {
-  if (session.via === 'break_glass' && session.name !== null && session.name !== '')
-    return session.name;
-  return `${session.via}:${session.oid ?? session.sid}`;
-}
-
 function toRow(row: ResponseRow, mode: RoundMode): PrivacyRow {
   return {
+    ...(row.submission_id === undefined ? {} : { submission_id: row.submission_id }),
+    ...(row.free === undefined ? {} : { free: row.free }),
+    source_id: row.source_id ?? null,
+    lang: row.lang ?? 'nn',
+    duration_s: row.duration_s ?? null,
     round_client: row.round_client,
     client: row.client,
     part: 'common',
@@ -62,14 +61,19 @@ export async function rows(
   ctx: RowsContext,
   view: RowsView = 'rows',
 ): Promise<RowsResult> {
-  const who = auditWho(requireSession(session));
+  const who = auditWho(requireSession(session), true);
   const scope = {
     round: query.round,
     ...(query.client === undefined ? {} : { client: query.client }),
   };
   return ctx.db.$transaction(async (tx) => {
     const entry = await tx.auditLog.create({
-      data: { who, what: ROWS_AUDIT, target: `round:${query.round}`, details: { ...scope, view } },
+      data: {
+        who,
+        what: view === 'master_analyse_export' ? 'exports.master_analyse' : ROWS_AUDIT,
+        target: `round:${query.round}`,
+        details: { ...scope, view },
+      },
     });
     const mode = await ctx.source.roundMode(query.round, tx);
     const read = await ctx.source.read({ ...scope, part: 'common' }, tx);
@@ -110,4 +114,85 @@ export function masterAnalyseExport(
   ctx: RowsContext,
 ): Promise<RowsResult> {
   return identifiedView('master_analyse_export', query, session, ctx);
+}
+
+/** Leader channel: one client, no common responses, no identifier. Read + audit commit together. */
+export async function leaderAnswers(
+  query: RowsQuery & { client: string },
+  session: PrivacySession | null | undefined,
+  ctx: RowsContext,
+) {
+  const who = auditWho(requireSession(session), true);
+  if (!query.client || query.client === 'alle') throw new NotFoundError('Vel éin kunde.');
+  return ctx.db.$transaction(async (tx) => {
+    const read = await ctx.source.read({ ...query, part: 'leader' }, tx);
+    const out = read
+      .filter((r) => r.part === 'leader')
+      .map((r) => ({
+        submission_id: r.submission_id,
+        role: r.role,
+        answers: r.answers,
+        free: r.free ?? {},
+      }));
+    await tx.auditLog.create({
+      data: {
+        who,
+        what: 'leader.read',
+        target: `client:${query.client}`,
+        details: { round: query.round, client: query.client, count: out.length },
+      },
+    });
+    return out;
+  });
+}
+
+/** Current and matched previous common responses with one audit in one transaction. */
+export async function employeeHistory(
+  query: RowsQuery,
+  previous: string | undefined,
+  session: PrivacySession | null | undefined,
+  ctx: RowsContext,
+  audit: 'privacy.rows' | 'exports.master_analyse' = 'privacy.rows',
+) {
+  const who = auditWho(requireSession(session), true);
+  return ctx.db.$transaction(async (tx) => {
+    const mode = await ctx.source.roundMode(query.round, tx);
+    if (mode === 'none') throw new NotFoundError(); // before either response read
+    if (previous && (await ctx.source.roundMode(previous, tx)) !== 'initials')
+      throw new NotFoundError();
+    const current = (await ctx.source.read({ ...query, part: 'common' }, tx))
+      .filter((r) => r.part === 'common')
+      .map((r) => toRow(r, mode));
+    const prior =
+      previous === undefined
+        ? []
+        : (
+            await ctx.source.read(
+              {
+                round: previous,
+                ...(query.client ? { client: query.client } : {}),
+                part: 'common',
+              },
+              tx,
+            )
+          )
+            .filter((r) => r.part === 'common')
+            .map((r) => toRow(r, 'initials'));
+    await tx.auditLog.create({
+      data: {
+        who,
+        what: audit,
+        target: `round:${query.round}`,
+        details: {
+          round: query.round,
+          client: query.client ?? 'alle',
+          view: 'per_employee',
+          count: current.length,
+          previous: previous ?? null,
+          previous_count: prior.length,
+        },
+      },
+    });
+    return { current, prior };
+  });
 }

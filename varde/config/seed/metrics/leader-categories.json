@@ -1,0 +1,88 @@
+{
+  "tryggleik.leiar_b17_sensitivity.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B17",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B17": {
+        "kunde": "other",
+        "id": "sensitive",
+        "helse": "sensitive",
+        "tilsette": "other",
+        "barn": "sensitive",
+        "betaling": "sensitive",
+        "andre": "other",
+        "forretning": "other",
+        "vk": "other"
+      }
+    },
+    "scale": "answer_categories",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": ["leaders_all"],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b19_provider.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B19",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B19": {
+        "fag": "external",
+        "nett": "external",
+        "okonomi": "external",
+        "booking": "external",
+        "some": "external",
+        "anna": "external",
+        "ingen": "other",
+        "vk": "other"
+      }
+    },
+    "scale": "answer_categories",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": ["leaders_all"],
+    "comparability": [],
+    "first_version": true
+  },
+  "tryggleik.leiar_b18_route.distribution": {
+    "version": 1,
+    "kind": "distribution",
+    "part": "leader",
+    "questions": [
+      {
+        "key": "B18",
+        "part": "leader"
+      }
+    ],
+    "options_mapping": {
+      "B18": {
+        "ring": "other",
+        "svar": "direct",
+        "to": "other",
+        "endrar": "direct",
+        "rekneskap": "unknown",
+        "vk": "unknown"
+      }
+    },
+    "scale": "answer_categories",
+    "recall_period": "as_worded",
+    "denominator_rule": "answered",
+    "populations": ["leaders_all"],
+    "comparability": [],
+    "first_version": true
+  }
+}

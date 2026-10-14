@@ -2,7 +2,7 @@
 import 'reflect-metadata';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import type { LightMyRequestResponse } from 'fastify';
+import type { LightMyRequestResponse, RouteOptions } from 'fastify';
 import { AppModule } from '../../src/app.module.js';
 import { configureApp } from '../../src/configure-app.js';
 import { SessionStore } from '../../src/modules/auth/session.store.js';
@@ -33,7 +33,10 @@ export function rawSetCookie(res: LightMyRequestResponse, name: string): string 
   return all.find((h) => h.startsWith(`${name}=`)) ?? '';
 }
 
-export async function startApp(env: Record<string, string | undefined>): Promise<TestApp> {
+export async function startApp(
+  env: Record<string, string | undefined>,
+  onRoute?: (route: RouteOptions) => void,
+): Promise<TestApp> {
   for (const [key, value] of Object.entries(env)) {
     if (value === undefined) delete process.env[key];
     else process.env[key] = value;
@@ -44,6 +47,7 @@ export async function startApp(env: Record<string, string | undefined>): Promise
     .useValue(store)
     .compile();
   const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+  if (onRoute) app.getHttpAdapter().getInstance().addHook('onRoute', onRoute);
   await configureApp(app);
   await app.init();
   const fastify = app.getHttpAdapter().getInstance();

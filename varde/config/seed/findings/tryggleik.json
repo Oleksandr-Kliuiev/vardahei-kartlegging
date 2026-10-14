@@ -1,0 +1,606 @@
+[
+  {
+    "key": "tryggleik.f12",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "tryggleik.f12.distribution",
+    "options": ["nei", "usikker"],
+    "basis": "tryggleik.f12.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "veit ikkje korleis eller til kven dei skal melde frå om mistenkelege e-postar",
+      "en": "do not know how or whom to notify about suspicious emails"
+    },
+    "action_text": {
+      "nn": "Éi side på veggen og i Teams: kven du ringjer, kva du gjer med e-posten. Leiaren seier det høgt på neste møte.",
+      "en": "One page on the wall and in Teams: whom to call and what to do with the email. The leader explains it at the next meeting."
+    },
+    "severity": "risk",
+    "order": 0
+  },
+  {
+    "key": "tryggleik.f5",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "tryggleik.f5.distribution",
+    "options": ["nei", "usikker"],
+    "basis": "tryggleik.f5.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "kjenner ingen rutine for å stoppe ei IT-hending frå å spreie seg",
+      "en": "know no procedure to stop an IT incident spreading"
+    },
+    "action_text": {
+      "nn": "Kort rutine: kople frå nettet, ring Vardahei, la PC-en stå på. Gå gjennom henne på eit møte.",
+      "en": "A short procedure: disconnect from the network, call Vardahei and leave the PC on. Go through it at a meeting."
+    },
+    "severity": "risk",
+    "order": 1
+  },
+  {
+    "key": "tryggleik.f14",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "tryggleik.f14.distribution",
+    "options": ["nei", "usikker"],
+    "basis": "tryggleik.f14.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "brukar ikkje MFA, eller veit ikkje om dei gjer det",
+      "en": "do not use MFA or do not know whether they do"
+    },
+    "action_text": {
+      "nn": "Sjekk i Entra kven som manglar MFA, og slå det på for alle. Vis korleis godkjenninga ser ut.",
+      "en": "Check Entra for people without MFA and enable it for everyone. Show what the approval looks like."
+    },
+    "severity": "risk",
+    "order": 2
+  },
+  {
+    "key": "tryggleik.f8",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "tryggleik.f8.distribution",
+    "options": ["ja", "delvis"],
+    "basis": "tryggleik.f8.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "brukar same passord på fleire tenester",
+      "en": "reuse passwords across services"
+    },
+    "action_text": {
+      "nn": "Passordhandterar og nytt, unikt passord på jobb-e-posten først.",
+      "en": "A password manager and a new unique password for work email first."
+    },
+    "severity": "risk",
+    "order": 3
+  },
+  {
+    "key": "tryggleik.f9",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "tryggleik.f9.distribution",
+    "options": ["nei", "usikker"],
+    "basis": "tryggleik.f9.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "har ikkje passordhandterar",
+      "en": "do not have a password manager"
+    },
+    "action_text": {
+      "nn": "Pilot med Bitwarden for 2–3 personar, så resten.",
+      "en": "Pilot Bitwarden with 2–3 people, then the rest."
+    },
+    "severity": "risk",
+    "order": 4
+  },
+  {
+    "key": "tryggleik.f6",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "tryggleik.f6.distribution",
+    "options": ["nei", "usikker"],
+    "basis": "tryggleik.f6.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "kjenner ingen rutine for å starte opp att etter ei alvorleg hending",
+      "en": "know no procedure for recovery after a serious incident"
+    },
+    "action_text": {
+      "nn": "Beredskapsplan på éi side saman med leiaren: kven gjer kva, i kva rekkjefølgje.",
+      "en": "A one-page contingency plan with the leader: who does what and in which order."
+    },
+    "severity": "risk",
+    "order": 5
+  },
+  {
+    "key": "tryggleik.f11",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "tryggleik.f11.distribution",
+    "options": ["nei", "usikker"],
+    "basis": "tryggleik.f11.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "har ikkje fått opplæring i å avsløre phishing",
+      "en": "have not received training to recognise phishing"
+    },
+    "action_text": {
+      "nn": "Kort gjennomgang på eit møte, så ein test med falske e-postar nokre veker etter.",
+      "en": "A short walkthrough at a meeting, followed by a test with fake emails a few weeks later."
+    },
+    "severity": "risk",
+    "order": 6
+  },
+  {
+    "key": "tryggleik.f16",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "tryggleik.f16.distribution",
+    "options": ["nei", "usikker"],
+    "basis": "tryggleik.f16.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "veit ikkje kvar filer skal lagrast for å få backup",
+      "en": "do not know where to store files for backup"
+    },
+    "action_text": {
+      "nn": "Vis kvar felles filer skal liggje (OneDrive og Teams), og flytt skrivebord og Dokument dit.",
+      "en": "Show where shared files belong (OneDrive and Teams) and move Desktop and Documents there."
+    },
+    "severity": "risk",
+    "order": 7
+  },
+  {
+    "key": "tryggleik.f17",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "tryggleik.f17.distribution",
+    "options": ["ja", "avogtil"],
+    "basis": "tryggleik.f17.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "lagrar viktige filer lokalt på PC-en",
+      "en": "store important files locally on their PC"
+    },
+    "action_text": {
+      "nn": "Flytt skrivebord og Dokument til OneDrive, så blir det backup utan at folk må tenkje på det.",
+      "en": "Move Desktop and Documents to OneDrive for backup without people needing to remember."
+    },
+    "severity": "risk",
+    "order": 8
+  },
+  {
+    "key": "tryggleik.f18",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "tryggleik.f18.distribution",
+    "options": ["nei", "usikker"],
+    "basis": "tryggleik.f18.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "trur ikkje PC-en blir oppdatert, eller veit ikkje",
+      "en": "think their PC is not updated or do not know"
+    },
+    "action_text": {
+      "nn": "Sjekk oppdateringsstatus for kunden, og fortel folk at det skjer automatisk.",
+      "en": "Check the customer’s update status and tell people that updates happen automatically."
+    },
+    "severity": "risk",
+    "order": 9
+  },
+  {
+    "key": "tryggleik.f19",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "tryggleik.f19.distribution",
+    "options": ["nei", "usikker"],
+    "basis": "tryggleik.f19.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "veit ikkje om PC-en har antivirus eller EDR",
+      "en": "do not know whether their PC has antivirus or EDR"
+    },
+    "action_text": {
+      "nn": "Vis ikonet og forklar kva det gjer. Tryggleik folk ikkje veit om, gir ikkje tryggleikskjensle.",
+      "en": "Show the icon and explain what it does. Security people do not know about does not give confidence."
+    },
+    "severity": "risk",
+    "order": 10
+  },
+  {
+    "key": "tryggleik.f10",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "tryggleik.f10.distribution",
+    "options": ["sjeldan", "nei"],
+    "basis": "tryggleik.f10.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "låser sjeldan eller aldri PC-en når dei går",
+      "en": "rarely or never lock their PC when they leave"
+    },
+    "action_text": {
+      "nn": "Automatisk lås etter fem minutt, og ei påminning om Win + L.",
+      "en": "Automatic locking after five minutes and a reminder about Win + L."
+    },
+    "severity": "risk",
+    "order": 11
+  },
+  {
+    "key": "tryggleik.f7",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "tryggleik.f7.distribution",
+    "options": ["nei", "usikker"],
+    "basis": "tryggleik.f7.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "meiner sjølve at passordvanane ikkje er gode",
+      "en": "think their password habits are not good"
+    },
+    "action_text": {
+      "nn": "Dei er klare for hjelp. Passordhandterar og ein kort gjennomgang.",
+      "en": "They are ready for help: a password manager and a short walkthrough."
+    },
+    "severity": "risk",
+    "order": 12
+  },
+  {
+    "key": "tryggleik.f3",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "tryggleik.f3.distribution",
+    "options": ["nei", "usikker"],
+    "basis": "tryggleik.f3.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "opplever ikkje at bedrifta har fokus på IT-sikkerheit i det daglege",
+      "en": "do not feel the company focuses on IT security day to day"
+    },
+    "action_text": {
+      "nn": "Leiaren tek det opp på eit møte, og det blir fast tema ein gong i kvartalet.",
+      "en": "The leader raises it at a meeting and makes it a regular quarterly topic."
+    },
+    "severity": "risk",
+    "order": 13
+  },
+  {
+    "key": "tryggleik.f13",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "tryggleik.f13.distribution",
+    "options": ["ja"],
+    "basis": "tryggleik.f13.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "har mistenkt at dei klikka på svindel",
+      "en": "have suspected they clicked a scam"
+    },
+    "action_text": {
+      "nn": "Sjekk innloggingslogg for kontoane, og køyr phishing-trening.",
+      "en": "Check sign-in logs for the accounts and run phishing training."
+    },
+    "severity": "risk",
+    "order": 14
+  },
+  {
+    "key": "tryggleik.leader_b13",
+    "version": 1,
+    "channel": "leader",
+    "metric_key": "tryggleik.leiar_b13.distribution",
+    "question": "B13",
+    "options": ["nei", "vardahei"],
+    "raw_options": ["nei", "vardahei"],
+    "basis": "B13",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "har ingen plan for dei første timane etter eit angrep",
+      "en": "have no plan for the first hours after an attack"
+    },
+    "action_text": {
+      "nn": "Lag ein beredskapsplan på éi side saman med kunden.",
+      "en": "Create a one-page contingency plan with the customer."
+    },
+    "severity": "risk",
+    "level": "medium",
+    "order": 0
+  },
+  {
+    "key": "tryggleik.leader_b12",
+    "version": 1,
+    "channel": "leader",
+    "metric_key": "tryggleik.leiar_b12.distribution",
+    "question": "B12",
+    "options": ["nei", "vk"],
+    "raw_options": ["nei", "vk"],
+    "basis": "B12",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "har aldri testa å hente tilbake frå backup",
+      "en": "have never tested restoring a backup"
+    },
+    "action_text": {
+      "nn": "Tilby ein årleg gjenopprettingstest.",
+      "en": "Offer an annual restoration test."
+    },
+    "severity": "risk",
+    "level": "medium",
+    "order": 1
+  },
+  {
+    "key": "tryggleik.leader_b9",
+    "version": 1,
+    "channel": "leader",
+    "metric_key": "tryggleik.leiar_b9.distribution",
+    "question": "B9",
+    "options": ["etter", "vk"],
+    "raw_options": ["etter", "vk"],
+    "basis": "B9",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "har ingen fast rutine når nokon sluttar",
+      "en": "have no fixed procedure when someone leaves"
+    },
+    "action_text": {
+      "nn": "Sjekkliste og eit enkelt skjema for «tilsett sluttar».",
+      "en": "A checklist and a simple employee departure form."
+    },
+    "severity": "risk",
+    "level": "medium",
+    "order": 2
+  },
+  {
+    "key": "tryggleik.leader_b10",
+    "version": 1,
+    "channel": "leader",
+    "metric_key": "tryggleik.leiar_b10.distribution",
+    "question": "B10",
+    "options": ["utan", "ikkje"],
+    "raw_options": ["utan", "ikkje"],
+    "basis": "B10",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "har ingen reglar for jobb-e-post på private mobilar",
+      "en": "have no rules for work email on private phones"
+    },
+    "action_text": {
+      "nn": "Reglar for mobil, eventuelt Intune.",
+      "en": "Mobile device rules, possibly Intune."
+    },
+    "severity": "risk",
+    "level": "medium",
+    "order": 3
+  },
+  {
+    "key": "tryggleik.leader_b7",
+    "version": 1,
+    "channel": "leader",
+    "metric_key": "tryggleik.leiar_b7.distribution",
+    "question": "B7",
+    "options": ["ja"],
+    "raw_options": ["ja"],
+    "basis": "B7",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "har fått spørsmål om IT-tryggleik frå kundar, bank eller forsikring",
+      "en": "have been asked about IT security by customers, banks or insurers"
+    },
+    "action_text": {
+      "nn": "Tilby dokumentasjonspakke: rutinar, oversikt og stadfesting.",
+      "en": "Offer a documentation package: procedures, an overview and confirmation."
+    },
+    "severity": "risk",
+    "level": "medium",
+    "order": 4
+  },
+  {
+    "key": "tryggleik.leader_b18_direct",
+    "version": 1,
+    "channel": "leader",
+    "metric_key": "tryggleik.leiar_b18_route.distribution",
+    "question": "B18",
+    "options": ["direct"],
+    "raw_options": ["endrar", "svar"],
+    "basis": "B18",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "kan endre kontonummer til ein leverandør utan å ringje og sjekke",
+      "en": "may change a supplier account number without calling to check"
+    },
+    "action_text": {
+      "nn": "Fast regel: nytt kontonummer blir alltid stadfesta på telefon, helst av to personar.",
+      "en": "Always confirm a new account number by phone, preferably by two people."
+    },
+    "severity": "risk",
+    "level": "medium",
+    "order": 5
+  },
+  {
+    "key": "tryggleik.leader_b18_unknown",
+    "version": 1,
+    "channel": "leader",
+    "metric_key": "tryggleik.leiar_b18_route.distribution",
+    "question": "B18",
+    "options": ["unknown"],
+    "raw_options": ["rekneskap", "vk"],
+    "basis": "B18",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "veit ikkje korleis endra kontonummer blir sjekka",
+      "en": "do not know how changed account numbers are checked"
+    },
+    "action_text": {
+      "nn": "Avklar rutinen med rekneskapsføraren.",
+      "en": "Clarify the procedure with the accountant."
+    },
+    "severity": "risk",
+    "level": "medium",
+    "order": 6
+  },
+  {
+    "key": "tryggleik.leader_b17",
+    "version": 1,
+    "channel": "leader",
+    "metric_key": "tryggleik.leiar_b17_sensitivity.distribution",
+    "question": "B17",
+    "options": ["sensitive"],
+    "raw_options": ["id", "helse", "barn", "betaling"],
+    "basis": "B17",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "har særleg sensitive opplysningar (personnummer, helse, barn eller betaling)",
+      "en": "have particularly sensitive information (ID numbers, health, children or payments)"
+    },
+    "action_text": {
+      "nn": "Kartlegg kvar dei ligg og kven som har tilgang. Prioriter tilgangsstyring og logging der.",
+      "en": "Map where it is stored and who has access. Prioritise access controls and logging."
+    },
+    "severity": "risk",
+    "level": "medium",
+    "order": 7
+  },
+  {
+    "key": "tryggleik.leader_b19",
+    "version": 1,
+    "channel": "leader",
+    "metric_key": "tryggleik.leiar_b19_provider.distribution",
+    "question": "B19",
+    "options": ["external"],
+    "raw_options": ["fag", "nett", "okonomi", "booking", "some", "anna"],
+    "basis": "B19",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "har system som andre leverandørar har ansvar for",
+      "en": "have systems for which other suppliers are responsible"
+    },
+    "action_text": {
+      "nn": "Få oversikt over leverandørane, kven som har tilgang, og om det er tofaktor på innlogginga.",
+      "en": "Map the suppliers, who has access and whether sign-ins use MFA."
+    },
+    "severity": "risk",
+    "level": "medium",
+    "order": 8
+  },
+  {
+    "key": "tryggleik.f12_x_b13",
+    "version": 1,
+    "channel": "leader",
+    "metric_key": "tryggleik.f12.distribution",
+    "question": "B13",
+    "options": ["nei", "ide", "vardahei"],
+    "basis": "tryggleik.f12.distribution",
+    "threshold": {
+      "medium": 0.6,
+      "high": 1
+    },
+    "min_count": 3,
+    "text": {
+      "nn": "seier dei veit kor dei skal melde frå, men leiaren har ingen skriven plan for kva som skjer etterpå",
+      "en": "say they know where to report an incident, but the leader has no written plan for what happens next"
+    },
+    "action_text": {
+      "nn": "Skriv ned det folk alt gjer i dag, så det ikkje heng på éin person. Éi side held.",
+      "en": "Write down what people already do so it does not depend on one person. One page is enough."
+    },
+    "severity": "risk",
+    "computed": "f12_b13",
+    "order": 99
+  }
+]

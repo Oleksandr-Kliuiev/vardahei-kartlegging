@@ -21,8 +21,10 @@ import { released, type Snap } from '../support/golden.js';
 import { IMPORT_ROUND_NAMES, resetImports } from '../support/imports.js';
 import { withPg } from '../support/rounds.js';
 import { assertReleaseSafety, assertSuppressionJustified } from '../support/release-safety.js';
+import { temporaryDatabase } from '../support/test-database.js';
 import { SEED_DIR } from '../support/seed-dir.js';
 
+let disposeDatabase: (() => Promise<void>) | undefined;
 let app: NestFastifyApplication;
 let prisma: PrismaService;
 let privacy: PrivacyService;
@@ -54,6 +56,7 @@ async function rawCells(round: string): Promise<Map<string, ComputedCell>> {
 }
 
 beforeAll(async () => {
+  disposeDatabase = await temporaryDatabase();
   app = await createApp();
   await app.init();
   prisma = app.get(PrismaService);
@@ -84,6 +87,7 @@ afterAll(async () => {
   await prisma.auditLog.deleteMany({ where: { who: `entra:${MARK}` } });
   await resetImports(prisma);
   await app.close();
+  await disposeDatabase?.();
 });
 
 describe('invariants 1a: completeness of snapshots', () => {
