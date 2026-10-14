@@ -5,11 +5,12 @@ import { currentBank } from './bank.mjs';
 import { runnerScenarios } from './runner-scenarios.mjs';
 
 /** Used with old-server.mjs. Stops before sending, so path capture adds no answers to fixtures. */
-export async function walkFixture(page, scenario) {
+export async function walkFixture(page, scenario, capture) {
   const form = currentBank().skjema[scenario.survey];
   await page.locator('#vidare').click();
   const path = [];
   for (let i = 0; i < 80; i += 1) {
+    if (capture && await capture(path.length)) return path;
     if (await page.locator('.mellom').count()) {
       path.push('B-intro');
       await page.locator('#vidare').click();
@@ -62,7 +63,10 @@ export async function browserPaths(server, tilgang) {
       await page.goto(`${server.base}/?k=daco&s=${s.survey}&t=${code}`);
       await page.waitForSelector('h1');
       const path = await walkFixture(page, s);
-      scenarios.push({ ...s, path });
+      await page.waitForSelector('.slutt');
+      const titles = await page.locator('.slutt section h3').allTextContents();
+      const tips = titles.flatMap((title) => currentBank().skjema[s.survey].tips.filter((t) => t.tittel.nn === title).map((t) => t.id));
+      scenarios.push({ ...s, path, tips });
       await page.close();
     }
     return { scenarios };

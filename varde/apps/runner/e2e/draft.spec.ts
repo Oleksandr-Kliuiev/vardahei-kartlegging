@@ -16,7 +16,7 @@ test('reload restores answers, step, free text and language', async ({ page }) =
   await expect(page.locator('.opt[data-id="anna"]')).toHaveAttribute('aria-checked', 'true');
   await expect(page.locator('#fri-Q2')).toHaveValue('Syntetisk tekst');
 });
-test('confirmed submission clears draft (Submission API is stubbed until 1.16)', async ({ page }) => {
+test('confirmed submission clears draft (isolated renderer fixture transport)', async ({ page }) => {
   await page.route('**/api/runner/submissions', (route) => {
     const input = route.request().postDataJSON() as { submission_id: string };
     return route.fulfill({ status: 201, json: { ok: true, submission_id: input.submission_id } });

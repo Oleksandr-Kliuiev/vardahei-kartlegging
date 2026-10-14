@@ -3,6 +3,18 @@ import { readFileSync } from 'node:fs';
 import { currentBank } from './bank.mjs';
 import { FIXTURES } from './generate.mjs';
 
+/** The old UI cannot send a scale with a missing row ("Vidare" needs every row), so a synthetic
+ * partial scale answer is dropped for both the expected path and the browser walks. */
+function withoutPartialScales(form, answers) {
+  const out = { ...answers };
+  for (const q of form.sporsmal) {
+    if (q.type !== 'scale' || out[q.id] === undefined) continue;
+    const value = out[q.id];
+    if (value === null || typeof value !== 'object' || q.rader.some((r) => value[r.id] == null)) delete out[q.id];
+  }
+  return out;
+}
+
 export function runnerScenarios() {
   const bank = currentBank();
   const rows = readFileSync(`${FIXTURES}/svar.synthetic.jsonl`, 'utf8').trim().split('\n').map((line, i) => ({ line: i + 1, row: JSON.parse(line) }));
@@ -26,7 +38,7 @@ export function runnerScenarios() {
       const fixture = pool.find((r) => !used.has(r.line) && selector.match(r.row.svar));
       if (!fixture) throw new Error(`missing synthetic runner scenario ${survey}:${selector.name}`);
       used.add(fixture.line);
-      out.push({ id: `${survey}-${selector.name}`, survey, line: fixture.line, answers: fixture.row.svar, free: fixture.row.fri ?? {} });
+      out.push({ id: `${survey}-${selector.name}`, survey, line: fixture.line, answers: withoutPartialScales(form, fixture.row.svar), free: fixture.row.fri ?? {} });
     }
   }
   return out;
@@ -41,6 +53,17 @@ export function sourcePaths() {
     const leader = bank.leiarRoller.includes(s.answers[role]);
     const common = form.sporsmal.filter((q) => q.del === 'A' && (!q.vis || q.vis(s.answers))).map((q) => q.id);
     const b = leader ? ['B-intro', ...form.sporsmal.filter((q) => q.del === 'B' && (!q.vis || q.vis(s.answers))).map((q) => q.id)] : [];
-    return { ...s, path: [...common, ...b] };
+    const clean = { ...s.answers };
+    for (const q of form.sporsmal) {
+      if ((q.del === 'B' && !leader) || (q.vis && !q.vis(clean)) ||
+        (q.type === 'scale' && q.rader.some((r) => clean[q.id]?.[r.id] == null))) delete clean[q.id];
+    }
+    // Same selection as kartlegging/public/index.html (~889-898): every tip is filtered by its
+    // condition; "reserve" is an ordinary tip when it matches and the single fallback otherwise.
+    const matches = (t) => { try { return t.naar(clean); } catch { return false; } };
+    const hits = form.tips.filter(matches);
+    const regular = hits.filter((t) => !t.avslutning).slice(0, bank.maksTips);
+    const tips = [...(regular.length ? regular : form.tips.filter((t) => t.reserve).slice(0, 1)), ...hits.filter((t) => t.avslutning)].map((t) => t.id);
+    return { ...s, path: [...common, ...b], tips };
   }) };
 }

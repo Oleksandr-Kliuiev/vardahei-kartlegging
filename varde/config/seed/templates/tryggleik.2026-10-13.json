@@ -103,6 +103,26 @@
     },
     "tips": [],
     "max_tips": 4,
+    "invitation": {
+      "letter": {
+        "nn": "Hei alle!\n\nVardahei IT, som hjelper oss med IT, vil gjerne vite korleis IT-sikkerheita er i kvardagen vår: kva rutinar vi har, korleis vi held styr på passord og innlogging, og kva vi gjer om noko går gale.\n\nSpørsmåla er dei same som i førre runde, slik at vi kan sjå kva som har endra seg. Du skriv inn initialane dine først, elles er det ingen namn. Svara per person ser berre Vardahei IT, og bedrifta får eit samla bilete. Det tek om lag {minutt} minutt, og «usikker» er eit heilt greitt svar.\n\n{lenkje}\n\nLenkja går til {host}, så du kan trygt opne ho.{frist}\n\nTakk!",
+        "en": "Hi everyone,\n\nVardahei IT, who help us with IT, would like to know what IT security looks like in our everyday work: which routines we have, how we keep track of passwords and sign-ins, and what we do if something goes wrong.\n\nThe questions are the same as last round, so we can see what has changed. You enter your initials first; apart from that there are no names. Only Vardahei IT sees answers per person, and the company gets an overall picture. It takes about {minutt} minutes, and “not sure” is a perfectly fine answer.\n\n{lenkje}\n\nThe link goes to {host}, so it's safe to open.{frist}\n\nThanks!"
+      },
+      "poster": {
+        "title": {
+          "nn": "Kor trygg er IT-kvardagen din?",
+          "en": "How safe is your everyday IT?"
+        },
+        "text": {
+          "nn": "Vardahei IT vil vite korleis du har det med e-post, passord og alt det andre. Det tek om lag {minutt} minutt.",
+          "en": "A {minutt}-minute survey from Vardahei IT."
+        },
+        "footer": {
+          "nn": "Skriv inn initialane dine først. Svara per person ser berre Vardahei IT. Bedrifta får eit samla bilete utan initialar.",
+          "en": "Enter your initials first. Only Vardahei IT sees the answers per person. Your company gets an overall picture without initials."
+        }
+      }
+    },
     "questions": [
       {
         "id": "F1",

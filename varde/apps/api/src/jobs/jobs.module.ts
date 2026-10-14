@@ -3,6 +3,7 @@ import { readDbBudget } from '../config/db-budget.js';
 import { DemoJobs } from './demo-jobs.js';
 import { loadJobTypes } from './job-config.js';
 import { JobsService } from './jobs.service.js';
+import { ProgressTtl } from './progress-ttl.js';
 
 @Global()
 @Module({
@@ -16,6 +17,7 @@ import { JobsService } from './jobs.service.js';
         }),
     },
     DemoJobs,
+    ProgressTtl,
   ],
   exports: [JobsService],
 })

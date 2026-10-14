@@ -12,7 +12,12 @@ describe('runner paths reference (1.13c; browser verification is in parity:golde
     expect(paths.scenarios).toHaveLength(12);
     expect(readFileSync(join(GOLDEN, 'paths.json'), 'utf8')).toBe(pathsJson(paths));
     const rows = readFileSync(join(FIXTURES, 'svar.synthetic.jsonl'), 'utf8').trim().split('\n').map((line) => JSON.parse(line) as { svar: object });
-    for (const s of paths.scenarios) expect(s.answers).toEqual(rows[s.line - 1]!.svar);
+    // Answers are the fixture row minus synthetic partial scales (the old UI cannot send those).
+    for (const s of paths.scenarios) {
+      const row = rows[s.line - 1]!.svar as Record<string, unknown>;
+      for (const [key, value] of Object.entries(s.answers)) expect(value).toEqual(row[key]);
+      expect(Object.keys(row).length - Object.keys(s.answers).length).toBeLessThanOrEqual(1);
+    }
     expect(paths.scenarios.filter((s) => s.survey === 'tryggleik')).toHaveLength(6);
     expect(paths.scenarios.filter((s) => s.survey === 'ki')).toHaveLength(6);
     expect(paths.scenarios.find((s) => s.id === 'ki-ingen')!.path).not.toContain('K16');

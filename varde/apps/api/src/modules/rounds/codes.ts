@@ -47,12 +47,12 @@ export function requireCode(result: CodeResolution): ResolvedRoundClient {
 export class CodesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async resolveCode(code: string, now = new Date()): Promise<CodeResolution> {
+  async resolveCode(code: string, now = new Date(), db: Prisma.TransactionClient = this.prisma): Promise<CodeResolution> {
     if (!/^[A-Za-z0-9_-]{22}$/.test(code)) return 'unknown';
     const hash = codeHash(code);
-    const rc = await this.prisma.roundClient.findUnique({ where: { code_hash: hash }, include });
+    const rc = await db.roundClient.findUnique({ where: { code_hash: hash }, include });
     if (rc === null) {
-      return (await this.prisma.revokedRoundCode.findUnique({ where: { code_hash: hash } }))
+      return (await db.revokedRoundCode.findUnique({ where: { code_hash: hash } }))
         ? 'revoked' : 'unknown';
     }
     if (rc.code_revoked_at !== null) return 'revoked';

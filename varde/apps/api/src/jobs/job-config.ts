@@ -59,11 +59,15 @@ export type Idempotency = Record<string, (payload: JobPayload) => string>;
 export const STAGE0_JOBS: Idempotency = {
   'demo.sleep': (p) => `demo.sleep:${p.id}`,
 };
+export const APPLICATION_JOBS: Idempotency = {
+  ...STAGE0_JOBS,
+  'retention.progress-ttl': (p) => `retention.progress-ttl:${p.id}`,
+};
 
 /** Merges config/jobs.json with the code registry; both must name the same types. */
 export function loadJobTypes(
   env: NodeJS.ProcessEnv = process.env,
-  registry: Idempotency = STAGE0_JOBS,
+  registry: Idempotency = APPLICATION_JOBS,
 ): JobType[] {
   const file = JobsFile.parse(readConfigJson('jobs.json', env));
   const configured = Object.keys(file.types).sort();

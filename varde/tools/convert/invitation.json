@@ -1,0 +1,86 @@
+{
+  "tryggleik": {
+    "initials": {
+      "letter": {
+        "nn": "Hei alle!\n\nVardahei IT, som hjelper oss med IT, vil gjerne vite korleis IT-sikkerheita er i kvardagen vår: kva rutinar vi har, korleis vi held styr på passord og innlogging, og kva vi gjer om noko går gale.\n\nSpørsmåla er dei same som i førre runde, slik at vi kan sjå kva som har endra seg. Du skriv inn initialane dine først, elles er det ingen namn. Svara per person ser berre Vardahei IT, og bedrifta får eit samla bilete. Det tek om lag {minutt} minutt, og «usikker» er eit heilt greitt svar.\n\n{lenkje}\n\nLenkja går til {host}, så du kan trygt opne ho.{frist}\n\nTakk!",
+        "en": "Hi everyone,\n\nVardahei IT, who help us with IT, would like to know what IT security looks like in our everyday work: which routines we have, how we keep track of passwords and sign-ins, and what we do if something goes wrong.\n\nThe questions are the same as last round, so we can see what has changed. You enter your initials first; apart from that there are no names. Only Vardahei IT sees answers per person, and the company gets an overall picture. It takes about {minutt} minutes, and “not sure” is a perfectly fine answer.\n\n{lenkje}\n\nThe link goes to {host}, so it's safe to open.{frist}\n\nThanks!"
+      },
+      "poster": {
+        "title": {
+          "nn": "Kor trygg er IT-kvardagen din?",
+          "en": "How safe is your everyday IT?"
+        },
+        "text": {
+          "nn": "Vardahei IT vil vite korleis du har det med e-post, passord og alt det andre. Det tek om lag {minutt} minutt.",
+          "en": "A {minutt}-minute survey from Vardahei IT."
+        },
+        "footer": {
+          "nn": "Skriv inn initialane dine først. Svara per person ser berre Vardahei IT. Bedrifta får eit samla bilete utan initialar.",
+          "en": "Enter your initials first. Only Vardahei IT sees the answers per person. Your company gets an overall picture without initials."
+        }
+      }
+    },
+    "none": {
+      "letter": {
+        "nn": "Hei alle!\n\nVardahei IT, som hjelper oss med IT, vil gjerne vite korleis IT-sikkerheita er i kvardagen vår: kva rutinar vi har, korleis vi held styr på passord og innlogging, og kva vi gjer om noko går gale.\n\nSpørsmåla er dei same som i førre runde, slik at vi kan sjå kva som har endra seg. Du skriv ikkje inn namn eller initialar. Vardahei IT ser svara, men ikkje kven som svarte. Det du skriv i fritekst, kan likevel seie noko om kven du er. Det tek om lag {minutt} minutt, og «usikker» er eit heilt greitt svar.\n\n{lenkje}\n\nLenkja går til {host}, så du kan trygt opne ho.{frist}\n\nTakk!",
+        "en": "Hi everyone,\n\nVardahei IT, who help us with IT, would like to know what IT security looks like in our everyday work: which routines we have, how we keep track of passwords and sign-ins, and what we do if something goes wrong.\n\nThe questions are the same as last round, so we can see what has changed. You do not enter your name or initials. Vardahei IT sees the answers, but not who answered. What you write in free text may still say something about who you are. It takes about {minutt} minutes, and “not sure” is a perfectly fine answer.\n\n{lenkje}\n\nThe link goes to {host}, so it's safe to open.{frist}\n\nThanks!"
+      },
+      "poster": {
+        "title": {
+          "nn": "Kor trygg er IT-kvardagen din?",
+          "en": "How safe is your everyday IT?"
+        },
+        "text": {
+          "nn": "Vardahei IT vil vite korleis du har det med e-post, passord og alt det andre. Det tek om lag {minutt} minutt.",
+          "en": "A {minutt}-minute survey from Vardahei IT."
+        },
+        "footer": {
+          "nn": "Du skriv ikkje inn namn eller initialar. Vardahei IT ser svara, men ikkje kven som svarte. Det du skriv i fritekst, kan likevel seie noko om kven du er.",
+          "en": "You do not enter your name or initials. Vardahei IT sees the answers, but not who answered. What you write in free text may still say something about who you are."
+        }
+      }
+    }
+  },
+  "ki": {
+    "initials": {
+      "letter": {
+        "nn": "Hei alle!\n\nVi vil gjerne finne ut kva som tek tid i arbeidsdagen vår, og om KI kan gjere noko av det enklare. Vardahei IT har laga ei kort undersøking om det. Har du aldri brukt KI, er svaret ditt like nyttig.\n\nDu skriv inn initialane dine først, elles er det ingen namn. Svara per person ser berre Vardahei IT, og bedrifta får eit samla bilete. Det tek om lag {minutt} minutt.\n\n{lenkje}\n\nLenkja går til {host}, så du kan trygt opne ho.{frist}\n\nTakk!",
+        "en": "Hi everyone,\n\nWe'd like to find out what takes time in our working day, and whether AI could make some of it easier. Vardahei IT has made a short survey about it. If you've never used AI, your answer is just as useful.\n\nYou enter your initials first; apart from that there are no names. Only Vardahei IT sees answers per person, and the company gets an overall picture. It takes about {minutt} minutes.\n\n{lenkje}\n\nThe link goes to {host}, so it's safe to open.{frist}\n\nThanks!"
+      },
+      "poster": {
+        "title": {
+          "nn": "Kva tek tid i arbeidsdagen din?",
+          "en": "What takes time in your working day?"
+        },
+        "text": {
+          "nn": "Vardahei IT vil finne ut kva som tek tid, og om KI kan gjere noko av det enklare. Har du aldri brukt KI, er svaret ditt like nyttig. Om lag {minutt} minutt.",
+          "en": "A {minutt}-minute survey from Vardahei IT. If you have never used AI, your answer is just as useful."
+        },
+        "footer": {
+          "nn": "Skriv inn initialane dine først. Svara per person ser berre Vardahei IT. Bedrifta får eit samla bilete utan initialar.",
+          "en": "Enter your initials first. Only Vardahei IT sees the answers per person. Your company gets an overall picture without initials."
+        }
+      }
+    },
+    "none": {
+      "letter": {
+        "nn": "Hei alle!\n\nVi vil gjerne finne ut kva som tek tid i arbeidsdagen vår, og om KI kan gjere noko av det enklare. Vardahei IT har laga ei kort undersøking om det. Har du aldri brukt KI, er svaret ditt like nyttig.\n\nDu skriv ikkje inn namn eller initialar. Vardahei IT ser svara, men ikkje kven som svarte. Det du skriv i fritekst, kan likevel seie noko om kven du er. Det tek om lag {minutt} minutt.\n\n{lenkje}\n\nLenkja går til {host}, så du kan trygt opne ho.{frist}\n\nTakk!",
+        "en": "Hi everyone,\n\nWe'd like to find out what takes time in our working day, and whether AI could make some of it easier. Vardahei IT has made a short survey about it. If you've never used AI, your answer is just as useful.\n\nYou do not enter your name or initials. Vardahei IT sees the answers, but not who answered. What you write in free text may still say something about who you are. It takes about {minutt} minutes.\n\n{lenkje}\n\nThe link goes to {host}, so it's safe to open.{frist}\n\nThanks!"
+      },
+      "poster": {
+        "title": {
+          "nn": "Kva tek tid i arbeidsdagen din?",
+          "en": "What takes time in your working day?"
+        },
+        "text": {
+          "nn": "Vardahei IT vil finne ut kva som tek tid, og om KI kan gjere noko av det enklare. Har du aldri brukt KI, er svaret ditt like nyttig. Om lag {minutt} minutt.",
+          "en": "A {minutt}-minute survey from Vardahei IT. If you have never used AI, your answer is just as useful."
+        },
+        "footer": {
+          "nn": "Du skriv ikkje inn namn eller initialar. Vardahei IT ser svara, men ikkje kven som svarte. Det du skriv i fritekst, kan likevel seie noko om kven du er.",
+          "en": "You do not enter your name or initials. Vardahei IT sees the answers, but not who answered. What you write in free text may still say something about who you are."
+        }
+      }
+    }
+  }
+}

@@ -35,7 +35,10 @@ export function templateTexts(
     add(['tips', n, 'title'], t.title);
     add(['tips', n, 'text'], t.text);
   });
-  for (const [key, t] of Object.entries(c.invitation ?? {})) add(['invitation', key], t);
+  if (c.invitation) {
+    add(['invitation', 'letter'], c.invitation.letter);
+    for (const [key, t] of Object.entries(c.invitation.poster)) add(['invitation', 'poster', key], t);
+  }
   c.questions.forEach((q, n) => {
     const p = ['questions', n];
     for (const [key, t] of Object.entries(q.texts)) add([...p, 'texts', key], t);

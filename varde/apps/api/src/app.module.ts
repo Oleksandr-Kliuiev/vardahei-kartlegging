@@ -8,6 +8,7 @@ import { ImportsModule } from './modules/imports/imports.module.js';
 import { MetricsModule } from './modules/metrics/metrics.module.js';
 import { PrivacyModule } from './modules/privacy/privacy.service.js';
 import { RoundsModule } from './modules/rounds/rounds.module.js';
+import { ResponsesModule } from './modules/responses/responses.module.js';
 import { SurveysModule } from './modules/surveys/surveys.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
@@ -21,6 +22,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     PrivacyModule.forApp(),
     SurveysModule,
     RoundsModule,
+    ResponsesModule,
     ImportsModule,
     MetricsModule,
     HomeModule,

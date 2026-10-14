@@ -187,3 +187,5 @@ input.stor { max-width: 240px; font-size: 1.35rem; letter-spacing: .12em; text-t
 }
 
 .skala-knappar { grid-template-columns: repeat(auto-fit, minmax(40px, 1fr)); }
+.fjell[data-reduced-motion="true"] *, .fjell[data-reduced-motion="true"] .fjell-merke { animation: none !important; transition: none !important; }
+.fjell.ferdig[data-reduced-motion="true"] .telt, .fjell.ferdig[data-reduced-motion="true"] .baal { opacity: 1; transform: none; }

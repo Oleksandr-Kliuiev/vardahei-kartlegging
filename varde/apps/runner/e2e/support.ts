@@ -6,7 +6,7 @@ import type { Question } from '@varde/schema/template/question';
 import type { RunnerRound } from '../src/round.js';
 
 export function state() {
-  return JSON.parse(readFileSync(resolve(import.meta.dirname, '../test-results/rounds.json'), 'utf8')) as Record<'nn' | 'en' | 'closed', { code: string; version: string }>;
+  return JSON.parse(readFileSync(resolve(import.meta.dirname, '../test-results/rounds.json'), 'utf8')) as Record<'nn' | 'en' | 'closed' | 'anonymous' | 'security', { code: string; version: string; roundClient: string }>;
 }
 export function syntheticContent(): TemplateContent {
   return (JSON.parse(readFileSync(resolve(import.meta.dirname, '../../../config/seed/templates/ki.2026-10-13.json'), 'utf8')) as { content: TemplateContent }).content;

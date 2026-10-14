@@ -11,6 +11,9 @@ export interface Draft {
   expires: string | null;
   /** Confirmed parts survive a lost connection between independent submissions. */
   confirmed?: { common: boolean; leader: boolean };
+  skip_leader?: boolean;
+  /** Exact request bytes survive lost acknowledgements and changing clocks. */
+  requests?: { common: string; leader?: string };
 }
 export interface DraftStorage {
   readonly length: number;
@@ -44,7 +47,10 @@ function valid(value: unknown): value is Draft {
     ['nn', 'nb', 'en'].includes(String(value.lang)) && typeof value.started_at === 'number' && Number.isFinite(value.started_at) &&
     uuid(value.submission_ids.common) && uuid(value.submission_ids.leader) && value.submission_ids.common !== value.submission_ids.leader &&
     (value.expires === null || (typeof value.expires === 'string' && Number.isFinite(Date.parse(value.expires)))) &&
-    (value.confirmed === undefined || (record(value.confirmed) && typeof value.confirmed.common === 'boolean' && typeof value.confirmed.leader === 'boolean'));
+    (value.confirmed === undefined || (record(value.confirmed) && typeof value.confirmed.common === 'boolean' && typeof value.confirmed.leader === 'boolean')) &&
+    (value.skip_leader === undefined || typeof value.skip_leader === 'boolean') &&
+    (value.requests === undefined || (record(value.requests) && typeof value.requests.common === 'string' &&
+      (value.requests.leader === undefined || typeof value.requests.leader === 'string')));
 }
 export function removeDraft(key: string, storage = browserStorage()): void {
   try { storage?.removeItem(key); } catch { /* Private browsing or a full store must not interrupt the survey. */ }

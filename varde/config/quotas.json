@@ -1,0 +1,6 @@
+{
+  "round_client_factor": 3,
+  "round_client_min": 30,
+  "global_per_10min": 600,
+  "per_ip_per_10min": 300
+}
