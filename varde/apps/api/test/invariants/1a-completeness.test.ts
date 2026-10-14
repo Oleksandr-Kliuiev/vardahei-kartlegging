@@ -20,6 +20,7 @@ import { clients, fixtureText, kundar, tilgang } from '../support/fixtures.js';
 import { released, type Snap } from '../support/golden.js';
 import { IMPORT_ROUND_NAMES, resetImports } from '../support/imports.js';
 import { withPg } from '../support/rounds.js';
+import { assertReleaseSafety, assertSuppressionJustified } from '../support/release-safety.js';
 import { SEED_DIR } from '../support/seed-dir.js';
 
 let app: NestFastifyApplication;
@@ -58,15 +59,13 @@ beforeAll(async () => {
   prisma = app.get(PrismaService);
   privacy = app.get(PrivacyService);
   metrics = app.get(MetricsService);
-  await app
-    .get(SeedService)
-    .seedAll({
-      clients: clients(),
-      kundar: kundar(),
-      tilgang: tilgang(),
-      seedDir: SEED_DIR,
-      who: 'test:seed',
-    });
+  await app.get(SeedService).seedAll({
+    clients: clients(),
+    kundar: kundar(),
+    tilgang: tilgang(),
+    seedDir: SEED_DIR,
+    who: 'test:seed',
+  });
   await resetImports(prisma);
   await app
     .get(SvarImportService)
@@ -94,6 +93,11 @@ describe('invariants 1a: completeness of snapshots', () => {
       const snaps = await released(r.id);
       before.set(r.id, snaps);
       const raw = await rawCells(r.id);
+      assertReleaseSafety([...snaps.values()]);
+      assertSuppressionJustified(
+        [...snaps.values()],
+        [...raw].map(([key, c]) => ({ ...c, population: key.split('|')[0]! })),
+      );
       expect(snaps.size, r.name).toBe(raw.size);
       for (const [key, s] of snaps) {
         const c = raw.get(key);
@@ -111,11 +115,49 @@ describe('invariants 1a: completeness of snapshots', () => {
     expect(compared).toBeGreaterThan(1000);
   });
 
+  it('five deletions per fixture round and repeated import/release keep every partition and diff safe', async () => {
+    const deleted = new Map<string, Map<string, Snap>>();
+    let checked = 0;
+    for (const r of rounds) {
+      await withPg(async (c) => {
+        const result = await c.query(
+          `DELETE FROM response WHERE id IN (
+          SELECT s.id FROM response s JOIN round_client rc ON rc.id = s.round_client_id
+          JOIN client cl ON cl.id = rc.client_id
+          WHERE rc.round_id = $1 AND s.part = 'common'
+          ORDER BY cl.slug, s.source_id, s.submission_id LIMIT 5)`,
+          [r.id],
+        );
+        expect(result.rowCount, r.name).toBe(5);
+      });
+      await metrics.releaseRound(r.id, { type: 'auto', who: 'system' });
+      const now = await released(r.id);
+      checked += assertReleaseSafety([...now.values()]);
+      checked += assertReleaseSafety([...now.values()], [...before.get(r.id)!.values()]);
+      deleted.set(r.id, now);
+    }
+    await app
+      .get(SvarImportService)
+      .importSvar(fixtureText('svar.synthetic.jsonl'), { who: 'test:1a' });
+    await app
+      .get(Runde1ImportService)
+      .importRunde1(fixtureText('runde1.synthetic.js'), { who: 'test:1a' });
+    await metrics.closeImported(SEED_DIR);
+    for (const r of rounds) {
+      const now = await released(r.id);
+      checked += assertReleaseSafety([...now.values()]);
+      for (const old of [before.get(r.id)!, deleted.get(r.id)!])
+        checked += assertReleaseSafety([...now.values()], [...old.values()]);
+      before.set(r.id, now);
+    }
+    expect(checked).toBeGreaterThan(6000);
+  });
+
   it('after TRUNCATE response the snapshots are unchanged and rows are empty with an AuditLog entry', async () => {
     await withPg((c) => c.query('TRUNCATE response'));
     for (const r of rounds) {
       const now = await released(r.id);
-      expect(now, r.name).toEqual(before.get(r.id));
+      expect(JSON.stringify([...now]), r.name).toBe(JSON.stringify([...before.get(r.id)!]));
       const rows = await privacy.rows({ round: r.id }, session);
       expect(rows.rows).toEqual([]);
     }

@@ -8,7 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { configureApp } from '../../src/configure-app.js';
 import { AuthModule } from '../../src/modules/auth/auth.module.js';
 import { SessionStore } from '../../src/modules/auth/session.store.js';
-import { privacyProviders } from '../../src/modules/privacy/privacy.service.js';
+import { PrivacyService } from '../../src/modules/privacy/privacy.service.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { cookieHeader } from '../support/auth-app.js';
 import { FixtureSource, ROUND_ANONYMOUS } from '../support/fixture-source.js';
@@ -27,7 +27,12 @@ beforeAll(async () => {
     providers: [
       // No database: 401 comes from the guard, 404 from the mode check before any transaction.
       { provide: PrismaService, useValue: {} },
-      ...privacyProviders(new FixtureSource()),
+      {
+        provide: PrivacyService,
+        useFactory: (prisma: PrismaService) =>
+          new PrivacyService(prisma, new FixtureSource(), { k: 3, exact_counts: [] }),
+        inject: [PrismaService],
+      },
     ],
   })
     .overrideProvider(SessionStore)

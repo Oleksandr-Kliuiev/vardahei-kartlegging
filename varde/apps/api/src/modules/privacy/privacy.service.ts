@@ -36,9 +36,8 @@ import type {
   RowsResult,
 } from './types.js';
 
-export const PRIVACY_CONFIG = Symbol('PRIVACY_CONFIG');
+const PRIVACY_CONFIG = Symbol('PRIVACY_CONFIG');
 
-export { RESPONSE_SOURCE } from './source.js';
 export type { ResponseSource, SourceQuery } from './source.js';
 export type { RowsDb } from './rows.js';
 export { ReleaseRejected } from './release.js';
@@ -187,20 +186,8 @@ export class PrivacyService {
   }
 }
 
-/**
- * Providers of the module for a response source; tests mount them with an in-memory source,
- * the application with the Prisma source (`PrivacyModule.forApp()`, 1.4b).
- */
-export function privacyProviders(source: ResponseSource): Provider[] {
-  return [
-    { provide: RESPONSE_SOURCE, useValue: source },
-    { provide: PRIVACY_CONFIG, useFactory: () => readPrivacyConfig() },
-    PrivacyService,
-  ];
-}
-
 /** Providers of the application: the Prisma response source (1.4b). */
-export function prismaPrivacyProviders(): Provider[] {
+function prismaPrivacyProviders(): Provider[] {
   return [
     {
       provide: RESPONSE_SOURCE,

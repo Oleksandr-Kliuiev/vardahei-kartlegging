@@ -59,8 +59,8 @@ export const boundaries = [
     rules: { 'no-restricted-syntax': ['error', EXPORT_ALL, ...RELEASED_CAST] },
   },
   {
-    ignores: ['apps/api/src/modules/privacy/**', 'apps/api/test/**'],
-    rules: { 'no-restricted-imports': ['error', { patterns: [PRIVACY_INTERNAL] }] },
+    ignores: ['apps/api/src/modules/privacy/**'],
+    rules: { 'varde/privacy-internals': 'error' },
   },
   {
     files: [

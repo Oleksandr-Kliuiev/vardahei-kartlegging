@@ -116,8 +116,9 @@ function assertActor(actor: unknown): ReleaseActor {
 /** Groups to carry forward because of differences 0 < |Δn| < k (rules 2 and 3). */
 function carriedByDiff(deltas: Map<string, number>, k: number): Set<string> {
   const small = (d: number) => d !== 0 && Math.abs(d) < k;
-  const total = deltas.get(TOTAL) ?? 0;
+  const total = deltas.get(TOTAL);
   const parts = [...deltas.entries()].filter(([g]) => g !== TOTAL);
+  if (total === undefined) return new Set(parts.filter(([, d]) => small(d)).map(([g]) => g));
   if (small(total)) return new Set(deltas.keys());
   const hidden = new Set(parts.filter(([, d]) => small(d)).map(([g]) => g));
   for (;;) {
@@ -193,11 +194,27 @@ export async function release(
   const previous = await store.listReleased(round, population);
   const prevByUnit = new Map(previous.map((s) => [unitOf(s), s]));
   const history = (await store.listHistory(round, population)).map(
-    (h) => new Map(h.map((c) => [unitOf(c), c.suppressed ? 0 : c.n])),
+    (h) => new Map(h.map((c) => [unitOf(c), c])),
   );
 
+  // A group can disappear after deletion. Its retained snapshot still belongs to the
+  // published partition and must participate in the checks rather than be appended later.
+  const offered = new Set(cells.map(unitOf));
+  const retained: ComputedCell[] = previous
+    .filter((s) => !offered.has(unitOf(s)))
+    .map((s) => ({
+      ...(s.client === undefined ? {} : { client: s.client }),
+      metric_key: s.metric_key,
+      metric_version: s.metric_version,
+      group: s.group,
+      n: s.n,
+      numerator: s.numerator,
+      denominator: s.denominator,
+      missing: s.missing,
+    }));
   const blocks = new Map<string, ComputedCell[]>();
-  for (const c of cells) blocks.set(blockOf(c), [...(blocks.get(blockOf(c)) ?? []), c]);
+  for (const c of [...cells, ...retained])
+    blocks.set(blockOf(c), [...(blocks.get(blockOf(c)) ?? []), c]);
 
   const now = day();
   const out: ReleasedSnapshot[] = [];
@@ -220,26 +237,68 @@ export async function release(
             ...(total.n < k ? [TOTAL] : []),
             ...splits.flatMap((p) => [...suppressedGroups(total, p, k)]),
           ]);
-    // Rules 2 and 3 against every earlier release (|Δn|: after a deletion n goes down).
-    const carry = new Set<string>();
-    for (const earlier of history) {
-      const deltas = new Map(block.map((c) => [c.group, c.n - (earlier.get(unitOf(c)) ?? 0)]));
-      const hit =
-        total === undefined
-          ? [...deltas].filter(([, d]) => d !== 0 && Math.abs(d) < k).map(([g]) => g)
-          : splits.length === 0
-            ? carriedByDiff(deltas, k)
-            : splits.flatMap((p) => [
-                ...carriedByDiff(
-                  new Map([total, ...p].map((c) => [c.group, deltas.get(c.group)!])),
-                  k,
-                ),
-              ]);
-      for (const g of hit) carry.add(g);
+    // Carry changes the published partition, so recheck both its values and its differences
+    // until stable. Each step carries or suppresses another cell; at most 2 × block.length
+    // steps can change the candidate. Hidden history is unknown, never the numeric zero.
+    const carry = new Set(block.filter((c) => !offered.has(unitOf(c))).map((c) => c.group));
+    for (const c of block) {
+      if (!offered.has(unitOf(c)) && prevByUnit.get(unitOf(c))?.suppressed) suppressed.add(c.group);
     }
-    if (exact) {
-      suppressed.delete(TOTAL);
-      carry.delete(TOTAL);
+    if (exact) suppressed.delete(TOTAL);
+    const published = (c: ComputedCell): ComputedCell | undefined => {
+      if (suppressed.has(c.group)) return undefined;
+      if (!carry.has(c.group)) return c;
+      const prev = prevByUnit.get(unitOf(c));
+      return prev === undefined || prev.suppressed ? undefined : { ...c, n: prev.n };
+    };
+    for (;;) {
+      const size = suppressed.size + carry.size;
+      const currentTotal = total === undefined ? undefined : published(total);
+      if (currentTotal !== undefined && !exact) {
+        for (const p of splits) {
+          const visible = p.flatMap((c) => {
+            const value = published(c);
+            return value === undefined ? [] : [value];
+          });
+          for (const g of suppressedGroups(currentTotal, visible, k)) suppressed.add(g);
+        }
+      }
+      for (const earlier of history) {
+        // Only values visible in both releases can be subtracted. Hidden groups in either
+        // release stay in each partition's signed remainder, including after carry.
+        const deltas = new Map(
+          block.flatMap((c) => {
+            const value = published(c);
+            const old = earlier.get(unitOf(c));
+            return value === undefined || old?.suppressed
+              ? []
+              : [[c.group, value.n - (old?.n ?? 0)] as const];
+          }),
+        );
+        const hit =
+          total === undefined
+            ? [...deltas].filter(([, d]) => d !== 0 && Math.abs(d) < k).map(([g]) => g)
+            : splits.length === 0
+              ? carriedByDiff(deltas, k)
+              : splits.flatMap((p) => [
+                  ...carriedByDiff(
+                    new Map(
+                      [total, ...p].flatMap((c) =>
+                        deltas.has(c.group) ? [[c.group, deltas.get(c.group)!] as const] : [],
+                      ),
+                    ),
+                    k,
+                  ),
+                ]);
+        for (const g of hit) {
+          if (exact && g === TOTAL) continue;
+          // If the latest carried value still has an unsafe relation to older history,
+          // hide this cell too; repeating carry cannot change that relation.
+          if (carry.has(g)) suppressed.add(g);
+          else carry.add(g);
+        }
+      }
+      if (size === suppressed.size + carry.size) break;
     }
 
     for (const c of block) {
@@ -269,27 +328,6 @@ export async function release(
       }
       out.push(markReleased(snapshot, now));
     }
-  }
-
-  // Released cells not offered again keep their value (what was released cannot be withdrawn).
-  const offered = new Set(cells.map(unitOf));
-  for (const prev of previous) {
-    if (offered.has(unitOf(prev))) continue;
-    carried += 1;
-    const { n, numerator, denominator, missing, suppressed, computed_at } = prev;
-    const where = prev.client === undefined ? {} : { client: prev.client };
-    const unit = { metric_key: prev.metric_key, metric_version: prev.metric_version };
-    const values = { n, numerator, denominator, missing, suppressed, computed_at, stale: true };
-    const snapshot: ComputedSnapshot = {
-      round,
-      population,
-      ...where,
-      ...unit,
-      group: prev.group,
-      ...values,
-      status: 'computed',
-    };
-    out.push(markReleased(snapshot, now));
   }
 
   const superseded = previous.map((s) => transition(s, 'superseded', { reason: 'new release' }));

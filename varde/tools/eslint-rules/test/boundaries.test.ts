@@ -95,7 +95,7 @@ ${name === 'PrismaResponseSource' ? "void source.read({ round: 'probe' });" : 'v
 `,
       );
       expect(ids).toContain('no-restricted-syntax');
-      expect(ids).toContain('no-restricted-imports');
+      expect(ids).toContain('varde/privacy-internals');
     },
   );
 
@@ -111,6 +111,60 @@ export const source = new PrismaResponseSource(new PrismaService());
 `,
       ),
     ).toEqual([]);
+  });
+
+  it.each([
+    'prisma-source',
+    'response-store',
+    'source',
+    'release',
+    'rows',
+    'prisma-snapshot-store',
+  ])('blocks aliased dynamic and static imports of %s in production', async (file) => {
+    for (const code of [
+      `import * as alias from '../privacy/${file}.js';\nexport const value = alias;\n`,
+      `export const value = await import('../privacy/${file}.js');\n`,
+      `export { value as alias } from '../privacy/${file}.js';\n`,
+    ]) {
+      expect(await ruleIds(`apps/api/src/modules/__boundaries__/${file}.ts`, code)).toContain(
+        'varde/privacy-internals',
+      );
+    }
+  });
+
+  it.each(['source', 'release', 'rows', 'prisma-snapshot-store'])(
+    'does not exempt test imports of %s',
+    async (file) => {
+      for (const code of [
+        `import * as alias from '../../src/modules/privacy/${file}.js';\nexport const value = alias;\n`,
+        `export const value = await import('../../src/modules/privacy/${file}.js');\n`,
+      ]) {
+        expect(await ruleIds(`apps/api/test/__boundaries__/${file}.ts`, code)).toContain(
+          'varde/privacy-internals',
+        );
+      }
+    },
+  );
+
+  it.each(['prisma-source', 'response-store'])(
+    'allows only the needed storage test imports (%s)',
+    async (file) => {
+      expect(
+        await ruleIds(
+          `apps/api/test/__boundaries__/allowed_${file}.ts`,
+          `export const value = await import('../../src/modules/privacy/${file}.js');\n`,
+        ),
+      ).not.toContain('varde/privacy-internals');
+    },
+  );
+
+  it('forbids importing the raw source token through the public surface, including an alias', async () => {
+    expect(
+      await ruleIds(
+        'apps/api/src/modules/__boundaries__/token.ts',
+        `import { RESPONSE_SOURCE as token } from '../privacy/privacy.service.js';\nexport { token };\n`,
+      ),
+    ).toContain('varde/privacy-internals');
   });
 
   it('rules/runner must not import rules/findings', async () => {
@@ -141,7 +195,7 @@ export const source = new PrismaResponseSource(new PrismaService());
         rel,
         `import { x } from '../../api/src/modules/privacy/privacy.repository.js';\nexport { x };\n`,
       ),
-    ).toContain('no-restricted-imports');
+    ).toContain('varde/privacy-internals');
   });
 
   it('only privacy.service is importable from outside modules/privacy', async () => {
@@ -151,12 +205,12 @@ export const source = new PrismaResponseSource(new PrismaService());
         `${dir}/internal.ts`,
         `import { x } from '../privacy/privacy.repository.js';\nexport { x };\n`,
       ),
-    ).toContain('no-restricted-imports');
+    ).toContain('varde/privacy-internals');
     expect(
       await ruleIds(
         `${dir}/service.ts`,
         `import { x } from '../privacy/privacy.service.js';\nexport { x };\n`,
       ),
-    ).not.toContain('no-restricted-imports');
+    ).not.toContain('varde/privacy-internals');
   });
 });
