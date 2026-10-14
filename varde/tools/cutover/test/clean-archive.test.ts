@@ -35,3 +35,16 @@ it('second cleaning is byte-for-byte idempotent and removes nothing', () => {
   expect(twice.svar).toBe(r.svar);
   expect(twice.runde1).toBe(r.runde1);
 });
+it.each(['zztest', 'ZZTEST ', 'Øh'])(
+  'removes raw round-1 identity %j without trimming or uppercasing it',
+  (init) => {
+    const records = [init, 'ZZTEST'].map((key) => ({ k: 'synthetic', init: key, svar: {} }));
+    const source = `window.RUNDE1=${JSON.stringify({ namn: 'Synthetic', dato: '2026-01', svar: records })};`;
+    const sourceId = createHash('sha256').update(`runde1|synthetic|${init}`).digest('hex');
+    const result = cleanArchive([{ source_id: sourceId, part: 'common' }], '', source);
+    expect(result.counts).toEqual({ common: 0, leader: 0, runde1: 1 });
+    const ctx = { window: { RUNDE1: { svar: [] } } };
+    runInNewContext(result.runde1, ctx);
+    expect(ctx.window.RUNDE1.svar).toEqual([records[1]]);
+  },
+);

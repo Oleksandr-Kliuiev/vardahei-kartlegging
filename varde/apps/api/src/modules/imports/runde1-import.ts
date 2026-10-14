@@ -12,6 +12,9 @@ import { RUNDE1_LABEL } from '../rounds/seed.service.js';
 import { importSubmissionId, partHash } from './import-ids.js';
 import { ImportMismatch } from './import-mismatch.js';
 import { loadVersion } from './import-rounds.js';
+import { runde1SourceId } from './runde1-source-id.mjs';
+
+export { runde1SourceId } from './runde1-source-id.mjs';
 
 export const RUNDE1_ROUND = 'Runde 1 (Forms, januar 2026)';
 
@@ -43,9 +46,6 @@ class DryRun extends Error {
     super('dry run');
   }
 }
-
-export const runde1SourceId = (k: string, init: string): string =>
-  createHash('sha256').update(`runde1|${k}|${init}`).digest('hex');
 
 /** window.RUNDE1 of runde1.js, loaded the way server.js loads sporsmal.js (vm, 1 s). */
 export function loadRunde1(src: string): { dato: string; svar: Record1[] } {

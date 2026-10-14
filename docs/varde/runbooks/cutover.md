@@ -5,7 +5,7 @@
 
 ## T−1: входы и проверки
 
-1. Образ последнего принятого `main` на VPS; artifact hash, зелёный CI с `invariants:1a`, `1b`, `1b:runner`, `1c` и репетицией записаны в чек-листе. Деплой — `varde/infra/README.md`, без изменения учётных данных Atlas. Скопировать `varde/infra/caddy/` в `/opt/varde/caddy/`, `tools/cutover/` в `/opt/varde/cutover/`.
+1. Образ последнего принятого `main` на VPS; artifact hash, зелёный CI с `invariants:1a`, `1b`, `1b:runner`, `1c` и репетицией записаны в чек-листе. Деплой — `varde/infra/README.md`, без изменения учётных данных Atlas. Скопировать `varde/infra/caddy/` в `/opt/varde/caddy/`, `varde/tools/cutover/` в `/opt/varde/tools/cutover/` и общий модуль `varde/apps/api/src/modules/imports/runde1-source-id.mjs` в `/opt/varde/apps/api/src/modules/imports/runde1-source-id.mjs` (сохранить относительные пути для CLI очистки).
 2. Повторить **четыре проверки pg_hba** из `varde/infra/sql/README.md`:
 
 ```bash
@@ -69,6 +69,7 @@ cp /opt/kartlegging/private/runde1.js "$W/private/"
  docker exec -i atlas-db-1 sh -c 'pg_dump -U "${POSTGRES_USER:-postgres}" -d varde -Fc' > "$W/varde-pre.dump"
 chmod 0600 "$W/varde-pre.dump"
 test -s "$W/varde-pre.dump"
+SU() { docker exec -i atlas-db-1 sh -c 'exec psql -X -U "${POSTGRES_USER:-postgres}" -v ON_ERROR_STOP=1 "$@"' psql "$@"; }
 SU -d varde -tAc 'select count(*) from response; select count(*) from aggregate_snapshot' # 0, 0
 ```
 
@@ -102,6 +103,7 @@ jq -s 'group_by([.skjema,.k,.leiardel]) | map({skjema:.[0].skjema,k:.[0].k,leiar
 docker compose -f /opt/varde/compose.yml stop app
 docker exec -i atlas-db-1 sh -c 'pg_restore -U "${POSTGRES_USER:-postgres}" -d varde --clean --if-exists --single-transaction' < "$W/varde-pre.dump"
 docker compose -f /opt/varde/compose.yml up -d
+SU() { docker exec -i atlas-db-1 sh -c 'exec psql -X -U "${POSTGRES_USER:-postgres}" -v ON_ERROR_STOP=1 "$@"' psql "$@"; }
 SU -d varde -tAc 'select count(*) from response; select count(*) from aggregate_snapshot' # 0, 0
 # Только после проверки восстановления
 rm -r "$W"
@@ -140,7 +142,7 @@ test ! -e "$ARCHIVE"
 CF=/etc/atlas-edge/Caddyfile
 TS=$(date -u +%Y%m%dT%H%M%SZ)
 cp -p "$CF" "$CF.bak-$TS"
-docker run --rm -v /etc/atlas-edge:/edge -v /opt/varde:/varde:ro node:22-alpine node /varde/cutover/update-caddy.mjs /edge/Caddyfile /varde/caddy/kartlegging-legacy.caddy
+docker run --rm -v /etc/atlas-edge:/edge -v /opt/varde:/varde:ro node:22-alpine node /varde/tools/cutover/update-caddy.mjs /edge/Caddyfile /varde/caddy/kartlegging-legacy.caddy
 docker exec atlas-edge-caddy-1 caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 docker exec atlas-edge-caddy-1 caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
 docker compose -f /opt/kartlegging/deploy/compose.yaml stop app
@@ -170,7 +172,7 @@ R=$(mktemp -d /root/varde-rollback-XXXXXX)
 chmod 0700 "$R"
 # После копирования и расшифровки архива в $R/restored
  docker compose -f /opt/varde/compose.yml run --rm -T app node dist/cli.js ledger tombstones --format kartlegging > "$R/tombstones.json"
-docker run --rm -v "$R:/rollback" -v /opt/varde/cutover:/scripts:ro node:22-alpine node /scripts/clean-archive.mjs --tombstones /rollback/tombstones.json --svar /rollback/restored/data/svar.jsonl --runde1 /rollback/restored/private/runde1.js --out /rollback/clean
+docker run --rm -v "$R:/rollback" -v /opt/varde:/varde:ro node:22-alpine node /varde/tools/cutover/clean-archive.mjs --tombstones /rollback/tombstones.json --svar /rollback/restored/data/svar.jsonl --runde1 /rollback/restored/private/runde1.js --out /rollback/clean
 install -m 0600 "$R/clean/svar.jsonl" /opt/kartlegging/data/svar.jsonl
 install -m 0600 "$R/clean/runde1.js" /opt/kartlegging/private/runde1.js
 ```

@@ -1,5 +1,6 @@
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
+import { normalizeRespondentKey, RESPONDENT_KEY_LENGTH } from '@varde/rules/runner';
 import { AdminSessionGuard, type AdminRequest } from '../auth/admin-session.guard.js';
 import { parseInput } from '../dashboard/dashboard.controller.js';
 import { ForgetService } from './forget.service.js';
@@ -9,7 +10,12 @@ const scope = z.discriminatedUnion('scope', [
   z.strictObject({
     scope: z.literal('respondent'),
     client: z.uuid(),
-    respondent_key: z.string().regex(/^[A-Z]{2,6}$/),
+    respondent_key: z
+      .string()
+      .trim()
+      .max(RESPONDENT_KEY_LENGTH)
+      .transform(normalizeRespondentKey)
+      .pipe(z.string().min(1)),
     round: z.uuid().optional(),
   }),
   z.strictObject({

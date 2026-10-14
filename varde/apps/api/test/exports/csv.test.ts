@@ -6,6 +6,7 @@ import { afterAll, beforeAll, expect, it, vi } from 'vitest';
 import { CsvService } from '../../src/modules/exports/csv.service.js';
 import { cell } from '../../src/modules/exports/csv.js';
 import { dashboardFixture, type DashboardFixture } from '../dashboard/fixture.js';
+import { withPg } from '../support/rounds.js';
 
 let f: DashboardFixture;
 beforeAll(async () => {
@@ -28,6 +29,45 @@ it('client CSV uses only common aggregates; hidden cells have no numbers', async
 });
 it('rows export requires a session', async () => {
   expect((await f.get(`/api/admin/exports/rows.csv?round=${f.ki}`)).statusCode).toBe(401);
+});
+it('client CSV contains exactly its round_client snapshot cells, never all_clients groups', async () => {
+  const c = await f.prisma.client.findUniqueOrThrow({ where: { slug: 'daco' } });
+  const expected = await withPg(
+    async (db) =>
+      (
+        await db.query<{
+          metric_key: string;
+          metric_version: number;
+          group: string;
+        }>(
+          "SELECT metric_key,metric_version,\"group\" FROM aggregate_snapshot WHERE round_id=$1 AND client_id=$2 AND population='round_client' AND status='released'",
+          [f.tryggleik, c.id],
+        )
+      ).rows,
+  );
+  const foreign = await withPg(
+    async (db) =>
+      (
+        await db.query(
+          "SELECT 1 FROM aggregate_snapshot WHERE round_id=$1 AND population='all_clients' AND \"group\" LIKE 'client:%' AND \"group\" <> 'client:daco' AND status='released'",
+          [f.tryggleik],
+        )
+      ).rowCount,
+  );
+  expect(foreign).toBeGreaterThan(0);
+  const response = await f.get(
+    `/api/admin/exports/client.csv?round=${f.tryggleik}&client=daco`,
+    f.cookie,
+  );
+  expect(response.statusCode).toBe(200);
+  const [header, ...rows] = parseCsv(response.body);
+  const columns = ['Måling', 'Versjon', 'Gruppe'].map((name) => header!.indexOf(name));
+  expect(expected.length).toBeGreaterThan(0);
+  expect(rows).toHaveLength(expected.length);
+  expect(rows.map((row) => columns.map((i) => row[i]).join('|')).sort()).toEqual(
+    expected.map((s) => `${s.metric_key}|${s.metric_version}|${s.group}`).sort(),
+  );
+  expect(rows.every((row) => !row[columns[2]!]!.startsWith('client:'))).toBe(true);
 });
 it('anonymous rows have submission IDs and no identifier column or leader answers', async () => {
   const text = await f.app.get(CsvService).rows(f.anon, undefined, f.session);

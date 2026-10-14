@@ -8,7 +8,8 @@ import { SvarImportService } from '../../src/modules/imports/svar-import.js';
 import { QuotaService } from '../../src/modules/responses/quota.service.js';
 import { dashboardFixture, type DashboardFixture } from '../dashboard/fixture.js';
 import { fixtureText } from '../support/fixtures.js';
-import { withPg } from '../support/rounds.js';
+import { insertResponse, withPg } from '../support/rounds.js';
+import { cookieHeader } from '../support/auth-app.js';
 import {
   cleanupSubmissions,
   postSubmission,
@@ -68,6 +69,61 @@ it('dry-run shows both parts and makes no ledger entry', async () => {
   expect(await count()).toBe(before);
   expect(await f.prisma.deletionRequest.count()).toBe(requests);
 });
+it.each(['ØH', 'Z', 'ZZTESTAB', ' øh '])(
+  'HTTP forget normalizes and deletes respondent key %j',
+  async (input) => {
+    const live = await submissionRound(f);
+    try {
+      await withPg((db) =>
+        insertResponse(db, {
+          round_client_id: live.rc.id,
+          respondent_key: input.trim().toUpperCase(),
+          answers: { F12: 'ja' },
+        }),
+      );
+      const response = await f.app
+        .getHttpAdapter()
+        .getInstance()
+        .inject({
+          method: 'POST',
+          url: '/api/admin/retention/forget',
+          headers: { cookie: cookieHeader(f.cookie) },
+          payload: {
+            scope: {
+              scope: 'respondent',
+              client: live.rc.client_id,
+              round: live.round.id,
+              respondent_key: input,
+            },
+            reason: 'Syntetisk førespurnad',
+          },
+        });
+      expect(response.statusCode).toBe(201);
+      expect(response.json()).toMatchObject({ common: 1, leader: 0 });
+      expect(await storedSubmissions(live.rc.id)).toEqual([]);
+    } finally {
+      await cleanupSubmissions(f.prisma, [live.round.id]);
+    }
+  },
+);
+it.each(['', '   ', 'ZZTESTABC'])(
+  'HTTP forget rejects empty or overlong respondent key %j',
+  async (respondent_key) => {
+    const response = await f.app
+      .getHttpAdapter()
+      .getInstance()
+      .inject({
+        method: 'POST',
+        url: '/api/admin/retention/forget',
+        headers: { cookie: cookieHeader(f.cookie) },
+        payload: {
+          scope: { scope: 'respondent', client: randomUUID(), respondent_key },
+          reason: 'Syntetisk',
+        },
+      });
+    expect(response.statusCode).toBe(400);
+  },
+);
 it('anonymous respondent scope is rejected', async () => {
   const r = await first(f.anon);
   await expect(

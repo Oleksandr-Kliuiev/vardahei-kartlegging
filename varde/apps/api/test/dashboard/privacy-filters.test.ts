@@ -125,6 +125,42 @@ it('quotes expose role only at k, omit identifiers in both modes, and never incl
   expect(result.quotes.find((q) => q.text === 'Syntetisk sitat 3')).not.toHaveProperty('role');
   expect(JSON.stringify(result)).not.toMatch(/respondent_key|leiartekst|answers/);
 });
+it('live HTTP dashboard hides n=2 cells and their n=3 complement, independently of FUNN min_count', async () => {
+  const r = await synthetic();
+  await withPg(async (db) => {
+    for (const [slug, n] of [
+      ['daco', 2],
+      ['gasta', 3],
+    ] as const)
+      for (let i = 0; i < n; i++)
+        await insertResponse(db, {
+          round_client_id: r.rcs[slug]!,
+          role: 'kontor',
+          respondent_key: 'ZZTEST',
+          answers: { F2: 'kontor', F12: 'nei' },
+        });
+  });
+  const all = await f.get(`/api/admin/dashboard?round=${r.id}`, f.cookie);
+  expect(all.statusCode).toBe(200);
+  const model = all.json<Awaited<ReturnType<AggregateView['load']>>>();
+  expect(model.source).toBe('live');
+  expect(model.zones!.n).toBe(5);
+  for (const id of ['daco', 'gasta']) {
+    const cell = model.zones!.grid.find((c) => c.id === id)!;
+    expect(cell).toMatchObject({ mean: null, critical: null });
+    expect(cell.questions.every((q) => q.mean === null)).toBe(true);
+  }
+  const small = await f.get(`/api/admin/dashboard?round=${r.id}&client=daco`, f.cookie);
+  expect(small.statusCode).toBe(200);
+  const selected = small.json<Awaited<ReturnType<AggregateView['load']>>>();
+  expect(selected.source).toBe('live');
+  expect(selected.zones).toMatchObject({ n: null, mean: null, critical: null });
+  expect(
+    selected.questions
+      .flatMap((q) => q.series.flatMap((s) => s.buckets))
+      .every((b) => b.cell.suppressed && !('n' in b.cell) && !('numerator' in b.cell)),
+  ).toBe(true);
+});
 it('an anonymous previous round is rejected inside privacy before either response read', async () => {
   const read = vi.spyOn(PrismaResponseSource.prototype, 'read');
   try {

@@ -17,6 +17,7 @@ import { clients, fixtureText, kundar, tilgang } from '../support/fixtures.js';
 import { countBySource, resetImports, tombstone } from '../support/imports.js';
 import { withPg } from '../support/rounds.js';
 import { SEED_DIR } from '../support/seed-dir.js';
+import { cleanArchive } from '../../../../tools/cutover/clean-archive.mjs';
 
 let app: NestFastifyApplication;
 let prisma: PrismaService;
@@ -52,6 +53,39 @@ afterAll(async () => {
   await resetImports(prisma);
   await app.close();
 });
+
+it.each(['zztest', 'ZZTEST ', 'Øh'])(
+  'import and rollback share raw init identity %j',
+  async (init) => {
+    const record = { ...RECORDS[0]!, init };
+    const src = `window.RUNDE1=${JSON.stringify({ dato: '2026-01', svar: [record] })};`;
+    const literalId = createHash('sha256').update(`runde1|${record.k}|${init}`).digest('hex');
+    try {
+      const manifest = await svc.importRunde1(src, { who: 'test:raw-identity' });
+      expect(manifest.counts.common).toEqual({ accepted: 1, existing: 0, suppressed: 0 });
+      const stored = await withPg((db) =>
+        db.query<{ source_id: string; respondent_key: string }>(
+          'SELECT source_id,respondent_key FROM response WHERE source_id=$1',
+          [literalId],
+        ),
+      );
+      expect(stored.rows).toEqual([
+        { source_id: literalId, respondent_key: init.trim().toUpperCase() },
+      ]);
+      const result = cleanArchive(
+        [{ source_id: stored.rows[0]!.source_id, part: 'common' }],
+        '',
+        src,
+      );
+      expect(result.counts.runde1).toBe(1);
+      const ctx = { window: { RUNDE1: { svar: [] } } };
+      vm.runInNewContext(result.runde1, ctx);
+      expect(ctx.window.RUNDE1.svar).toEqual([]);
+    } finally {
+      await withPg((db) => db.query('DELETE FROM response WHERE source_id=$1', [literalId]));
+    }
+  },
+);
 
 describe('import of round 1 (1.9)', () => {
   it('records = accepted + existing + suppressed; no leader part', async () => {

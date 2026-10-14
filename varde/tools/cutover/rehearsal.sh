@@ -16,5 +16,5 @@ pnpm --filter @varde/api db:migrate
 pnpm --filter @varde/api... build
 pnpm --filter @varde/runner build
 pnpm --filter @varde/admin build
-pnpm --filter @varde/api exec vitest run --config vitest.integration.config.mts test/cutover/rehearsal.test.ts
+pnpm --filter @varde/api exec vitest run --config vitest.integration.config.mts --reporter verbose test/cutover/rehearsal.test.ts
 printf 'rehearsal ok (8 steps, rollback 1)\n'

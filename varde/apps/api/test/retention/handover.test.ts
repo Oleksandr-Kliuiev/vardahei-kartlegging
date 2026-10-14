@@ -110,10 +110,70 @@ it('AES-256 ZIP contains all client common and leader rows, including anonymous 
   for (const name of ['svar.csv', 'leiar.csv'])
     for (const row of parseCsv(files[name]!).slice(1))
       if (anonIds.has(row[12]!)) expect(row[0]).toBe('');
-  expect(files['samla.csv']).not.toMatch(/all_clients|leaders_all/);
+  const expectedSnapshots = await withPg(
+    async (db) =>
+      (
+        await db.query<{
+          round_id: string;
+          population: string;
+          metric_key: string;
+          group: string;
+          n: number;
+          numerator: number;
+          denominator: number;
+          missing: number;
+          suppressed: boolean;
+          stale: boolean;
+        }>(
+          "SELECT round_id,population,metric_key,\"group\",n,numerator,denominator,missing,suppressed,stale FROM aggregate_snapshot WHERE client_id=$1 AND population='round_client' AND status='released'",
+          [c.id],
+        )
+      ).rows,
+  );
+  const excluded = await withPg(
+    async (db) =>
+      (
+        await db.query<{ population: string; n: string }>(
+          "SELECT population,count(*) n FROM aggregate_snapshot WHERE status='released' AND (population IN ('all_clients','leaders_all') OR client_id <> $1) GROUP BY population",
+          [c.id],
+        )
+      ).rows,
+  );
+  for (const population of ['all_clients', 'leaders_all', 'round_client'])
+    expect(Number(excluded.find((s) => s.population === population)?.n ?? 0)).toBeGreaterThan(0);
+  const [snapshotHeader, ...snapshotRows] = parseCsv(files['samla.csv']!);
+  expect(snapshotHeader).toEqual([
+    'Runde',
+    'Population',
+    'Metric',
+    'Gruppe',
+    'n',
+    'Teljar',
+    'Nemnar',
+    'Manglar',
+    'Utdatert',
+  ]);
+  expect(expectedSnapshots.length).toBeGreaterThan(0);
+  expect(snapshotRows).toHaveLength(expectedSnapshots.length);
+  expect(snapshotRows.map((row) => JSON.stringify(row)).sort()).toEqual(
+    expectedSnapshots
+      .map((s) =>
+        JSON.stringify([
+          s.round_id,
+          s.population,
+          s.metric_key,
+          s.group,
+          ...(s.suppressed
+            ? ['', '', '', '']
+            : [s.n, s.numerator, s.denominator, s.missing].map(String)),
+          String(s.stale),
+        ]),
+      )
+      .sort(),
+  );
+  expect(files['samla.csv']).not.toMatch(/all_clients|leaders_all|client:(?!daco\b)/);
   for (const other of ['Gasta', 'Kviknes', 'Maskinsenteret', 'SFHS', 'Tharaso'])
-    for (const name of ['svar.csv', 'leiar.csv', 'samla.csv'])
-      expect(files[name]).not.toContain(other);
+    for (const name of ['svar.csv', 'leiar.csv']) expect(files[name]).not.toContain(other);
   const audit = await f.prisma.auditLog.findFirstOrThrow({
     where: { what: 'retention.handover' },
     orderBy: { at: 'desc' },

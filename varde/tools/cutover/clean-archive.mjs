@@ -1,12 +1,11 @@
 #!/usr/bin/env node
-import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { runInNewContext } from 'node:vm';
+import { runde1SourceId } from '../../apps/api/src/modules/imports/runde1-source-id.mjs';
 
-export const runde1Key = (k, init) =>
-  createHash('sha256').update(`runde1|${k}|${init.trim().toUpperCase()}`).digest('hex');
+export const runde1Key = runde1SourceId;
 /** Identity is permanent id, never the hash of a mutable response. */
 export function cleanArchive(tombstones, svar, runde1) {
   const common = new Set(tombstones.filter((t) => t.part === 'common').map((t) => t.source_id));
