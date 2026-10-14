@@ -42,8 +42,6 @@ export { RESPONSE_SOURCE } from './source.js';
 export type { ResponseSource, SourceQuery } from './source.js';
 export type { RowsDb } from './rows.js';
 export { ReleaseRejected } from './release.js';
-export { PrismaResponseSource } from './prisma-source.js';
-export { ResponseStore } from './response-store.js';
 export type { ResponsePart } from './response-store.js';
 export type {
   ComputedCell,

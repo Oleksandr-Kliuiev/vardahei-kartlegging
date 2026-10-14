@@ -9,6 +9,7 @@ import { readConfigJson } from '../../config/config-dir.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { PrivacyService, type ResponsePart } from '../privacy/privacy.service.js';
 import { importSubmissionId, partHash } from './import-ids.js';
+import { ImportMismatch } from './import-mismatch.js';
 import { ImportRounds, type ImportVersion, loadVersion } from './import-rounds.js';
 import { type Candidate, type ImportMap, parseSvar } from './svar-lines.js';
 
@@ -35,9 +36,6 @@ class DryRun extends Error {
   constructor(readonly manifest: SvarManifest) {
     super('dry run');
   }
-}
-export class ImportMismatch extends Error {
-  override name = 'ImportMismatch';
 }
 
 const zero = (): PartCounts => ({ accepted: 0, existing: 0, suppressed: 0 });

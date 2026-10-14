@@ -1,12 +1,13 @@
 // Task 1.8 (integration): import of svar.jsonl on the synthetic fixtures (ADR-024, ADR-025).
 // Tombstones are inserted directly (forget is 1.31b).
 import 'reflect-metadata';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../src/bootstrap.js';
 import { SvarImportService, type SvarManifest } from '../../src/modules/imports/svar-import.js';
-import { PrismaResponseSource } from '../../src/modules/privacy/privacy.service.js';
+import * as svarLines from '../../src/modules/imports/svar-lines.js';
+import { PrismaResponseSource } from '../../src/modules/privacy/prisma-source.js';
 import { SeedService } from '../../src/modules/rounds/seed.service.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { clients, fixtureText, kundar, tilgang } from '../support/fixtures.js';
@@ -210,6 +211,57 @@ describe('import of svar.jsonl (1.8)', () => {
     expect(m.counts.rounds[NAME.tryggleik]?.common.suppressed).toBe(1);
     expect(await withPg((c) => countBySource(c, [id]))).toEqual({});
   });
+
+  it('a leader-only tombstone suppresses leader and still creates common', async () => {
+    const id = randomUUID();
+    const t = first.counts.rounds[NAME.tryggleik]!;
+    const client = await prisma.client.findUniqueOrThrow({ where: { slug: leaderLine().k } });
+    await withPg((c) => tombstone(c, id, 'leader', t.round_id, client.id));
+    const m = await run(withId(leaderLine(), id));
+    expect(m.counts.rounds[NAME.tryggleik]?.leader).toEqual({
+      accepted: 0,
+      existing: 0,
+      suppressed: 1,
+    });
+    expect(m.counts.rounds[NAME.tryggleik]?.common).toEqual({
+      accepted: 1,
+      existing: 0,
+      suppressed: 0,
+    });
+    expect(await withPg((c) => countBySource(c, [id]))).toEqual({ common: 1 });
+  });
+
+  it.each(['lines', 'leiardel'] as const)(
+    'a %s mismatch rolls back and saves a failed manifest',
+    async (counter) => {
+      const id = randomUUID();
+      const text = withId(leaderLine(), id);
+      const sourceHash = createHash('sha256').update(text).digest('hex');
+      const parse = svarLines.parseSvar;
+      const spy = vi.spyOn(svarLines, 'parseSvar').mockImplementationOnce((...args) => {
+        const parsed = parse(...args);
+        return { ...parsed, [counter]: parsed[counter] + 1 };
+      });
+      try {
+        await expect(run(text)).rejects.toThrow(/reconciliation/);
+      } finally {
+        spy.mockRestore();
+      }
+      expect(await withPg((c) => countBySource(c, [id]))).toEqual({});
+      const manifests = await prisma.importManifest.findMany({
+        where: { source_hash: sourceHash },
+      });
+      expect(manifests).toHaveLength(1);
+      expect(manifests[0]).toMatchObject({
+        source: 'svar',
+        status: 'failed',
+        round_ids: [],
+        started_by: 'test:import',
+        rejected: [],
+      });
+      expect(JSON.stringify(manifests[0]?.counts)).toContain('reconciliation');
+    },
+  );
 
   it('a deleted common part does not block the leader part', async () => {
     const id = randomUUID();

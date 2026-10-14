@@ -6,10 +6,10 @@ import type { Prisma } from '@prisma/client';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   type ComputedCell,
-  PrismaResponseSource,
   PrivacyService,
   ReleaseRejected,
 } from '../../src/modules/privacy/privacy.service.js';
+import { PrismaResponseSource } from '../../src/modules/privacy/prisma-source.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { makeRound, type TestRound, withPg } from '../support/rounds.js';
 
@@ -148,6 +148,17 @@ describe('Prisma snapshot store and atomic release (1.4c)', () => {
     const d = await service().release(t.round, 'round_client', [cell(10)], 'db', AUTO);
     expect(d.released[0]).toMatchObject({ n: 10 });
     expect((await snapshots(t.round)).filter((s) => s.status === 'superseded')).toHaveLength(3);
+    slug = `${MARK}-kunde-a`;
+  });
+
+  it('history: A=3 → B=7 → deletion C=6 carries forward because of B', async () => {
+    const t = await fresh('hist-down');
+    slug = t.slug;
+    await service().release(t.round, 'round_client', [cell(3)], 'db', AUTO);
+    await service().release(t.round, 'round_client', [cell(7)], 'db', AUTO);
+    const c = await service().release(t.round, 'round_client', [cell(6)], 'db', AUTO);
+    expect(c.released[0]).toMatchObject({ n: 7, stale: true });
+    expect((await snapshots(t.round)).filter((s) => s.status === 'superseded')).toHaveLength(2);
     slug = `${MARK}-kunde-a`;
   });
 

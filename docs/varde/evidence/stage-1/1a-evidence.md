@@ -102,3 +102,7 @@ Tree-hash `kartlegging/` в `golden/manifest.json`: `153ba0c55a8633f99072fd13d36
 - `@playwright/test` 1.64.0 в `tools/parity` (та же версия, что `apps/admin`): golden старого дашборда.
 - `tsx` 4.23.15 в `tools/convert` (уже в lockfile у api): CLI конвертера.
 - `@varde/rules` в `apps/api` и `apps/runner`, `@varde/schema` в `packages/rules` (workspace).
+
+## Исправления после приёмки (14.10.2026)
+
+Приёмка 1a вернула Reject (blocking: восстановимые малые клиенты и роли в снимках `all_clients`; important: реэкспорт хранилищ ответов из фасада privacy; minor: живые мутанты, `normalizeFree`, manifest `failed` в импорте раунда 1). Исправления написал Codex (`gpt-6.1-sol`, effort high, песочница `workspace-write`, 146 тыс. токенов) — пилот; коммит и проверки на Docker/Chromium выполнил оркестратор. Подавление теперь считается отдельно по каждому разбиению (`client:*`, `role:*`), остаток «итог − видимые» учитывается как скрытая часть; `new PrismaResponseSource/ResponseStore` запрещены вне `modules/privacy` правилом lint. Проверки: `pnpm check`, integration 117/117, `invariants:1a` 8/8, `parity:golden --check` 21 files identical.

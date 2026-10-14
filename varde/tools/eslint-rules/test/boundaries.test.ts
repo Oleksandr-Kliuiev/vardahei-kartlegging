@@ -82,6 +82,37 @@ describe('import boundaries', () => {
     ).toEqual([]);
   });
 
+  it.each(['PrismaResponseSource', 'ResponseStore'])(
+    'forbids constructing %s in a production module',
+    async (name) => {
+      const ids = await ruleIds(
+        `apps/api/src/modules/__boundaries__/construct_${name}.ts`,
+        `import { ${name} } from '../privacy/${name === 'ResponseStore' ? 'response-store' : 'prisma-source'}.js';
+import { PrismaService } from '../../../prisma/prisma.service.js';
+const prisma = new PrismaService();
+export const source = new ${name}(${name === 'ResponseStore' ? '' : 'prisma'});
+${name === 'PrismaResponseSource' ? "void source.read({ round: 'probe' });" : 'void prisma;'}
+`,
+      );
+      expect(ids).toContain('no-restricted-syntax');
+      expect(ids).toContain('no-restricted-imports');
+    },
+  );
+
+  it('allows a test to import and construct a privacy source directly', async () => {
+    expect(
+      await ruleIds(
+        'apps/api/test/__boundaries__/source.ts',
+        `
+import { PrismaResponseSource } from '../../src/modules/privacy/prisma-source.js';
+import { PrismaService } from '../../src/prisma/prisma.service.js';
+
+export const source = new PrismaResponseSource(new PrismaService());
+`,
+      ),
+    ).toEqual([]);
+  });
+
   it('rules/runner must not import rules/findings', async () => {
     expect(
       await ruleIds(

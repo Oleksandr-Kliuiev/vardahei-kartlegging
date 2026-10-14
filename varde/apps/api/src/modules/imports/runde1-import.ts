@@ -10,6 +10,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { PrivacyService, type ResponsePart } from '../privacy/privacy.service.js';
 import { RUNDE1_LABEL } from '../rounds/seed.service.js';
 import { importSubmissionId, partHash } from './import-ids.js';
+import { ImportMismatch } from './import-mismatch.js';
 import { loadVersion } from './import-rounds.js';
 
 export const RUNDE1_ROUND = 'Runde 1 (Forms, januar 2026)';
@@ -76,6 +77,19 @@ export class Runde1ImportService {
       });
     } catch (error) {
       if (error instanceof DryRun) return error.manifest;
+      if (error instanceof ImportMismatch && opts.dryRun !== true) {
+        await this.prisma.importManifest.create({
+          data: {
+            source: 'runde1',
+            source_hash: sourceHash,
+            round_ids: [],
+            counts: { error: error.message },
+            rejected: [],
+            status: 'failed',
+            started_by: opts.who,
+          },
+        });
+      }
       throw error;
     }
   }
@@ -182,7 +196,7 @@ export class Runde1ImportService {
     await this.privacy.store.insertParts(tx, inserts);
     const { accepted, existing: ex, suppressed: sup } = m.counts.common;
     if (accepted + ex + sup + m.counts.rejected !== m.counts.records)
-      throw new Error('runde1 import: reconciliation failed');
+      throw new ImportMismatch('runde1 import: reconciliation failed');
     const saved = await tx.importManifest.create({
       data: {
         source: 'runde1',

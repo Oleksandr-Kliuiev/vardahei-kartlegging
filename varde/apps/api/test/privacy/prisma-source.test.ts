@@ -1,11 +1,8 @@
 // Task 1.4b (integration): class `rows` through the Prisma response source in both modes.
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import {
-  PrismaResponseSource,
-  PrivacyService,
-  type PrivacySession,
-} from '../../src/modules/privacy/privacy.service.js';
+import { PrivacyService, type PrivacySession } from '../../src/modules/privacy/privacy.service.js';
+import { PrismaResponseSource } from '../../src/modules/privacy/prisma-source.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { insertResponse, makeRound, type TestRound, withPg } from '../support/rounds.js';
 

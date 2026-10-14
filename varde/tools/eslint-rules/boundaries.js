@@ -31,6 +31,18 @@ const RELEASED_CAST_ALLOWED = [
   'tools/eslint-rules/fixtures/**', // the selfcheck fixture; its copy in apps/api is linted
 ];
 
+/** Storage constructors are private to privacy; test fixtures may instantiate them. */
+const PRIVATE_STORAGE = ['PrismaResponseSource', 'ResponseStore'].flatMap((name) => [
+  {
+    selector: `NewExpression[callee.name='${name}']`,
+    message: `Only modules/privacy may construct ${name}; use PrivacyService (ADR-021).`,
+  },
+  {
+    selector: `NewExpression[callee.type='MemberExpression'][callee.property.name='${name}']`,
+    message: `Only modules/privacy may construct ${name}; use PrivacyService (ADR-021).`,
+  },
+]);
+
 /** Allowed entry into the privacy module from outside it (0.15b). */
 const PRIVACY_INTERNAL = {
   regex: '(^|/)privacy/(?!privacy\\.service(\\.js)?$)[^/]+',
@@ -47,13 +59,30 @@ export const boundaries = [
     rules: { 'no-restricted-syntax': ['error', EXPORT_ALL, ...RELEASED_CAST] },
   },
   {
-    ignores: ['apps/api/src/modules/privacy/**'],
+    ignores: ['apps/api/src/modules/privacy/**', 'apps/api/test/**'],
     rules: { 'no-restricted-imports': ['error', { patterns: [PRIVACY_INTERNAL] }] },
+  },
+  {
+    files: [
+      'apps/*/src/**/*.{ts,tsx}',
+      'packages/*/src/**/*.{ts,tsx}',
+      'tools/*/src/**/*.{ts,tsx}',
+    ],
+    ignores: ['apps/api/src/modules/privacy/**'],
+    rules: { 'no-restricted-syntax': ['error', EXPORT_ALL, ...RELEASED_CAST, ...PRIVATE_STORAGE] },
   },
   {
     files: ['packages/*/src/**/index.ts'],
     ignores: ['packages/rules/src/runner/index.ts', 'packages/rules/src/findings/index.ts'],
-    rules: { 'no-restricted-syntax': ['error', EXPORT_ALL, BARREL_INDEX, ...RELEASED_CAST] },
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        EXPORT_ALL,
+        BARREL_INDEX,
+        ...RELEASED_CAST,
+        ...PRIVATE_STORAGE,
+      ],
+    },
   },
   {
     files: ['apps/runner/**/*.{ts,tsx}'],

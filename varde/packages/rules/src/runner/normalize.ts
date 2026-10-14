@@ -92,7 +92,7 @@ export function normalizeAnswers(version: RunnerVersion, raw: RawAnswers): Norma
 
 /** Free texts (`fri`): trimmed, ≤ 800 characters, only for questions of the version. */
 export function normalizeFree(version: RunnerVersion, raw: RawAnswers): Record<string, string> {
-  const ids = new Set(version.questions.map((q) => q.id));
+  const ids = new Set(version.questions.filter((q) => !q.identifier).map((q) => q.id));
   const out: Record<string, string> = {};
   for (const [id, t] of Object.entries(raw)) {
     if (ids.has(id) && typeof t === 'string' && t.trim() !== '') {

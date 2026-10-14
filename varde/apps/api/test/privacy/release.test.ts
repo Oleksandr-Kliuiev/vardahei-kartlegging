@@ -102,6 +102,45 @@ describe('privacy.release (0.15b)', () => {
     expect(find(r, 'all')).toMatchObject({ suppressed: false, n: 5 });
   });
 
+  it('all_clients suppresses roles and clients independently', async () => {
+    const cells = [
+      cell('all', 20, 9),
+      cell('client:a', 18, 8),
+      cell('client:b', 2, 1),
+      cell('role:x', 18, 8),
+      cell('role:y', 2, 1),
+    ].map((c) => {
+      const out = { ...c };
+      delete out.client;
+      return out;
+    });
+    const r = await privacy.release(ROUND, 'all_clients', cells, store, AUTO);
+    expect(find(r, 'all')).toMatchObject({ n: 20, numerator: 9, suppressed: false });
+    for (const g of ['client:a', 'client:b', 'role:x', 'role:y']) {
+      expect(find(r, g)).toMatchObject({ n: 0, numerator: 0, suppressed: true });
+    }
+  });
+
+  it('an unlisted remainder below k needs complementary suppression', async () => {
+    const r = await run([cell('all', 20, 9), cell('role:x', 18, 8)]);
+    expect(find(r, 'role:x')).toMatchObject({ suppressed: true });
+  });
+
+  it('history differences protect each overlapping partition and its unlisted remainder', async () => {
+    const cells = (n: number, a: number, b: number, x: number) =>
+      [cell('all', n, 0), cell('client:a', a, 0), cell('client:b', b, 0), cell('role:x', x, 0)].map(
+        (c) => {
+          const out = { ...c };
+          delete out.client;
+          return out;
+        },
+      );
+    await privacy.release(ROUND, 'all_clients', cells(20, 10, 10, 10), store, AUTO);
+    const r = await privacy.release(ROUND, 'all_clients', cells(24, 13, 11, 13), store, AUTO);
+    for (const g of ['client:a', 'client:b', 'role:x'])
+      expect(find(r, g)).toMatchObject({ n: 10, stale: true });
+  });
+
   it('a new metric for a round that already has a release → ReleaseRejected', async () => {
     await run([cell('all', 6, 3)]);
     await expect(
@@ -136,6 +175,8 @@ describe('privacy.release (0.15b)', () => {
 
   it('markReleased is not reachable from the public surface of the module', async () => {
     expect(Object.keys(surface)).not.toContain('markReleased');
+    expect(Object.keys(surface)).not.toContain('PrismaResponseSource');
+    expect(Object.keys(surface)).not.toContain('ResponseStore');
     // A deep import, only to prove the function is not exported by release.ts either.
     const mod = (await import('../../src/modules/privacy/release.js')) as Record<string, unknown>;
     expect(Object.keys(mod)).not.toContain('markReleased');
@@ -156,17 +197,16 @@ describe('privacy.release (0.15b)', () => {
 });
 
 describe('cell shape by population and the exact counter (1.10b)', () => {
-  const leader = (over: Partial<ComputedCell> = {}) =>
-    ({
-      metric_key: F12_JA,
-      metric_version: 1,
-      group: 'all',
-      n: 4,
-      numerator: 2,
-      denominator: 4,
-      missing: 0,
-      ...over,
-    });
+  const leader = (over: Partial<ComputedCell> = {}) => ({
+    metric_key: F12_JA,
+    metric_version: 1,
+    group: 'all',
+    n: 4,
+    numerator: 2,
+    denominator: 4,
+    missing: 0,
+    ...over,
+  });
 
   it('a leaders_all cell with a client (or a role group) → ReleaseRejected', async () => {
     await expect(

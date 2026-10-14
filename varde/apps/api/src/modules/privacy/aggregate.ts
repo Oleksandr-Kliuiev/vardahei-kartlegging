@@ -62,7 +62,9 @@ export function suppressedGroups(total: Stats, parts: readonly Stats[], k: numbe
   if (total.n < k) return new Set([total.group, ...parts.map((p) => p.group)]);
   const hidden = new Set(parts.filter((p) => p.n < k).map((p) => p.group));
   for (;;) {
-    const hiddenN = parts.filter((p) => hidden.has(p.group)).reduce((s, p) => s + p.n, 0);
+    // Include respondents without an explicit group in this partition.
+    const hiddenN =
+      total.n - parts.filter((p) => !hidden.has(p.group)).reduce((s, p) => s + p.n, 0);
     if (hiddenN === 0 || hiddenN >= k) return hidden;
     const visible = parts.filter((p) => !hidden.has(p.group)).sort((a, b) => a.n - b.n);
     const smallest = visible[0];

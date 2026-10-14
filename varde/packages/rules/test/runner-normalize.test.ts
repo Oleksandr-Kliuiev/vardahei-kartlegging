@@ -73,6 +73,18 @@ describe('normalizeAnswers (1.6)', () => {
     expect(n.dropped).toBe(2);
   });
 
+  it.each(['F1', 'K0'])('normalizeFree excludes identifier %s in both modes', (id) => {
+    const version = {
+      ...VERSION,
+      questions: VERSION.questions.map((q) => (q.identifier ? { ...q, id } : q)),
+    };
+    for (const identification of ['initials', 'none'] as const) {
+      expect(
+        normalizeFree({ ...version, identification }, { [id]: 'QAXAM', T: '  meir  ' }),
+      ).toEqual({ T: 'meir' });
+    }
+  });
+
   it('normalizeRespondentKey and normalizeFree', () => {
     expect(normalizeRespondentKey(7)).toBeNull();
     expect(normalizeFree(VERSION, { T: '  meir  ', Z: 'x', F: ' ' })).toEqual({ T: 'meir' });

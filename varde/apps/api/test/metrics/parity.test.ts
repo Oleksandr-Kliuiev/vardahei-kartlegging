@@ -66,15 +66,13 @@ beforeAll(async () => {
   app = await createApp();
   await app.init();
   prisma = app.get(PrismaService);
-  await app
-    .get(SeedService)
-    .seedAll({
-      clients: clients(),
-      kundar: kundar(),
-      tilgang: tilgang(),
-      seedDir: SEED_DIR,
-      who: 'test:seed',
-    });
+  await app.get(SeedService).seedAll({
+    clients: clients(),
+    kundar: kundar(),
+    tilgang: tilgang(),
+    seedDir: SEED_DIR,
+    who: 'test:seed',
+  });
   await resetImports(prisma);
   await app
     .get(SvarImportService)
@@ -133,18 +131,30 @@ describe('parity of released snapshots with the old dashboard (1.10)', () => {
         expect(samla?.suppressed, '§6 p. 1: small client (n < 3)').toBe(true);
         continue;
       }
-      expect(round1(mean(samla)), `${slug} samla`).toBe(cellValue(row.at(-2)!));
-      expect(
-        pct(
-          get(snaps.tryggleik, 'all_clients', '', mk('tryggleik', 'critical_share', 'all'), group),
-        ),
-      ).toBe(num(row.at(-1)!));
+      if (samla?.suppressed !== true) {
+        expect(round1(mean(samla)), `${slug} samla`).toBe(cellValue(row.at(-2)!));
+      }
+      const critical = get(
+        snaps.tryggleik,
+        'all_clients',
+        '',
+        mk('tryggleik', 'critical_share', 'all'),
+        group,
+      );
+      if (critical?.suppressed !== true) expect(pct(critical)).toBe(num(row.at(-1)!));
       header!.slice(1, -2).forEach((label, i) => {
         const q = short.find((x) => x.texts.short_label?.nn === label)!;
         const cell = row[i + 1]!;
-        const v = round1(
-          mean(get(snaps.tryggleik, 'all_clients', '', mk('tryggleik', 'mean_score', q.id), group)),
+        const snapshot = get(
+          snaps.tryggleik,
+          'all_clients',
+          '',
+          mk('tryggleik', 'mean_score', q.id),
+          group,
         );
+        // §6 p. 1: another client can be hidden to protect a small unlisted remainder.
+        if (snapshot?.suppressed === true) return;
+        const v = round1(mean(snapshot));
         expect(v === null ? '–' : v, `${slug} ${q.id}`).toBe(cellValue(cell));
       });
     }
@@ -351,6 +361,35 @@ describe('parity of released snapshots with the old dashboard (1.10)', () => {
         expect([s?.n, s?.numerator], `${qid}.${opt}`).toEqual([g.n, count]);
       }
     }
+  });
+
+  it('each released partition leaves either zero or at least k hidden respondents', () => {
+    let checked = 0;
+    for (const [round, snapshots] of Object.entries(snaps)) {
+      const blocks = new Map<string, Snap[]>();
+      for (const s of snapshots.values()) {
+        if (s.population !== 'all_clients') continue;
+        const block = blocks.get(s.metric_key) ?? [];
+        block.push(s);
+        blocks.set(s.metric_key, block);
+      }
+      for (const [metric, block] of blocks) {
+        const total = block.find((s) => s.group === 'all');
+        if (total === undefined || total.suppressed) continue;
+        for (const prefix of ['role:', 'client:']) {
+          const parts = block.filter((s) => s.group.startsWith(prefix));
+          if (parts.length === 0) continue;
+          const remainder =
+            total.n - parts.filter((s) => !s.suppressed).reduce((n, s) => n + s.n, 0);
+          expect(
+            remainder === 0 || remainder >= 3,
+            `${round}/${metric}/${prefix}: ${remainder}`,
+          ).toBe(true);
+          checked += 1;
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(500);
   });
 
   it('no person:* groups; leader cells only in leaders_all', () => {

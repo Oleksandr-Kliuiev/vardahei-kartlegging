@@ -121,14 +121,25 @@ function carriedByDiff(deltas: Map<string, number>, k: number): Set<string> {
   if (small(total)) return new Set(deltas.keys());
   const hidden = new Set(parts.filter(([, d]) => small(d)).map(([g]) => g));
   for (;;) {
-    const sum = parts.filter(([g]) => hidden.has(g)).reduce((s, [, d]) => s + Math.abs(d), 0);
-    if (sum === 0 || sum >= k) return hidden;
+    // Include the signed unlisted remainder of this partition.
+    const remainder = total - parts.filter(([g]) => !hidden.has(g)).reduce((s, [, d]) => s + d, 0);
+    if (!small(remainder)) return hidden;
     const next = parts
       .filter(([g, d]) => !hidden.has(g) && d !== 0)
       .sort((a, b) => Math.abs(a[1]) - Math.abs(b[1]))[0];
     if (next === undefined) return new Set(deltas.keys());
     hidden.add(next[0]);
   }
+}
+
+/** Each prefix is a separate partition of the total (roles and clients overlap). */
+function partitions(parts: readonly ComputedCell[]): ComputedCell[][] {
+  const out = new Map<string, ComputedCell[]>();
+  for (const c of parts) {
+    const prefix = c.group.split(':')[0]!;
+    out.set(prefix, [...(out.get(prefix) ?? []), c]);
+  }
+  return [...out.values()];
 }
 
 const day = (): string => new Date().toISOString().slice(0, 10);
@@ -199,12 +210,16 @@ export async function release(
     const byGroup = new Map(block.map((c) => [c.group, c]));
     const total = byGroup.get(TOTAL);
     const parts = block.filter((c) => c.group !== TOTAL);
+    const splits = partitions(parts);
     // Rule 1 and complementary suppression inside the new release; a block without a total
     // (e.g. drop-out per question) has no subtraction relation between its groups.
     const suppressed =
       total === undefined
         ? new Set(parts.filter((c) => c.n < k).map((c) => c.group))
-        : suppressedGroups(total, parts, k);
+        : new Set([
+            ...(total.n < k ? [TOTAL] : []),
+            ...splits.flatMap((p) => [...suppressedGroups(total, p, k)]),
+          ]);
     // Rules 2 and 3 against every earlier release (|Δn|: after a deletion n goes down).
     const carry = new Set<string>();
     for (const earlier of history) {
@@ -212,7 +227,14 @@ export async function release(
       const hit =
         total === undefined
           ? [...deltas].filter(([, d]) => d !== 0 && Math.abs(d) < k).map(([g]) => g)
-          : carriedByDiff(deltas, k);
+          : splits.length === 0
+            ? carriedByDiff(deltas, k)
+            : splits.flatMap((p) => [
+                ...carriedByDiff(
+                  new Map([total, ...p].map((c) => [c.group, deltas.get(c.group)!])),
+                  k,
+                ),
+              ]);
       for (const g of hit) carry.add(g);
     }
     if (exact) {
