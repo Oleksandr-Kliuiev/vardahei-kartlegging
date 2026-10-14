@@ -10,7 +10,7 @@
 | 0.6 образ, каталоги, миграции, `up -d`, `/health` из сети Docker, логи | §1–§4 ниже                                            | нет; Caddy и HTTPS — после DNS (§5)                            |
 | 0.7 Entra в `app.env`, редирект, сессия                                | §6                                                    | ID уже в `/etc/varde/entra.env`; проверка по HTTPS — после DNS |
 | 0.8 break-glass на 30 минут                                            | §7 и `docs/varde/runbooks/break-glass.md`             | нет; `404` по HTTPS — после DNS                                |
-| 0.12 неделя метрик, стенд                                              | §8, `tools/metrics/README.md`, `tools/load/README.md` | DNS, решение о swap                                            |
+| 0.12 неделя метрик (стенд удалён в 1.0)                                | §8, `tools/metrics/README.md` | DNS, решение о swap                                            |
 | 0.10, 0.10e, 0.10c, 0.10d, 0.11                                        | отложены 13.10                                        | —                                                              |
 
 Пути на VPS: `/opt/varde` = rsync `varde/infra/`; `/opt/varde/config/` = `varde/config/`; `/opt/varde/metrics/` = `varde/tools/metrics/`; `/opt/varde/compose.yml`; `/opt/varde/.env` (`VARDE_SHA=<sha>` — тег обоих образов для compose); `/opt/varde/VERSION` (sha развёрнутого образа); `/opt/varde/images/`; env — `/etc/varde/app.env`, `/etc/varde/backup.env` (`0600 root`); Entra — `/etc/varde/entra/key.pem`, `cert.pem`.
@@ -173,25 +173,9 @@ SESSION_TTL_SECONDS=28800
 
 Процедура — `docs/varde/runbooks/break-glass.md`. Проверка на VPS по пакету: включить на 30 минут, режим socket `660`, вход через туннель, из соседнего контейнера `http://varde-app:3001/` → connection refused, `ss -lntp | grep -c 3001` → 0, после DNS `curl -sI https://varde.vardahei.tech/break-glass/login` → 404, выключить.
 
-## 8. Метрики и стенд (0.12)
+## 8. Метрики (0.12)
 
-Неделя метрик — `tools/metrics/README.md` (cron на 7 дней, сводка `sort`/`awk`). Стенд — `tools/load/README.md` (k6 только с Mac через публичный хост, после DNS). Включение stub на окно (≤ 4 ч), значения пишет оператор; токен виден ему и уничтожается после стенда:
-
-```bash
-TOKEN=$(openssl rand -hex 24)        # показать себе один раз, в evidence не писать
-{ echo VARDE_STUB_SUBMIT=1; echo "VARDE_STUB_UNTIL=$(date -u -d '+3 hours' +%Y-%m-%dT%H:%M:%SZ)"; echo "VARDE_STUB_TOKEN=$TOKEN"; } >> /etc/varde/app.env
-docker compose -f /opt/varde/compose.yml up -d
-docker run --rm --network atlas_edge curlimages/curl:8.17.0 -s -o /dev/null -w '%{http_code}\n' -X POST http://varde-app:3000/stub/submit   # без токена → 404
-```
-
-После стенда:
-
-```bash
-sed -i '/^VARDE_STUB_\(SUBMIT\|UNTIL\|TOKEN\)=/d' /etc/varde/app.env; unset TOKEN
-docker compose -f /opt/varde/compose.yml up -d
-docker exec -i atlas-db-1 sh -c 'psql -X -U "${POSTGRES_USER:-postgres}" -d varde -c "TRUNCATE stub_submission"'   # вывод в evidence
-curl -s -o /dev/null -w '%{http_code}\n' -X POST https://varde.vardahei.tech/stub/submit   # → 404
-```
+Неделя метрик — `tools/metrics/README.md` (cron на 7 дней, сводка `sort`/`awk`). Стенд нагрузки и stub удалены в 1.0 (решение 13.10: нагрузочных тестов нет); после деплоя 1a `curl -s -o /dev/null -w '%{http_code}\n' -X POST https://varde.vardahei.tech/stub/submit` → `404`, `to_regclass('stub_submission')` → пусто.
 
 ## Откат деплоя
 

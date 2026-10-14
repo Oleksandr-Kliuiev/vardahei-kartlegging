@@ -1,7 +1,27 @@
 /**
- * Entry point `@varde/rules/findings`: metrics and finding rules.
- * Must not import `@varde/rules/runner` internals.
+ * Entry point `@varde/rules/findings`: metrics and finding rules (1.10).
+ * Must not import `@varde/rules/runner` internals. Re-exports by name only.
  */
+export {
+  answerOf,
+  criticalShare,
+  cross,
+  distribution,
+  heaviestTask,
+  isAnswered,
+  meanScore,
+  type MetricRow,
+  personLevel,
+  personScore,
+  personsPerZone,
+  routineHoursWeek,
+  type Scoring,
+  scoresOf,
+  scoreStat,
+  valuesOf,
+  zone,
+} from './calc.js';
+export { cells, groupsOf, type MetricCell, metricValues, subMetrics } from './cells.js';
 
 /** Stable key of a metric definition version, e.g. `zone@3`. */
 export function metricKey(key: string, version: number): string {

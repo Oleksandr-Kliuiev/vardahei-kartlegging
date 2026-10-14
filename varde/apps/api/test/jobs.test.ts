@@ -26,7 +26,6 @@ const CONFIG = {
   },
   types: {
     'demo.sleep': { settings: { sleepSeconds: 5 } },
-    'demo.hold-connection': { settings: { holdUrl: 'http://127.0.0.1:9/unused' } },
     'test.stately': {},
     'test.singleton': { policy: 'singleton', concurrency: 2, timeoutSeconds: 30 },
   },

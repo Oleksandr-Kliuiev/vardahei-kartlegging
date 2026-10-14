@@ -144,3 +144,11 @@ describe('MetricDefinition refinements (0.16)', () => {
     rejected({ ...byKind('mean_score'), respondent_key: 'x' });
   });
 });
+
+describe('first_version (1.10b)', () => {
+  it('first_version: true requires version 1', () => {
+    const def = (readFixture('k7xk8.v1.json') as Record<string, unknown>[])[0]!;
+    expect(MetricDefinition.safeParse(def).success).toBe(true);
+    expect(MetricDefinition.safeParse({ ...def, version: 2 }).success).toBe(false);
+  });
+});

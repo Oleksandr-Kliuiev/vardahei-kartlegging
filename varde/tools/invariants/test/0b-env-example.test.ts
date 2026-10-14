@@ -39,11 +39,10 @@ describe('apps/api/.env.example covers the api environment (0.12b)', () => {
     for (const name of envNames(file, readFileSync(file, 'utf8'))) read.set(name, file);
   }
 
-  it('finds the variables of config/* (auth, break-glass, stub, db)', () => {
+  it('finds the variables of config/* (auth, break-glass, db)', () => {
     for (const name of [
       'ENTRA_CLIENT_KEY_FILE',
       'VARDE_BREAK_GLASS_UNTIL',
-      'VARDE_STUB_TOKEN',
       'VARDE_CONFIG_DIR',
     ]) {
       expect(read.has(name), name).toBe(true);

@@ -14,3 +14,6 @@
 07cc7150d3b532428024920cf377c0bf1b312a61:varde/apps/api/test/privacy/release.test.ts:generic-api-key:38
 07cc7150d3b532428024920cf377c0bf1b312a61:varde/apps/api/test/privacy/release.test.ts:generic-api-key:105
 81989ca13949cd221e51ad4f9a003dcacf2c25b0:varde/apps/api/test/invariants/0c-no-leak-keys.test.ts:generic-api-key:92
+# generic-api-key on the metric name tryggleik.b13 after `metric_key:` in the 1.4c test (pushed
+# commit); the test uses a constant since 1.8; no secret. Reviewed 13.10.2026 (checkpoint 1a).
+95c66a686d3d9bd88dc3d4a9f13203ade7a8fcdf:varde/apps/api/test/privacy/prisma-snapshot-store.test.ts:generic-api-key:173

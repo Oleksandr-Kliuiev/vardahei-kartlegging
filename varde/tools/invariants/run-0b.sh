@@ -36,11 +36,11 @@ block "database isolation, read-only backup, audit journal" bash -c \
 block "no query in logs (api and Caddy error log)" bash -c \
   "$(declare -f unit); unit test/log-no-query.test.ts && bash infra/caddy/test/caddy-log.test.sh"
 block "break-glass (socket only, window, AuditLog, hash through env_file)" bash -c \
-  "$(declare -f unit); unit test/break-glass.test.ts && pnpm -s --filter @varde/api build && bash infra/test/break-glass-env.test.sh"
+  "$(declare -f unit); unit test/break-glass.test.ts && pnpm -s --filter "@varde/api..." build && bash infra/test/break-glass-env.test.sh"
 block "pg-boss (payload ids only, limits, singleton, budget, pg_dump after pgboss)" bash -c \
   "$(declare -f integration unit); integration test/jobs.test.ts && unit test/db-budget.test.ts"
 deferred_block "backup guard, rotation, ledger export" "0.10, 0.10e"
 block "Entra login and cookie session" bash -c "$(declare -f unit); unit test/auth.test.ts"
-block "stub off without flag/token/UNTIL; .env.example names only" bash -c \
-  "$(declare -f integration); integration test/stub-submit.test.ts && pnpm -s --filter @varde/tools-invariants exec vitest run test/0b-env-example.test.ts"
+block "stub removed (1.0); .env.example names only" bash -c \
+  "$(declare -f integration); integration test/stub-removed.test.ts && pnpm -s --filter @varde/tools-invariants exec vitest run test/0b-env-example.test.ts"
 echo "invariants 0b: $((total - deferred))/$total ok, $deferred deferred 13.10 (block 8 roundtrip in job image: deferred, 0.10c)"

@@ -9,6 +9,7 @@
     "build": "tsc --noEmit && vite build"
   },
   "dependencies": {
+    "@varde/rules": "workspace:*",
     "preact": "10.29.8"
   },
   "devDependencies": {

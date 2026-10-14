@@ -58,7 +58,6 @@ export type Idempotency = Record<string, (payload: JobPayload) => string>;
 /** Job types of stage 0 (code side of the registry). */
 export const STAGE0_JOBS: Idempotency = {
   'demo.sleep': (p) => `demo.sleep:${p.id}`,
-  'demo.hold-connection': (p) => `demo.hold-connection:${p.id}`,
 };
 
 /** Merges config/jobs.json with the code registry; both must name the same types. */

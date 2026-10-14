@@ -30,7 +30,10 @@ export interface RowsContext {
 
 export const ROWS_AUDIT = 'privacy.rows';
 
+/** Who reads: entra:<oid>; for break-glass the operator of the window (session name), 1.10b. */
 export function auditWho(session: PrivacySession): string {
+  if (session.via === 'break_glass' && session.name !== null && session.name !== '')
+    return session.name;
   return `${session.via}:${session.oid ?? session.sid}`;
 }
 

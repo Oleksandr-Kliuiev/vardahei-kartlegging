@@ -4,9 +4,9 @@ name: varde
 on:
   push:
     branches: [main, 'varde/**']
-    paths: ['varde/**', 'docs/varde/**', '.github/workflows/varde.yml']
+    paths: ['varde/**', 'docs/varde/**', '.github/workflows/varde.yml', 'kartlegging/**']
   pull_request:
-    paths: ['varde/**', 'docs/varde/**', '.github/workflows/varde.yml']
+    paths: ['varde/**', 'docs/varde/**', '.github/workflows/varde.yml', 'kartlegging/**']
 
 permissions:
   contents: read
@@ -25,6 +25,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # tools/convert reads sporsmal.js of f26ee21 (KI 2026-10-12)
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
           package_json_file: varde/package.json
@@ -76,6 +78,7 @@ jobs:
       - run: pnpm invariants:0a
       - run: pnpm invariants:0b
       - run: pnpm invariants:0c
+      - run: pnpm invariants:1a
 
   image:
     runs-on: ubuntu-24.04
@@ -105,6 +108,10 @@ jobs:
           docker stop "$cid"
       - name: Config files are in the image
         run: docker run --rm varde-api:ci test -f /out/config/db-budget.json
+      - name: '@varde/schema is built to dist in the image (1.4b)'
+        run: >-
+          test "$(docker run --rm varde-api:ci node -e
+          "import('@varde/schema/metrics/populations').then(()=>console.log('schema ok'))")" = 'schema ok'
       - name: migrate deploy from the image
         run: >-
           docker run --rm --network host
@@ -124,8 +131,6 @@ jobs:
         run: bash infra/test/compose-config.test.sh
       - name: Caddy fragments validate; error log has no query
         run: bash infra/caddy/test/caddy-log.test.sh
-      - name: k6 scripts of the 0.12 stand (inspect, no load)
-        run: bash tools/load/test/k6-inspect.test.sh
       - name: VPS metrics sampler on fixtures
         run: bash tools/metrics/test/vps-sample.test.sh
 
@@ -158,9 +163,11 @@ jobs:
           cache-dependency-path: varde/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @varde/api db:migrate
-      - run: pnpm --filter @varde/api build
+      - run: pnpm --filter "@varde/api..." build
       - run: pnpm --filter @varde/admin exec playwright install --with-deps chromium
       - run: pnpm --filter @varde/admin e2e
+      - name: Golden of the old dashboard on synthetic fixtures (1.2c)
+        run: pnpm parity:golden --check && pnpm --filter @varde/tools-parity test:golden
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:

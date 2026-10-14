@@ -1,17 +1,36 @@
-// In-memory SnapshotStore of the release tests (0.15b); the Prisma store is 1.4c.
+// In-memory SnapshotStore of the release tests (0.15b); the Prisma store is 1.4c
+// (modules/privacy/prisma-snapshot-store.ts). History = every saved batch; metric set per round.
 import type { Population } from '@varde/schema/metrics/populations';
 import type {
   ReleasedSnapshot,
   SupersededSnapshot,
 } from '@varde/schema/metrics/aggregate-snapshot';
-import type { SnapshotStore } from '../../src/modules/privacy/privacy.service.js';
+import type { HistoricCell, SnapshotStore } from '../../src/modules/privacy/privacy.service.js';
 
 type Stored = ReleasedSnapshot | SupersededSnapshot;
 
 export class MemorySnapshotStore implements SnapshotStore {
   /** Every snapshot ever saved, in order; superseded ones are replaced in place, never removed. */
   readonly all: Stored[] = [];
+  /** Every release batch as saved (round, population, cells). */
+  readonly batches: { round: string; population: Population; cells: HistoricCell[] }[] = [];
+  readonly metricSets = new Map<string, readonly string[]>();
   writes = 0;
+
+  listHistory(round: string, population: Population): Promise<HistoricCell[][]> {
+    return Promise.resolve(
+      this.batches.filter((b) => b.round === round && b.population === population).map((b) => b.cells),
+    );
+  }
+
+  metricSet(round: string): Promise<readonly string[] | null> {
+    return Promise.resolve(this.metricSets.get(round) ?? null);
+  }
+
+  fixMetricSet(round: string, metrics: readonly string[]): Promise<void> {
+    this.metricSets.set(round, [...metrics]);
+    return Promise.resolve();
+  }
 
   listReleased(round: string, population: Population): Promise<ReleasedSnapshot[]> {
     return Promise.resolve(
@@ -25,6 +44,10 @@ export class MemorySnapshotStore implements SnapshotStore {
   save(snapshots: readonly ReleasedSnapshot[]): Promise<void> {
     this.writes += 1;
     this.all.push(...snapshots);
+    const first = snapshots[0];
+    if (first !== undefined) {
+      this.batches.push({ round: first.round, population: first.population, cells: snapshots.map((x) => ({ ...x })) });
+    }
     return Promise.resolve();
   }
 

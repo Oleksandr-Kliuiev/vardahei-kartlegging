@@ -9,7 +9,7 @@ RUN apk add --no-cache openssl && npm i -g pnpm@11.11.0
 WORKDIR /src
 COPY . .
 RUN pnpm install --frozen-lockfile --filter "@varde/api..." \
- && pnpm --filter @varde/api build \
+ && pnpm --filter "@varde/api..." build \
  && pnpm deploy --filter @varde/api --prod /out
 # pnpm >= 10 does not run dependency lifecycle scripts in the deployed tree, so the client and
 # engines are generated here explicitly (prisma stays in api dependencies for migrate deploy).

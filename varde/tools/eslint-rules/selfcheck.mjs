@@ -2,6 +2,7 @@
 // `pnpm lint:privacy:selfcheck`: copies the bypass fixture into apps/api/src/modules/dashboard,
 // lints it with the real config and requires `varde/privacy-only-release` errors for both
 // bypasses (tx.response.findMany and include: { responses: true }, 0.19b); anything else fails.
+// Since 1.10b also fixtures/cast.ts: `as ReleasedSnapshot` outside privacy → no-restricted-syntax.
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
@@ -14,9 +15,11 @@ const parent = join(root, 'apps/api/src/modules/dashboard');
 const parentExisted = existsSync(parent);
 const dir = join(parent, '__selfcheck__');
 const target = join(dir, 'bypass.ts');
+const cast = join(dir, 'cast.ts');
 
 mkdirSync(dir, { recursive: true });
 copyFileSync(join(here, 'fixtures/bypass.ts'), target);
+copyFileSync(join(here, 'fixtures/cast.ts'), cast);
 let ok = false;
 try {
   const eslint = join(root, 'node_modules/eslint/bin/eslint.js');
@@ -37,7 +40,18 @@ try {
   const kinds = new Set(
     hits.map((m) => (m.message.includes('include/select') ? 'relation' : 'model')),
   );
-  if (kinds.has('model') && kinds.has('relation') && others.length === 0) ok = true;
+  const castRun = spawnSync(process.execPath, [eslint, '--format', 'json', cast], { cwd: root, encoding: 'utf8' });
+  let castMessages = [];
+  try {
+    castMessages = JSON.parse(castRun.stdout).flatMap((r) => r.messages);
+  } catch {
+    console.error(`selfcheck: FAILED (cast: eslint exit ${castRun.status}, no JSON)\n${castRun.stderr}`);
+  }
+  const castOk =
+    castMessages.length > 0 &&
+    castMessages.every((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('ReleasedSnapshot'));
+  if (!castOk) console.error(`selfcheck: FAILED (cast): ${JSON.stringify(castMessages, null, 2)}`);
+  if (kinds.has('model') && kinds.has('relation') && others.length === 0 && castOk) ok = true;
   else if (results.length > 0) {
     console.error(`selfcheck: FAILED (exit ${run.status}): ${JSON.stringify(messages, null, 2)}`);
   }
@@ -47,5 +61,5 @@ try {
     rmSync(parent, { recursive: true });
   }
 }
-if (ok) console.log('selfcheck: bypass rejected (tx.response, include responses)');
+if (ok) console.log('selfcheck: bypass rejected (tx.response, include responses, as ReleasedSnapshot)');
 process.exit(ok ? 0 : 1);

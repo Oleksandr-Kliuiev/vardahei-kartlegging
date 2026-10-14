@@ -1,0 +1,32 @@
+{
+  "daco": {
+    "tilsette": 25,
+    "open": true,
+    "frist": null
+  },
+  "gasta": {
+    "tilsette": 18,
+    "open": true,
+    "frist": null
+  },
+  "kviknes": {
+    "tilsette": 30,
+    "open": true,
+    "frist": "2027-06-30"
+  },
+  "maskinsenteret": {
+    "tilsette": 22,
+    "open": true,
+    "frist": null
+  },
+  "sfhs": {
+    "tilsette": null,
+    "open": true,
+    "frist": null
+  },
+  "tharaso": {
+    "tilsette": 6,
+    "open": true,
+    "frist": "2027-06-30"
+  }
+}

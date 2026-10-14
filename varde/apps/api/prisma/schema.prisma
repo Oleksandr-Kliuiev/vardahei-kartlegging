@@ -41,13 +41,264 @@ model AdminSession {
   @@map("admin_session")
 }
 
-/// Load stand of 0.12 only (ADR-016): synthetic submissions written like the future Submission
-/// API (1.16). Removed together with modules/stub by a migration in 1.33.
-model StubSubmission {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  submission_id String   @unique @db.Uuid
-  answers       Json     @db.JsonB
-  created_at    DateTime @default(now()) @db.Timestamptz(6)
+/// Survey template (1.4a, ARCHITECTURE §4): one per questionnaire; versions carry the content.
+/// `audience` ∈ {client_survey, seminar_live, seminar_after} (CHECK in the migration).
+model SurveyTemplate {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key                String            @unique
+  audience           String
+  required_languages String[]
+  created_at         DateTime          @default(now()) @db.Timestamptz(6)
+  versions           TemplateVersion[]
 
-  @@map("stub_submission")
+  @@map("survey_template")
+}
+
+/// Version of a template (1.4a, ADR-005, ADR-019, ADR-025). A published version is immutable:
+/// trigger `template_version_immutable` rejects UPDATE and DELETE once `status = published`.
+/// `status` ∈ {draft, published}, `identification` ∈ {initials, none},
+/// `origin` ∈ {authored, kartlegging, external_import} (CHECKs in the migration).
+model TemplateVersion {
+  id                     String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  template_id            String         @db.Uuid
+  template               SurveyTemplate @relation(fields: [template_id], references: [id], onDelete: Restrict)
+  rounds                 Round[]
+  label                  String
+  version_no             Int
+  status                 String         @default("draft")
+  identification         String         @default("initials")
+  required_languages     String[]
+  content                Json           @db.JsonB
+  translation_acceptance Json           @default("{}") @db.JsonB
+  origin                 String
+  content_hash           String
+  created_at             DateTime       @default(now()) @db.Timestamptz(6)
+  published_at           DateTime?      @db.Timestamptz(6)
+  published_by           String?
+  /// Marks of changed frozen questions at publication: [{id, kind: orthographic|semantic}] (ADR-005).
+  frozen_changes         Json?          @db.JsonB
+
+  @@unique([template_id, version_no])
+  @@unique([template_id, label])
+  @@map("template_version")
+}
+
+/// Client (1.4b, ARCHITECTURE §4): mirror of Atlas; in stage 1 filled from kundar.json (1.7).
+model Client {
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug              String        @unique
+  name              String
+  industry          String?
+  employee_count    Int?
+  default_lang      String        @default("nn")
+  atlas_external_id String?
+  round_clients     RoundClient[]
+
+  @@map("client")
+}
+
+/// Round (1.4b, ADR-022, ADR-025). `template_version_id` and `identification` are fixed when the
+/// round leaves `draft` (CHECK round_mode_fixed, trigger round_freeze).
+/// `type` ∈ {regular, post_seminar, live, external_import}; `status` ∈ {draft, open, closed, archived}.
+model Round {
+  id                  String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String
+  type                String
+  template_version_id String?          @db.Uuid
+  template_version    TemplateVersion? @relation(fields: [template_version_id], references: [id], onDelete: Restrict)
+  identification      String?
+  status              String           @default("draft")
+  created_at          DateTime         @default(now()) @db.Timestamptz(6)
+  opened_at           DateTime?        @db.Timestamptz(6)
+  closed_at           DateTime?        @db.Timestamptz(6)
+  round_clients       RoundClient[]
+
+  @@map("round")
+}
+
+/// One client in one round (1.4b, ADR-022, ADR-009): code, snapshot of the population, deadline,
+/// lifecycle `draft → open → closed → archived`. `legacy_code_hash` = sha256 of the kartlegging code.
+model RoundClient {
+  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  round_id            String          @db.Uuid
+  round               Round           @relation(fields: [round_id], references: [id], onDelete: Restrict)
+  client_id           String          @db.Uuid
+  client              Client          @relation(fields: [client_id], references: [id], onDelete: Restrict)
+  code                String?
+  code_hash           String?         @unique
+  code_expires_at     DateTime?       @db.Timestamptz(6)
+  code_revoked_at     DateTime?       @db.Timestamptz(6)
+  legacy_code_hash    String?
+  population_snapshot Int?
+  deadline            DateTime?       @db.Date
+  status              String          @default("draft")
+  responses           Response[]
+  progress_events     ProgressEvent[]
+
+  @@unique([round_id, client_id])
+  @@map("round_client")
+}
+
+/// One part (common | leader) of one submission (1.4b, ADR-006, ADR-024, ADR-025). No names, IP
+/// or exact time; `respondent_key` only in rounds with identification = initials (trigger
+/// response_respondent_key_mode); the only FK is round_client. (source_id, part) is unique for
+/// imported rows (NULLs are distinct in Postgres, so live submissions are not constrained).
+model Response {
+  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  round_client_id String      @db.Uuid
+  round_client    RoundClient @relation(fields: [round_client_id], references: [id], onDelete: Restrict)
+  part            String
+  role            String?
+  lang            String
+  respondent_key  String?
+  answers         Json        @db.JsonB
+  free            Json        @default("{}") @db.JsonB
+  submission_id   String      @unique @db.Uuid
+  content_hash    String
+  source_id       String?
+  duration_s      Int?
+  submitted_day   DateTime    @db.Date
+
+  @@unique([source_id, part])
+  @@index([round_client_id, part])
+  @@map("response")
+}
+
+/// Anonymous progress of a runner session (1.4b; TTL 24 h, ADR-021): no link to Response.
+model ProgressEvent {
+  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  round_client_id String      @db.Uuid
+  round_client    RoundClient @relation(fields: [round_client_id], references: [id], onDelete: Restrict)
+  session_id      String
+  question_no     Int
+  finished        Boolean     @default(false)
+  at              DateTime    @default(now()) @db.Timestamptz(6)
+
+  @@index([round_client_id, at])
+  @@map("progress_event")
+}
+
+/// Versioned measurement contract (1.4c, ADR-020); `definition` is the MetricDefinition JSON.
+model MetricDefinition {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key        String
+  version    Int
+  definition Json   @db.JsonB
+
+  @@unique([key, version])
+  @@map("metric_definition")
+}
+
+/// Released aggregate cell (1.4c, ADR-020, ADR-021). Written only by privacy.release() through
+/// modules/privacy/prisma-snapshot-store.ts. A released row may only become `superseded` with a
+/// reason (other columns unchanged); released and superseded rows are never deleted (trigger
+/// aggregate_snapshot_released). `status` ∈ {computed, released, superseded}.
+model AggregateSnapshot {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  round_id          String    @db.Uuid
+  population        String
+  round_client_id   String?   @db.Uuid
+  client_id         String?   @db.Uuid
+  metric_key        String
+  metric_version    Int
+  group             String
+  n                 Int
+  numerator         Float
+  denominator       Float
+  missing           Int
+  suppressed        Boolean
+  stale             Boolean   @default(false)
+  status            String
+  computed_at       DateTime  @db.Date
+  released_at       DateTime? @db.Date
+  superseded_at     DateTime? @db.Timestamptz(6)
+  superseded_reason String?
+  release_id        String    @db.Uuid
+
+  @@index([round_id, population, status])
+  @@index([release_id])
+  @@map("aggregate_snapshot")
+}
+
+/// Metric set of a round, fixed by the first release of any population (1.4c, ADR-021 rule 4).
+model RoundMetricSet {
+  round_id    String   @id @db.Uuid
+  metric_keys String[]
+  fixed_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("round_metric_set")
+}
+
+/// FUNN rule (1.4c, ADR-026): `channel` ∈ {aggregate, leader}.
+model FindingRule {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key        String
+  version    Int
+  channel    String
+  definition Json   @db.JsonB
+
+  @@unique([key, version])
+  @@map("finding_rule")
+}
+
+/// A finding computed over released snapshots (1.4c; retention as released snapshots).
+model Finding {
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  round_id     String  @db.Uuid
+  client_id    String? @db.Uuid
+  rule_key     String
+  rule_version Int
+  numbers      Json    @db.JsonB
+  release_id   String  @db.Uuid
+
+  @@index([round_id])
+  @@map("finding")
+}
+
+/// Provable import (1.4c, ADR-024): counts and rejected line numbers with reasons, never answers
+/// or initials. `source` ∈ {svar, runde1}, `status` ∈ {ok, failed}.
+model ImportManifest {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  source      String
+  source_hash String
+  round_ids   String[]
+  counts      Json     @db.JsonB
+  rejected    Json     @db.JsonB
+  status      String
+  started_by  String
+  at          DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("import_manifest")
+}
+
+/// Deletion on request (1.4c, ADR-017): `scope` ∈ {client, respondent, submissions}.
+model DeletionRequest {
+  id           String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  requested_by String
+  reason       String
+  scope        String
+  scope_ref    Json                @db.JsonB
+  at           DateTime            @default(now()) @db.Timestamptz(6)
+  tombstones   DeletionTombstone[]
+
+  @@map("deletion_request")
+}
+
+/// Tombstone of a deleted Response part: keeps import, restore and rollback from bringing it
+/// back (ADR-017, ADR-024). No answers.
+model DeletionTombstone {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  request_id     String          @db.Uuid
+  request        DeletionRequest @relation(fields: [request_id], references: [id], onDelete: Restrict)
+  submission_id  String          @db.Uuid
+  content_hash   String
+  round_id       String          @db.Uuid
+  client_id      String          @db.Uuid
+  part           String
+  source_id      String?
+  respondent_key String?
+
+  @@index([source_id, part])
+  @@index([submission_id])
+  @@map("deletion_tombstone")
 }

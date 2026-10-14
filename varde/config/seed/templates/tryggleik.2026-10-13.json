@@ -1,0 +1,2226 @@
+{
+  "label": "2026-10-13",
+  "origin": "kartlegging",
+  "source_versjon": "2026-10-13",
+  "content": {
+    "key": "tryggleik",
+    "audience": "client_survey",
+    "identification": "initials",
+    "required_languages": [
+      "nn",
+      "en"
+    ],
+    "score_scale": {
+      "key": "risk-0-3",
+      "levels": [
+        {
+          "id": "gron",
+          "label": {
+            "nn": "Grøn"
+          }
+        },
+        {
+          "id": "gul",
+          "label": {
+            "nn": "Gul"
+          }
+        },
+        {
+          "id": "oransje",
+          "label": {
+            "nn": "Oransje"
+          }
+        },
+        {
+          "id": "raud",
+          "label": {
+            "nn": "Raud"
+          }
+        }
+      ]
+    },
+    "leader_roles": [
+      "leiar",
+      "it"
+    ],
+    "intro": {
+      "title": {
+        "nn": "IT-sikkerheit i kvardagen",
+        "en": "IT security in everyday work"
+      },
+      "short": {
+        "nn": "IT-sikkerheit",
+        "en": "IT security"
+      },
+      "minutes": 5,
+      "letter": [
+        {
+          "nn": "Vi i Vardahei IT vil gjerne vite korleis IT-sikkerheita er i kvardagen hos dykk: kva rutinar som finst, korleis de held styr på passord og innlogging, og kva de gjer om noko går gale.",
+          "en": "We at Vardahei IT would like to know what IT security looks like in your everyday work: which routines exist, how you keep track of passwords and sign-ins, and what you do if something goes wrong."
+        },
+        {
+          "nn": "Spørsmåla er dei same som i førre runde, slik at vi kan sjå kva som har endra seg. Svara blir brukte til å finne ut kva vi bør gjere betre i verksemda.",
+          "en": "The questions are the same as in the previous round, so we can see what has changed. The answers are used to find out what we should improve in the company."
+        }
+      ],
+      "sender": {
+        "nn": "Asbjørn og resten av gjengen i Vardahei IT",
+        "en": "Asbjørn and the rest of the team at Vardahei IT"
+      },
+      "facts": [
+        {
+          "nn": "Vi spør om initialane dine, slik at vi kan sjå endringa frå førre runde. Svara per person ser berre Vardahei IT. Bedrifta får eit samla bilete utan initialar.",
+          "en": "We ask for your initials so we can see the change since the previous round. Only Vardahei IT sees answers per person. Your company gets an overall picture without initials."
+        },
+        {
+          "nn": "Ingen feil svar. «Usikker» er eit heilt greitt svar, og nyttig for oss å vite.",
+          "en": "No wrong answers. “Not sure” is a perfectly fine answer, and useful for us to know."
+        },
+        {
+          "nn": "Vi kjem tilbake til bedrifta med det vi fann, og kva vi føreslår å gjere.",
+          "en": "We'll get back to your company with what we found and what we suggest doing."
+        }
+      ],
+      "contact": {
+        "name": "Vardahei IT",
+        "phone": "+47 930 94 567",
+        "email": "post@vardahei.no",
+        "hours": {
+          "nn": "Måndag til fredag 08–16",
+          "en": "Monday to Friday 08–16"
+        }
+      }
+    },
+    "leader_intro": {
+      "title": {
+        "nn": "Nokre spørsmål til deg som leiar",
+        "en": "A few questions for you as a manager"
+      },
+      "text": {
+        "nn": "Sidan du har ansvar i bedrifta, har vi nokre spørsmål til. Dei handlar meir om drifta enn om teknikk, og tek om lag 8 minutt.",
+        "en": "Since you have responsibility in the company, we have a few more questions. They're about running the business more than technology, and take about 8 minutes."
+      }
+    },
+    "tips": [],
+    "max_tips": 4,
+    "questions": [
+      {
+        "id": "F1",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Skriv inn initialane dine: 2 første og 3 siste. Eksempel: Ola Nordman = OLNOR",
+            "en": "Enter your initials: first 2 and last 3 letters. Example: Ola Nordman = OLNOR"
+          },
+          "help": {
+            "nn": "Initialane gjer at vi kan sjå svar og score per rolle og per tilsett, og samanlikne med førre runde.",
+            "en": "Your initials let us see answers and scores per role and per employee, and compare with the previous round."
+          },
+          "section_title": {
+            "nn": "Identifikasjon",
+            "en": "Identification"
+          },
+          "placeholder": {
+            "nn": "OLNOR",
+            "en": "OLNOR"
+          }
+        },
+        "required": true,
+        "anchor_key": "F1",
+        "frozen": true,
+        "identifier": true,
+        "type": "text",
+        "single_line": true,
+        "uppercase": true,
+        "max_length": 8
+      },
+      {
+        "id": "F2",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Kva rolle beskriv deg best?",
+            "en": "Which role describes you best?"
+          }
+        },
+        "required": true,
+        "role": true,
+        "anchor_key": "F2",
+        "frozen": true,
+        "options": [
+          {
+            "id": "leiar",
+            "texts": {
+              "text": {
+                "nn": "Leiar",
+                "en": "Manager"
+              }
+            }
+          },
+          {
+            "id": "kontor",
+            "texts": {
+              "text": {
+                "nn": "Administrasjon/kontor",
+                "en": "Administration/office"
+              }
+            }
+          },
+          {
+            "id": "prod",
+            "texts": {
+              "text": {
+                "nn": "Produksjon/drift",
+                "en": "Production/operations"
+              }
+            }
+          },
+          {
+            "id": "sal",
+            "texts": {
+              "text": {
+                "nn": "Sal / Kundeservice",
+                "en": "Sales / customer service"
+              }
+            }
+          },
+          {
+            "id": "it",
+            "texts": {
+              "text": {
+                "nn": "IT / superbrukar",
+                "en": "IT / super user"
+              }
+            }
+          },
+          {
+            "id": "anna",
+            "texts": {
+              "text": {
+                "nn": "Anna",
+                "en": "Other"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "F3",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Opplever du at verksemda har eit tydeleg fokus på IT-sikkerheit i det daglege arbeidet?",
+            "en": "Do you feel the company has a clear focus on IT security in everyday work?"
+          },
+          "short_label": {
+            "nn": "Fokus på sikkerheit"
+          }
+        },
+        "anchor_key": "F3",
+        "frozen": true,
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja",
+                "en": "Yes"
+              }
+            },
+            "score": 0
+          },
+          {
+            "id": "delvis",
+            "texts": {
+              "text": {
+                "nn": "Delvis",
+                "en": "Partly"
+              }
+            },
+            "score": 1
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            },
+            "score": 2
+          },
+          {
+            "id": "usikker",
+            "texts": {
+              "text": {
+                "nn": "Usikker",
+                "en": "Not sure"
+              }
+            },
+            "score": 1
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "F4",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Har du via e-post, telefon (t.d. svindelanrop) eller SMS opplevd forsøk på svindel eller hacking?",
+            "en": "Have you experienced attempts at fraud or hacking by email, phone (e.g. scam calls) or SMS?"
+          },
+          "section_title": {
+            "nn": "IT-sikkerheitskultur og erfaring",
+            "en": "IT security culture and experience"
+          },
+          "short_label": {
+            "nn": "Opplevd svindelforsøk"
+          }
+        },
+        "anchor_key": "F4",
+        "frozen": true,
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja",
+                "en": "Yes"
+              }
+            },
+            "score": 3
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            },
+            "score": 0
+          },
+          {
+            "id": "usikker",
+            "texts": {
+              "text": {
+                "nn": "Usikker",
+                "en": "Not sure"
+              }
+            },
+            "score": 1
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "F5",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Finst det etablerte rutinar for kva du skal gjere for å hindre at ei IT-hending spreier seg vidare (t.d. kople frå nett, varsle rett person)?",
+            "en": "Are there established routines for what to do to stop an IT incident from spreading (e.g. disconnect from the network, alert the right person)?"
+          },
+          "short_label": {
+            "nn": "Rutine: stoppe hending"
+          }
+        },
+        "anchor_key": "F5",
+        "frozen": true,
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja",
+                "en": "Yes"
+              }
+            },
+            "score": 0
+          },
+          {
+            "id": "delvis",
+            "texts": {
+              "text": {
+                "nn": "Delvis",
+                "en": "Partly"
+              }
+            },
+            "score": 1
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            },
+            "score": 2
+          },
+          {
+            "id": "usikker",
+            "texts": {
+              "text": {
+                "nn": "Usikker",
+                "en": "Not sure"
+              }
+            },
+            "score": 1
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "F6",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Finst det rutinar for korleis verksemda skal starte opp att etter ei alvorleg IT-hending (kven gjer kva, rekkjefølgje, kommunikasjon)?",
+            "en": "Are there routines for how the company gets going again after a serious IT incident (who does what, in which order, communication)?"
+          },
+          "short_label": {
+            "nn": "Rutine: starte opp att"
+          }
+        },
+        "anchor_key": "F6",
+        "frozen": true,
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja",
+                "en": "Yes"
+              }
+            },
+            "score": 0
+          },
+          {
+            "id": "delvis",
+            "texts": {
+              "text": {
+                "nn": "Delvis",
+                "en": "Partly"
+              }
+            },
+            "score": 1
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            },
+            "score": 2
+          },
+          {
+            "id": "usikker",
+            "texts": {
+              "text": {
+                "nn": "Usikker",
+                "en": "Not sure"
+              }
+            },
+            "score": 1
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "F7",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Opplever du at du har gode rutinar for passord (ikkje dele, sterke passord, ikkje skrive dei ned synleg)?",
+            "en": "Do you feel you have good password habits (not sharing, strong passwords, not writing them down where they can be seen)?"
+          },
+          "short_label": {
+            "nn": "Passordvanar"
+          }
+        },
+        "anchor_key": "F7",
+        "frozen": true,
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja",
+                "en": "Yes"
+              }
+            },
+            "score": 0
+          },
+          {
+            "id": "delvis",
+            "texts": {
+              "text": {
+                "nn": "Delvis",
+                "en": "Partly"
+              }
+            },
+            "score": 1
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            },
+            "score": 2
+          },
+          {
+            "id": "usikker",
+            "texts": {
+              "text": {
+                "nn": "Usikker",
+                "en": "Not sure"
+              }
+            },
+            "score": 1
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "F8",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Brukar du same passord på fleire tenester (jobb og/eller privat)?",
+            "en": "Do you use the same password for several services (work and/or private)?"
+          },
+          "section_title": {
+            "nn": "Passord og tilgang",
+            "en": "Passwords and access"
+          },
+          "short_label": {
+            "nn": "Same passord"
+          }
+        },
+        "anchor_key": "F8",
+        "frozen": true,
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja",
+                "en": "Yes"
+              }
+            },
+            "score": 3
+          },
+          {
+            "id": "delvis",
+            "texts": {
+              "text": {
+                "nn": "Delvis",
+                "en": "Partly"
+              }
+            },
+            "score": 2
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            },
+            "score": 0
+          },
+          {
+            "id": "usikker",
+            "texts": {
+              "text": {
+                "nn": "Usikker",
+                "en": "Not sure"
+              }
+            },
+            "score": 1
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "F9",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Brukar du ein passordhandterar (t.d. Bitwarden, 1Password eller liknande)?",
+            "en": "Do you use a password manager (e.g. Bitwarden, 1Password or similar)?"
+          },
+          "short_label": {
+            "nn": "Passordhandterar"
+          }
+        },
+        "anchor_key": "F9",
+        "frozen": true,
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja",
+                "en": "Yes"
+              }
+            },
+            "score": 0
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            },
+            "score": 2
+          },
+          {
+            "id": "usikker",
+            "texts": {
+              "text": {
+                "nn": "Usikker",
+                "en": "Not sure"
+              }
+            },
+            "score": 1
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "F10",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Låser du PC-en (Win + L) når du går frå arbeidsplassen din?",
+            "en": "Do you lock your computer (Win + L) when you leave your desk?"
+          },
+          "short_label": {
+            "nn": "Låser PC-en"
+          }
+        },
+        "anchor_key": "F10",
+        "frozen": true,
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja",
+                "en": "Yes"
+              }
+            },
+            "score": 0
+          },
+          {
+            "id": "oftast",
+            "texts": {
+              "text": {
+                "nn": "Oftast",
+                "en": "Usually"
+              }
+            },
+            "score": 1
+          },
+          {
+            "id": "sjeldan",
+            "texts": {
+              "text": {
+                "nn": "Sjeldan",
+                "en": "Rarely"
+              }
+            },
+            "score": 2
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            },
+            "score": 2
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "F11",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Har du fått opplæring i korleis du kan avsløre phishing eller svindelforsøk?",
+            "en": "Have you had training in how to spot phishing or fraud attempts?"
+          },
+          "section_title": {
+            "nn": "Phishing og opplæring",
+            "en": "Phishing and training"
+          },
+          "short_label": {
+            "nn": "Phishing-opplæring"
+          }
+        },
+        "anchor_key": "F11",
+        "frozen": true,
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja",
+                "en": "Yes"
+              }
+            },
+            "score": 0
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            },
+            "score": 2
+          },
+          {
+            "id": "usikker",
+            "texts": {
+              "text": {
+                "nn": "Usikker",
+                "en": "Not sure"
+              }
+            },
+            "score": 1
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "F12",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Veit du korleis og til kven du skal rapportere mistenkelege e-postar eller meldingar?",
+            "en": "Do you know how, and to whom, to report suspicious emails or messages?"
+          },
+          "short_label": {
+            "nn": "Veit kor dei skal melde frå"
+          }
+        },
+        "anchor_key": "F12",
+        "frozen": true,
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja",
+                "en": "Yes"
+              }
+            },
+            "score": 0
+          },
+          {
+            "id": "delvis",
+            "texts": {
+              "text": {
+                "nn": "Delvis",
+                "en": "Partly"
+              }
+            },
+            "score": 1
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            },
+            "score": 2
+          },
+          {
+            "id": "usikker",
+            "texts": {
+              "text": {
+                "nn": "Usikker",
+                "en": "Not sure"
+              }
+            },
+            "score": 1
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "F13",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Har du nokon gong i ettertid mistenkt at du kan ha klikka på ei lenke eller vedlegg som var svindel?",
+            "en": "Have you ever suspected afterwards that you may have clicked a link or attachment that was a scam?"
+          },
+          "short_label": {
+            "nn": "Mistenkt klikk"
+          }
+        },
+        "anchor_key": "F13",
+        "frozen": true,
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja",
+                "en": "Yes"
+              }
+            },
+            "score": 3
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            },
+            "score": 0
+          },
+          {
+            "id": "usikker",
+            "texts": {
+              "text": {
+                "nn": "Usikker",
+                "en": "Not sure"
+              }
+            },
+            "score": 1
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "F14",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Brukar du tofaktorautentisering (MFA) når du loggar på jobb-system?",
+            "en": "Do you use two-factor authentication (MFA) when logging in to work systems?"
+          },
+          "section_title": {
+            "nn": "Tofaktorautentisering (MFA)",
+            "en": "Two-factor authentication (MFA)"
+          },
+          "short_label": {
+            "nn": "Brukar MFA"
+          }
+        },
+        "anchor_key": "F14",
+        "frozen": true,
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja",
+                "en": "Yes"
+              }
+            },
+            "score": 0
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            },
+            "score": 2
+          },
+          {
+            "id": "usikker",
+            "texts": {
+              "text": {
+                "nn": "Usikker",
+                "en": "Not sure"
+              }
+            },
+            "score": 1
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "F15",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Kvar av desse brukar du MFA i?",
+            "en": "Which of these do you use MFA in?"
+          },
+          "help": {
+            "nn": "Kryss av alt som passar.",
+            "en": "Tick everything that applies."
+          },
+          "short_label": {
+            "nn": "MFA kvar"
+          }
+        },
+        "anchor_key": "F15",
+        "frozen": true,
+        "options": [
+          {
+            "id": "m365",
+            "texts": {
+              "text": {
+                "nn": "Microsoft 365/e-post",
+                "en": "Microsoft 365/email"
+              }
+            }
+          },
+          {
+            "id": "vpn",
+            "texts": {
+              "text": {
+                "nn": "VPN",
+                "en": "VPN"
+              }
+            }
+          },
+          {
+            "id": "erp",
+            "texts": {
+              "text": {
+                "nn": "Økonomi/ERP",
+                "en": "Finance/ERP"
+              }
+            }
+          },
+          {
+            "id": "crm",
+            "texts": {
+              "text": {
+                "nn": "CRM",
+                "en": "CRM"
+              }
+            }
+          },
+          {
+            "id": "andre",
+            "texts": {
+              "text": {
+                "nn": "Andre system",
+                "en": "Other systems"
+              }
+            }
+          },
+          {
+            "id": "usikker",
+            "texts": {
+              "text": {
+                "nn": "Usikker",
+                "en": "Not sure"
+              }
+            }
+          }
+        ],
+        "exclusive_options": [
+          "usikker"
+        ],
+        "type": "multi"
+      },
+      {
+        "id": "F16",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Veit du kor arbeidsdata skal lagrast for å vere sikker på at dei blir tekne backup av?",
+            "en": "Do you know where work data should be saved to be sure it is backed up?"
+          },
+          "section_title": {
+            "nn": "Data og backup",
+            "en": "Data and backup"
+          },
+          "short_label": {
+            "nn": "Veit kvar filer skal lagrast"
+          }
+        },
+        "anchor_key": "F16",
+        "frozen": true,
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja",
+                "en": "Yes"
+              }
+            },
+            "score": 0
+          },
+          {
+            "id": "delvis",
+            "texts": {
+              "text": {
+                "nn": "Delvis",
+                "en": "Partly"
+              }
+            },
+            "score": 1
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            },
+            "score": 2
+          },
+          {
+            "id": "usikker",
+            "texts": {
+              "text": {
+                "nn": "Usikker",
+                "en": "Not sure"
+              }
+            },
+            "score": 1
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "F17",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Lagrar du ofte viktige arbeidsfiler lokalt på PC (Skrivebord/Dokument) i staden for OneDrive/SharePoint?",
+            "en": "Do you often save important work files locally on the PC (Desktop/Documents) instead of OneDrive/SharePoint?"
+          },
+          "short_label": {
+            "nn": "Lagrar lokalt"
+          }
+        },
+        "anchor_key": "F17",
+        "frozen": true,
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja",
+                "en": "Yes"
+              }
+            },
+            "score": 3
+          },
+          {
+            "id": "avogtil",
+            "texts": {
+              "text": {
+                "nn": "Av og til",
+                "en": "Sometimes"
+              }
+            },
+            "score": 2
+          },
+          {
+            "id": "sjeldan",
+            "texts": {
+              "text": {
+                "nn": "Sjeldan",
+                "en": "Rarely"
+              }
+            },
+            "score": 1
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            },
+            "score": 0
+          },
+          {
+            "id": "usikker",
+            "texts": {
+              "text": {
+                "nn": "Usikker",
+                "en": "Not sure"
+              }
+            },
+            "score": 1
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "F18",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Opplever du at PC-en din jamleg blir oppdatert med siste sikkerheits- og programvareoppdateringar?",
+            "en": "Do you feel your PC is regularly updated with the latest security and software updates?"
+          },
+          "section_title": {
+            "nn": "Oppdateringar og tryggleik",
+            "en": "Updates and security"
+          },
+          "short_label": {
+            "nn": "PC oppdatert"
+          }
+        },
+        "anchor_key": "F18",
+        "frozen": true,
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja",
+                "en": "Yes"
+              }
+            },
+            "score": 0
+          },
+          {
+            "id": "delvis",
+            "texts": {
+              "text": {
+                "nn": "Delvis",
+                "en": "Partly"
+              }
+            },
+            "score": 1
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            },
+            "score": 2
+          },
+          {
+            "id": "usikker",
+            "texts": {
+              "text": {
+                "nn": "Usikker",
+                "en": "Not sure"
+              }
+            },
+            "score": 1
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "F19",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Veit du om PC-en din har antivirus/EDR eller annan sikkerheitsprogramvare installert og aktiv?",
+            "en": "Do you know whether your PC has antivirus/EDR or other security software installed and active?"
+          },
+          "short_label": {
+            "nn": "Antivirus/EDR aktiv"
+          }
+        },
+        "anchor_key": "F19",
+        "frozen": true,
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja",
+                "en": "Yes"
+              }
+            },
+            "score": 0
+          },
+          {
+            "id": "delvis",
+            "texts": {
+              "text": {
+                "nn": "Delvis",
+                "en": "Partly"
+              }
+            },
+            "score": 1
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            },
+            "score": 2
+          },
+          {
+            "id": "usikker",
+            "texts": {
+              "text": {
+                "nn": "Usikker",
+                "en": "Not sure"
+              }
+            },
+            "score": 1
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "F20",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Ei verksemd med 10–30 tilsette kan tape 100 000–200 000 kr per dag ved eit alvorleg IT-angrep. Trur du dette er realistisk for dykk? Eventuelt kva meiner du er ein realistisk kostnad?",
+            "en": "A business with 10–30 employees can lose NOK 100,000–200,000 per day in a serious IT attack. Do you think this is realistic for you? If not, what do you think a realistic cost would be?"
+          },
+          "section_title": {
+            "nn": "Vurdering og forbetring",
+            "en": "Assessment and improvement"
+          }
+        },
+        "anchor_key": "F20",
+        "frozen": true,
+        "type": "text"
+      },
+      {
+        "id": "F21",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Kva meiner du er det viktigaste tiltaket for å betre IT-sikkerheita i verksemda?",
+            "en": "What do you think is the most important measure to improve IT security in the company?"
+          }
+        },
+        "anchor_key": "F21",
+        "frozen": true,
+        "type": "text"
+      },
+      {
+        "id": "F22",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Andre kommentarar eller innspel knytt til IT-sikkerheit?",
+            "en": "Any other comments or input on IT security?"
+          },
+          "help": {
+            "nn": "Valfritt.",
+            "en": "Optional."
+          }
+        },
+        "optional": true,
+        "anchor_key": "F22",
+        "frozen": true,
+        "type": "text"
+      },
+      {
+        "id": "B1",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Kva er dei tre systema eller verktøya de ikkje klarar dykk utan?",
+            "en": "Which three systems or tools can't you manage without?"
+          },
+          "placeholder": {
+            "nn": "Til dømes e-post, PowerOffice, bookingsystemet",
+            "en": "For example email, PowerOffice, the booking system"
+          }
+        },
+        "type": "text"
+      },
+      {
+        "id": "B2",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Tenk deg at e-post, filer og fagsystem stoppar i morgon tidleg. Kor lenge kan de halde fram før det blir alvorleg?",
+            "en": "Imagine email, files and your core systems stop tomorrow morning. How long can you keep going before it gets serious?"
+          }
+        },
+        "options": [
+          {
+            "id": "t2",
+            "texts": {
+              "text": {
+                "nn": "Under to timar",
+                "en": "Less than two hours"
+              }
+            }
+          },
+          {
+            "id": "dag",
+            "texts": {
+              "text": {
+                "nn": "Ein arbeidsdag",
+                "en": "One working day"
+              }
+            }
+          },
+          {
+            "id": "d23",
+            "texts": {
+              "text": {
+                "nn": "2–3 dagar",
+                "en": "2–3 days"
+              }
+            }
+          },
+          {
+            "id": "veke",
+            "texts": {
+              "text": {
+                "nn": "Ei veke eller meir",
+                "en": "A week or more"
+              }
+            }
+          },
+          {
+            "id": "vk",
+            "texts": {
+              "text": {
+                "nn": "Veit ikkje",
+                "en": "Not sure"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "B3",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Er det periodar der ein IT-stans ville vore ekstra ille?",
+            "en": "Are there periods when an IT outage would be especially bad?"
+          },
+          "help": {
+            "nn": "Til dømes høgsesong, anbodsfristar, lønnskøyring eller eksamen.",
+            "en": "For example peak season, tender deadlines, payroll or exams."
+          }
+        },
+        "optional": true,
+        "type": "text"
+      },
+      {
+        "id": "B4",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Kva ville vore verst for dykk?",
+            "en": "What would hurt you the most?"
+          },
+          "help": {
+            "nn": "Vel dei to som tyngjer mest.",
+            "en": "Pick the two that weigh the most."
+          }
+        },
+        "options": [
+          {
+            "id": "stans",
+            "texts": {
+              "text": {
+                "nn": "At vi ikkje får jobba",
+                "en": "Not being able to work"
+              }
+            }
+          },
+          {
+            "id": "tap",
+            "texts": {
+              "text": {
+                "nn": "At data blir borte for godt",
+                "en": "Losing data for good"
+              }
+            }
+          },
+          {
+            "id": "lekkasje",
+            "texts": {
+              "text": {
+                "nn": "At kundeopplysningar kjem på avvegar",
+                "en": "Customer information getting out"
+              }
+            }
+          },
+          {
+            "id": "svindel",
+            "texts": {
+              "text": {
+                "nn": "At pengar blir betalte til svindlarar",
+                "en": "Money being paid to fraudsters"
+              }
+            }
+          },
+          {
+            "id": "omdome",
+            "texts": {
+              "text": {
+                "nn": "At ryktet vårt tek skade",
+                "en": "Damage to our reputation"
+              }
+            }
+          }
+        ],
+        "type": "multi",
+        "max_choices": 2,
+        "min_choices": 1
+      },
+      {
+        "id": "B17",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Kva slags opplysningar har de som ikkje må kome på avvegar?",
+            "en": "What kinds of information do you hold that must not get out?"
+          },
+          "help": {
+            "nn": "Kryss av alt som passar. Vi spør om kva slag, ikkje om innhaldet.",
+            "en": "Tick everything that applies. We're asking about the kind, not the content."
+          }
+        },
+        "options": [
+          {
+            "id": "kunde",
+            "texts": {
+              "text": {
+                "nn": "Kontaktopplysningar om kundar",
+                "en": "Customer contact details"
+              }
+            }
+          },
+          {
+            "id": "id",
+            "texts": {
+              "text": {
+                "nn": "Personnummer eller kopi av legitimasjon",
+                "en": "National ID numbers or copies of ID"
+              }
+            }
+          },
+          {
+            "id": "helse",
+            "texts": {
+              "text": {
+                "nn": "Helseopplysningar",
+                "en": "Health information"
+              }
+            }
+          },
+          {
+            "id": "tilsette",
+            "texts": {
+              "text": {
+                "nn": "Opplysningar om tilsette: lønn, sjukefråvær, personalsaker",
+                "en": "Staff records: pay, sick leave, HR matters"
+              }
+            }
+          },
+          {
+            "id": "barn",
+            "texts": {
+              "text": {
+                "nn": "Opplysningar om elevar eller mindreårige",
+                "en": "Information about students or minors"
+              }
+            }
+          },
+          {
+            "id": "betaling",
+            "texts": {
+              "text": {
+                "nn": "Kort- eller kontoopplysningar",
+                "en": "Card or bank account details"
+              }
+            }
+          },
+          {
+            "id": "andre",
+            "texts": {
+              "text": {
+                "nn": "Data eller innloggingar vi tek vare på for kundane våre",
+                "en": "Data or logins we keep on behalf of our customers"
+              }
+            }
+          },
+          {
+            "id": "forretning",
+            "texts": {
+              "text": {
+                "nn": "Prisar, tilbod, kontraktar eller teikningar",
+                "en": "Prices, quotes, contracts or drawings"
+              }
+            }
+          },
+          {
+            "id": "vk",
+            "texts": {
+              "text": {
+                "nn": "Veit ikkje",
+                "en": "Not sure"
+              }
+            }
+          }
+        ],
+        "exclusive_options": [
+          "vk"
+        ],
+        "type": "multi"
+      },
+      {
+        "id": "B5",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Kven har ansvar for IT hos dykk i dag?",
+            "en": "Who is responsible for IT in your company today?"
+          }
+        },
+        "options": [
+          {
+            "id": "dagleg",
+            "texts": {
+              "text": {
+                "nn": "Dagleg leiar",
+                "en": "The managing director"
+              }
+            }
+          },
+          {
+            "id": "tilsett",
+            "texts": {
+              "text": {
+                "nn": "Ein tilsett, ved sida av anna arbeid",
+                "en": "An employee, alongside other work"
+              }
+            }
+          },
+          {
+            "id": "vardahei",
+            "texts": {
+              "text": {
+                "nn": "I praksis Vardahei",
+                "en": "In practice, Vardahei"
+              }
+            }
+          },
+          {
+            "id": "ingen",
+            "texts": {
+              "text": {
+                "nn": "Ingen bestemt",
+                "en": "Nobody in particular"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "B19",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Har de system som nokon andre enn Vardahei har ansvaret for?",
+            "en": "Do you have systems that someone other than Vardahei is responsible for?"
+          },
+          "help": {
+            "nn": "Kryss av alt som passar.",
+            "en": "Tick everything that applies."
+          }
+        },
+        "options": [
+          {
+            "id": "fag",
+            "texts": {
+              "text": {
+                "nn": "Fagsystem eller bransjesystem",
+                "en": "Industry-specific or core system"
+              }
+            }
+          },
+          {
+            "id": "nett",
+            "texts": {
+              "text": {
+                "nn": "Nettside eller nettbutikk",
+                "en": "Website or online shop"
+              }
+            }
+          },
+          {
+            "id": "okonomi",
+            "texts": {
+              "text": {
+                "nn": "Rekneskap, lønn eller faktura",
+                "en": "Accounting, payroll or invoicing"
+              }
+            }
+          },
+          {
+            "id": "booking",
+            "texts": {
+              "text": {
+                "nn": "Kasse- eller bookingsystem",
+                "en": "Point-of-sale or booking system"
+              }
+            }
+          },
+          {
+            "id": "some",
+            "texts": {
+              "text": {
+                "nn": "Sosiale medium",
+                "en": "Social media"
+              }
+            }
+          },
+          {
+            "id": "anna",
+            "texts": {
+              "text": {
+                "nn": "Anna",
+                "en": "Other"
+              }
+            }
+          },
+          {
+            "id": "ingen",
+            "texts": {
+              "text": {
+                "nn": "Nei, Vardahei har alt",
+                "en": "No, Vardahei handles everything"
+              }
+            }
+          },
+          {
+            "id": "vk",
+            "texts": {
+              "text": {
+                "nn": "Veit ikkje",
+                "en": "Not sure"
+              }
+            }
+          }
+        ],
+        "exclusive_options": [
+          "ingen",
+          "vk"
+        ],
+        "free_text": {
+          "texts": {
+            "text": {
+              "nn": "Kven har ansvaret for dei? (valfritt)",
+              "en": "Who is responsible for them? (optional)"
+            }
+          }
+        },
+        "type": "multi"
+      },
+      {
+        "id": "B7",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Har kundar, forsikringsselskap, bank eller offentlege oppdragsgjevarar spurt om IT-tryggleiken dykkar?",
+            "en": "Have customers, your insurer, bank or public clients asked about your IT security?"
+          }
+        },
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja",
+                "en": "Yes"
+              }
+            }
+          },
+          {
+            "id": "ventar",
+            "texts": {
+              "text": {
+                "nn": "Nei, men vi trur det kjem",
+                "en": "No, but we expect it"
+              }
+            }
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            }
+          },
+          {
+            "id": "vk",
+            "texts": {
+              "text": {
+                "nn": "Veit ikkje",
+                "en": "Not sure"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "B8",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Kor ofte får de nye tilsette, vikarar eller sesongarbeidarar?",
+            "en": "How often do you get new staff, temps or seasonal workers?"
+          }
+        },
+        "options": [
+          {
+            "id": "ofte",
+            "texts": {
+              "text": {
+                "nn": "Fleire gonger i månaden",
+                "en": "Several times a month"
+              }
+            }
+          },
+          {
+            "id": "ar",
+            "texts": {
+              "text": {
+                "nn": "Nokre gonger i året",
+                "en": "A few times a year"
+              }
+            }
+          },
+          {
+            "id": "sjeldan",
+            "texts": {
+              "text": {
+                "nn": "Sjeldan",
+                "en": "Rarely"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "B9",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Når nokon sluttar, korleis blir tilgangane deira stengde?",
+            "en": "When someone leaves, how are their accounts closed?"
+          }
+        },
+        "options": [
+          {
+            "id": "vardahei",
+            "texts": {
+              "text": {
+                "nn": "Vi seier frå til Vardahei same dag",
+                "en": "We tell Vardahei the same day"
+              }
+            }
+          },
+          {
+            "id": "sjolv",
+            "texts": {
+              "text": {
+                "nn": "Vi gjer det sjølve",
+                "en": "We do it ourselves"
+              }
+            }
+          },
+          {
+            "id": "etter",
+            "texts": {
+              "text": {
+                "nn": "Det skjer etter kvart",
+                "en": "It happens eventually"
+              }
+            }
+          },
+          {
+            "id": "vk",
+            "texts": {
+              "text": {
+                "nn": "Veit ikkje",
+                "en": "Not sure"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "B10",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Kan dei tilsette bruke jobb-e-post og Teams på private mobilar?",
+            "en": "Can employees use work email and Teams on their private phones?"
+          }
+        },
+        "options": [
+          {
+            "id": "reglar",
+            "texts": {
+              "text": {
+                "nn": "Ja, og vi har reglar for det",
+                "en": "Yes, and we have rules for it"
+              }
+            }
+          },
+          {
+            "id": "utan",
+            "texts": {
+              "text": {
+                "nn": "Ja, men utan særlege reglar",
+                "en": "Yes, but without any real rules"
+              }
+            }
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            }
+          },
+          {
+            "id": "ikkje",
+            "texts": {
+              "text": {
+                "nn": "Det har vi ikkje tenkt på",
+                "en": "We haven't thought about it"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "B11",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Omtrent kor mange innloggingar deler fleire av dykk?",
+            "en": "Roughly how many logins are shared by several of you?"
+          },
+          "help": {
+            "nn": "Til dømes leverandørportalar, sosiale medium eller kundekontoar.",
+            "en": "For example supplier portals, social media or customer accounts."
+          }
+        },
+        "options": [
+          {
+            "id": "ingen",
+            "texts": {
+              "text": {
+                "nn": "Ingen",
+                "en": "None"
+              }
+            }
+          },
+          {
+            "id": "1-10",
+            "texts": {
+              "text": {
+                "nn": "1–10",
+                "en": "1–10"
+              }
+            }
+          },
+          {
+            "id": "11-50",
+            "texts": {
+              "text": {
+                "nn": "11–50",
+                "en": "11–50"
+              }
+            }
+          },
+          {
+            "id": "o50",
+            "texts": {
+              "text": {
+                "nn": "Fleire enn 50",
+                "en": "More than 50"
+              }
+            }
+          },
+          {
+            "id": "vk",
+            "texts": {
+              "text": {
+                "nn": "Veit ikkje",
+                "en": "Not sure"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "B12",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Har de nokon gong prøvd å hente tilbake data frå backup, berre for å sjå at det verkar?",
+            "en": "Have you ever tried restoring data from backup, just to check that it works?"
+          }
+        },
+        "options": [
+          {
+            "id": "siste",
+            "texts": {
+              "text": {
+                "nn": "Ja, det siste året",
+                "en": "Yes, in the last year"
+              }
+            }
+          },
+          {
+            "id": "lenge",
+            "texts": {
+              "text": {
+                "nn": "Ja, men det er lenge sidan",
+                "en": "Yes, but it was a long time ago"
+              }
+            }
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            }
+          },
+          {
+            "id": "vk",
+            "texts": {
+              "text": {
+                "nn": "Veit ikkje",
+                "en": "Not sure"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "B13",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Om de blir ramma av eit dataangrep i morgon: veit de kven som gjer kva dei første timane?",
+            "en": "If you were hit by a cyberattack tomorrow, do you know who does what in the first hours?"
+          }
+        },
+        "options": [
+          {
+            "id": "skrive",
+            "texts": {
+              "text": {
+                "nn": "Ja, det står skrive ned",
+                "en": "Yes, it's written down"
+              }
+            }
+          },
+          {
+            "id": "ide",
+            "texts": {
+              "text": {
+                "nn": "Vi har ein idé, men ingenting skrive ned",
+                "en": "We have an idea, but nothing written down"
+              }
+            }
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            }
+          },
+          {
+            "id": "vardahei",
+            "texts": {
+              "text": {
+                "nn": "Vi reknar med at Vardahei tek det",
+                "en": "We assume Vardahei handles it"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "B18",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Ein leverandør skriv i ein e-post at dei har fått nytt kontonummer. Kva gjer de før de betaler?",
+            "en": "A supplier emails to say they have a new bank account number. What do you do before paying?"
+          },
+          "help": {
+            "nn": "Kryss av det de faktisk gjer i dag.",
+            "en": "Tick what you actually do today."
+          }
+        },
+        "options": [
+          {
+            "id": "ring",
+            "texts": {
+              "text": {
+                "nn": "Ringjer leverandøren på eit nummer vi har frå før",
+                "en": "Call the supplier on a number we already have"
+              }
+            }
+          },
+          {
+            "id": "svar",
+            "texts": {
+              "text": {
+                "nn": "Svarar på e-posten og ber om stadfesting",
+                "en": "Reply to the email and ask for confirmation"
+              }
+            }
+          },
+          {
+            "id": "to",
+            "texts": {
+              "text": {
+                "nn": "To personar godkjenner betalinga",
+                "en": "Two people approve the payment"
+              }
+            }
+          },
+          {
+            "id": "endrar",
+            "texts": {
+              "text": {
+                "nn": "Endrar kontonummeret og betaler",
+                "en": "Update the account number and pay"
+              }
+            }
+          },
+          {
+            "id": "rekneskap",
+            "texts": {
+              "text": {
+                "nn": "Rekneskapsføraren tek seg av det, og vi veit ikkje korleis",
+                "en": "Our accountant handles it, and we don't know how"
+              }
+            }
+          },
+          {
+            "id": "vk",
+            "texts": {
+              "text": {
+                "nn": "Veit ikkje",
+                "en": "Not sure"
+              }
+            }
+          }
+        ],
+        "exclusive_options": [
+          "vk"
+        ],
+        "type": "multi"
+      },
+      {
+        "id": "B14",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Kor godt kjenner du til kva Vardahei gjer for dykk i dag?",
+            "en": "How well do you know what Vardahei does for you today?"
+          },
+          "help": {
+            "nn": "Til dømes overvaking, oppdateringar og backup.",
+            "en": "For example monitoring, updates and backup."
+          }
+        },
+        "type": "scale",
+        "rows": [
+          {
+            "id": "kjenner",
+            "texts": {
+              "text": {
+                "nn": "",
+                "en": ""
+              }
+            }
+          }
+        ],
+        "scale": {
+          "min": 1,
+          "max": 5,
+          "low": {
+            "nn": "Lite",
+            "en": "Not much"
+          },
+          "high": {
+            "nn": "Godt",
+            "en": "Well"
+          }
+        }
+      },
+      {
+        "id": "B15",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Kva vil de ha meir av frå oss?",
+            "en": "What would you like more of from us?"
+          },
+          "help": {
+            "nn": "Kryss av alt som passar.",
+            "en": "Tick everything that applies."
+          }
+        },
+        "options": [
+          {
+            "id": "mote",
+            "texts": {
+              "text": {
+                "nn": "Faste statusmøte",
+                "en": "Regular status meetings"
+              }
+            }
+          },
+          {
+            "id": "rapport",
+            "texts": {
+              "text": {
+                "nn": "Ein kort rapport kvar månad eller kvartal",
+                "en": "A short monthly or quarterly report"
+              }
+            }
+          },
+          {
+            "id": "opplaering",
+            "texts": {
+              "text": {
+                "nn": "Opplæring for dei tilsette",
+                "en": "Training for staff"
+              }
+            }
+          },
+          {
+            "id": "rad",
+            "texts": {
+              "text": {
+                "nn": "Råd om nye løysingar, til dømes KI og automatisering",
+                "en": "Advice on new solutions, like AI and automation"
+              }
+            }
+          },
+          {
+            "id": "raskare",
+            "texts": {
+              "text": {
+                "nn": "Raskare svar når vi tek kontakt",
+                "en": "Faster replies when we get in touch"
+              }
+            }
+          },
+          {
+            "id": "avtale",
+            "texts": {
+              "text": {
+                "nn": "Klarare avtalar og prisar",
+                "en": "Clearer agreements and prices"
+              }
+            }
+          },
+          {
+            "id": "fungerer",
+            "texts": {
+              "text": {
+                "nn": "Ingenting, det fungerer bra",
+                "en": "Nothing, it works well"
+              }
+            }
+          }
+        ],
+        "exclusive_options": [
+          "fungerer"
+        ],
+        "type": "multi"
+      },
+      {
+        "id": "B16",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Kor sannsynleg er det at du vil tilrå Vardahei til ei anna bedrift?",
+            "en": "How likely are you to recommend Vardahei to another business?"
+          }
+        },
+        "type": "nps",
+        "scale": {
+          "min": 0,
+          "max": 10,
+          "low": {
+            "nn": "Lite sannsynleg",
+            "en": "Not likely"
+          },
+          "high": {
+            "nn": "Svært sannsynleg",
+            "en": "Very likely"
+          }
+        },
+        "free_text": {
+          "texts": {
+            "text": {
+              "nn": "Kva er grunnen? (valfritt)",
+              "en": "What's the reason? (optional)"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

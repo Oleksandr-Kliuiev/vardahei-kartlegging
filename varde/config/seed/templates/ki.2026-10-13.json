@@ -1,0 +1,2740 @@
+{
+  "label": "2026-10-13",
+  "origin": "kartlegging",
+  "source_versjon": "2026-10-13",
+  "content": {
+    "key": "ki",
+    "audience": "client_survey",
+    "identification": "initials",
+    "required_languages": [
+      "nn",
+      "en"
+    ],
+    "leader_roles": [
+      "leiar",
+      "it"
+    ],
+    "intro": {
+      "title": {
+        "nn": "Arbeidsdagen og KI",
+        "en": "Your working day and AI"
+      },
+      "short": {
+        "nn": "Arbeidsdag og KI",
+        "en": "Work and AI"
+      },
+      "minutes": 7,
+      "letter": [
+        {
+          "nn": "Vi vil gjerne forstå korleis arbeidsdagen din ser ut: kva som tek tid, kva som går av seg sjølv, og korleis du brukar KI i dag. Om du brukar det i det heile.",
+          "en": "We'd like to understand what your working day looks like: what takes time, what runs smoothly, and how you use AI today. If you use it at all."
+        },
+        {
+          "nn": "Svara hjelper oss å finne ut kvar KI faktisk kan gjere jobben lettare hos dykk, og kvar det ikkje gir meining.",
+          "en": "Your answers help us find where AI can actually make work easier at your company, and where it makes no sense."
+        }
+      ],
+      "sender": {
+        "nn": "Asbjørn og resten av gjengen i Vardahei IT",
+        "en": "Asbjørn and the rest of the team at Vardahei IT"
+      },
+      "facts": [
+        {
+          "nn": "Du skriv inn initialane dine først, slik at vi kan sjå endringa til neste runde. Svara per person ser berre Vardahei IT. Bedrifta får eit samla bilete utan initialar.",
+          "en": "You enter your initials first, so we can see the change by the next round. Only Vardahei IT sees answers per person. Your company gets an overall picture without initials."
+        },
+        {
+          "nn": "Ingen feil svar. Har du aldri brukt KI, er det like nyttig å vite.",
+          "en": "No wrong answers. If you've never used AI, that's just as useful to know."
+        },
+        {
+          "nn": "Til slutt får du nokre KI-tips som passar for deg.",
+          "en": "At the end you get a few AI tips that suit you."
+        }
+      ],
+      "contact": {
+        "name": "Vardahei IT",
+        "phone": "+47 930 94 567",
+        "email": "post@vardahei.no",
+        "hours": {
+          "nn": "Måndag til fredag 08–16",
+          "en": "Monday to Friday 08–16"
+        }
+      }
+    },
+    "leader_intro": {
+      "title": {
+        "nn": "Nokre spørsmål til deg som leiar",
+        "en": "A few questions for you as a manager"
+      },
+      "text": {
+        "nn": "Sidan du har ansvar i bedrifta, har vi nokre spørsmål om korleis jobben flyt hos dykk. Dei tek om lag 6 minutt.",
+        "en": "Since you have responsibility in the company, we have a few questions about how work flows at your company. They take about 6 minutes."
+      }
+    },
+    "tips": [
+      {
+        "id": "start",
+        "when": {
+          "or": [
+            {
+              "in": [
+                {
+                  "var": "K9"
+                },
+                [
+                  "n0",
+                  "n1"
+                ]
+              ]
+            },
+            {
+              "in": [
+                {
+                  "var": "K7"
+                },
+                [
+                  "aldri",
+                  "provd"
+                ]
+              ]
+            }
+          ]
+        },
+        "title": {
+          "nn": "Ein enkel stad å starte",
+          "en": "An easy place to start"
+        },
+        "text": {
+          "nn": "Neste gong du skal skrive ein e-post du gruar deg til, be KI om eit utkast og rett det etterpå. Du bestemmer innhaldet, KI skriv første versjon. Det er heile trikset.",
+          "en": "Next time you need to write an email you're dreading, ask AI for a draft and edit it afterwards. You decide the content, AI writes the first version. That's the whole trick."
+        }
+      },
+      {
+        "id": "lov",
+        "when": {
+          "in": [
+            "lov",
+            {
+              "var": "K13"
+            }
+          ]
+        },
+        "title": {
+          "nn": "Usikker på kva som er lov?",
+          "en": "Not sure what's allowed?"
+        },
+        "text": {
+          "nn": "Spør leiaren din. Har bedrifta ingen reglar enno, hjelper vi gjerne med å lage nokre enkle, så alle veit kva som gjeld.",
+          "en": "Ask your manager. If the company has no rules yet, we're happy to help write a few simple ones so everyone knows where they stand."
+        }
+      },
+      {
+        "id": "data",
+        "when": {
+          "or": [
+            {
+              "in": [
+                "data",
+                {
+                  "var": "K13"
+                }
+              ]
+            },
+            {
+              "in": [
+                {
+                  "var": "K19"
+                },
+                [
+                  "privat",
+                  "begge"
+                ]
+              ]
+            },
+            {
+              "in": [
+                {
+                  "var": "K21"
+                },
+                [
+                  "lim",
+                  "vk"
+                ]
+              ]
+            }
+          ]
+        },
+        "title": {
+          "nn": "Kva du ikkje bør lime inn",
+          "en": "What not to paste in"
+        },
+        "text": {
+          "nn": "Personnummer, kundeopplysningar, passord og interne tal høyrer ikkje heime i KI-verktøy du brukar med privat konto. Bruk verktøy bedrifta har godkjent, og logg inn med jobbkontoen. Då er det avtalane til bedrifta som gjeld. Er du usikker på om eit dokument kan delast, spør først.",
+          "en": "National ID numbers, customer details, passwords and internal figures don't belong in AI tools you use with a private account. Use tools your company has approved, signed in with your work account. Then your company's agreements apply. If you're not sure a document can be shared, ask first."
+        }
+      },
+      {
+        "id": "stolar",
+        "when": {
+          "or": [
+            {
+              "in": [
+                "stolar",
+                {
+                  "var": "K13"
+                }
+              ]
+            },
+            {
+              "<=": [
+                {
+                  "var": "K12.vurdere"
+                },
+                2
+              ]
+            }
+          ]
+        },
+        "title": {
+          "nn": "KI kan ta feil, og seier det sjeldan sjølv",
+          "en": "AI can be wrong, and rarely says so"
+        },
+        "text": {
+          "nn": "Bruk det til utkast, idear og samandrag. Sjekk alltid tal, namn og fakta før du sender noko vidare. Spør gjerne: «Kvar har du dette frå?»",
+          "en": "Use it for drafts, ideas and summaries. Always check numbers, names and facts before passing anything on. It helps to ask: “Where did you get this from?”"
+        },
+        "reserve": true
+      },
+      {
+        "id": "kva",
+        "when": {
+          "or": [
+            {
+              "in": [
+                "kva",
+                {
+                  "var": "K13"
+                }
+              ]
+            },
+            {
+              "in": [
+                "passar",
+                {
+                  "var": "K13"
+                }
+              ]
+            }
+          ]
+        },
+        "title": {
+          "nn": "Tre ting KI er god på i kvardagen",
+          "en": "Three everyday things AI is good at"
+        },
+        "text": {
+          "nn": "Lage samandrag av lange dokument. Skrive om ein tekst slik at han blir kortare eller enklare. Omsetje. Prøv éin av dei denne veka, med ei ekte oppgåve frå jobben.",
+          "en": "Summarising long documents. Rewriting a text to make it shorter or simpler. Translating. Try one of these this week, with a real task from work."
+        }
+      },
+      {
+        "id": "tid",
+        "when": {
+          "or": [
+            {
+              "in": [
+                "tid",
+                {
+                  "var": "K13"
+                }
+              ]
+            },
+            {
+              "<=": [
+                {
+                  "var": "K12.sporje"
+                },
+                2
+              ]
+            }
+          ]
+        },
+        "title": {
+          "nn": "Fem minutt er nok",
+          "en": "Five minutes is enough"
+        },
+        "text": {
+          "nn": "Du treng ikkje kurs for å starte. Fortel KI kven du er, kva du skal ha, og kven det er til. «Eg jobbar på eit hotell. Skriv eit kort, venleg svar til ein gjest som klagar på støy.» Jo meir du fortel, jo betre svar.",
+          "en": "You don't need a course to start. Tell the AI who you are, what you need and who it's for. “I work at a hotel. Write a short, friendly reply to a guest complaining about noise.” The more you tell it, the better the answer."
+        }
+      },
+      {
+        "id": "framme",
+        "when": {
+          "and": [
+            {
+              "in": [
+                {
+                  "var": "K9"
+                },
+                [
+                  "n3",
+                  "n4"
+                ]
+              ]
+            },
+            {
+              "==": [
+                {
+                  "var": "K21"
+                },
+                "jobb"
+              ]
+            },
+            {
+              "!": [
+                {
+                  "<=": [
+                    {
+                      "var": "K12.vurdere"
+                    },
+                    2
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "title": {
+          "nn": "Du er langt framme",
+          "en": "You're well ahead"
+        },
+        "text": {
+          "nn": "Kanskje du kan vise ein kollega korleis du brukar det? Fem minutt ved pulten er ofte betre opplæring enn eit heilt kurs.",
+          "en": "Maybe you could show a colleague how you use it? Five minutes at the desk is often better training than a whole course."
+        }
+      },
+      {
+        "id": "oppgave",
+        "when": {
+          "or": [
+            {
+              "!=": [
+                {
+                  "var": "K15"
+                },
+                ""
+              ]
+            },
+            {
+              "some": [
+                {
+                  "var": "K3"
+                },
+                {
+                  "!=": [
+                    {
+                      "var": ""
+                    },
+                    "ingen"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "title": {
+          "nn": "Oppgåvene du nemnde, ser vi på",
+          "en": "We'll look at the tasks you mentioned"
+        },
+        "text": {
+          "nn": "Mykje av det som kjennest som rutine, kan gå raskare eller av seg sjølv. Vi samlar svara frå alle hos dykk og kjem tilbake med konkrete forslag.",
+          "en": "A lot of what feels like routine can go faster or run by itself. We'll gather everyone's answers at your company and come back with concrete suggestions."
+        },
+        "closing": true
+      }
+    ],
+    "max_tips": 4,
+    "questions": [
+      {
+        "id": "K0",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Skriv inn initialane dine: 2 første og 3 siste. Eksempel: Ola Nordman = OLNOR",
+            "en": "Enter your initials: first 2 and last 3 letters. Example: Ola Nordman = OLNOR"
+          },
+          "help": {
+            "nn": "Initialane gjer at vi kan sjå svara per tilsett og samanlikne med neste runde. Svara per person ser berre Vardahei IT.",
+            "en": "Your initials let us see answers per employee and compare with the next round. Only Vardahei IT sees answers per person."
+          },
+          "section_title": {
+            "nn": "Identifikasjon",
+            "en": "Identification"
+          },
+          "placeholder": {
+            "nn": "OLNOR",
+            "en": "OLNOR"
+          }
+        },
+        "required": true,
+        "identifier": true,
+        "type": "text",
+        "single_line": true,
+        "uppercase": true,
+        "max_length": 8
+      },
+      {
+        "id": "K1",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Kva rolle har du i bedrifta?",
+            "en": "What is your role at work?"
+          }
+        },
+        "role": true,
+        "anchor_key": "K1",
+        "options": [
+          {
+            "id": "leiar",
+            "texts": {
+              "text": {
+                "nn": "Leiar",
+                "en": "Manager"
+              }
+            }
+          },
+          {
+            "id": "kontor",
+            "texts": {
+              "text": {
+                "nn": "Administrasjon/kontor",
+                "en": "Administration/office"
+              }
+            }
+          },
+          {
+            "id": "prod",
+            "texts": {
+              "text": {
+                "nn": "Produksjon/drift",
+                "en": "Production/operations"
+              }
+            }
+          },
+          {
+            "id": "sal",
+            "texts": {
+              "text": {
+                "nn": "Sal / Kundeservice",
+                "en": "Sales / customer service"
+              }
+            }
+          },
+          {
+            "id": "it",
+            "texts": {
+              "text": {
+                "nn": "IT / superbrukar",
+                "en": "IT / super user"
+              }
+            }
+          },
+          {
+            "id": "anna",
+            "texts": {
+              "text": {
+                "nn": "Anna",
+                "en": "Other"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "K2",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Kva går mesteparten av arbeidsdagen din til?",
+            "en": "What does most of your working day go to?"
+          },
+          "help": {
+            "nn": "Vel inntil tre.",
+            "en": "Choose up to three."
+          }
+        },
+        "options": [
+          {
+            "id": "kundar",
+            "texts": {
+              "text": {
+                "nn": "Kundar, telefon og e-post",
+                "en": "Customers, phone and email"
+              }
+            }
+          },
+          {
+            "id": "tekst",
+            "texts": {
+              "text": {
+                "nn": "Skrive tilbod, rapportar eller andre tekstar",
+                "en": "Writing quotes, reports or other texts"
+              }
+            }
+          },
+          {
+            "id": "tal",
+            "texts": {
+              "text": {
+                "nn": "Tal, rekneskap og fakturaer",
+                "en": "Numbers, accounts and invoices"
+              }
+            }
+          },
+          {
+            "id": "planlegging",
+            "texts": {
+              "text": {
+                "nn": "Planlegging, vakter og bemanning",
+                "en": "Planning, shifts and staffing"
+              }
+            }
+          },
+          {
+            "id": "registrering",
+            "texts": {
+              "text": {
+                "nn": "Registrere informasjon i system",
+                "en": "Entering information into systems"
+              }
+            }
+          },
+          {
+            "id": "mote",
+            "texts": {
+              "text": {
+                "nn": "Møte og samordning",
+                "en": "Meetings and coordination"
+              }
+            }
+          },
+          {
+            "id": "praktisk",
+            "texts": {
+              "text": {
+                "nn": "Praktisk arbeid: produksjon, verkstad, service eller reinhald",
+                "en": "Hands-on work: production, workshop, service or cleaning"
+              }
+            }
+          },
+          {
+            "id": "undervisning",
+            "texts": {
+              "text": {
+                "nn": "Undervisning eller oppfølging av elevar og deltakarar",
+                "en": "Teaching or following up students"
+              }
+            }
+          },
+          {
+            "id": "anna",
+            "texts": {
+              "text": {
+                "nn": "Anna",
+                "en": "Something else"
+              }
+            }
+          }
+        ],
+        "type": "multi",
+        "max_choices": 3
+      },
+      {
+        "id": "K3",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Kva oppgåver tek tid, men kjennest som rutine?",
+            "en": "Which tasks take time but feel like routine?"
+          },
+          "help": {
+            "nn": "Kryss av alt som passar.",
+            "en": "Tick everything that applies."
+          }
+        },
+        "options": [
+          {
+            "id": "epost",
+            "texts": {
+              "text": {
+                "nn": "Svare på dei same spørsmåla og e-postane om att og om att",
+                "en": "Answering the same questions and emails again and again"
+              }
+            }
+          },
+          {
+            "id": "referat",
+            "texts": {
+              "text": {
+                "nn": "Skrive referat, notat eller rapportar",
+                "en": "Writing minutes, notes or reports"
+              }
+            }
+          },
+          {
+            "id": "tilbod",
+            "texts": {
+              "text": {
+                "nn": "Lage tilbod eller ordrar",
+                "en": "Making quotes or orders"
+              }
+            }
+          },
+          {
+            "id": "kopiere",
+            "texts": {
+              "text": {
+                "nn": "Kopiere informasjon frå eitt system til eit anna",
+                "en": "Copying information from one system to another"
+              }
+            }
+          },
+          {
+            "id": "leite",
+            "texts": {
+              "text": {
+                "nn": "Leite etter dokument eller informasjon",
+                "en": "Looking for documents or information"
+              }
+            }
+          },
+          {
+            "id": "faktura",
+            "texts": {
+              "text": {
+                "nn": "Fakturering, bilag og purringar",
+                "en": "Invoicing, receipts and reminders"
+              }
+            }
+          },
+          {
+            "id": "plan",
+            "texts": {
+              "text": {
+                "nn": "Setje opp vakter, ruter eller timeplanar",
+                "en": "Setting up shifts, routes or schedules"
+              }
+            }
+          },
+          {
+            "id": "omsetje",
+            "texts": {
+              "text": {
+                "nn": "Omsetje tekst",
+                "en": "Translating text"
+              }
+            }
+          },
+          {
+            "id": "timar",
+            "texts": {
+              "text": {
+                "nn": "Føre timar eller timelister",
+                "en": "Logging hours or timesheets"
+              }
+            },
+            "visible_if": {
+              "or": [
+                {
+                  "==": [
+                    {
+                      "var": "K1"
+                    },
+                    "prod"
+                  ]
+                },
+                {
+                  "in": [
+                    "praktisk",
+                    {
+                      "var": "K2"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "sjekkliste",
+            "texts": {
+              "text": {
+                "nn": "Fylle ut sjekklister og skjema, til dømes HMS",
+                "en": "Filling in checklists and forms, like HSE"
+              }
+            },
+            "visible_if": {
+              "or": [
+                {
+                  "==": [
+                    {
+                      "var": "K1"
+                    },
+                    "prod"
+                  ]
+                },
+                {
+                  "in": [
+                    "praktisk",
+                    {
+                      "var": "K2"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "dokumentere",
+            "texts": {
+              "text": {
+                "nn": "Dokumentere utført arbeid med tekst eller bilete",
+                "en": "Documenting finished work with text or photos"
+              }
+            },
+            "visible_if": {
+              "or": [
+                {
+                  "==": [
+                    {
+                      "var": "K1"
+                    },
+                    "prod"
+                  ]
+                },
+                {
+                  "in": [
+                    "praktisk",
+                    {
+                      "var": "K2"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "delar",
+            "texts": {
+              "text": {
+                "nn": "Bestille delar eller varer",
+                "en": "Ordering parts or supplies"
+              }
+            },
+            "visible_if": {
+              "or": [
+                {
+                  "==": [
+                    {
+                      "var": "K1"
+                    },
+                    "prod"
+                  ]
+                },
+                {
+                  "in": [
+                    "praktisk",
+                    {
+                      "var": "K2"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "ingen",
+            "texts": {
+              "text": {
+                "nn": "Eg har lite slikt arbeid",
+                "en": "I don't have much of that"
+              }
+            }
+          }
+        ],
+        "exclusive_options": [
+          "ingen"
+        ],
+        "free_text": {
+          "texts": {
+            "text": {
+              "nn": "Beskriv gjerne éi slik oppgåve: kva gjer du, og kor ofte? (valfritt)",
+              "en": "Feel free to describe one such task: what do you do, and how often? (optional)"
+            }
+          }
+        },
+        "type": "multi"
+      },
+      {
+        "id": "K16",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Kva for ei av desse tek mest tid?",
+            "en": "Which of these takes the most time?"
+          }
+        },
+        "visible_if": {
+          ">=": [
+            {
+              "count": [
+                {
+                  "var": "K3"
+                },
+                {
+                  "!=": [
+                    {
+                      "var": ""
+                    },
+                    "ingen"
+                  ]
+                }
+              ]
+            },
+            2
+          ]
+        },
+        "options": [
+          {
+            "id": "epost",
+            "texts": {
+              "text": {
+                "nn": "Svare på dei same spørsmåla og e-postane om att og om att",
+                "en": "Answering the same questions and emails again and again"
+              }
+            }
+          },
+          {
+            "id": "referat",
+            "texts": {
+              "text": {
+                "nn": "Skrive referat, notat eller rapportar",
+                "en": "Writing minutes, notes or reports"
+              }
+            }
+          },
+          {
+            "id": "tilbod",
+            "texts": {
+              "text": {
+                "nn": "Lage tilbod eller ordrar",
+                "en": "Making quotes or orders"
+              }
+            }
+          },
+          {
+            "id": "kopiere",
+            "texts": {
+              "text": {
+                "nn": "Kopiere informasjon frå eitt system til eit anna",
+                "en": "Copying information from one system to another"
+              }
+            }
+          },
+          {
+            "id": "leite",
+            "texts": {
+              "text": {
+                "nn": "Leite etter dokument eller informasjon",
+                "en": "Looking for documents or information"
+              }
+            }
+          },
+          {
+            "id": "faktura",
+            "texts": {
+              "text": {
+                "nn": "Fakturering, bilag og purringar",
+                "en": "Invoicing, receipts and reminders"
+              }
+            }
+          },
+          {
+            "id": "plan",
+            "texts": {
+              "text": {
+                "nn": "Setje opp vakter, ruter eller timeplanar",
+                "en": "Setting up shifts, routes or schedules"
+              }
+            }
+          },
+          {
+            "id": "omsetje",
+            "texts": {
+              "text": {
+                "nn": "Omsetje tekst",
+                "en": "Translating text"
+              }
+            }
+          },
+          {
+            "id": "timar",
+            "texts": {
+              "text": {
+                "nn": "Føre timar eller timelister",
+                "en": "Logging hours or timesheets"
+              }
+            },
+            "visible_if": {
+              "or": [
+                {
+                  "==": [
+                    {
+                      "var": "K1"
+                    },
+                    "prod"
+                  ]
+                },
+                {
+                  "in": [
+                    "praktisk",
+                    {
+                      "var": "K2"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "sjekkliste",
+            "texts": {
+              "text": {
+                "nn": "Fylle ut sjekklister og skjema, til dømes HMS",
+                "en": "Filling in checklists and forms, like HSE"
+              }
+            },
+            "visible_if": {
+              "or": [
+                {
+                  "==": [
+                    {
+                      "var": "K1"
+                    },
+                    "prod"
+                  ]
+                },
+                {
+                  "in": [
+                    "praktisk",
+                    {
+                      "var": "K2"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "dokumentere",
+            "texts": {
+              "text": {
+                "nn": "Dokumentere utført arbeid med tekst eller bilete",
+                "en": "Documenting finished work with text or photos"
+              }
+            },
+            "visible_if": {
+              "or": [
+                {
+                  "==": [
+                    {
+                      "var": "K1"
+                    },
+                    "prod"
+                  ]
+                },
+                {
+                  "in": [
+                    "praktisk",
+                    {
+                      "var": "K2"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "delar",
+            "texts": {
+              "text": {
+                "nn": "Bestille delar eller varer",
+                "en": "Ordering parts or supplies"
+              }
+            },
+            "visible_if": {
+              "or": [
+                {
+                  "==": [
+                    {
+                      "var": "K1"
+                    },
+                    "prod"
+                  ]
+                },
+                {
+                  "in": [
+                    "praktisk",
+                    {
+                      "var": "K2"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "choices_from": "K3",
+        "type": "single"
+      },
+      {
+        "id": "K17",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Tenk på rutineoppgåva som tek mest tid. Kor ofte gjer du ho?",
+            "en": "Think of the routine task that takes the most time. How often do you do it?"
+          }
+        },
+        "visible_if": {
+          ">=": [
+            {
+              "count": [
+                {
+                  "var": "K3"
+                },
+                {
+                  "!=": [
+                    {
+                      "var": ""
+                    },
+                    "ingen"
+                  ]
+                }
+              ]
+            },
+            1
+          ]
+        },
+        "options": [
+          {
+            "id": "fleiredag",
+            "texts": {
+              "text": {
+                "nn": "Fleire gonger om dagen",
+                "en": "Several times a day"
+              }
+            }
+          },
+          {
+            "id": "dag",
+            "texts": {
+              "text": {
+                "nn": "Omtrent kvar dag",
+                "en": "About once a day"
+              }
+            }
+          },
+          {
+            "id": "veke",
+            "texts": {
+              "text": {
+                "nn": "Nokre gonger i veka",
+                "en": "A few times a week"
+              }
+            }
+          },
+          {
+            "id": "sjeldnare",
+            "texts": {
+              "text": {
+                "nn": "Sjeldnare",
+                "en": "Less often"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "K18",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Og kor lang tid tek ho kvar gong?",
+            "en": "And how long does it take each time?"
+          }
+        },
+        "visible_if": {
+          ">=": [
+            {
+              "count": [
+                {
+                  "var": "K3"
+                },
+                {
+                  "!=": [
+                    {
+                      "var": ""
+                    },
+                    "ingen"
+                  ]
+                }
+              ]
+            },
+            1
+          ]
+        },
+        "options": [
+          {
+            "id": "u5",
+            "texts": {
+              "text": {
+                "nn": "Under 5 minutt",
+                "en": "Less than 5 minutes"
+              }
+            }
+          },
+          {
+            "id": "5-15",
+            "texts": {
+              "text": {
+                "nn": "5–15 minutt",
+                "en": "5–15 minutes"
+              }
+            }
+          },
+          {
+            "id": "15-30",
+            "texts": {
+              "text": {
+                "nn": "15–30 minutt",
+                "en": "15–30 minutes"
+              }
+            }
+          },
+          {
+            "id": "30-60",
+            "texts": {
+              "text": {
+                "nn": "30–60 minutt",
+                "en": "30–60 minutes"
+              }
+            }
+          },
+          {
+            "id": "o60",
+            "texts": {
+              "text": {
+                "nn": "Meir enn ein time",
+                "en": "More than an hour"
+              }
+            }
+          },
+          {
+            "id": "vk",
+            "texts": {
+              "text": {
+                "nn": "Veit ikkje",
+                "en": "Not sure"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "K4",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Omtrent kor mykje tid i veka går til slike rutineoppgåver?",
+            "en": "Roughly how much time a week goes to routine tasks like these?"
+          }
+        },
+        "visible_if": {
+          "!": [
+            {
+              "and": [
+                {
+                  "==": [
+                    {
+                      "count": [
+                        {
+                          "var": "K3"
+                        }
+                      ]
+                    },
+                    1
+                  ]
+                },
+                {
+                  "in": [
+                    "ingen",
+                    {
+                      "var": "K3"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "options": [
+          {
+            "id": "u1",
+            "texts": {
+              "text": {
+                "nn": "Under ein time",
+                "en": "Less than an hour"
+              }
+            }
+          },
+          {
+            "id": "1-3",
+            "texts": {
+              "text": {
+                "nn": "1–3 timar",
+                "en": "1–3 hours"
+              }
+            }
+          },
+          {
+            "id": "3-5",
+            "texts": {
+              "text": {
+                "nn": "3–5 timar",
+                "en": "3–5 hours"
+              }
+            }
+          },
+          {
+            "id": "5-10",
+            "texts": {
+              "text": {
+                "nn": "5–10 timar",
+                "en": "5–10 hours"
+              }
+            }
+          },
+          {
+            "id": "o10",
+            "texts": {
+              "text": {
+                "nn": "Meir enn 10 timar",
+                "en": "More than 10 hours"
+              }
+            }
+          },
+          {
+            "id": "vk",
+            "texts": {
+              "text": {
+                "nn": "Veit ikkje",
+                "en": "Not sure"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "K5",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Kva program og nettstader brukar du kvar veke i jobben?",
+            "en": "Which programs and websites do you use every week at work?"
+          },
+          "help": {
+            "nn": "Kryss av alt som passar.",
+            "en": "Tick everything that applies."
+          }
+        },
+        "options": [
+          {
+            "id": "m365",
+            "texts": {
+              "text": {
+                "nn": "E-post, Teams og Office",
+                "en": "Email, Teams and Office"
+              }
+            }
+          },
+          {
+            "id": "okonomi",
+            "texts": {
+              "text": {
+                "nn": "PowerOffice eller anna økonomisystem",
+                "en": "PowerOffice or another accounting system"
+              }
+            }
+          },
+          {
+            "id": "crm",
+            "texts": {
+              "text": {
+                "nn": "Kunde- eller bookingsystem",
+                "en": "Customer or booking system"
+              }
+            }
+          },
+          {
+            "id": "bransje",
+            "texts": {
+              "text": {
+                "nn": "Bransjesystem eller fagprogram",
+                "en": "Industry-specific systems"
+              }
+            }
+          },
+          {
+            "id": "rekneark",
+            "texts": {
+              "text": {
+                "nn": "Rekneark som vi har laga sjølve",
+                "en": "Spreadsheets we made ourselves"
+              }
+            }
+          },
+          {
+            "id": "some",
+            "texts": {
+              "text": {
+                "nn": "Sosiale medium for bedrifta",
+                "en": "Social media for the company"
+              }
+            }
+          },
+          {
+            "id": "portal",
+            "texts": {
+              "text": {
+                "nn": "Nettsider hos leverandørar eller kundar",
+                "en": "Supplier or customer portals"
+              }
+            }
+          },
+          {
+            "id": "anna",
+            "texts": {
+              "text": {
+                "nn": "Anna",
+                "en": "Other"
+              }
+            }
+          }
+        ],
+        "free_text": {
+          "texts": {
+            "text": {
+              "nn": "Skriv gjerne namnet på systema (valfritt)",
+              "en": "Feel free to name the systems (optional)"
+            }
+          }
+        },
+        "type": "multi"
+      },
+      {
+        "id": "K6",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Kor ofte leitar du etter informasjon som du veit finst ein stad hos dykk?",
+            "en": "How often do you search for information you know exists somewhere at your workplace?"
+          },
+          "help": {
+            "nn": "Til dømes ein gamal e-post, eit dokument, ein pris eller korleis noko vart gjort sist.",
+            "en": "For example an old email, a document, a price, or how something was done last time."
+          }
+        },
+        "options": [
+          {
+            "id": "fleiredag",
+            "texts": {
+              "text": {
+                "nn": "Fleire gonger om dagen",
+                "en": "Several times a day"
+              }
+            }
+          },
+          {
+            "id": "dag",
+            "texts": {
+              "text": {
+                "nn": "Omtrent kvar dag",
+                "en": "About once a day"
+              }
+            }
+          },
+          {
+            "id": "veke",
+            "texts": {
+              "text": {
+                "nn": "Nokre gonger i veka",
+                "en": "A few times a week"
+              }
+            }
+          },
+          {
+            "id": "sjeldan",
+            "texts": {
+              "text": {
+                "nn": "Sjeldan",
+                "en": "Rarely"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "K20",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Kvar leitar du oftast?",
+            "en": "Where do you usually look?"
+          },
+          "help": {
+            "nn": "Vel inntil to.",
+            "en": "Choose up to two."
+          }
+        },
+        "visible_if": {
+          "!=": [
+            {
+              "var": "K6"
+            },
+            "sjeldan"
+          ]
+        },
+        "options": [
+          {
+            "id": "epost",
+            "texts": {
+              "text": {
+                "nn": "I e-posten",
+                "en": "In my email"
+              }
+            }
+          },
+          {
+            "id": "filer",
+            "texts": {
+              "text": {
+                "nn": "I mapper på PC-en, i OneDrive eller i Teams",
+                "en": "In folders on my computer, in OneDrive or in Teams"
+              }
+            }
+          },
+          {
+            "id": "system",
+            "texts": {
+              "text": {
+                "nn": "I fagsystemet eller økonomisystemet",
+                "en": "In our core or accounting system"
+              }
+            }
+          },
+          {
+            "id": "kollega",
+            "texts": {
+              "text": {
+                "nn": "Eg spør ein kollega",
+                "en": "I ask a colleague"
+              }
+            }
+          },
+          {
+            "id": "papir",
+            "texts": {
+              "text": {
+                "nn": "I permar eller på papir",
+                "en": "In binders or on paper"
+              }
+            }
+          }
+        ],
+        "type": "multi",
+        "max_choices": 2
+      },
+      {
+        "id": "K7",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Kor ofte brukar du KI-verktøy, til dømes ChatGPT, Copilot, Gemini eller Claude, i jobben?",
+            "en": "How often do you use AI tools, such as ChatGPT, Copilot, Gemini or Claude, at work?"
+          },
+          "section_title": {
+            "nn": "Litt om KI",
+            "en": "A bit about AI"
+          }
+        },
+        "anchor_key": "K7",
+        "options": [
+          {
+            "id": "aldri",
+            "texts": {
+              "text": {
+                "nn": "Aldri",
+                "en": "Never"
+              }
+            }
+          },
+          {
+            "id": "provd",
+            "texts": {
+              "text": {
+                "nn": "Har prøvd ein gong eller to",
+                "en": "Tried it once or twice"
+              }
+            }
+          },
+          {
+            "id": "avogtil",
+            "texts": {
+              "text": {
+                "nn": "Av og til",
+                "en": "Now and then"
+              }
+            }
+          },
+          {
+            "id": "veke",
+            "texts": {
+              "text": {
+                "nn": "Kvar veke",
+                "en": "Every week"
+              }
+            }
+          },
+          {
+            "id": "dag",
+            "texts": {
+              "text": {
+                "nn": "Kvar dag",
+                "en": "Every day"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "K8",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Og privat, utanom jobben?",
+            "en": "And privately, outside work?"
+          }
+        },
+        "anchor_key": "K8",
+        "options": [
+          {
+            "id": "aldri",
+            "texts": {
+              "text": {
+                "nn": "Aldri",
+                "en": "Never"
+              }
+            }
+          },
+          {
+            "id": "provd",
+            "texts": {
+              "text": {
+                "nn": "Har prøvd ein gong eller to",
+                "en": "Tried it once or twice"
+              }
+            }
+          },
+          {
+            "id": "avogtil",
+            "texts": {
+              "text": {
+                "nn": "Av og til",
+                "en": "Now and then"
+              }
+            }
+          },
+          {
+            "id": "veke",
+            "texts": {
+              "text": {
+                "nn": "Kvar veke",
+                "en": "Every week"
+              }
+            }
+          },
+          {
+            "id": "dag",
+            "texts": {
+              "text": {
+                "nn": "Kvar dag",
+                "en": "Every day"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "K9",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Kva passar best på deg?",
+            "en": "Which fits you best?"
+          }
+        },
+        "anchor_key": "K9",
+        "options": [
+          {
+            "id": "n0",
+            "texts": {
+              "text": {
+                "nn": "Eg har ikkje brukt KI",
+                "en": "I haven't used AI"
+              }
+            }
+          },
+          {
+            "id": "n1",
+            "texts": {
+              "text": {
+                "nn": "Eg har prøvd, men veit ikkje heilt kva eg skal bruke det til",
+                "en": "I've tried it but don't quite know what to use it for"
+              }
+            }
+          },
+          {
+            "id": "n2",
+            "texts": {
+              "text": {
+                "nn": "Eg brukar det til enkle ting, som å skrive om ein tekst eller spørje om noko",
+                "en": "I use it for simple things, like rewriting a text or asking a question"
+              }
+            }
+          },
+          {
+            "id": "n3",
+            "texts": {
+              "text": {
+                "nn": "Eg brukar det fast og veit kva det er godt og dårleg til",
+                "en": "I use it regularly and know what it's good and bad at"
+              }
+            }
+          },
+          {
+            "id": "n4",
+            "texts": {
+              "text": {
+                "nn": "Eg har laga eigne oppsett, malar eller automatiseringar",
+                "en": "I've built my own setups, templates or automations"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "K11",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Kva har du brukt KI til?",
+            "en": "What have you used AI for?"
+          },
+          "help": {
+            "nn": "Både i jobben og privat. Kryss av alt som passar.",
+            "en": "At work and privately. Tick everything that applies."
+          }
+        },
+        "visible_if": {
+          "or": [
+            {
+              "!=": [
+                {
+                  "var": "K7"
+                },
+                "aldri"
+              ]
+            },
+            {
+              "!=": [
+                {
+                  "var": "K8"
+                },
+                "aldri"
+              ]
+            }
+          ]
+        },
+        "options": [
+          {
+            "id": "skrive",
+            "texts": {
+              "text": {
+                "nn": "Skrive eller forbetre tekst",
+                "en": "Writing or improving text"
+              }
+            }
+          },
+          {
+            "id": "epost",
+            "texts": {
+              "text": {
+                "nn": "Svare på e-post",
+                "en": "Answering email"
+              }
+            }
+          },
+          {
+            "id": "samandrag",
+            "texts": {
+              "text": {
+                "nn": "Samandrag av dokument eller møte",
+                "en": "Summarising documents or meetings"
+              }
+            }
+          },
+          {
+            "id": "omsetje",
+            "texts": {
+              "text": {
+                "nn": "Omsetje",
+                "en": "Translating"
+              }
+            }
+          },
+          {
+            "id": "idear",
+            "texts": {
+              "text": {
+                "nn": "Idear og planlegging",
+                "en": "Ideas and planning"
+              }
+            }
+          },
+          {
+            "id": "tal",
+            "texts": {
+              "text": {
+                "nn": "Rekneark, formlar og tal",
+                "en": "Spreadsheets, formulas and numbers"
+              }
+            }
+          },
+          {
+            "id": "sok",
+            "texts": {
+              "text": {
+                "nn": "Søkje etter informasjon",
+                "en": "Looking things up"
+              }
+            }
+          },
+          {
+            "id": "bilete",
+            "texts": {
+              "text": {
+                "nn": "Bilete eller presentasjonar",
+                "en": "Images or presentations"
+              }
+            }
+          },
+          {
+            "id": "laere",
+            "texts": {
+              "text": {
+                "nn": "Lære noko nytt",
+                "en": "Learning something new"
+              }
+            }
+          },
+          {
+            "id": "anna",
+            "texts": {
+              "text": {
+                "nn": "Anna",
+                "en": "Something else"
+              }
+            }
+          }
+        ],
+        "type": "multi"
+      },
+      {
+        "id": "K21",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Du skal svare ein kunde og vil ha hjelp av KI. Du har kontrakten deira open, og du har ein privat KI-konto på mobilen. Kva gjer du?",
+            "en": "You need to reply to a customer and want help from AI. You have their contract open, and you have a private AI account on your phone. What do you do?"
+          },
+          "section_title": {
+            "nn": "Ein liten situasjon",
+            "en": "A quick situation"
+          }
+        },
+        "options": [
+          {
+            "id": "lim",
+            "texts": {
+              "text": {
+                "nn": "Limer inn kontrakten. Det går fortast.",
+                "en": "Paste in the contract. It's quickest."
+              }
+            }
+          },
+          {
+            "id": "fjern",
+            "texts": {
+              "text": {
+                "nn": "Fjernar namn og tal først, og limer inn resten",
+                "en": "Remove names and figures first, then paste the rest"
+              }
+            }
+          },
+          {
+            "id": "jobb",
+            "texts": {
+              "text": {
+                "nn": "Brukar eit verktøy bedrifta har godkjent, eller spør kva som er lov",
+                "en": "Use a tool the company has approved, or ask what's allowed"
+              }
+            }
+          },
+          {
+            "id": "utan",
+            "texts": {
+              "text": {
+                "nn": "Skriv svaret utan KI",
+                "en": "Write the reply without AI"
+              }
+            }
+          },
+          {
+            "id": "vk",
+            "texts": {
+              "text": {
+                "nn": "Veit ikkje",
+                "en": "Not sure"
+              }
+            }
+          }
+        ],
+        "scenario": {
+          "correct_options": [
+            "jobb"
+          ],
+          "explanation": {
+            "title": {
+              "nn": "Kontrakten og den private KI-kontoen",
+              "en": "The contract and the private AI account"
+            },
+            "text": {
+              "nn": "Bruk eit verktøy bedrifta har godkjent, og logg inn med jobbkontoen. Å fjerne namn og tal hjelper, men det er lett å gløyme noko. Har de ingen reglar enno, spør leiaren. Vi hjelper gjerne med å lage dei.",
+              "en": "Use a tool the company has approved, signed in with your work account. Removing names and figures helps, but it's easy to miss something. If there are no rules yet, ask your manager. We're happy to help write them."
+            }
+          }
+        },
+        "type": "single"
+      },
+      {
+        "id": "K19",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Har du lagt jobbdokument eller kundeopplysningar inn i eit KI-verktøy dei siste tre månadene?",
+            "en": "In the last three months, have you put work documents or customer details into an AI tool?"
+          },
+          "help": {
+            "nn": "Ingen feil svar. Vi spør for å finne ut kva verktøy de treng.",
+            "en": "No wrong answers. We ask to find out which tools you need."
+          }
+        },
+        "visible_if": {
+          "or": [
+            {
+              "!=": [
+                {
+                  "var": "K7"
+                },
+                "aldri"
+              ]
+            },
+            {
+              "!=": [
+                {
+                  "var": "K8"
+                },
+                "aldri"
+              ]
+            }
+          ]
+        },
+        "options": [
+          {
+            "id": "jobb",
+            "texts": {
+              "text": {
+                "nn": "Ja, med jobbkontoen",
+                "en": "Yes, signed in with my work account"
+              }
+            }
+          },
+          {
+            "id": "privat",
+            "texts": {
+              "text": {
+                "nn": "Ja, med privat konto eller utan å logge inn",
+                "en": "Yes, with a private account or without signing in"
+              }
+            }
+          },
+          {
+            "id": "begge",
+            "texts": {
+              "text": {
+                "nn": "Ja, begge delar",
+                "en": "Yes, both"
+              }
+            }
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            }
+          },
+          {
+            "id": "vk",
+            "texts": {
+              "text": {
+                "nn": "Hugsar ikkje",
+                "en": "Don't remember"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "K12",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Kor godt stemmer dette for deg?",
+            "en": "How well does this fit you?"
+          },
+          "help": {
+            "nn": "1 betyr stemmer ikkje, 5 betyr stemmer heilt.",
+            "en": "1 means not at all, 5 means completely."
+          }
+        },
+        "visible_if": {
+          "or": [
+            {
+              "!=": [
+                {
+                  "var": "K7"
+                },
+                "aldri"
+              ]
+            },
+            {
+              "!=": [
+                {
+                  "var": "K8"
+                },
+                "aldri"
+              ]
+            }
+          ]
+        },
+        "type": "scale",
+        "rows": [
+          {
+            "id": "sporje",
+            "texts": {
+              "text": {
+                "nn": "Eg veit korleis eg skal spørje for å få eit godt svar",
+                "en": "I know how to ask to get a good answer"
+              }
+            }
+          },
+          {
+            "id": "vurdere",
+            "texts": {
+              "text": {
+                "nn": "Eg merkar når svaret er feil eller oppdikta",
+                "en": "I notice when the answer is wrong or made up"
+              }
+            }
+          },
+          {
+            "id": "spart",
+            "texts": {
+              "text": {
+                "nn": "Eg har spart tid med KI den siste månaden",
+                "en": "AI has saved me time in the last month"
+              }
+            }
+          }
+        ],
+        "scale": {
+          "min": 1,
+          "max": 5,
+          "low": {
+            "nn": "Stemmer ikkje",
+            "en": "Not at all"
+          },
+          "high": {
+            "nn": "Stemmer heilt",
+            "en": "Completely"
+          }
+        }
+      },
+      {
+        "id": "K13",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Kva held deg tilbake frå å bruke KI meir i jobben?",
+            "en": "What holds you back from using AI more at work?"
+          },
+          "help": {
+            "nn": "Vel inntil tre.",
+            "en": "Choose up to three."
+          }
+        },
+        "options": [
+          {
+            "id": "kva",
+            "texts": {
+              "text": {
+                "nn": "Veit ikkje kva eg skal bruke det til",
+                "en": "I don't know what to use it for"
+              }
+            }
+          },
+          {
+            "id": "lov",
+            "texts": {
+              "text": {
+                "nn": "Usikker på om det er lov hos oss",
+                "en": "Not sure if it's allowed here"
+              }
+            }
+          },
+          {
+            "id": "data",
+            "texts": {
+              "text": {
+                "nn": "Redd for å dele opplysningar eg ikkje burde",
+                "en": "Worried about sharing information I shouldn't"
+              }
+            }
+          },
+          {
+            "id": "stolar",
+            "texts": {
+              "text": {
+                "nn": "Stolar ikkje heilt på svara",
+                "en": "I don't fully trust the answers"
+              }
+            }
+          },
+          {
+            "id": "tid",
+            "texts": {
+              "text": {
+                "nn": "Har ikkje tid til å lære det",
+                "en": "No time to learn it"
+              }
+            }
+          },
+          {
+            "id": "tilgang",
+            "texts": {
+              "text": {
+                "nn": "Har ikkje tilgang til gode verktøy",
+                "en": "No access to good tools"
+              }
+            }
+          },
+          {
+            "id": "passar",
+            "texts": {
+              "text": {
+                "nn": "Det passar ikkje til arbeidet mitt",
+                "en": "It doesn't fit my work"
+              }
+            }
+          },
+          {
+            "id": "ingenting",
+            "texts": {
+              "text": {
+                "nn": "Ingenting held meg tilbake",
+                "en": "Nothing is holding me back"
+              }
+            }
+          }
+        ],
+        "exclusive_options": [
+          "ingenting"
+        ],
+        "type": "multi",
+        "max_choices": 3
+      },
+      {
+        "id": "K14",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Korleis kjennest det å tenkje på meir KI i jobben?",
+            "en": "How does it feel to think about more AI at work?"
+          }
+        },
+        "options": [
+          {
+            "id": "gler",
+            "texts": {
+              "text": {
+                "nn": "Eg gler meg",
+                "en": "I'm looking forward to it"
+              }
+            }
+          },
+          {
+            "id": "nysgjerrig",
+            "texts": {
+              "text": {
+                "nn": "Nysgjerrig",
+                "en": "Curious"
+              }
+            }
+          },
+          {
+            "id": "noytral",
+            "texts": {
+              "text": {
+                "nn": "Nøytralt",
+                "en": "Neutral"
+              }
+            }
+          },
+          {
+            "id": "skeptisk",
+            "texts": {
+              "text": {
+                "nn": "Litt skeptisk",
+                "en": "A bit sceptical"
+              }
+            }
+          },
+          {
+            "id": "uroa",
+            "texts": {
+              "text": {
+                "nn": "Eg er uroa",
+                "en": "Worried"
+              }
+            }
+          }
+        ],
+        "free_text": {
+          "texts": {
+            "text": {
+              "nn": "Vil du seie meir? (valfritt)",
+              "en": "Want to say more? (optional)"
+            }
+          }
+        },
+        "type": "single"
+      },
+      {
+        "id": "K15",
+        "part": "common",
+        "texts": {
+          "text": {
+            "nn": "Om du fekk ein assistent som kunne ta éi oppgåve frå deg kvar veke, kva skulle det vore?",
+            "en": "If you got an assistant who could take one task off your hands every week, what would it be?"
+          },
+          "placeholder": {
+            "nn": "Til dømes: setje opp vaktlista, skrive referat frå måndagsmøtet",
+            "en": "For example: making the shift plan, writing the Monday meeting notes"
+          }
+        },
+        "optional": true,
+        "type": "text"
+      },
+      {
+        "id": "L2",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Frå kunden tek kontakt til jobben er fakturert: kvar stoppar det oftast opp?",
+            "en": "From the customer's first contact to the invoice: where does it most often get stuck?"
+          },
+          "help": {
+            "nn": "Vel inntil tre.",
+            "en": "Choose up to three."
+          }
+        },
+        "options": [
+          {
+            "id": "forespurnad",
+            "texts": {
+              "text": {
+                "nn": "Førespurnader og tilbod",
+                "en": "Enquiries and quotes"
+              }
+            }
+          },
+          {
+            "id": "planlegging",
+            "texts": {
+              "text": {
+                "nn": "Planlegging og bemanning",
+                "en": "Planning and staffing"
+              }
+            }
+          },
+          {
+            "id": "innkjop",
+            "texts": {
+              "text": {
+                "nn": "Innkjøp og lager",
+                "en": "Purchasing and stock"
+              }
+            }
+          },
+          {
+            "id": "gjennomforing",
+            "texts": {
+              "text": {
+                "nn": "Sjølve gjennomføringa",
+                "en": "Doing the actual work"
+              }
+            }
+          },
+          {
+            "id": "faktura",
+            "texts": {
+              "text": {
+                "nn": "Fakturering og oppfølging",
+                "en": "Invoicing and follow-up"
+              }
+            }
+          },
+          {
+            "id": "rapport",
+            "texts": {
+              "text": {
+                "nn": "Rapportering og oversikt",
+                "en": "Reporting and overview"
+              }
+            }
+          },
+          {
+            "id": "opplaering",
+            "texts": {
+              "text": {
+                "nn": "Opplæring av nye",
+                "en": "Training new people"
+              }
+            }
+          },
+          {
+            "id": "kundeservice",
+            "texts": {
+              "text": {
+                "nn": "Kundeservice etter levering",
+                "en": "Customer service after delivery"
+              }
+            }
+          }
+        ],
+        "type": "multi",
+        "max_choices": 3
+      },
+      {
+        "id": "L11",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Omtrent kor mange førespurnader får de frå kundar i veka?",
+            "en": "Roughly how many customer enquiries do you get a week?"
+          },
+          "help": {
+            "nn": "E-post, telefon og skjema til saman.",
+            "en": "Email, phone and forms combined."
+          }
+        },
+        "options": [
+          {
+            "id": "u10",
+            "texts": {
+              "text": {
+                "nn": "Under 10",
+                "en": "Fewer than 10"
+              }
+            }
+          },
+          {
+            "id": "10-30",
+            "texts": {
+              "text": {
+                "nn": "10–30",
+                "en": "10–30"
+              }
+            }
+          },
+          {
+            "id": "31-100",
+            "texts": {
+              "text": {
+                "nn": "31–100",
+                "en": "31–100"
+              }
+            }
+          },
+          {
+            "id": "o100",
+            "texts": {
+              "text": {
+                "nn": "Meir enn 100",
+                "en": "More than 100"
+              }
+            }
+          },
+          {
+            "id": "vk",
+            "texts": {
+              "text": {
+                "nn": "Veit ikkje",
+                "en": "Not sure"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "L1",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Korleis går ein typisk jobb hos dykk, steg for steg?",
+            "en": "How does a typical job go at your company, step by step?"
+          },
+          "help": {
+            "nn": "Valfritt. Stikkord er nok. Vi vil forstå kjeda, ikkje detaljane.",
+            "en": "Optional. Keywords are enough. We want to understand the chain, not the details."
+          },
+          "placeholder": {
+            "nn": "Førespurnad på e-post → synfaring → tilbod → …",
+            "en": "Email enquiry → site visit → quote → …"
+          }
+        },
+        "optional": true,
+        "type": "text"
+      },
+      {
+        "id": "L3",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Kva rapport eller oversikt skulle de ønskje de hadde, men som tek for lang tid å lage i dag?",
+            "en": "Which report or overview do you wish you had, but takes too long to make today?"
+          }
+        },
+        "optional": true,
+        "type": "text"
+      },
+      {
+        "id": "L4",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Har bedrifta reglar for korleis de tilsette kan bruke KI?",
+            "en": "Does the company have rules for how employees can use AI?"
+          }
+        },
+        "options": [
+          {
+            "id": "skrive",
+            "texts": {
+              "text": {
+                "nn": "Ja, skrivne reglar",
+                "en": "Yes, written rules"
+              }
+            }
+          },
+          {
+            "id": "uformelt",
+            "texts": {
+              "text": {
+                "nn": "Berre uformelt",
+                "en": "Only informally"
+              }
+            }
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            }
+          },
+          {
+            "id": "vk",
+            "texts": {
+              "text": {
+                "nn": "Veit ikkje",
+                "en": "Not sure"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "L5",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Betaler bedrifta for KI-verktøy i dag?",
+            "en": "Does the company pay for AI tools today?"
+          }
+        },
+        "options": [
+          {
+            "id": "alle",
+            "texts": {
+              "text": {
+                "nn": "Ja, for alle eller dei fleste",
+                "en": "Yes, for everyone or most people"
+              }
+            }
+          },
+          {
+            "id": "nokre",
+            "texts": {
+              "text": {
+                "nn": "Ja, for nokre få",
+                "en": "Yes, for a few"
+              }
+            }
+          },
+          {
+            "id": "gratis",
+            "texts": {
+              "text": {
+                "nn": "Nei, men nokre brukar gratisversjonar",
+                "en": "No, but some use free versions"
+              }
+            }
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei",
+                "en": "No"
+              }
+            }
+          },
+          {
+            "id": "vk",
+            "texts": {
+              "text": {
+                "nn": "Veit ikkje",
+                "en": "Not sure"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "L6",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Kva planar har de det neste året?",
+            "en": "What are your plans for the next year?"
+          },
+          "help": {
+            "nn": "Kryss av alt som passar.",
+            "en": "Tick everything that applies."
+          }
+        },
+        "options": [
+          {
+            "id": "tilsetje",
+            "texts": {
+              "text": {
+                "nn": "Tilsetje fleire",
+                "en": "Hire more people"
+              }
+            }
+          },
+          {
+            "id": "lokale",
+            "texts": {
+              "text": {
+                "nn": "Nye lokale eller ny avdeling",
+                "en": "New premises or a new department"
+              }
+            }
+          },
+          {
+            "id": "system",
+            "texts": {
+              "text": {
+                "nn": "Nytt fagsystem eller nettbutikk",
+                "en": "A new core system or online shop"
+              }
+            }
+          },
+          {
+            "id": "utstyr",
+            "texts": {
+              "text": {
+                "nn": "Byte PC-ar eller anna utstyr",
+                "en": "Replace computers or other equipment"
+              }
+            }
+          },
+          {
+            "id": "farten",
+            "texts": {
+              "text": {
+                "nn": "Meir heimekontor eller arbeid på farten",
+                "en": "More remote or mobile work"
+              }
+            }
+          },
+          {
+            "id": "ki",
+            "texts": {
+              "text": {
+                "nn": "Ta i bruk KI eller meir automatisering",
+                "en": "Start using AI or more automation"
+              }
+            }
+          },
+          {
+            "id": "ingen",
+            "texts": {
+              "text": {
+                "nn": "Ingen store endringar",
+                "en": "No big changes"
+              }
+            }
+          }
+        ],
+        "exclusive_options": [
+          "ingen"
+        ],
+        "type": "multi"
+      },
+      {
+        "id": "L7",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Kva ville vore den beste første gevinsten av KI for dykk?",
+            "en": "What would be the best first gain from AI for you?"
+          }
+        },
+        "options": [
+          {
+            "id": "tid",
+            "texts": {
+              "text": {
+                "nn": "Mindre tid på rutinearbeid",
+                "en": "Less time on routine work"
+              }
+            }
+          },
+          {
+            "id": "kundar",
+            "texts": {
+              "text": {
+                "nn": "Raskare svar til kundane",
+                "en": "Faster replies to customers"
+              }
+            }
+          },
+          {
+            "id": "oversikt",
+            "texts": {
+              "text": {
+                "nn": "Betre oversikt og rapportar",
+                "en": "Better overview and reports"
+              }
+            }
+          },
+          {
+            "id": "feil",
+            "texts": {
+              "text": {
+                "nn": "Færre feil",
+                "en": "Fewer mistakes"
+              }
+            }
+          },
+          {
+            "id": "opplaering",
+            "texts": {
+              "text": {
+                "nn": "Lettare opplæring av nye tilsette",
+                "en": "Easier training of new staff"
+              }
+            }
+          },
+          {
+            "id": "vk",
+            "texts": {
+              "text": {
+                "nn": "Veit ikkje enno",
+                "en": "Don't know yet"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "L8",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Når kunne det vore aktuelt å prøve ei KI-løysing i drifta?",
+            "en": "When might it be relevant to try an AI solution in your operations?"
+          }
+        },
+        "options": [
+          {
+            "id": "no",
+            "texts": {
+              "text": {
+                "nn": "Så snart som mogleg",
+                "en": "As soon as possible"
+              }
+            }
+          },
+          {
+            "id": "halvar",
+            "texts": {
+              "text": {
+                "nn": "I løpet av eit halvår",
+                "en": "Within six months"
+              }
+            }
+          },
+          {
+            "id": "ar",
+            "texts": {
+              "text": {
+                "nn": "Om eitt år eller meir",
+                "en": "In a year or more"
+              }
+            }
+          },
+          {
+            "id": "ikkje",
+            "texts": {
+              "text": {
+                "nn": "Ikkje aktuelt no",
+                "en": "Not relevant right now"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      },
+      {
+        "id": "L9",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Er det noko de absolutt ikkje vil at KI skal røre?",
+            "en": "Is there anything you definitely don't want AI to touch?"
+          },
+          "placeholder": {
+            "nn": "Til dømes lønn, personalsaker eller kontakt med enkelte kundar",
+            "en": "For example payroll, HR matters or contact with certain customers"
+          }
+        },
+        "optional": true,
+        "type": "text"
+      },
+      {
+        "id": "L10",
+        "part": "leader",
+        "texts": {
+          "text": {
+            "nn": "Vil de at vi tek ein prat om det de har svart?",
+            "en": "Would you like us to have a chat about your answers?"
+          }
+        },
+        "options": [
+          {
+            "id": "ja",
+            "texts": {
+              "text": {
+                "nn": "Ja, gjerne",
+                "en": "Yes, please"
+              }
+            }
+          },
+          {
+            "id": "seinare",
+            "texts": {
+              "text": {
+                "nn": "Kanskje seinare",
+                "en": "Maybe later"
+              }
+            }
+          },
+          {
+            "id": "nei",
+            "texts": {
+              "text": {
+                "nn": "Nei takk",
+                "en": "No thanks"
+              }
+            }
+          }
+        ],
+        "type": "single"
+      }
+    ]
+  }
+}

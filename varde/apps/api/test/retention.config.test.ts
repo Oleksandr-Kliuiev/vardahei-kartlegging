@@ -8,6 +8,7 @@ const CLASSES = [
   'progress_event',
   'response',
   'aggregate_snapshot_released',
+  'finding',
   'contact',
   'registration',
   'proposal',
@@ -17,7 +18,10 @@ const CLASSES = [
   'admin_session',
   'connection_log',
   'pgboss_jobs',
-  'stub_submission',
+  'template_version',
+  'round',
+  'metric_definition',
+  'import_manifest',
   'backup',
 ];
 

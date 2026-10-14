@@ -10,6 +10,10 @@
       "min_years": 3,
       "review": "yearly"
     },
+    "finding": {
+      "min_years": 3,
+      "review": "yearly"
+    },
     "contact": {
       "kind": "relationship"
     },
@@ -39,9 +43,18 @@
     "pgboss_jobs": {
       "ttl_days": 7
     },
-    "stub_submission": {
-      "kind": "until_task",
-      "task": "1.33"
+    "template_version": {
+      "kind": "forever"
+    },
+    "round": {
+      "kind": "forever"
+    },
+    "metric_definition": {
+      "kind": "forever"
+    },
+    "import_manifest": {
+      "kind": "forever",
+      "content": "counts_only"
     },
     "backup": {
       "rotation_days": 35,

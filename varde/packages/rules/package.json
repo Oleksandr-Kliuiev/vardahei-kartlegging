@@ -3,14 +3,28 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "exports": {
-    "./runner": "./src/runner/index.ts",
-    "./findings": "./src/findings/index.ts"
+    "./runner": {
+      "types": "./src/runner/index.ts",
+      "source": "./src/runner/index.ts",
+      "default": "./dist/runner/index.js"
+    },
+    "./findings": {
+      "types": "./src/findings/index.ts",
+      "source": "./src/findings/index.ts",
+      "default": "./dist/findings/index.js"
+    }
   },
   "scripts": {
     "lint": "eslint .",
     "test": "vitest run",
     "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@varde/schema": "workspace:*"
   },
   "devDependencies": {
     "eslint": "9.39.5",

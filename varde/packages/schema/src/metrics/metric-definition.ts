@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { Part, Population, populationAllows } from './populations.js';
 
-/** The one place where metric kinds are listed (extended in 1.10). */
+/** The one place where metric kinds are listed (1.10: routine_hours_week, heaviest_task). */
 export const METRIC_KINDS = [
   'distribution',
   'mean_score',
@@ -11,6 +11,8 @@ export const METRIC_KINDS = [
   'zone',
   'persons_per_zone',
   'cross',
+  'routine_hours_week',
+  'heaviest_task',
 ] as const;
 export const MetricKind = z.enum(METRIC_KINDS);
 export type MetricKind = z.infer<typeof MetricKind>;
@@ -90,6 +92,9 @@ export const MetricDefinition = z
     }
     if (KINDS_WITH_THRESHOLDS.includes(m.kind) && m.thresholds === undefined) {
       issue(`${m.kind} needs thresholds`, ['thresholds']);
+    }
+    if (m.first_version === true && m.version !== 1) {
+      issue('first_version: true requires version 1', ['first_version']);
     }
     if (m.comparability.length === 0 && m.first_version !== true) {
       issue('empty comparability is allowed only with first_version: true', ['comparability']);

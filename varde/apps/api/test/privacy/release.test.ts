@@ -9,6 +9,7 @@ import {
 } from '../../src/modules/privacy/privacy.service.js';
 import type { PrismaService } from '../../src/prisma/prisma.service.js';
 import { FixtureSource, ROUND_INITIALS } from '../support/fixture-source.js';
+import { assertReleaseSafety } from '../support/release-safety.js';
 import { MemorySnapshotStore } from '../support/memory-snapshot-store.js';
 
 const ROUND = 'r-release';
@@ -102,6 +103,167 @@ describe('privacy.release (0.15b)', () => {
     expect(find(r, 'all')).toMatchObject({ suppressed: false, n: 5 });
   });
 
+  it('all_clients suppresses roles and clients independently', async () => {
+    const cells = [
+      cell('all', 20, 9),
+      cell('client:a', 18, 8),
+      cell('client:b', 2, 1),
+      cell('role:x', 18, 8),
+      cell('role:y', 2, 1),
+    ].map((c) => {
+      const out = { ...c };
+      delete out.client;
+      return out;
+    });
+    const r = await privacy.release(ROUND, 'all_clients', cells, store, AUTO);
+    expect(find(r, 'all')).toMatchObject({ n: 20, numerator: 9, suppressed: false });
+    for (const g of ['client:a', 'client:b', 'role:x', 'role:y']) {
+      expect(find(r, g)).toMatchObject({ n: 0, numerator: 0, suppressed: true });
+    }
+  });
+
+  it('an unlisted remainder below k needs complementary suppression', async () => {
+    const r = await run([cell('all', 20, 9), cell('role:x', 18, 8)]);
+    expect(find(r, 'role:x')).toMatchObject({ suppressed: true });
+  });
+
+  it('history differences protect each overlapping partition and its unlisted remainder', async () => {
+    const cells = (n: number, a: number, b: number, x: number) =>
+      [cell('all', n, 0), cell('client:a', a, 0), cell('client:b', b, 0), cell('role:x', x, 0)].map(
+        (c) => {
+          const out = { ...c };
+          delete out.client;
+          return out;
+        },
+      );
+    await privacy.release(ROUND, 'all_clients', cells(20, 10, 10, 10), store, AUTO);
+    const r = await privacy.release(ROUND, 'all_clients', cells(24, 13, 11, 13), store, AUTO);
+    for (const g of ['client:a', 'client:b', 'role:x'])
+      expect(find(r, g)).toMatchObject({ n: 10, stale: true });
+  });
+
+  it.each(['round_client', 'all_clients'] as const)(
+    'hidden current and historic groups stay in the diff remainder (%s)',
+    async (population) => {
+      const cells = (ns: number[]) =>
+        ['all', 'role:a', 'role:d', 'role:h', 'role:s'].map((g, i) => {
+          const c = cell(g, ns[i]!, Math.floor(ns[i]! / 2));
+          if (population === 'all_clients') delete c.client;
+          return c;
+        });
+      const first = await privacy.release(
+        ROUND,
+        population,
+        cells([40, 15, 13, 10, 2]),
+        store,
+        AUTO,
+      );
+      const second = await privacy.release(
+        ROUND,
+        population,
+        cells([35, 12, 12, 9, 2]),
+        store,
+        AUTO,
+      );
+      assertReleaseSafety(first.released);
+      assertReleaseSafety(second.released);
+      assertReleaseSafety(second.released, first.released);
+      const third = await privacy.release(
+        ROUND,
+        population,
+        cells([45, 18, 14, 10, 3]),
+        store,
+        AUTO,
+      );
+      assertReleaseSafety(third.released);
+      for (const old of [first, second]) assertReleaseSafety(third.released, old.released);
+    },
+  );
+
+  it('carry treats client and role partitions independently: 20/10/10/10/10 → 24/13/11/10/14', async () => {
+    const cells = (ns: number[]) =>
+      ['all', 'client:a', 'client:b', 'role:x', 'role:y'].map((g, i) => {
+        const c = cell(g, ns[i]!, ns[i]!);
+        delete c.client;
+        return c;
+      });
+    const first = await privacy.release(
+      ROUND,
+      'all_clients',
+      cells([20, 10, 10, 10, 10]),
+      store,
+      AUTO,
+    );
+    const second = await privacy.release(
+      ROUND,
+      'all_clients',
+      cells([24, 13, 11, 10, 14]),
+      store,
+      AUTO,
+    );
+    expect(find(second, 'client:b')).toMatchObject({ n: 10, numerator: 10, stale: true });
+    assertReleaseSafety(second.released);
+    assertReleaseSafety(second.released, first.released);
+  });
+
+  const ROLES = ['all', 'role:a', 'role:b', 'role:c', 'role:d', 'role:e'];
+  const roleCells = (ns: number[]) => ROLES.map((g, i) => cell(g, ns[i]!, ns[i]!));
+
+  it('a group hidden now is not read as a visible zero: [14,3,2,4,3,2] → [19,2,3,3,6,3]', async () => {
+    const first = await run(roleCells([14, 3, 2, 4, 3, 2]));
+    const second = await run(roleCells([19, 2, 3, 3, 6, 3]));
+    assertReleaseSafety(first.released);
+    assertReleaseSafety(second.released);
+    assertReleaseSafety(second.released, first.released);
+  });
+
+  it('a carried value that is still unsafe against older history is hidden: three releases', async () => {
+    const first = await run(roleCells([28, 6, 6, 3, 4, 4]));
+    const second = await run(roleCells([35, 7, 7, 3, 5, 7]));
+    const third = await run(roleCells([32, 7, 6, 3, 4, 7]));
+    for (const r of [first, second, third]) assertReleaseSafety(r.released);
+    assertReleaseSafety(second.released, first.released);
+    assertReleaseSafety(third.released, second.released);
+    assertReleaseSafety(third.released, first.released);
+  });
+
+  it('drop-out without a total carries deletions below k, but releases a deletion of k', async () => {
+    const drop = (n: number) => cell('question:F5', n, n, { metric_key: 'progress.dropout' });
+    const first = await run([drop(10)]);
+    const second = await run([drop(9)]);
+    expect(find(second, 'question:F5')).toMatchObject({ n: 10, numerator: 10, stale: true });
+    const third = await run([drop(7)]);
+    expect(find(third, 'question:F5')).toMatchObject({ n: 7, suppressed: false });
+    expect(find(third, 'question:F5')).not.toHaveProperty('stale');
+    assertReleaseSafety(second.released, first.released);
+    assertReleaseSafety(third.released, second.released);
+  });
+
+  it('stale groups are checked against the fresh total after carry', async () => {
+    const first = await run([
+      cell('all', 40, 40),
+      cell('role:a', 20, 20),
+      cell('role:b', 10, 10),
+      cell('role:c', 10, 10),
+    ]);
+    const second = await run([
+      cell('all', 35, 35),
+      cell('role:a', 18, 18),
+      cell('role:b', 8, 8),
+      cell('role:c', 9, 9),
+    ]);
+    assertReleaseSafety(second.released);
+    assertReleaseSafety(second.released, first.released);
+  });
+
+  it('groups omitted after deletion remain part of the published partition', async () => {
+    const first = await run([cell('all', 20, 20), cell('role:a', 10, 10), cell('role:b', 10, 10)]);
+    const second = await run([cell('all', 15, 15), cell('role:a', 15, 15)]);
+    expect(find(second, 'role:b')).toBeDefined();
+    assertReleaseSafety(second.released);
+    assertReleaseSafety(second.released, first.released);
+  });
+
   it('a new metric for a round that already has a release → ReleaseRejected', async () => {
     await run([cell('all', 6, 3)]);
     await expect(
@@ -134,12 +296,12 @@ describe('privacy.release (0.15b)', () => {
     expect(store.writes).toBe(0);
   });
 
-  it('markReleased is not reachable from the public surface of the module', async () => {
+  it('markReleased is not reachable from the public surface of the module', () => {
     expect(Object.keys(surface)).not.toContain('markReleased');
-    // A deep import, only to prove the function is not exported by release.ts either.
-    const mod = (await import('../../src/modules/privacy/release.js')) as Record<string, unknown>;
-    expect(Object.keys(mod)).not.toContain('markReleased');
-    expect(Object.keys(mod).filter((k) => /mark/i.test(k))).toEqual([]);
+    expect(Object.keys(surface)).not.toContain('PrismaResponseSource');
+    expect(Object.keys(surface)).not.toContain('ResponseStore');
+    for (const name of ['RESPONSE_SOURCE', 'privacyProviders', 'prismaPrivacyProviders'])
+      expect(Object.keys(surface)).not.toContain(name);
   });
 
   it('the live view aggregate() never writes to the SnapshotStore', async () => {
@@ -152,5 +314,71 @@ describe('privacy.release (0.15b)', () => {
     });
     expect(store.writes).toBe(0);
     expect(store.all).toEqual([]);
+  });
+});
+
+describe('cell shape by population and the exact counter (1.10b)', () => {
+  const leader = (over: Partial<ComputedCell> = {}) => ({
+    metric_key: F12_JA,
+    metric_version: 1,
+    group: 'all',
+    n: 4,
+    numerator: 2,
+    denominator: 4,
+    missing: 0,
+    ...over,
+  });
+
+  it('a leaders_all cell with a client (or a role group) → ReleaseRejected', async () => {
+    await expect(
+      privacy.release(ROUND, 'leaders_all', [leader({ client: 'kunde-a' })], store, AUTO),
+    ).rejects.toThrow(ReleaseRejected);
+    await expect(
+      privacy.release(ROUND, 'leaders_all', [leader({ group: 'role:leiar' })], store, AUTO),
+    ).rejects.toThrow(ReleaseRejected);
+  });
+
+  it('a round_client cell without a client → ReleaseRejected', async () => {
+    await expect(privacy.release(ROUND, 'round_client', [leader()], store, AUTO)).rejects.toThrow(
+      ReleaseRejected,
+    );
+  });
+
+  it('an all_clients cell with a client field → ReleaseRejected (groups client:<slug> instead)', async () => {
+    await expect(
+      privacy.release(ROUND, 'all_clients', [cell('all', 6, 3)], store, AUTO),
+    ).rejects.toThrow(ReleaseRejected);
+    const ok = await privacy.release(
+      ROUND,
+      'all_clients',
+      [leader({ group: 'client:kunde-a', n: 6 }), leader({ n: 6 })],
+      store,
+      AUTO,
+    );
+    expect(ok.released).toHaveLength(2);
+  });
+
+  it('responses_total in all_clients is suppressed by the general rules', async () => {
+    const r = await privacy.release(
+      ROUND,
+      'all_clients',
+      [leader({ metric_key: 'responses_total', n: 2, numerator: 2, denominator: 2 })],
+      store,
+      AUTO,
+    );
+    expect(r.released[0]).toMatchObject({ suppressed: true, n: 0 });
+  });
+
+  it('responses_total in round_client: group all exact, role groups by the general rules', async () => {
+    const t = (group: string, n: number) => cell(group, n, n, { metric_key: 'responses_total' });
+    const r = await privacy.release(
+      ROUND,
+      'round_client',
+      [t('all', 2), t('role:sal', 2)],
+      store,
+      AUTO,
+    );
+    expect(find(r, 'all')).toMatchObject({ suppressed: false, n: 2 });
+    expect(find(r, 'role:sal')).toMatchObject({ suppressed: true, n: 0 });
   });
 });

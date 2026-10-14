@@ -34,6 +34,8 @@ export const RetentionClasses = z.strictObject({
     min_years: z.number().int().min(3),
     review: z.literal('yearly'),
   }),
+  /** Findings live as long as the released snapshots they are computed from. */
+  finding: z.strictObject({ min_years: z.number().int().min(3), review: z.literal('yearly') }),
   contact: z.strictObject({ kind: z.literal('relationship') }),
   registration: z.strictObject({ after_seminar_days: days }),
   proposal: z.strictObject({ ttl_months: days }),
@@ -46,7 +48,15 @@ export const RetentionClasses = z.strictObject({
   admin_session: z.strictObject({ after_expiry_days: days }),
   connection_log: z.strictObject({ ttl_months: days }),
   pgboss_jobs: z.strictObject({ ttl_days: days }),
-  stub_submission: z.strictObject({ kind: z.literal('until_task'), task: z.string().min(1) }),
+  // Service tables of stage 1 (1.4c): templates, rounds and clients, metric/rule definitions.
+  template_version: z.strictObject({ kind: z.literal('forever') }),
+  round: z.strictObject({ kind: z.literal('forever') }),
+  metric_definition: z.strictObject({ kind: z.literal('forever') }),
+  /** Counts and rejected line numbers only — never answers or initials (ADR-024). */
+  import_manifest: z.strictObject({
+    kind: z.literal('forever'),
+    content: z.literal('counts_only'),
+  }),
   backup: Backup,
 });
 
