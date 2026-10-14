@@ -70,7 +70,7 @@ it.skipIf(process.env.VARDE_RESTORE_DOCKER !== '1')(
           seedDir: SEED_DIR,
           who: 'test:restore',
         });
-      const dump = docker(['pg_dump', '-d', '"$DATABASE_URL"', '-Fc']);
+      const dump = docker(['pg_dump', '-d', '"$DATABASE_URL"', '-Fc', '-N', 'pgboss']);
       expect(dump.length).toBeGreaterThan(1000);
       const line = fixtureText('svar.synthetic.jsonl')
         .trim()
@@ -118,7 +118,7 @@ it.skipIf(process.env.VARDE_RESTORE_DOCKER !== '1')(
         leader: { accepted: 0, suppressed: 1 },
       });
       // Second dump predates a deletion, so apply-db must physically remove its restored common.
-      const postImport = docker(['pg_dump', '-d', '"$DATABASE_URL"', '-Fc']);
+      const postImport = docker(['pg_dump', '-d', '"$DATABASE_URL"', '-Fc', '-N', 'pgboss']);
       const c = new pg.Client({ connectionString: url });
       await c.connect();
       const common = (
