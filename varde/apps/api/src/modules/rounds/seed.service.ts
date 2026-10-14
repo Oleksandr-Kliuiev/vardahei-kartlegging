@@ -3,6 +3,7 @@
 // or poster gets «Kartlegginga er avslutta». Every step is idempotent (second run → unchanged).
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
+import { FindingsService } from '../findings/findings.service.js';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { readSeedTemplates, SeedTemplatesService } from '../surveys/seed-templates.js';
@@ -50,6 +51,7 @@ export class SeedService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly templates: SeedTemplatesService,
+    private readonly findings: FindingsService,
   ) {}
 
   async seedClients(clients: readonly SeedClient[], kundar: Kundar): Promise<Counts> {
@@ -155,6 +157,7 @@ export class SeedService {
     seedDir: string;
     who: string;
   }) {
+    await this.findings.seed(input.seedDir);
     const clients = await this.seedClients(input.clients, input.kundar);
     const templates = await this.seedAllTemplates(input.seedDir, input.who);
     const imports = await this.seedImportRounds(input.kundar, input.tilgang);

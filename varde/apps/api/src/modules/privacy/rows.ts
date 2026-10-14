@@ -33,6 +33,8 @@ export const ROWS_AUDIT = 'privacy.rows';
 
 function toRow(row: ResponseRow, mode: RoundMode): PrivacyRow {
   return {
+    ...(row.submission_id === undefined ? {} : { submission_id: row.submission_id }),
+    ...(row.free === undefined ? {} : { free: row.free }),
     round_client: row.round_client,
     client: row.client,
     part: 'common',
@@ -104,4 +106,84 @@ export function masterAnalyseExport(
   ctx: RowsContext,
 ): Promise<RowsResult> {
   return identifiedView('master_analyse_export', query, session, ctx);
+}
+
+/** Leader channel: one client, no common responses, no identifier. Read + audit commit together. */
+export async function leaderAnswers(
+  query: RowsQuery & { client: string },
+  session: PrivacySession | null | undefined,
+  ctx: RowsContext,
+) {
+  const who = auditWho(requireSession(session), true);
+  if (!query.client || query.client === 'alle') throw new NotFoundError('Vel éin kunde.');
+  return ctx.db.$transaction(async (tx) => {
+    const read = await ctx.source.read({ ...query, part: 'leader' }, tx);
+    const out = read
+      .filter((r) => r.part === 'leader')
+      .map((r) => ({
+        submission_id: r.submission_id,
+        role: r.role,
+        answers: r.answers,
+        free: r.free ?? {},
+      }));
+    await tx.auditLog.create({
+      data: {
+        who,
+        what: 'leader.read',
+        target: `client:${query.client}`,
+        details: { round: query.round, client: query.client, count: out.length },
+      },
+    });
+    return out;
+  });
+}
+
+/** Current and matched previous common responses with one audit in one transaction. */
+export async function employeeHistory(
+  query: RowsQuery,
+  previous: string | undefined,
+  session: PrivacySession | null | undefined,
+  ctx: RowsContext,
+) {
+  const who = auditWho(requireSession(session), true);
+  return ctx.db.$transaction(async (tx) => {
+    const mode = await ctx.source.roundMode(query.round, tx);
+    if (mode === 'none') throw new NotFoundError(); // before either response read
+    if (previous && (await ctx.source.roundMode(previous, tx)) !== 'initials')
+      throw new NotFoundError();
+    const current = (await ctx.source.read({ ...query, part: 'common' }, tx))
+      .filter((r) => r.part === 'common')
+      .map((r) => toRow(r, mode));
+    const prior =
+      previous === undefined
+        ? []
+        : (
+            await ctx.source.read(
+              {
+                round: previous,
+                ...(query.client ? { client: query.client } : {}),
+                part: 'common',
+              },
+              tx,
+            )
+          )
+            .filter((r) => r.part === 'common')
+            .map((r) => toRow(r, 'initials'));
+    await tx.auditLog.create({
+      data: {
+        who,
+        what: ROWS_AUDIT,
+        target: `round:${query.round}`,
+        details: {
+          round: query.round,
+          client: query.client ?? 'alle',
+          view: 'per_employee',
+          count: current.length,
+          previous: previous ?? null,
+          previous_count: prior.length,
+        },
+      },
+    });
+    return { current, prior };
+  });
 }

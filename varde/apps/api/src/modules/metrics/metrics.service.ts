@@ -3,6 +3,8 @@
 // for every population, one release per population with the full metric set of the round.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { FindingsService } from '../findings/findings.service.js';
+import type { TemplateContent } from '@varde/schema/template/template';
 import { Injectable } from '@nestjs/common';
 import { subMetrics } from '@varde/rules/findings';
 import {
@@ -29,9 +31,11 @@ export class MetricsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly privacy: PrivacyService,
+    private readonly findings: FindingsService,
   ) {}
 
   async seedMetrics(seedDir: string): Promise<{ created: number; unchanged: number }> {
+    await this.findings.seed(seedDir);
     const dir = join(seedDir, 'metrics');
     const out = { created: 0, unchanged: 0 };
     for (const file of readdirSync(dir)
@@ -101,6 +105,26 @@ export class MetricsService {
         metric_set: metricSet,
       });
       out.populations[population] = { cells: r.released.length, carried: r.carried };
+    }
+    const r = await this.prisma.round.findUniqueOrThrow({
+      where: { id: round },
+      include: { template_version: true },
+    });
+    if (r.status === 'closed' || r.status === 'archived') {
+      const content = r.template_version!.content as unknown as TemplateContent;
+      for (const client of [undefined, ...clients.map((rc) => rc.client.slug)]) {
+        const cells = await this.privacy.viewCells(
+          round,
+          client ? 'round_client' : 'all_clients',
+          defs.filter((d) => d.part === 'common'),
+          client,
+        );
+        await this.findings.persist(
+          round,
+          client,
+          await this.findings.calculate(content, cells, 'all', 'aggregate'),
+        );
+      }
     }
     return out;
   }

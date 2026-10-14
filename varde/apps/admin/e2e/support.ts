@@ -11,6 +11,7 @@ export interface Fixture {
 export interface State {
   mark: string;
   client: string;
+  other_client: string;
   version: string;
   rounds: Record<string, Fixture>;
   connections: number;

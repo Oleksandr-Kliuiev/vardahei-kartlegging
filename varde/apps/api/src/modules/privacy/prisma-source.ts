@@ -30,6 +30,8 @@ export class PrismaResponseSource implements ResponseSource {
         },
       },
       select: {
+        submission_id: true,
+        free: true,
         part: true,
         role: true,
         respondent_key: true,
@@ -40,6 +42,8 @@ export class PrismaResponseSource implements ResponseSource {
       orderBy: [{ submitted_day: 'asc' }, { id: 'asc' }],
     });
     return found.map((r) => ({
+      submission_id: r.submission_id,
+      free: (r.free ?? {}) as Readonly<Record<string, unknown>>,
       round_client: r.round_client.id,
       client: r.round_client.client.slug,
       part: r.part === 'leader' ? 'leader' : 'common',

@@ -1,3 +1,4 @@
+import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { Module } from '@nestjs/common';
 import { AdminModule } from './admin/admin.module.js';
 import { EventsModule } from './modules/events/events.module.js';
@@ -30,6 +31,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     HomeModule,
     AdminModule,
     EventsModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}

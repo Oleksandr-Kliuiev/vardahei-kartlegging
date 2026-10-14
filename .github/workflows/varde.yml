@@ -75,6 +75,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @varde/api db:migrate
       - run: pnpm --filter @varde/runner build
+      - run: pnpm --filter @varde/admin build
       - run: pnpm --filter @varde/api test:integration
       - run: pnpm invariants:0a
       - run: pnpm invariants:0b

@@ -1,5 +1,11 @@
 // Integration test files (Postgres). Excluded from `pnpm test`, run by `pnpm test:integration`.
 export const INTEGRATION_FILES = [
+  'test/dashboard/aggregate-view.test.ts',
+  'test/dashboard/leader.test.ts',
+  'test/dashboard/rows-view.test.ts',
+  'test/dashboard/comparison.test.ts',
+  'test/dashboard/privacy-filters.test.ts',
+  'test/findings/funn.test.ts',
   'test/admin/data.test.ts',
   'test/admin/break-glass.test.ts',
   'test/events/stream.test.ts',

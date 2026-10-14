@@ -1,3 +1,4 @@
+import { DashboardPage } from './dashboard-page.js';
 import { useEffect, useState, type MouseEvent } from 'react';
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
 import logo from './logo.png';
@@ -86,6 +87,8 @@ function Shell({ name }: { name: string | null }) {
           <ProgressPage />
         ) : path === '/admin/rounds' ? (
           <RoundsPage />
+        ) : path === '/admin/dashboard' ? (
+          <DashboardPage />
         ) : (
           <section className="del">
             <p>{section ? 'Denne delen kjem snart.' : 'Vel ein del i menyen.'}</p>

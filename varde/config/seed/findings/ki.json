@@ -1,0 +1,346 @@
+[
+  {
+    "key": "ki.k8",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "ki.k7_x_k8",
+    "options": [
+      "aldri.avogtil",
+      "aldri.veke",
+      "aldri.dag",
+      "provd.avogtil",
+      "provd.veke",
+      "provd.dag"
+    ],
+    "basis": "ki.k8.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "brukar KI privat, men knapt i jobben",
+      "en": "use AI privately but hardly at work"
+    },
+    "action_text": {
+      "nn": "Dei er klare. Gi dei eit godkjent KI-verktøy med jobbkonto og enkle reglar, så tek dei det i bruk.",
+      "en": "They are ready. Give them an approved AI tool with a work account and simple rules."
+    },
+    "severity": "opportunity",
+    "order": 0
+  },
+  {
+    "key": "ki.k6",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "ki.k6.distribution",
+    "options": ["fleiredag", "dag"],
+    "basis": "ki.k6.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "leitar etter informasjon dei veit finst, kvar dag",
+      "en": "search every day for information they know exists"
+    },
+    "action_text": {
+      "nn": "Ein assistent som søkjer i eigne dokument, e-post og system.",
+      "en": "An assistant that searches their own documents, email and systems."
+    },
+    "severity": "opportunity",
+    "order": 1
+  },
+  {
+    "key": "ki.k9",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "ki.k9.distribution",
+    "options": ["n0", "n1"],
+    "basis": "ki.k9.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "har ikkje kome i gang med KI",
+      "en": "have not started using AI"
+    },
+    "action_text": {
+      "nn": "Praktisk demo på arbeidsplassen med deira eigne oppgåver, ikkje kurs.",
+      "en": "A practical workplace demo using their own tasks, rather than a course."
+    },
+    "severity": "opportunity",
+    "order": 2
+  },
+  {
+    "key": "ki.k13_lov",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "ki.k13.distribution",
+    "options": ["lov"],
+    "basis": "ki.k13.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "er usikre på om KI er lov å bruke hos dei",
+      "en": "are unsure whether AI is allowed at work"
+    },
+    "action_text": {
+      "nn": "KI-reglar på éi side. Vi kan lage utkast saman med leiaren.",
+      "en": "AI rules on one page. We can draft them with the leader."
+    },
+    "severity": "risk",
+    "order": 3
+  },
+  {
+    "key": "ki.k19",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "ki.k19.distribution",
+    "options": ["privat", "begge"],
+    "basis": "ki.k19.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "har lagt jobbdokument eller kundeopplysningar inn i KI med privat konto",
+      "en": "have put work documents or customer information into AI with a private account"
+    },
+    "action_text": {
+      "nn": "Avklar kva verktøy som er godkjende, og gi tilgang med jobbkonto. Forbod utan alternativ verkar sjeldan.",
+      "en": "Clarify the approved tools and provide work accounts. A ban without an alternative rarely works."
+    },
+    "severity": "risk",
+    "order": 4
+  },
+  {
+    "key": "ki.k21",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "ki.k21.distribution",
+    "options": ["lim", "vk"],
+    "basis": "ki.k21.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "ville limt inn ein kundekontrakt i ein privat KI-konto, eller veit ikkje",
+      "en": "would paste a customer contract into a private AI account or do not know"
+    },
+    "action_text": {
+      "nn": "Kort opplæring om kva som kan delast med KI, og eit godkjent verktøy å bruke i staden.",
+      "en": "Short training on what can be shared with AI and an approved alternative tool."
+    },
+    "severity": "risk",
+    "order": 5
+  },
+  {
+    "key": "ki.k13_data",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "ki.k13.distribution",
+    "options": ["data"],
+    "basis": "ki.k13.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "er redde for å dele opplysningar dei ikkje burde",
+      "en": "are afraid of sharing information they should not"
+    },
+    "action_text": {
+      "nn": "Enkle reglar for kva som kan delast, og eit godkjent verktøy med jobbkonto.",
+      "en": "Simple rules about what can be shared and an approved tool with a work account."
+    },
+    "severity": "risk",
+    "order": 6
+  },
+  {
+    "key": "ki.k14",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "ki.k14.distribution",
+    "options": ["skeptisk", "uroa"],
+    "basis": "ki.k14.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "er skeptiske eller uroa for meir KI",
+      "en": "are sceptical or worried about more AI"
+    },
+    "action_text": {
+      "nn": "Start med dei nysgjerrige. Vis konkret kva som blir lettare, og kva som ikkje endrar seg.",
+      "en": "Start with the curious people. Show what becomes easier and what stays the same."
+    },
+    "severity": "risk",
+    "order": 7
+  },
+  {
+    "key": "ki.routine_hours",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "ki.routine_hours_week",
+    "options": [],
+    "basis": "ki.k4.distribution",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "går til rutineoppgåver hos dei {n} som svarte",
+      "en": "are spent on routine tasks by the {n} respondents"
+    },
+    "action_text": {
+      "nn": "Start med den vanlegaste oppgåva. Sjå sitata under for kva folk faktisk gjer.",
+      "en": "Start with the most common task. Read the quotes below to see what people do."
+    },
+    "severity": "opportunity",
+    "computed": "routine",
+    "order": -2
+  },
+  {
+    "key": "ki.heaviest_task",
+    "version": 1,
+    "channel": "aggregate",
+    "metric_key": "ki.heaviest_task",
+    "options": [],
+    "basis": "ki.routine_hours_week",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "på «{task}», den tyngste oppgåva for {n} {persons} (anslag: kor ofte × kor lenge)",
+      "en": "on “{task}”, the heaviest task for {n} {persons} (estimate: frequency × time)"
+    },
+    "action_text": {
+      "nn": "Ein konkret kandidat for automatisering. Sjå fritekstane for korleis oppgåva faktisk går føre seg.",
+      "en": "A concrete candidate for automation. Read the free-text responses to see how the task is done."
+    },
+    "severity": "opportunity",
+    "computed": "heaviest",
+    "minimum_hours": 1,
+    "order": -1
+  },
+  {
+    "key": "ki.leader_l10",
+    "version": 1,
+    "channel": "leader",
+    "metric_key": "ki.leiar_l10.distribution",
+    "question": "L10",
+    "options": ["ja"],
+    "raw_options": ["ja"],
+    "basis": "L10",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "vil gjerne ta ein prat om KI",
+      "en": "would like to discuss AI"
+    },
+    "action_text": {
+      "nn": "Ring dei denne veka.",
+      "en": "Call them this week."
+    },
+    "severity": "opportunity",
+    "level": "high",
+    "order": 0
+  },
+  {
+    "key": "ki.leader_l8",
+    "version": 1,
+    "channel": "leader",
+    "metric_key": "ki.leiar_l8.distribution",
+    "question": "L8",
+    "options": ["no", "halvar"],
+    "raw_options": ["no", "halvar"],
+    "basis": "L8",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "vil prøve KI i drifta innan eit halvår",
+      "en": "want to try AI in operations within six months"
+    },
+    "action_text": {
+      "nn": "Førebu eit konkret forslag ut frå svara til dei tilsette.",
+      "en": "Prepare a concrete proposal based on employee responses."
+    },
+    "severity": "opportunity",
+    "level": "high",
+    "order": 1
+  },
+  {
+    "key": "ki.leader_l4",
+    "version": 1,
+    "channel": "leader",
+    "metric_key": "ki.leiar_l4.distribution",
+    "question": "L4",
+    "options": ["nei", "vk"],
+    "raw_options": ["nei", "vk"],
+    "basis": "L4",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "har ingen reglar for KI-bruk",
+      "en": "have no rules for AI use"
+    },
+    "action_text": {
+      "nn": "Tilby KI-reglar på éi side.",
+      "en": "Offer one-page AI rules."
+    },
+    "severity": "opportunity",
+    "level": "medium",
+    "order": 2
+  },
+  {
+    "key": "ki.leader_l5",
+    "version": 1,
+    "channel": "leader",
+    "metric_key": "ki.leiar_l5.distribution",
+    "question": "L5",
+    "options": ["gratis"],
+    "raw_options": ["gratis"],
+    "basis": "L5",
+    "threshold": {
+      "medium": 0.15,
+      "high": 0.3
+    },
+    "min_count": 2,
+    "text": {
+      "nn": "har tilsette som brukar gratisversjonar utan avtale",
+      "en": "have employees using free versions without an agreement"
+    },
+    "action_text": {
+      "nn": "Snakk om kva verktøy som passar for dei, med jobbkonto, og kva som er trygt å dele.",
+      "en": "Discuss suitable tools with work accounts and what is safe to share."
+    },
+    "severity": "opportunity",
+    "level": "medium",
+    "order": 3
+  }
+]

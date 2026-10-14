@@ -1,0 +1,303 @@
+:root {
+  --s-gron: #2e7d32;
+  --s-gul: #e8c21e;
+  --s-oransje: #f08a1c;
+  --s-raud: #e5484d;
+  --s-gron-bg: rgba(46, 125, 50, 0.16);
+  --s-gul-bg: rgba(255, 236, 110, 0.42);
+  --s-oransje-bg: rgba(240, 138, 28, 0.26);
+  --s-raud-bg: rgba(229, 72, 77, 0.24);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --s-gron: #4caf50;
+    --s-gron-bg: rgba(76, 175, 80, 0.22);
+    --s-gul-bg: rgba(232, 194, 30, 0.24);
+  }
+}
+.dashboard-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  margin: 14px 0;
+}
+.dashboard-filter label {
+  color: var(--muted);
+}
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 22px 34px;
+  padding: 14px 0 20px;
+}
+.hero > div {
+  color: var(--muted);
+}
+.stor {
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.sone {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink);
+  margin-right: 9px;
+}
+.sone i,
+.niva i,
+.kake li i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.sone.gron i {
+  background: var(--s-gron);
+}
+.sone.gul i {
+  background: var(--s-gul);
+}
+.sone.oransje i {
+  background: var(--s-oransje);
+}
+.sone.raud i {
+  background: var(--s-raud);
+}
+.rute td {
+  min-width: 58px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.rute th {
+  min-width: 85px;
+}
+.rute td.gron {
+  background: var(--s-gron-bg);
+  box-shadow: inset 0 -3px var(--s-gron);
+}
+.rute td.gul {
+  background: var(--s-gul-bg);
+  box-shadow: inset 0 -3px var(--s-gul);
+}
+.rute td.oransje {
+  background: var(--s-oransje-bg);
+  box-shadow: inset 0 -3px var(--s-oransje);
+}
+.rute td.raud {
+  background: var(--s-raud-bg);
+  box-shadow: inset 0 -3px var(--s-raud);
+}
+.sumrad {
+  font-weight: 700;
+  border-top: 2px solid var(--line);
+}
+.kaker {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 22px;
+}
+.kake {
+  padding: 8px 0;
+}
+.kake h3 {
+  font-size: 15px;
+  min-height: 2.6em;
+  margin: 0;
+}
+.kake svg {
+  width: 146px;
+  display: block;
+  margin: 10px auto;
+}
+.kake .midt {
+  fill: var(--ink);
+  font-size: 18px;
+  font-weight: 700;
+}
+.kake .midt-under {
+  fill: var(--muted);
+  font-size: 8px;
+}
+.kake ul {
+  list-style: none;
+  padding: 0;
+  font-size: 13px;
+}
+.kake li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 5px 0;
+}
+.kake li span {
+  margin-left: auto;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.kake p {
+  color: var(--muted);
+  font-size: 12px;
+}
+.funn {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.funn li {
+  display: grid;
+  grid-template-columns: 82px 1fr;
+  gap: 6px 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.funn li:last-child {
+  border: 0;
+}
+.funn .tiltak {
+  grid-column: 2;
+  color: var(--muted);
+}
+.niva {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-weight: 700;
+}
+.niva.high {
+  color: var(--kritisk);
+}
+.niva.high i {
+  background: var(--kritisk);
+}
+.niva.medium {
+  color: var(--merk);
+}
+.niva.medium i {
+  background: var(--merk);
+}
+.rutenett {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 32px;
+}
+.distribution {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) minmax(50px, 1.2fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin: 9px 0;
+  font-size: 13px;
+}
+.distribution > span:last-child {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.spor {
+  height: 9px;
+  border-radius: 2px;
+  background: var(--bar-track);
+  overflow: hidden;
+}
+.spor > span {
+  display: block;
+  height: 100%;
+  background: var(--bar);
+}
+.tilsette td,
+.tilsette th {
+  font-variant-numeric: tabular-nums;
+}
+.tilsette th[scope='row'] {
+  font-family: monospace;
+  letter-spacing: 0.03em;
+}
+.tilsette .merk,
+.tilsette .m3 {
+  color: var(--kritisk);
+  font-weight: 700;
+}
+.tilsette .m2 {
+  color: var(--ink);
+}
+.pil-ned {
+  color: var(--god);
+}
+.pil-opp {
+  color: var(--kritisk);
+}
+.sitat-liste {
+  list-style: none;
+  padding: 0;
+}
+.sitat-liste li {
+  border-left: 3px solid var(--line);
+  padding: 6px 14px;
+  margin: 12px 0;
+}
+blockquote {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.kjelde {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+@media (max-width: 1000px) {
+  .kaker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 620px) {
+  .rutenett,
+  .kaker {
+    grid-template-columns: 1fr;
+  }
+  .distribution {
+    grid-template-columns: 1fr auto;
+  }
+  .distribution .spor {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .funn li {
+    grid-template-columns: 1fr;
+  }
+  .funn .tiltak {
+    grid-column: 1;
+  }
+}
+
+.leader-signal {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.leader-signal i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.leader-signal.high i {
+  background: var(--kritisk);
+}
+.leader-signal.medium i {
+  background: var(--merk);
+}
+.leader-signal.good i {
+  background: var(--god);
+}
