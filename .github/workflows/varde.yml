@@ -74,6 +74,7 @@ jobs:
           cache-dependency-path: varde/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @varde/api db:migrate
+      - run: pnpm --filter @varde/runner build
       - run: pnpm --filter @varde/api test:integration
       - run: pnpm invariants:0a
       - run: pnpm invariants:0b
@@ -173,8 +174,6 @@ jobs:
       - run: pnpm --filter @varde/runner exec playwright test
       - name: Golden of the old dashboard on synthetic fixtures (1.2c)
         run: pnpm parity:golden --check && pnpm --filter @varde/tools-parity test:golden
-      - name: Old and new runner profile screenshots (1.13e)
-        run: node tools/parity/screens.mjs
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
