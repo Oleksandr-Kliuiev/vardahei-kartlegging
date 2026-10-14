@@ -107,6 +107,7 @@ export function renderHome(view: HomeView): string {
             ? 'Du er logga inn.'
             : `Du er logga inn som <strong>${escapeHtml(view.session.name)}</strong>.`
         }</p>
+<p><a class="knapp hoved" href="/admin">Opne adminpanelet</a></p>
 <form method="post" action="/auth/logout"><button class="knapp" type="submit">Logg ut</button></form>`;
   return `<!doctype html>
 <html lang="nn">

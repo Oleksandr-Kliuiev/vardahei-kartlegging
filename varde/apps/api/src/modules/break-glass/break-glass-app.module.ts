@@ -2,6 +2,12 @@
 // store and Prisma client of the main app, plus POST /break-glass/login. No jobs here.
 import { type DynamicModule, Module } from '@nestjs/common';
 import type { BreakGlassConfig } from '../../config/break-glass-config.js';
+import { AdminModule } from '../../admin/admin.module.js';
+import { HomeModule } from '../../home/home.module.js';
+import { EventsModule } from '../events/events.module.js';
+import { PrivacyModule } from '../privacy/privacy.service.js';
+import { RoundsModule } from '../rounds/rounds.module.js';
+import { ResponsesModule } from '../responses/responses.module.js';
 import { HealthModule } from '../../health/health.module.js';
 import type { PrismaService } from '../../prisma/prisma.service.js';
 import { SharedPrismaModule } from '../../prisma/prisma.module.js';
@@ -22,6 +28,12 @@ export class BreakGlassAppModule {
       imports: [
         SharedPrismaModule.with(shared.prisma),
         HealthModule,
+        HomeModule,
+        AdminModule,
+        PrivacyModule.forApp(),
+        RoundsModule,
+        ResponsesModule,
+        EventsModule,
         AuthModule.register('break_glass', shared.store),
       ],
       controllers: [BreakGlassController],

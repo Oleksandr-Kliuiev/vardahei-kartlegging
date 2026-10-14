@@ -4,6 +4,7 @@
 // mode initials. Views on rows (per employee, Master_Analyse export) are 404 in anonymous
 // rounds; their real implementation is 1.27b / 1.30b.
 import type { Prisma } from '@prisma/client';
+import { auditWho } from '../auth/audit-who.js';
 import type { ResponseSource } from './source.js';
 import {
   NotFoundError,
@@ -30,13 +31,6 @@ export interface RowsContext {
 
 export const ROWS_AUDIT = 'privacy.rows';
 
-/** Who reads: entra:<oid>; for break-glass the operator of the window (session name), 1.10b. */
-export function auditWho(session: PrivacySession): string {
-  if (session.via === 'break_glass' && session.name !== null && session.name !== '')
-    return session.name;
-  return `${session.via}:${session.oid ?? session.sid}`;
-}
-
 function toRow(row: ResponseRow, mode: RoundMode): PrivacyRow {
   return {
     round_client: row.round_client,
@@ -62,7 +56,7 @@ export async function rows(
   ctx: RowsContext,
   view: RowsView = 'rows',
 ): Promise<RowsResult> {
-  const who = auditWho(requireSession(session));
+  const who = auditWho(requireSession(session), true);
   const scope = {
     round: query.round,
     ...(query.client === undefined ? {} : { client: query.client }),

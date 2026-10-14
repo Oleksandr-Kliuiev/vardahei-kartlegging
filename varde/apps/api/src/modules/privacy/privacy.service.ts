@@ -81,20 +81,62 @@ export class PrivacyService {
 
   /** Live progress is always aggregate; session IDs and duration rows never leave privacy. */
   progress(round: string, now = new Date()) {
-    return this.prisma.$transaction(async (tx) => {
-      const found = await tx.round.findUnique({ where: { id: round }, select: { template_version: { select: { content: true } } } });
-      if (!found) throw new NotFoundException('Runden finst ikkje.');
-      const content = found.template_version?.content as { questions?: unknown[] } | undefined;
-      const questionCount = content?.questions?.length ?? 0;
-      const clients = await tx.roundClient.findMany({ where: { round_id: round }, select: { id: true } });
-      const events = await tx.progressEvent.findMany({ where: { round_client: { round_id: round }, at: { gte: new Date(now.getTime() - 24 * 3600_000) } },
-        select: { round_client_id: true, session_id: true, question_no: true, finished: true, at: true } });
-      const durations = await tx.response.findMany({ where: { round_client: { round_id: round }, part: 'common', duration_s: { not: null } }, select: { round_client_id: true, duration_s: true } });
-      return { class: 'aggregate' as const, clients: clients.map((rc) => ({
-        round_client_id: rc.id,
-        ...progressCells(events.filter((e) => e.round_client_id === rc.id), durations.filter((d) => d.round_client_id === rc.id).map((d) => d.duration_s!), now, this.config.k, questionCount),
-      })) };
-    }, { isolationLevel: 'RepeatableRead' });
+    return this.prisma.$transaction(
+      async (tx) => {
+        const found = await tx.round.findUnique({
+          where: { id: round },
+          select: { template_version: { select: { content: true } } },
+        });
+        if (!found) throw new NotFoundException('Runden finst ikkje.');
+        const content = found.template_version?.content as { questions?: unknown[] } | undefined;
+        const questionCount = content?.questions?.length ?? 0;
+        const clients = await tx.roundClient.findMany({
+          where: { round_id: round },
+          select: { id: true, population_snapshot: true },
+        });
+        const events = await tx.progressEvent.findMany({
+          where: {
+            round_client: { round_id: round },
+            at: { gte: new Date(now.getTime() - 24 * 3600_000) },
+          },
+          select: {
+            round_client_id: true,
+            session_id: true,
+            question_no: true,
+            finished: true,
+            at: true,
+          },
+        });
+        const durations = await tx.response.findMany({
+          where: { round_client: { round_id: round }, part: 'common', duration_s: { not: null } },
+          select: { round_client_id: true, duration_s: true },
+        });
+        const totals = await tx.response.groupBy({
+          by: ['round_client_id'],
+          where: { round_client: { round_id: round }, part: 'common' },
+          _count: { _all: true },
+          _max: { submitted_day: true },
+        });
+        return {
+          class: 'aggregate' as const,
+          clients: clients.map((rc) => ({
+            round_client_id: rc.id,
+            population_snapshot: rc.population_snapshot,
+            responses_total: totals.find((t) => t.round_client_id === rc.id)?._count._all ?? 0,
+            last_response_day:
+              totals.find((t) => t.round_client_id === rc.id)?._max.submitted_day ?? null,
+            ...progressCells(
+              events.filter((e) => e.round_client_id === rc.id),
+              durations.filter((d) => d.round_client_id === rc.id).map((d) => d.duration_s!),
+              now,
+              this.config.k,
+              questionCount,
+            ),
+          })),
+        };
+      },
+      { isolationLevel: 'RepeatableRead' },
+    );
   }
 
   private get ctx(): RowsContext {

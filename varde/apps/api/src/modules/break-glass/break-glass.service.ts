@@ -13,6 +13,7 @@ import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fa
 import { configureApp } from '../../configure-app.js';
 import { readBreakGlassConfig, socketPath } from '../../config/break-glass-config.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { EventsService } from '../events/events.service.js';
 import { SessionStore } from '../auth/session.store.js';
 import { BreakGlassAppModule } from './break-glass-app.module.js';
 
@@ -37,6 +38,7 @@ export class BreakGlassService implements OnApplicationBootstrap, OnModuleDestro
   constructor(
     private readonly store: SessionStore,
     private readonly prisma: PrismaService,
+    private readonly events: EventsService,
   ) {}
 
   get listening(): boolean {
@@ -68,6 +70,7 @@ export class BreakGlassService implements OnApplicationBootstrap, OnModuleDestro
       new FastifyAdapter(),
       { logger: ['error', 'warn'] },
     );
+    app.get(EventsService).shareWith(this.events);
     await configureApp(app);
     await app.init();
     await app.getHttpAdapter().getInstance().listen({ path: config.socket });

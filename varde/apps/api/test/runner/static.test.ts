@@ -16,7 +16,11 @@ const saved = process.env.VARDE_STATIC_DIR;
 const dir = mkdtempSync(resolve(tmpdir(), 'varde-runner-static-'));
 beforeAll(async () => {
   const runner = resolve(__dirname, '../../../runner');
-  execFileSync(process.execPath, [resolve(runner, 'node_modules/vite/bin/vite.js'), 'build', '--outDir', dir], { cwd: runner, stdio: 'pipe' });
+  execFileSync(
+    process.execPath,
+    [resolve(runner, 'node_modules/vite/bin/vite.js'), 'build', '--outDir', dir],
+    { cwd: runner, stdio: 'pipe' },
+  );
   process.env.VARDE_STATIC_DIR = dir;
   out = captureOutput();
   app = await createApp();
@@ -32,7 +36,11 @@ afterAll(async () => {
 });
 const get = (url: string) => app.getHttpAdapter().getInstance().inject({ method: 'GET', url });
 function logLines(path: string) {
-  return out.lines().filter((l) => l.startsWith('{')).map((l) => JSON.parse(l) as { path: string; status: number }).filter((l) => l.path === path);
+  return out
+    .lines()
+    .filter((l) => l.startsWith('{'))
+    .map((l) => JSON.parse(l) as { path: string; status: number })
+    .filter((l) => l.path === path);
 }
 describe('runner static (1.12)', () => {
   it('/r and /r/ → compiled HTML, no-store, security headers, successful access unlogged', async () => {
@@ -41,8 +49,10 @@ describe('runner static (1.12)', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body).toContain('/r/assets/');
       expect(res.headers).toMatchObject({
-        'cache-control': 'no-store', 'referrer-policy': 'no-referrer',
-        'x-frame-options': 'DENY', 'x-content-type-options': 'nosniff',
+        'cache-control': 'no-store',
+        'referrer-policy': 'no-referrer',
+        'x-frame-options': 'DENY',
+        'x-content-type-options': 'nosniff',
       });
       expect(res.headers['content-security-policy']).toContain("default-src 'self'");
       expect(logLines(path)).toEqual([]);
@@ -68,12 +78,19 @@ describe('runner static (1.12)', () => {
   });
   it('CSP and compiled HTML/CSS use no external font hosts', async () => {
     const res = await get('/r');
-    const css = readdirSync(resolve(dir, 'assets')).filter((f) => f.endsWith('.css')).map((f) => readFileSync(resolve(dir, 'assets', f), 'utf8')).join('\n');
+    const css = readdirSync(resolve(dir, 'assets'))
+      .filter((f) => f.endsWith('.css'))
+      .map((f) => readFileSync(resolve(dir, 'assets', f), 'utf8'))
+      .join('\n');
     const content = `${res.headers['content-security-policy']}\n${res.body}\n${css}`;
     expect(content).not.toMatch(/fonts\.googleapis\.com|fonts\.gstatic\.com|https?:\/\//);
     expect(css).toContain('Atkinson Hyperlegible');
   });
   it('path traversal cannot serve source files', async () => {
-    expect((await get('/r/assets/%2e%2e/%2e%2e/package.json')).statusCode).toBe(404);
+    for (const path of ['/r/assets/%2e%2e/%2e%2e/package.json', '/r/assets/..%2findex.html']) {
+      const result = await get(path);
+      expect(result.statusCode).toBe(404);
+    }
+    expect(out.text()).not.toContain('ForbiddenError');
   });
 });

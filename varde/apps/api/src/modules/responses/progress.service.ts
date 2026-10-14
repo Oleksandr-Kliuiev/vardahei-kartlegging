@@ -5,6 +5,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { z } from 'zod';
+import { EventsService } from '../events/events.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { CodesService, requireCode } from '../rounds/codes.js';
 import { SlidingWindow } from './sliding-window.js';
@@ -19,6 +20,7 @@ export class ProgressService {
   private readonly limits = new SlidingWindow();
   constructor(
     private readonly prisma: PrismaService,
+    private readonly events: EventsService,
     private readonly codes: CodesService,
   ) {}
   async record(code: string, body: unknown, ip: string) {
@@ -41,6 +43,7 @@ export class ProgressService {
           data: { round_client_id: rc.id, ...result.data, finished: result.data.finished ?? false },
         });
       });
+      this.events.changed('progress');
     } catch (e) {
       undo();
       if (e instanceof HttpException) throw e;

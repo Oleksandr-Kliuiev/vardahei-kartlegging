@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import fastifyCookie from '@fastify/cookie';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
+import { registerAdminStatic } from './admin/static.js';
 import { registerRunnerStatic } from './runner/static.js';
 import { sessionSecret } from './config/auth-config.js';
 import { QuerySafeExceptionFilter } from './logging/query-safe-exception.filter.js';
@@ -20,5 +21,6 @@ export async function configureApp<T extends NestFastifyApplication>(app: T): Pr
     secret: sessionSecret() ?? fallbackSecret,
   });
   await registerRunnerStatic(app);
+  await registerAdminStatic(app);
   return app;
 }
