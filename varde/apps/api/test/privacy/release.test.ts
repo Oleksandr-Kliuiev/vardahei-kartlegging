@@ -206,6 +206,27 @@ describe('privacy.release (0.15b)', () => {
     assertReleaseSafety(second.released, first.released);
   });
 
+  const ROLES = ['all', 'role:a', 'role:b', 'role:c', 'role:d', 'role:e'];
+  const roleCells = (ns: number[]) => ROLES.map((g, i) => cell(g, ns[i]!, ns[i]!));
+
+  it('a group hidden now is not read as a visible zero: [14,3,2,4,3,2] → [19,2,3,3,6,3]', async () => {
+    const first = await run(roleCells([14, 3, 2, 4, 3, 2]));
+    const second = await run(roleCells([19, 2, 3, 3, 6, 3]));
+    assertReleaseSafety(first.released);
+    assertReleaseSafety(second.released);
+    assertReleaseSafety(second.released, first.released);
+  });
+
+  it('a carried value that is still unsafe against older history is hidden: three releases', async () => {
+    const first = await run(roleCells([28, 6, 6, 3, 4, 4]));
+    const second = await run(roleCells([35, 7, 7, 3, 5, 7]));
+    const third = await run(roleCells([32, 7, 6, 3, 4, 7]));
+    for (const r of [first, second, third]) assertReleaseSafety(r.released);
+    assertReleaseSafety(second.released, first.released);
+    assertReleaseSafety(third.released, second.released);
+    assertReleaseSafety(third.released, first.released);
+  });
+
   it('drop-out without a total carries deletions below k, but releases a deletion of k', async () => {
     const drop = (n: number) => cell('question:F5', n, n, { metric_key: 'progress.dropout' });
     const first = await run([drop(10)]);

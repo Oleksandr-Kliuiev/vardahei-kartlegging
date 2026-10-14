@@ -36,3 +36,4 @@
 - **1.10** `ReleasedSnapshot`: brand-тип и lint на приведение вне privacy; refine `first_version ⇒ version === 1` в MetricDefinition.
 - **1.32** связь `round_client` X ↔ `all_clients client:X` в истории выдач.
 - **этап 1** удалить stub `/stub/submit` (0.12 не планируется).
+- **1.32 (lint privacy, minor из приёмки 1a):** `privacy-internals.js:16-17` проверяет только Literal в `import()` — шаблонная строка `` await import(`../privacy/prisma-source.js`) `` проходит; `new PrivacyService(prisma, src, {k:1, …})` вне privacy проходит lint — добавить `PrivacyService` в `PRIVATE_STORAGE` (`boundaries.js`).
