@@ -94,6 +94,60 @@ export class PrismaSnapshotStore implements SnapshotStore {
     return [...byRelease.values()];
   }
 
+  private equivalent<T extends { client?: string | undefined; group: string }>(
+    population: Population,
+    cell: T,
+  ): T | undefined {
+    if (population === 'all_clients' && cell.client && cell.group === 'all') {
+      const mapped = { ...cell, group: `client:${cell.client}` };
+      delete mapped.client;
+      return mapped;
+    }
+    if (population === 'round_client' && cell.group.startsWith('client:'))
+      return { ...cell, client: cell.group.slice(7), group: 'all' };
+    return undefined;
+  }
+  async listLinkedReleased(round: string, population: Population): Promise<ReleasedSnapshot[]> {
+    if (population === 'leaders_all') return [];
+    const other = population === 'all_clients' ? 'round_client' : 'all_clients';
+    const rows = await this.listReleased(round, other);
+    return rows.flatMap((s) => {
+      const mapped = this.equivalent(population, s);
+      return mapped ? [{ ...mapped, population }] : [];
+    });
+  }
+  async listLinkedHistory(round: string, population: Population): Promise<HistoricCell[][]> {
+    if (population === 'leaders_all') return [];
+    const rows = await this.listHistory(
+      round,
+      population === 'all_clients' ? 'round_client' : 'all_clients',
+    );
+    return rows.map((release) =>
+      release.flatMap((s) => {
+        const mapped = this.equivalent(population, s);
+        return mapped ? [mapped] : [];
+      }),
+    );
+  }
+
+  async handoverSnapshots(clientId: string) {
+    const rows = await this.tx.aggregateSnapshot.findMany({
+      where: { client_id: clientId, population: 'round_client', status: 'released' },
+      orderBy: [{ round_id: 'asc' }, { metric_key: 'asc' }, { group: 'asc' }],
+    });
+    return rows.map((r) => ({
+      round: r.round_id,
+      population: 'round_client',
+      metric: r.metric_key,
+      group: r.group,
+      n: r.suppressed ? null : r.n,
+      numerator: r.suppressed ? null : r.numerator,
+      denominator: r.suppressed ? null : r.denominator,
+      missing: r.suppressed ? null : r.missing,
+      stale: r.stale,
+    }));
+  }
+
   async metricSet(round: string): Promise<readonly string[] | null> {
     const set = await this.tx.roundMetricSet.findUnique({ where: { round_id: round } });
     return set === null ? null : set.metric_keys;

@@ -1,3 +1,6 @@
+import { ExportPage } from './export-page.js';
+import { DeletionPage } from './deletion-page.js';
+import { ArchiveReminder } from './archive-reminder.js';
 import { DashboardPage } from './dashboard-page.js';
 import { useEffect, useState, type MouseEvent } from 'react';
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -84,11 +87,18 @@ function Shell({ name }: { name: string | null }) {
           </span>
         </div>
         {path === '/admin' ? (
-          <ProgressPage />
+          <>
+            <ArchiveReminder />
+            <ProgressPage />
+          </>
         ) : path === '/admin/rounds' ? (
           <RoundsPage />
         ) : path === '/admin/dashboard' ? (
           <DashboardPage />
+        ) : path === '/admin/export' ? (
+          <ExportPage />
+        ) : path === '/admin/deletion' ? (
+          <DeletionPage />
         ) : (
           <section className="del">
             <p>{section ? 'Denne delen kjem snart.' : 'Vel ein del i menyen.'}</p>

@@ -16,6 +16,7 @@ services:
       PORT: "3070"
       HOST: "0.0.0.0"
       BASE_URL: "https://kartlegging.vardahei.tech"
+      KARTLEGGING_LESEMODUS: "${KARTLEGGING_LESEMODUS:-0}"
       DATA_DIR: "/data"
     volumes:
       - /opt/kartlegging:/app:ro

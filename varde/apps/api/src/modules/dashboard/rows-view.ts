@@ -29,6 +29,7 @@ export class RowsView {
     round: string,
     client: string | undefined,
     session: PrivacySession | undefined,
+    audit: 'privacy.rows' | 'exports.master_analyse' = 'privacy.rows',
   ) {
     const scope = await this.context.load(round, client);
     if (scope.round.identification === 'none') throw new NotFoundError();
@@ -37,6 +38,7 @@ export class RowsView {
       { round, ...(scope.client ? { client: scope.client } : {}) },
       previous?.round.id,
       session,
+      audit,
     );
     const prev = new Map(prior.filter((r) => r.respondent_key).map((r) => [identity(r), r]));
     const sc = scoring(scope),

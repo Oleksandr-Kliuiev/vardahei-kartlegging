@@ -97,6 +97,10 @@ export class SvarImportService {
     const rounds = new ImportRounds(tx);
     const versions = new Map<string, ImportVersion>();
     const ids = parsed.candidates.map((c) => c.id);
+    await this.privacy.store.lockSubmissions(
+      tx,
+      ids.flatMap((id) => [importSubmissionId(id, 'common'), importSubmissionId(id, 'leader')]),
+    );
     const existing = new Set(
       (await this.privacy.store.existingKeys(tx, ids)).map((e) => `${e.source_id}|${e.part}`),
     );

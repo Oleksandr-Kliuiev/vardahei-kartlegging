@@ -8,6 +8,9 @@ export type RoundMode = 'initials' | 'none';
 
 /** One response as the source returns it; never leaves the module except through `rows`. */
 export interface ResponseRow {
+  source_id?: string | null;
+  lang?: string;
+  duration_s?: number | null;
   submission_id?: string;
   free?: Readonly<Record<string, unknown>>;
   round_client: string;
@@ -76,6 +79,9 @@ export interface RowsQuery {
 
 /** A row of class `rows`: common part only; `respondent_key` only in mode initials. */
 export interface PrivacyRow {
+  source_id?: string | null;
+  lang?: string;
+  duration_s?: number | null;
   submission_id?: string;
   free?: Readonly<Record<string, unknown>>;
   round_client: string;

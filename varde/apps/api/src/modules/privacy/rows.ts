@@ -35,6 +35,9 @@ function toRow(row: ResponseRow, mode: RoundMode): PrivacyRow {
   return {
     ...(row.submission_id === undefined ? {} : { submission_id: row.submission_id }),
     ...(row.free === undefined ? {} : { free: row.free }),
+    source_id: row.source_id ?? null,
+    lang: row.lang ?? 'nn',
+    duration_s: row.duration_s ?? null,
     round_client: row.round_client,
     client: row.client,
     part: 'common',
@@ -65,7 +68,12 @@ export async function rows(
   };
   return ctx.db.$transaction(async (tx) => {
     const entry = await tx.auditLog.create({
-      data: { who, what: ROWS_AUDIT, target: `round:${query.round}`, details: { ...scope, view } },
+      data: {
+        who,
+        what: view === 'master_analyse_export' ? 'exports.master_analyse' : ROWS_AUDIT,
+        target: `round:${query.round}`,
+        details: { ...scope, view },
+      },
     });
     const mode = await ctx.source.roundMode(query.round, tx);
     const read = await ctx.source.read({ ...scope, part: 'common' }, tx);
@@ -144,6 +152,7 @@ export async function employeeHistory(
   previous: string | undefined,
   session: PrivacySession | null | undefined,
   ctx: RowsContext,
+  audit: 'privacy.rows' | 'exports.master_analyse' = 'privacy.rows',
 ) {
   const who = auditWho(requireSession(session), true);
   return ctx.db.$transaction(async (tx) => {
@@ -172,7 +181,7 @@ export async function employeeHistory(
     await tx.auditLog.create({
       data: {
         who,
-        what: ROWS_AUDIT,
+        what: audit,
         target: `round:${query.round}`,
         details: {
           round: query.round,

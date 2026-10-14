@@ -134,6 +134,10 @@ export function QuotesSection({ query, showClient }: { query: string; showClient
                 .map((q, i) => (
                   <li key={`${q.submission_id}-${i}`}>
                     <blockquote>{q.text}</blockquote>
+                    <details>
+                      <summary>Innsendings-ID for sletting</summary>
+                      <code>{q.submission_id}</code>
+                    </details>
                     <span className="kjelde">
                       {[showClient ? q.client_name : null, q.role].filter(Boolean).join(', ')}
                     </span>

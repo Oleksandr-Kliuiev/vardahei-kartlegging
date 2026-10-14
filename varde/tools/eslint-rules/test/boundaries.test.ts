@@ -214,3 +214,18 @@ export const source = new PrismaResponseSource(new PrismaService());
     ).not.toContain('varde/privacy-internals');
   });
 });
+
+it('blocks privacy dynamic imports in static template strings and facade construction', async () => {
+  expect(
+    await ruleIds(
+      'apps/api/src/modules/__boundaries__/template.ts',
+      'export const source = () => import(`../privacy/prisma-source.js`);\n',
+    ),
+  ).toContain('varde/privacy-internals');
+  expect(
+    await ruleIds(
+      'apps/api/src/modules/__boundaries__/facade.ts',
+      "import { PrivacyService } from '../privacy/privacy.service.js';\nexport const p = new PrivacyService(null, null, {k:1});\n",
+    ),
+  ).toContain('no-restricted-syntax');
+});

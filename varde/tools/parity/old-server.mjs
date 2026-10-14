@@ -54,7 +54,7 @@ async function waitFor(url, ms = 15_000) {
  * @param {{ svar: string, runde1: string, tilgang: string, kundar: string }} files contents
  * @returns {Promise<{ base: string, password: string, epost: string, root: string, stop: () => Promise<void> }>}
  */
-export async function startOldServer(files) {
+export async function startOldServer(files, { readOnly = false } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'varde-old-kartlegging-'));
   const app = join(root, 'kartlegging');
   const data = join(root, 'data');
@@ -74,6 +74,7 @@ export async function startOldServer(files) {
     env: {
       PATH: process.env.PATH,
       PORT: String(port),
+      KARTLEGGING_LESEMODUS: readOnly ? '1' : '0',
       HOST: '127.0.0.1',
       DATA_DIR: data,
       BASE_URL: base,
@@ -82,7 +83,7 @@ export async function startOldServer(files) {
     stdio: ['ignore', 'ignore', 'inherit'],
   });
   const stop = async () => {
-    if (child.exitCode === null) {
+    if (child.exitCode === null && child.signalCode === null) {
       child.kill('SIGTERM');
       await new Promise((r) => child.once('exit', r));
     }

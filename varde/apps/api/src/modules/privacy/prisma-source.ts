@@ -1,6 +1,8 @@
 // ResponseSource on Prisma (1.4b): the round mode from Round.identification, responses of a
 // round by client (slug) and part; respondent_key only in mode initials; the day only.
 // In the allow-list of varde/privacy-only-release (reads `response`).
+import { NotFoundException } from '@nestjs/common';
+import { progressCells } from './progress.js';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { ResponseSource, SourceQuery } from './source.js';
@@ -31,6 +33,9 @@ export class PrismaResponseSource implements ResponseSource {
       },
       select: {
         submission_id: true,
+        source_id: true,
+        lang: true,
+        duration_s: true,
         free: true,
         part: true,
         role: true,
@@ -43,6 +48,9 @@ export class PrismaResponseSource implements ResponseSource {
     });
     return found.map((r) => ({
       submission_id: r.submission_id,
+      source_id: r.source_id,
+      lang: r.lang,
+      duration_s: r.duration_s,
       free: (r.free ?? {}) as Readonly<Record<string, unknown>>,
       round_client: r.round_client.id,
       client: r.round_client.client.slug,
@@ -55,4 +63,63 @@ export class PrismaResponseSource implements ResponseSource {
       submitted_day: r.submitted_day.toISOString().slice(0, 10),
     }));
   }
+}
+
+export function progressView(prisma: PrismaService, k: number, round: string, now = new Date()) {
+  return prisma.$transaction(
+    async (tx) => {
+      const found = await tx.round.findUnique({
+        where: { id: round },
+        select: { template_version: { select: { content: true } } },
+      });
+      if (!found) throw new NotFoundException('Runden finst ikkje.');
+      const content = found.template_version?.content as { questions?: unknown[] } | undefined;
+      const questionCount = content?.questions?.length ?? 0;
+      const clients = await tx.roundClient.findMany({
+        where: { round_id: round },
+        select: { id: true, population_snapshot: true },
+      });
+      const events = await tx.progressEvent.findMany({
+        where: {
+          round_client: { round_id: round },
+          at: { gte: new Date(now.getTime() - 24 * 3600_000) },
+        },
+        select: {
+          round_client_id: true,
+          session_id: true,
+          question_no: true,
+          finished: true,
+          at: true,
+        },
+      });
+      const durations = await tx.response.findMany({
+        where: { round_client: { round_id: round }, part: 'common', duration_s: { not: null } },
+        select: { round_client_id: true, duration_s: true },
+      });
+      const totals = await tx.response.groupBy({
+        by: ['round_client_id'],
+        where: { round_client: { round_id: round }, part: 'common' },
+        _count: { _all: true },
+        _max: { submitted_day: true },
+      });
+      return {
+        class: 'aggregate' as const,
+        clients: clients.map((rc) => ({
+          round_client_id: rc.id,
+          population_snapshot: rc.population_snapshot,
+          responses_total: totals.find((t) => t.round_client_id === rc.id)?._count._all ?? 0,
+          last_response_day:
+            totals.find((t) => t.round_client_id === rc.id)?._max.submitted_day ?? null,
+          ...progressCells(
+            events.filter((e) => e.round_client_id === rc.id),
+            durations.filter((d) => d.round_client_id === rc.id).map((d) => d.duration_s!),
+            now,
+            k,
+            questionCount,
+          ),
+        })),
+      };
+    },
+    { isolationLevel: 'RepeatableRead' },
+  );
 }

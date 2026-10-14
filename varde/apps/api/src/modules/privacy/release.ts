@@ -52,6 +52,12 @@ export interface SnapshotStore {
   listReleased(round: string, population: Population): Promise<ReleasedSnapshot[]>;
   /** Every earlier release of one (round, population), superseded ones included (1.4c). */
   listHistory(round: string, population: Population): Promise<readonly (readonly HistoricCell[])[]>;
+  /** Equivalent client totals issued through the other common population (1.32). */
+  listLinkedReleased?(round: string, population: Population): Promise<ReleasedSnapshot[]>;
+  listLinkedHistory?(
+    round: string,
+    population: Population,
+  ): Promise<readonly (readonly HistoricCell[])[]>;
   /** Metric set (`key@version`) fixed on the round, or null before its first release. */
   metricSet(round: string): Promise<readonly string[] | null>;
   fixMetricSet(round: string, metrics: readonly string[]): Promise<void>;
@@ -192,10 +198,12 @@ export async function release(
   const { k, exact_counts } = deps.config;
   const toFix = await checkMetricSet(round, cells, store, opts);
   const previous = await store.listReleased(round, population);
-  const prevByUnit = new Map(previous.map((s) => [unitOf(s), s]));
-  const history = (await store.listHistory(round, population)).map(
-    (h) => new Map(h.map((c) => [unitOf(c), c])),
-  );
+  const linked = (await store.listLinkedReleased?.(round, population)) ?? [];
+  const prevByUnit = new Map([...linked, ...previous].map((s) => [unitOf(s), s]));
+  const history = [
+    ...(await store.listHistory(round, population)),
+    ...((await store.listLinkedHistory?.(round, population)) ?? []),
+  ].map((h) => new Map(h.map((c) => [unitOf(c), c])));
 
   // A group can disappear after deletion. Its retained snapshot still belongs to the
   // published partition and must participate in the checks rather than be appended later.
@@ -260,7 +268,12 @@ export async function release(
             const value = published(c);
             return value === undefined ? [] : [value];
           });
-          for (const g of suppressedGroups(currentTotal, visible, k)) suppressed.add(g);
+          const remainder = currentTotal.n - visible.reduce((n, c) => n + c.n, 0);
+          // A carried component was already disclosed in another release/population.
+          // Hiding that component now cannot revoke it: hide the new total instead.
+          if (visible.some((c) => carry.has(c.group)) && remainder !== 0 && Math.abs(remainder) < k)
+            suppressed.add(TOTAL);
+          else for (const g of suppressedGroups(currentTotal, visible, k)) suppressed.add(g);
         }
       }
       for (const earlier of history) {

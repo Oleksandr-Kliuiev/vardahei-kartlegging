@@ -419,6 +419,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && p === "/sporsmal.js") return send(res, 200, fs.readFileSync(path.join(__dirname, "public/sporsmal.js")), "text/javascript; charset=utf-8");
 
     if (req.method === "GET" && p === "/api/sjekk") {
+      if (process.env.KARTLEGGING_LESEMODUS === "1") return send(res, 410, "Kartlegginga er avslutta.");
       if (kodeSperra(ip) || forMange("sjekk:" + ip, GRENSE.sjekk)) return send(res, 429, "For mange forsøk.");
       const k = (url.searchParams.get("k") || "").toLowerCase();
       if (!gyldigKode(k, url.searchParams.get("t") || "")) { kodeFeil(ip); hending("ugyldig_lenkje", { k: K.kundar[k] ? k : null }); return send(res, 403, "Lenkja er ikkje gyldig."); }
@@ -427,6 +428,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && p === "/api/svar") {
+      if (process.env.KARTLEGGING_LESEMODUS === "1") return send(res, 410, "Kartlegginga er avslutta.");
       if (kodeSperra(ip) || forMange("svar:" + ip, GRENSE.svar)) return send(res, 429, "For mange innsendingar. Prøv igjen om litt.");
       let d; try { d = JSON.parse(await lesBody(req)); } catch { return send(res, 400, "Ugyldig innhald."); }
       const rad = valider(d);
@@ -439,6 +441,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && p === "/api/framdrift") {
+      if (process.env.KARTLEGGING_LESEMODUS === "1") return send(res, 410, "Kartlegginga er avslutta.");
       if (forMange("fd:" + ip, GRENSE.framdriftIp)) return send(res, 429, "");
       let d; try { d = JSON.parse(await lesBody(req, 2000)); } catch { return send(res, 400, ""); }
       const k = String(d.k || "").toLowerCase();
@@ -561,6 +564,7 @@ ${tekst ? `<p class="feil">${tekst}</p>` : ""}<button type="submit">Lagre passor
     if (req.method === "POST" && p === "/api/admin/kunde") {
       if (!sameOrigin(req)) return send(res, 403, "Ugyldig førespurnad.");
       let d; try { d = JSON.parse(await lesBody(req, 2000)); } catch { return send(res, 400, ""); }
+      if (process.env.KARTLEGGING_LESEMODUS === "1" && d.open) return send(res, 409, "Lesemodus: kartlegginga kan ikkje opnast att.");
       const o = KUNDEOPPSETT[d.k];
       if (!o) return json(res, 404, { feil: "Ukjend kunde" });
       const for_ = JSON.stringify(o);

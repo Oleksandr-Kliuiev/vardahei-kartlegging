@@ -18,9 +18,9 @@ import { suppressedGroups, aggregate, assertAggregateQuery } from './aggregate.j
 import { liveCells, type ViewCell } from './view-cells.js';
 import { PrivacyViolation } from './types.js';
 import { PrismaSnapshotStore } from './prisma-snapshot-store.js';
-import { PrismaResponseSource } from './prisma-source.js';
+import { PrismaResponseSource, progressView } from './prisma-source.js';
+import { handover } from './handover.js';
 import { ResponseStore } from './response-store.js';
-import { progressCells } from './progress.js';
 import {
   type ComputedCell,
   release,
@@ -52,7 +52,7 @@ export type { ResponseSource, SourceQuery } from './source.js';
 export type { RowsDb } from './rows.js';
 export type { ViewCell } from './view-cells.js';
 export { ReleaseRejected } from './release.js';
-export type { ResponsePart } from './response-store.js';
+export type { DeleteScope, DeleteCounts, ResponsePart } from './response-store.js';
 export type {
   ComputedCell,
   HistoricCell,
@@ -90,62 +90,7 @@ export class PrivacyService {
 
   /** Live progress is always aggregate; session IDs and duration rows never leave privacy. */
   progress(round: string, now = new Date()) {
-    return this.prisma.$transaction(
-      async (tx) => {
-        const found = await tx.round.findUnique({
-          where: { id: round },
-          select: { template_version: { select: { content: true } } },
-        });
-        if (!found) throw new NotFoundException('Runden finst ikkje.');
-        const content = found.template_version?.content as { questions?: unknown[] } | undefined;
-        const questionCount = content?.questions?.length ?? 0;
-        const clients = await tx.roundClient.findMany({
-          where: { round_id: round },
-          select: { id: true, population_snapshot: true },
-        });
-        const events = await tx.progressEvent.findMany({
-          where: {
-            round_client: { round_id: round },
-            at: { gte: new Date(now.getTime() - 24 * 3600_000) },
-          },
-          select: {
-            round_client_id: true,
-            session_id: true,
-            question_no: true,
-            finished: true,
-            at: true,
-          },
-        });
-        const durations = await tx.response.findMany({
-          where: { round_client: { round_id: round }, part: 'common', duration_s: { not: null } },
-          select: { round_client_id: true, duration_s: true },
-        });
-        const totals = await tx.response.groupBy({
-          by: ['round_client_id'],
-          where: { round_client: { round_id: round }, part: 'common' },
-          _count: { _all: true },
-          _max: { submitted_day: true },
-        });
-        return {
-          class: 'aggregate' as const,
-          clients: clients.map((rc) => ({
-            round_client_id: rc.id,
-            population_snapshot: rc.population_snapshot,
-            responses_total: totals.find((t) => t.round_client_id === rc.id)?._count._all ?? 0,
-            last_response_day:
-              totals.find((t) => t.round_client_id === rc.id)?._max.submitted_day ?? null,
-            ...progressCells(
-              events.filter((e) => e.round_client_id === rc.id),
-              durations.filter((d) => d.round_client_id === rc.id).map((d) => d.duration_s!),
-              now,
-              this.config.k,
-              questionCount,
-            ),
-          })),
-        };
-      },
-      { isolationLevel: 'RepeatableRead' },
-    );
+    return progressView(this.prisma, this.config.k, round, now);
   }
 
   private get ctx(): RowsContext {
@@ -158,6 +103,7 @@ export class PrivacyService {
     population: Population,
     defs: readonly MetricDefinition[],
     client?: string,
+    releasedOnly = false,
   ): Promise<ViewCell[]> {
     const r = await this.prisma.round.findUnique({ where: { id: round } });
     if (!r) throw new NotFoundException('Runden finst ikkje.');
@@ -165,7 +111,7 @@ export class PrivacyService {
       throw new PrivacyViolation('round_client needs a client');
     if (population !== 'round_client' && client)
       throw new PrivacyViolation('population cannot have client');
-    if (r.status !== 'closed' && r.status !== 'archived') {
+    if (!releasedOnly && r.status !== 'closed' && r.status !== 'archived') {
       return liveCells(await this.computeCells(round, population, defs, client), this.config.k);
     }
     const c = client ? await this.prisma.client.findUnique({ where: { slug: client } }) : null;
@@ -389,6 +335,10 @@ export class PrivacyService {
     );
   }
 
+  handover(client: string, reason: string, recipient: string, session: PrivacySession | undefined) {
+    return handover(client, reason, recipient, session, this.ctx);
+  }
+
   /** Class `rows`: admin session, AuditLog in the same transaction as the read. */
   rows(query: RowsQuery, session: PrivacySession | null | undefined): Promise<RowsResult> {
     return rows(query, session, this.ctx);
@@ -402,8 +352,9 @@ export class PrivacyService {
     query: RowsQuery,
     previous: string | undefined,
     session: PrivacySession | null | undefined,
+    audit: 'privacy.rows' | 'exports.master_analyse' = 'privacy.rows',
   ) {
-    return employeeHistory(query, previous, session, this.ctx);
+    return employeeHistory(query, previous, session, this.ctx, audit);
   }
 
   leaderAnswers(query: RowsQuery & { client: string }, session: PrivacySession | null | undefined) {
@@ -450,8 +401,9 @@ export class PrivacyService {
       );
     }
     return this.prisma.$transaction(
-      (tx) =>
-        release(
+      async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${'privacy.release:' + round}, 0))`;
+        return release(
           round,
           population,
           cells,
@@ -462,7 +414,8 @@ export class PrivacyService {
             audit: { write: async (data) => void (await tx.auditLog.create({ data })) },
           },
           opts,
-        ),
+        );
+      },
       { timeout: 120_000, maxWait: 10_000 },
     );
   }

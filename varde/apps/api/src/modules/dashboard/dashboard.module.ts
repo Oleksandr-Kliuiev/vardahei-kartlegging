@@ -14,6 +14,6 @@ import { DashboardController } from './dashboard.controller.js';
   imports: [MetricsModule, FindingsModule],
   controllers: [DashboardController, LeaderController, RowsController],
   providers: [DashboardContext, AggregateView, LeaderView, RowsView, ComparisonView],
-  exports: [DashboardContext, AggregateView],
+  exports: [DashboardContext, AggregateView, RowsView],
 })
 export class DashboardModule {}

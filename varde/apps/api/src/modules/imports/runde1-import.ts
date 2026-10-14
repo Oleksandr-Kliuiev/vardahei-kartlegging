@@ -172,6 +172,10 @@ export class Runde1ImportService {
       });
     });
     const ids = candidates.map((c) => c.sourceId);
+    await this.privacy.store.lockSubmissions(
+      tx,
+      candidates.map((c) => c.part.submission_id),
+    );
     const existing = new Set(
       (await this.privacy.store.existingKeys(tx, ids))
         .filter((e) => e.part === 'common')

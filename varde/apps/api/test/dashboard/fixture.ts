@@ -1,3 +1,4 @@
+import type { RouteOptions } from 'fastify';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { SvarImportService } from '../../src/modules/imports/svar-import.js';
 import { Runde1ImportService } from '../../src/modules/imports/runde1-import.js';
@@ -8,8 +9,8 @@ import { clients, kundar, tilgang, fixtureText } from '../support/fixtures.js';
 import { resetImports } from '../support/imports.js';
 import { SEED_DIR } from '../support/seed-dir.js';
 
-export async function dashboardFixture() {
-  const t = await startApp({});
+export async function dashboardFixture(onRoute?: (route: RouteOptions) => void) {
+  const t = await startApp({}, onRoute);
   const prisma = t.app.get(PrismaService);
   await t.app.get(SeedService).seedAll({
     clients: clients(),

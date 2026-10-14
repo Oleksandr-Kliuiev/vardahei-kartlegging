@@ -93,3 +93,5 @@ ssh vardahei-vps 'bash /opt/kartlegging/deploy/installer.sh'
 Обновление кода: тот же `rsync` и `docker compose -f /opt/kartlegging/deploy/compose.yaml restart`.
 
 Бэкап: папка `/opt/kartlegging/data`.
+
+`KARTLEGGING_LESEMODUS=1` stengjer `/api/sjekk`, `/api/svar` og `/api/framdrift` med 410 før validering; admin kan ikkje opne kundar att (409). Standard er 0. Etter endring: `docker compose up -d --force-recreate`. Lokal syntetisk test: `node tools/test/lesemodus.test.js`.

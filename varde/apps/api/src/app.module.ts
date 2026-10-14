@@ -1,3 +1,6 @@
+import { CutoverModule } from './modules/cutover/cutover.module.js';
+import { RetentionModule } from './modules/retention/retention.module.js';
+import { ExportsModule } from './modules/exports/exports.module.js';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { Module } from '@nestjs/common';
 import { AdminModule } from './admin/admin.module.js';
@@ -32,6 +35,9 @@ import { PrismaModule } from './prisma/prisma.module.js';
     AdminModule,
     EventsModule,
     DashboardModule,
+    ExportsModule,
+    RetentionModule,
+    CutoverModule,
   ],
 })
 export class AppModule {}
