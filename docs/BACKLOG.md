@@ -37,3 +37,6 @@
 - **1.32** связь `round_client` X ↔ `all_clients client:X` в истории выдач.
 - **этап 1** удалить stub `/stub/submit` (0.12 не планируется).
 - **1.32 (lint privacy, minor из приёмки 1a):** `privacy-internals.js:16-17` проверяет только Literal в `import()` — шаблонная строка `` await import(`../privacy/prisma-source.js`) `` проходит; `new PrivacyService(prisma, src, {k:1, …})` вне privacy проходит lint — добавить `PrivacyService` в `PRIVATE_STORAGE` (`boundaries.js`).
+- **1.22/1.32 (минор из приёмки 1b, дыры в тестах; код верный):** квота считает обе части (тест с leader-строками); код только из `Authorization`, не из `?c=` (тест); CSP целиком (`unsafe-inline`/`unsafe-eval`, `frame-ancestors`, `object-src`), а не только `default-src`; identifier под чужим ключом в `answers`; медиана прогресса без leader; свободный текст скрытого вопроса; гонки close/submit и между RoundClient; окно 24 ч в прогрессе; корень статики `dist/assets`.
+- **1.23 (минор):** закодированный traversal (`/r/assets/..%2findex.html`) даёт 500 и полный stack `ForbiddenError` в логе (`query-safe-exception.filter.ts:38`) — отдавать 404 без stack; единый helper `auditWho` (`rounds.controller.ts:14` пишет `oid ?? sid`, break-glass должен писать оператора).
+- **1.31b (условие):** `retention.forget` берёт тот же advisory lock на `submission_id`, что Submission API, иначе гонка forget и replay.

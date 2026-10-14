@@ -1,5 +1,10 @@
 // Integration test files (Postgres). Excluded from `pnpm test`, run by `pnpm test:integration`.
 export const INTEGRATION_FILES = [
+  'test/responses/submission.test.ts',
+  'test/responses/submission-logs.test.ts',
+  'test/responses/quotas.test.ts',
+  'test/responses/progress.test.ts',
+  'test/rounds/invitation.test.ts',
   'test/migrations.test.ts',
   'test/audit-log.test.ts',
   'test/seed.test.ts',
@@ -16,6 +21,8 @@ export const INTEGRATION_FILES = [
   'test/privacy/prisma-source.test.ts',
   'test/privacy/prisma-snapshot-store.test.ts',
   'test/rounds/seed.test.ts',
+  'test/rounds/codes.test.ts',
+  'test/rounds/lifecycle.test.ts',
   'test/imports/svar-import.test.ts',
   'test/imports/runde1-import.test.ts',
   'test/metrics/parity.test.ts',

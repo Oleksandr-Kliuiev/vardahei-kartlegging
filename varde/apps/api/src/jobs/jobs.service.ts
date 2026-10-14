@@ -25,6 +25,7 @@ const RESTART_DELAY_MS = 30_000;
 export class JobsService implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger('jobs');
   private readonly handlers = new Map<string, JobHandler>();
+  private readonly schedules = new Map<string, { cron: string; payload: JobPayload }>();
   private readonly types: Map<string, JobType>;
   private boss: PgBoss | undefined;
   private retryTimer: NodeJS.Timeout | undefined;
@@ -98,6 +99,7 @@ export class JobsService implements OnApplicationBootstrap, OnModuleDestroy {
       }
     }
     for (const name of this.handlers.keys()) await this.work(name);
+    for (const [name, schedule] of this.schedules) await boss.schedule(name, schedule.cron, schedule.payload, queueLimits(this.type(name)));
     this.ready = true;
   }
 
@@ -111,6 +113,14 @@ export class JobsService implements OnApplicationBootstrap, OnModuleDestroy {
     this.type(name);
     this.handlers.set(name, handler);
     if (this.boss !== undefined) await this.work(name);
+  }
+
+  async schedule(name: string, cron: string, payload: unknown): Promise<void> {
+    const type = this.type(name);
+    const parsed = JobPayloadSchema.safeParse(payload);
+    if (!parsed.success) throw new JobPayloadRejected(name);
+    this.schedules.set(name, { cron, payload: parsed.data });
+    if (this.ready) await this.requireBoss().schedule(name, cron, parsed.data, queueLimits(type));
   }
 
   private async work(name: string): Promise<void> {

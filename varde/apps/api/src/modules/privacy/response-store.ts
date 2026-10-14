@@ -53,10 +53,14 @@ export class ResponseStore {
   async findBySubmission(
     tx: Prisma.TransactionClient,
     submissionId: string,
-  ): Promise<{ content_hash: string } | null> {
+  ): Promise<{ content_hash: string; round_client_id: string } | null> {
     return tx.response.findUnique({
       where: { submission_id: submissionId },
-      select: { content_hash: true },
+      select: { content_hash: true, round_client_id: true },
     });
+  }
+
+  count(tx: Prisma.TransactionClient, roundClient: string): Promise<number> {
+    return tx.response.count({ where: { round_client_id: roundClient } });
   }
 }

@@ -5,6 +5,7 @@ import type { LocalizedText } from '@varde/schema/template/texts';
 import { TemplateVersionContent } from '@varde/schema/template/validate';
 import { expressionFor } from './expressions.js';
 import type { Kartlegging, Skjema, Sporsmal, Tekst, Val } from './kartlegging.js';
+import invitations from '../invitation.json';
 
 const text = (t: Tekst): LocalizedText => ({ nn: t.nn, en: t.en });
 const nnOnly = (s: string): LocalizedText => ({ nn: s });
@@ -137,6 +138,7 @@ export function convertSkjema(k: Kartlegging, id: string): TemplateContent {
       }),
     ),
     max_tips: k.maksTips,
+    invitation: invitations[id as keyof typeof invitations]?.[identifierOf(skjema) === undefined ? 'none' : 'initials'],
     questions: skjema.sporsmal.map((q) => question(skjema, q)),
   });
   const parsed = TemplateVersionContent.safeParse(raw);

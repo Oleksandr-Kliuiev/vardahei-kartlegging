@@ -134,9 +134,20 @@ model RoundClient {
   status              String          @default("draft")
   responses           Response[]
   progress_events     ProgressEvent[]
+  revoked_codes       RevokedRoundCode[]
 
   @@unique([round_id, client_id])
   @@map("round_client")
+}
+
+/// Hash-only history: old links retain the revoked message after reissue (ADR-009).
+model RevokedRoundCode {
+  code_hash       String      @id
+  round_client_id String      @db.Uuid
+  round_client    RoundClient @relation(fields: [round_client_id], references: [id], onDelete: Cascade)
+  revoked_at      DateTime    @default(now()) @db.Timestamptz(6)
+
+  @@map("revoked_round_code")
 }
 
 /// One part (common | leader) of one submission (1.4b, ADR-006, ADR-024, ADR-025). No names, IP

@@ -36,6 +36,11 @@ export const Intro = z.strictObject({
   contact: Contact,
 });
 
+export const Invitation = z.strictObject({
+  letter: LocalizedText,
+  poster: z.strictObject({ title: LocalizedText, text: LocalizedText, footer: LocalizedText }),
+});
+
 export const Tip = z.strictObject({
   id: z.string().regex(/^[a-z0-9_-]+$/),
   when: Expression,
@@ -58,7 +63,7 @@ export const TemplateContentShape = z.strictObject({
   tips: z.array(Tip),
   max_tips: z.number().int().min(0),
   /** Texts of "Send ut" and the poster (filled by 1.21). */
-  invitation: z.record(z.string(), LocalizedText).optional(),
+  invitation: Invitation.optional(),
   questions: z.array(Question).min(1),
 });
 export type TemplateContent = z.infer<typeof TemplateContentShape>;

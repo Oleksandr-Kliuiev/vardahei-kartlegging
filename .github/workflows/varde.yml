@@ -74,11 +74,14 @@ jobs:
           cache-dependency-path: varde/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @varde/api db:migrate
+      - run: pnpm --filter @varde/runner build
       - run: pnpm --filter @varde/api test:integration
       - run: pnpm invariants:0a
       - run: pnpm invariants:0b
       - run: pnpm invariants:0c
       - run: pnpm invariants:1a
+      - run: pnpm invariants:1b:runner
+      - run: pnpm invariants:1b
 
   image:
     runs-on: ubuntu-24.04
@@ -106,6 +109,8 @@ jobs:
           sleep 5
           test "$(docker inspect -f '{{.State.Running}}' "$cid")" = true || { docker logs "$cid"; exit 1; }
           docker stop "$cid"
+      - name: Runner is built into the image (1.12)
+        run: docker run --rm varde-api:ci test -f /out/static/runner/index.html
       - name: Config files are in the image
         run: docker run --rm varde-api:ci test -f /out/config/db-budget.json
       - name: '@varde/schema is built to dist in the image (1.4b)'
@@ -166,13 +171,17 @@ jobs:
       - run: pnpm --filter "@varde/api..." build
       - run: pnpm --filter @varde/admin exec playwright install --with-deps chromium
       - run: pnpm --filter @varde/admin e2e
+      - run: pnpm --filter @varde/runner exec playwright test
       - name: Golden of the old dashboard on synthetic fixtures (1.2c)
         run: pnpm parity:golden --check && pnpm --filter @varde/tools-parity test:golden
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: playwright-report
-          path: varde/apps/admin/playwright-report
+          path: |
+            varde/apps/admin/playwright-report
+            varde/apps/runner/test-results
+            docs/varde/evidence/stage-1/1.13e
           retention-days: 7
 
   secrets:

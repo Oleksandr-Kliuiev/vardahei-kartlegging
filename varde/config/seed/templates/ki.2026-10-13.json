@@ -355,6 +355,26 @@
       }
     ],
     "max_tips": 4,
+    "invitation": {
+      "letter": {
+        "nn": "Hei alle!\n\nVi vil gjerne finne ut kva som tek tid i arbeidsdagen vår, og om KI kan gjere noko av det enklare. Vardahei IT har laga ei kort undersøking om det. Har du aldri brukt KI, er svaret ditt like nyttig.\n\nDu skriv inn initialane dine først, elles er det ingen namn. Svara per person ser berre Vardahei IT, og bedrifta får eit samla bilete. Det tek om lag {minutt} minutt.\n\n{lenkje}\n\nLenkja går til {host}, så du kan trygt opne ho.{frist}\n\nTakk!",
+        "en": "Hi everyone,\n\nWe'd like to find out what takes time in our working day, and whether AI could make some of it easier. Vardahei IT has made a short survey about it. If you've never used AI, your answer is just as useful.\n\nYou enter your initials first; apart from that there are no names. Only Vardahei IT sees answers per person, and the company gets an overall picture. It takes about {minutt} minutes.\n\n{lenkje}\n\nThe link goes to {host}, so it's safe to open.{frist}\n\nThanks!"
+      },
+      "poster": {
+        "title": {
+          "nn": "Kva tek tid i arbeidsdagen din?",
+          "en": "What takes time in your working day?"
+        },
+        "text": {
+          "nn": "Vardahei IT vil finne ut kva som tek tid, og om KI kan gjere noko av det enklare. Har du aldri brukt KI, er svaret ditt like nyttig. Om lag {minutt} minutt.",
+          "en": "A {minutt}-minute survey from Vardahei IT. If you have never used AI, your answer is just as useful."
+        },
+        "footer": {
+          "nn": "Skriv inn initialane dine først. Svara per person ser berre Vardahei IT. Bedrifta får eit samla bilete utan initialar.",
+          "en": "Enter your initials first. Only Vardahei IT sees the answers per person. Your company gets an overall picture without initials."
+        }
+      }
+    },
     "questions": [
       {
         "id": "K0",

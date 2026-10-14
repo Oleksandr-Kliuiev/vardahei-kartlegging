@@ -9,6 +9,7 @@
     "pollingIntervalSeconds": 2
   },
   "types": {
-    "demo.sleep": { "settings": { "sleepSeconds": 5 } }
+    "demo.sleep": { "settings": { "sleepSeconds": 5 } },
+    "retention.progress-ttl": {}
   }
 }

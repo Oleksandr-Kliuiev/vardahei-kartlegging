@@ -1,0 +1,79 @@
+import 'reflect-metadata';
+import { randomBytes } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { resolve } from 'node:path';
+import type { NestFastifyApplication } from '@nestjs/platform-fastify';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createApp } from '../../src/bootstrap.js';
+import { captureOutput, type Captured } from '../support/capture-output.js';
+
+let app: NestFastifyApplication;
+let out: Captured;
+const code = randomBytes(16).toString('base64url');
+const saved = process.env.VARDE_STATIC_DIR;
+const dir = mkdtempSync(resolve(tmpdir(), 'varde-runner-static-'));
+beforeAll(async () => {
+  const runner = resolve(__dirname, '../../../runner');
+  execFileSync(process.execPath, [resolve(runner, 'node_modules/vite/bin/vite.js'), 'build', '--outDir', dir], { cwd: runner, stdio: 'pipe' });
+  process.env.VARDE_STATIC_DIR = dir;
+  out = captureOutput();
+  app = await createApp();
+  await app.init();
+  await app.getHttpAdapter().getInstance().ready();
+}, 30_000);
+afterAll(async () => {
+  await app?.close();
+  out?.restore();
+  if (saved === undefined) delete process.env.VARDE_STATIC_DIR;
+  else process.env.VARDE_STATIC_DIR = saved;
+  rmSync(dir, { recursive: true, force: true });
+});
+const get = (url: string) => app.getHttpAdapter().getInstance().inject({ method: 'GET', url });
+function logLines(path: string) {
+  return out.lines().filter((l) => l.startsWith('{')).map((l) => JSON.parse(l) as { path: string; status: number }).filter((l) => l.path === path);
+}
+describe('runner static (1.12)', () => {
+  it('/r and /r/ → compiled HTML, no-store, security headers, successful access unlogged', async () => {
+    for (const path of ['/r', '/r/']) {
+      const res = await get(`${path}?c=${code}`);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toContain('/r/assets/');
+      expect(res.headers).toMatchObject({
+        'cache-control': 'no-store', 'referrer-policy': 'no-referrer',
+        'x-frame-options': 'DENY', 'x-content-type-options': 'nosniff',
+      });
+      expect(res.headers['content-security-policy']).toContain("default-src 'self'");
+      expect(logLines(path)).toEqual([]);
+    }
+  });
+  it('missing runner route → 404 with neither query nor code in log/response', async () => {
+    const res = await get(`/r/x?c=${code}`);
+    expect(res.statusCode).toBe(404);
+    expect(res.body).not.toContain(code);
+    expect(logLines('/r/x')).toEqual([expect.objectContaining({ status: 404 })]);
+    expect(out.text()).not.toContain(code);
+  });
+  it('assets cache is immutable; Atkinson woff2 is served locally', async () => {
+    const files = readdirSync(resolve(dir, 'assets'));
+    const fonts = files.filter((f) => f.endsWith('.woff2'));
+    expect(fonts.length).toBeGreaterThan(0);
+    for (const file of [files.find((f) => f.endsWith('.js'))!, ...fonts]) {
+      const res = await get(`/r/assets/${file}`);
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['cache-control']).toBe('public, max-age=31536000, immutable');
+    }
+    expect((await get('/r/assets/missing.js')).statusCode).toBe(404);
+  });
+  it('CSP and compiled HTML/CSS use no external font hosts', async () => {
+    const res = await get('/r');
+    const css = readdirSync(resolve(dir, 'assets')).filter((f) => f.endsWith('.css')).map((f) => readFileSync(resolve(dir, 'assets', f), 'utf8')).join('\n');
+    const content = `${res.headers['content-security-policy']}\n${res.body}\n${css}`;
+    expect(content).not.toMatch(/fonts\.googleapis\.com|fonts\.gstatic\.com|https?:\/\//);
+    expect(css).toContain('Atkinson Hyperlegible');
+  });
+  it('path traversal cannot serve source files', async () => {
+    expect((await get('/r/assets/%2e%2e/%2e%2e/package.json')).statusCode).toBe(404);
+  });
+});

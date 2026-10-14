@@ -6,6 +6,7 @@ import {
   Inject,
   Injectable,
   Module,
+  NotFoundException,
   type Provider,
 } from '@nestjs/common';
 import { cells as metricCells } from '@varde/rules/findings';
@@ -18,6 +19,7 @@ import { PrivacyViolation } from './types.js';
 import { PrismaSnapshotStore } from './prisma-snapshot-store.js';
 import { PrismaResponseSource } from './prisma-source.js';
 import { ResponseStore } from './response-store.js';
+import { progressCells } from './progress.js';
 import {
   type ComputedCell,
   release,
@@ -76,6 +78,24 @@ export class PrivacyService {
 
   /** The only write path of Response (import 1.8, Submission API 1.16). */
   readonly store = new ResponseStore();
+
+  /** Live progress is always aggregate; session IDs and duration rows never leave privacy. */
+  progress(round: string, now = new Date()) {
+    return this.prisma.$transaction(async (tx) => {
+      const found = await tx.round.findUnique({ where: { id: round }, select: { template_version: { select: { content: true } } } });
+      if (!found) throw new NotFoundException('Runden finst ikkje.');
+      const content = found.template_version?.content as { questions?: unknown[] } | undefined;
+      const questionCount = content?.questions?.length ?? 0;
+      const clients = await tx.roundClient.findMany({ where: { round_id: round }, select: { id: true } });
+      const events = await tx.progressEvent.findMany({ where: { round_client: { round_id: round }, at: { gte: new Date(now.getTime() - 24 * 3600_000) } },
+        select: { round_client_id: true, session_id: true, question_no: true, finished: true, at: true } });
+      const durations = await tx.response.findMany({ where: { round_client: { round_id: round }, part: 'common', duration_s: { not: null } }, select: { round_client_id: true, duration_s: true } });
+      return { class: 'aggregate' as const, clients: clients.map((rc) => ({
+        round_client_id: rc.id,
+        ...progressCells(events.filter((e) => e.round_client_id === rc.id), durations.filter((d) => d.round_client_id === rc.id).map((d) => d.duration_s!), now, this.config.k, questionCount),
+      })) };
+    }, { isolationLevel: 'RepeatableRead' });
+  }
 
   private get ctx(): RowsContext {
     return { db: this.prisma, source: this.source };

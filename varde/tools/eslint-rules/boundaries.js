@@ -85,7 +85,7 @@ export const boundaries = [
     },
   },
   {
-    files: ['apps/runner/**/*.{ts,tsx}'],
+    files: ['apps/runner/src/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
