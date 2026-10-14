@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 import { REPO } from './bank.mjs';
 import { FIXTURES } from './generate.mjs';
+import { browserPaths, pathsJson } from './runner-paths.mjs';
 import { startOldServer } from './old-server.mjs';
 
 export const GOLDEN = fileURLToPath(new URL('./golden/', import.meta.url));
@@ -123,6 +124,7 @@ async function run(svar, skjemaIds, withCsv) {
       const res = await page.request.get(`${server.base}/api/analyse.csv`);
       if (!res.ok()) throw new Error(`analyse.csv: ${res.status()}`);
       out.set('analyse.csv', await res.text());
+      out.set('paths.json', pathsJson(await browserPaths(server, JSON.parse(fixture('tilgang.json')))));
     }
     return out;
   } finally {

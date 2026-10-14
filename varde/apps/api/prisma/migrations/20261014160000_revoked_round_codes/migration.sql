@@ -1,0 +1,5 @@
+CREATE TABLE "revoked_round_code" (
+  "code_hash" TEXT NOT NULL PRIMARY KEY,
+  "round_client_id" UUID NOT NULL REFERENCES "round_client"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "revoked_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

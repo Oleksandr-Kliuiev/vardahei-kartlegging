@@ -2,8 +2,10 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["vite/client"]
   },
-  "include": ["src", "test", "*.config.ts"]
+  "include": ["src", "test", "e2e", "*.config.ts"]
 }

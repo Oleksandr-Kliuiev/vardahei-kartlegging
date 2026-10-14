@@ -9,10 +9,12 @@
     "build": "tsc --noEmit && vite build"
   },
   "dependencies": {
+    "@fontsource/atkinson-hyperlegible": "5.2.8",
     "@varde/rules": "workspace:*",
     "preact": "10.29.8"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.0",
     "@varde/schema": "workspace:*",
     "eslint": "9.39.5",
     "jsdom": "26.1.0",

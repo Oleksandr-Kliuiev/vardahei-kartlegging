@@ -4,7 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { ImportsModule } from '../modules/imports/imports.module.js';
 import { MetricsModule } from '../modules/metrics/metrics.module.js';
 import { PrivacyModule } from '../modules/privacy/privacy.service.js';
-import { RoundsModule } from '../modules/rounds/rounds.module.js';
+import { RoundsCoreModule } from '../modules/rounds/rounds-core.module.js';
 import { SurveysModule } from '../modules/surveys/surveys.module.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 
@@ -13,7 +13,7 @@ import { PrismaModule } from '../prisma/prisma.module.js';
     PrismaModule,
     PrivacyModule.forApp(),
     SurveysModule,
-    RoundsModule,
+    RoundsCoreModule,
     ImportsModule,
     MetricsModule,
   ],

@@ -1,14 +1,12 @@
 import { Module } from '@nestjs/common';
-import { SurveysModule } from '../surveys/surveys.module.js';
 import { LegacyController } from './legacy.controller.js';
-import { LegacyService } from './legacy.service.js';
-import { SeedService } from './seed.service.js';
+import { RoundsController } from './rounds.controller.js';
+import { RoundsCoreModule } from './rounds-core.module.js';
+import { RunnerController } from './runner.controller.js';
 
-/** Clients, rounds and round clients: seed of kartlegging and old links (1.7). */
 @Module({
-  imports: [SurveysModule],
-  controllers: [LegacyController],
-  providers: [SeedService, LegacyService],
-  exports: [SeedService],
+  imports: [RoundsCoreModule],
+  controllers: [LegacyController, RunnerController, RoundsController],
+  exports: [RoundsCoreModule],
 })
 export class RoundsModule {}

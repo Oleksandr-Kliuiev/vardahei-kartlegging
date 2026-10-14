@@ -16,6 +16,8 @@ export const INTEGRATION_FILES = [
   'test/privacy/prisma-source.test.ts',
   'test/privacy/prisma-snapshot-store.test.ts',
   'test/rounds/seed.test.ts',
+  'test/rounds/codes.test.ts',
+  'test/rounds/lifecycle.test.ts',
   'test/imports/svar-import.test.ts',
   'test/imports/runde1-import.test.ts',
   'test/metrics/parity.test.ts',
