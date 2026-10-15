@@ -84,7 +84,8 @@ export async function released(round: string): Promise<Map<string, Snap>> {
     c.query<Snap>(
       `SELECT s.population, c.slug AS client, s.metric_key, s."group", s.n, s.numerator, s.denominator, s.suppressed
          FROM aggregate_snapshot s LEFT JOIN client c ON c.id = s.client_id
-        WHERE s.round_id = $1 AND s.status = 'released'`,
+        WHERE s.round_id = $1 AND s.status = 'released'
+        ORDER BY s.population, c.slug NULLS FIRST, s.metric_key, s."group"`,
       [round],
     ),
   );

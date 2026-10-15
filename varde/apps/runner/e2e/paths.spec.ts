@@ -11,6 +11,9 @@ const scenarios = (JSON.parse(readFileSync(resolve(workspace, 'tools/parity/gold
   scenarios: { id: string; survey: string; answers: Answers; path: string[] }[];
 }).scenarios;
 for (const scenario of scenarios) test(`old runner path: ${scenario.id}`, async ({ page }) => {
+  // A leader path answers about 40 questions, each followed by the walk to the next step:
+  // about 16 s on a laptop and twice that on a CI runner, so the default 30 s is too tight.
+  test.setTimeout(90_000);
   const content = (JSON.parse(readFileSync(resolve(workspace, `config/seed/templates/${scenario.survey}.2026-10-13.json`), 'utf8')) as { content: TemplateContent }).content;
   await page.route('**/api/runner/round', async (route) => {
     const response = await route.fetch();
