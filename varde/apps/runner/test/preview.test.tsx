@@ -47,3 +47,40 @@ it('unauthenticated preview cannot fetch the template and never falls back to li
     expect.objectContaining({ credentials: 'same-origin', cache: 'no-store' }),
   );
 });
+it('in a frame, unsaved content is taken only from the same-origin parent and must pass the schema', async () => {
+  const content = syntheticContent();
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() => Promise.resolve(new Response(JSON.stringify({ content }), { status: 200 }))),
+  );
+  const parent = { postMessage: vi.fn() };
+  vi.stubGlobal('parent', parent);
+  await act(() => render(<Preview id="synthetic" />, root));
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, 10));
+  });
+  expect(parent.postMessage).toHaveBeenCalledWith({ type: 'varde:forhand-klar' }, location.origin);
+  const send = (data: unknown, origin = location.origin, source: unknown = parent) =>
+    act(() => {
+      window.dispatchEvent(new MessageEvent('message', { data, origin, source: source as Window }));
+    });
+  const title = { nn: 'Endra tittel frå editoren', en: 'Changed' };
+  await send(
+    { type: 'varde:forhand-innhald', content: { ...content, intro: { ...content.intro, title } } },
+    'https://evil.example',
+  );
+  expect(root.textContent).not.toContain('Endra tittel frå editoren');
+  await send(
+    { type: 'varde:forhand-innhald', content: { ...content, intro: { ...content.intro, title } } },
+    location.origin,
+    window,
+  );
+  expect(root.textContent).not.toContain('Endra tittel frå editoren');
+  await send({ type: 'varde:forhand-innhald', content: { nonsense: true } });
+  expect(root.querySelector('h1')).not.toBeNull();
+  await send({
+    type: 'varde:forhand-innhald',
+    content: { ...content, intro: { ...content.intro, title } },
+  });
+  expect(root.textContent).toContain('Endra tittel frå editoren');
+});

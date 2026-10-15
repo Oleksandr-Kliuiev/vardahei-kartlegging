@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
-import { mutate } from './api.js';
-import type { Round, Client } from './models.js';
+import { useQuery } from '@tanstack/react-query';
+import { api, mutate } from './api.js';
+import type { Round, Client, Progress } from './models.js';
 import {
   ErrorMessage,
   useAction,
@@ -12,6 +13,7 @@ import {
 import { LaunchForm } from './launch-form.js';
 import { ClientForm } from './clients-form.js';
 import { RoundClientCard } from './round-client.js';
+import { HoldButton } from './widgets.js';
 
 function EmployeeCount({ client }: { client: Client }) {
   const action = useAction();
@@ -112,6 +114,54 @@ export function AuditLog() {
   );
 }
 
+const roundStatus: Record<string, [string, string]> = {
+  draft: ['Ikkje opna', 'chip'],
+  open: ['Open', 'chip ok'],
+  closed: ['Avslutta', 'chip warn'],
+};
+
+/** One round: status, a card per client with its response ring, and closing by holding the button. */
+function RoundSection({ round, clients }: { round: Round; clients: Client[] }) {
+  const action = useAction();
+  const progress = useQuery({
+    queryKey: ['progress', round.id],
+    queryFn: () =>
+      api<{ class: 'aggregate'; clients: Progress[] }>(`/api/admin/rounds/${round.id}/progress`),
+    enabled: round.status !== 'draft',
+  });
+  const [text, chip] = roundStatus[round.status] ?? ['Avslutta', 'chip'];
+  return (
+    <section className="del runde" aria-label={round.name}>
+      <div className="runde-topp">
+        <h2>{round.name}</h2>
+        <span className={chip}>{text}</span>
+      </div>
+      <div className="kundekort-grid">
+        {round.round_clients.map((rc) => (
+          <RoundClientCard
+            key={rc.id}
+            rc={rc}
+            progress={progress.data?.clients.find((p) => p.round_client_id === rc.id)}
+          />
+        ))}
+      </div>
+      {['draft', 'open'].includes(round.status) && <AddClient round={round} clients={clients} />}
+      {round.status === 'open' && (
+        <HoldButton
+          className="fare"
+          label="Avslutt heile runden"
+          hint="Hald inne knappen i over eitt sekund for å avslutte runden. Lenkjene sluttar då å verke."
+          disabled={action.isPending}
+          onConfirm={() => {
+            action.mutate(() => mutate(`/api/admin/rounds/${round.id}/close`));
+          }}
+        />
+      )}
+      <ErrorMessage error={action.error ?? progress.error} />
+    </section>
+  );
+}
+
 export function RoundsPage() {
   const clients = useClients(),
     rounds = useRounds(),
@@ -194,33 +244,7 @@ export function RoundsPage() {
         </form>
       </section>
       {rounds.data?.map((round) => (
-        <section className="del" key={round.id} aria-label={round.name}>
-          <h2>{round.name}</h2>
-          <p className="under">
-            {round.status === 'draft'
-              ? 'Ikkje opna'
-              : round.status === 'open'
-                ? 'Open'
-                : 'Avslutta'}
-          </p>
-          {round.round_clients.map((rc) => (
-            <RoundClientCard key={rc.id} rc={rc} />
-          ))}
-          {['draft', 'open'].includes(round.status) && (
-            <AddClient round={round} clients={clients.data ?? []} />
-          )}
-          {round.status === 'open' && (
-            <button
-              className="fare"
-              disabled={action.isPending}
-              onClick={() => {
-                action.mutate(() => mutate(`/api/admin/rounds/${round.id}/close`));
-              }}
-            >
-              Avslutt heile runden
-            </button>
-          )}
-        </section>
+        <RoundSection key={round.id} round={round} clients={clients.data ?? []} />
       ))}
       <AuditLog />
     </>

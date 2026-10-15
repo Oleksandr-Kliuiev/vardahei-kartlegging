@@ -58,6 +58,17 @@ describe('runner static (1.12)', () => {
       expect(logLines(path)).toEqual([]);
     }
   });
+  it('only the admin preview may be framed, and only by Varde itself (1.46)', async () => {
+    const preview = await get('/r?preview=00000000-0000-4000-8000-000000000000');
+    expect(preview.headers['x-frame-options']).toBe('SAMEORIGIN');
+    expect(preview.headers['content-security-policy']).toContain("frame-ancestors 'self'");
+    expect(preview.headers['content-security-policy']).not.toContain("frame-ancestors 'none'");
+    for (const url of [`/r?c=${code}`, '/r', '/r/assets/missing.js', `/r/forhand-x?preview=1`]) {
+      const res = await get(url);
+      expect(res.headers['content-security-policy'], url).toContain("frame-ancestors 'none'");
+      expect(res.headers['x-frame-options'], url).toBe('DENY');
+    }
+  });
   it('missing runner route → 404 with neither query nor code in log/response', async () => {
     const res = await get(`/r/x?c=${code}`);
     expect(res.statusCode).toBe(404);

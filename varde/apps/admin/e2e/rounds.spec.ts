@@ -121,3 +121,15 @@ test('employee count is editable, new snapshots use it, deadline and invitation 
   await poster.close();
   await expect(round).toBeVisible();
 });
+test('closing a whole round needs a 1.2 s hold; a short press only explains', async ({ page }) => {
+  const { round, client } = await newRound(page);
+  await client.getByRole('button', { name: 'Opne', exact: true }).click();
+  await expect(client.getByText('Open', { exact: true })).toBeVisible();
+  const close = round.getByRole('button', { name: 'Avslutt heile runden' });
+  await close.click();
+  await expect(round.getByRole('status')).toContainText('Hald inne knappen');
+  await page.waitForTimeout(1500);
+  await expect(round.locator('.runde-topp')).toContainText('Open');
+  await close.click({ delay: 1400 });
+  await expect(round.locator('.runde-topp')).toContainText('Avslutta');
+});

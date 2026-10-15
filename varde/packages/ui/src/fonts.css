@@ -1,0 +1,4 @@
+/* @varde/ui fonts: Atkinson Hyperlegible Next og Mono (variable, vekt 200–800), filene blir bundla og lasta frå eige domene (CSP font-src 'self').
+   Latin-ext blir berre lasta når teksten treng teikn derifrå (unicode-range). */
+@import '@fontsource-variable/atkinson-hyperlegible-next/wght.css';
+@import '@fontsource-variable/atkinson-hyperlegible-mono/wght.css';

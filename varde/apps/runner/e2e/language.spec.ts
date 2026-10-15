@@ -25,9 +25,9 @@ test('client default is English', async ({ page }) => {
 });
 test('unknown code', async ({ page }) => {
   await page.goto('/r?c=unknown');
-  await expect(page.locator('h1')).toHaveText('Lenkja er ikkje gyldig.');
+  await expect(page.locator('h1')).toHaveText('Denne lenkja verkar ikkje');
 });
 test('closed RoundClient', async ({ page }) => {
   await page.goto(`/r?c=${state().closed.code}`);
-  await expect(page.locator('h1')).toHaveText('Kartlegginga er avslutta.');
+  await expect(page.locator('h1')).toHaveText('Kartlegginga er avslutta');
 });

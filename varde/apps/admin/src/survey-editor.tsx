@@ -7,6 +7,7 @@ import { api, mutate } from './api.js';
 import { ErrorMessage } from './queries.js';
 import { JsonField, ObjectFields, type Issue, type Json } from './editor-fields.js';
 import { newQuestion, QuestionEditor, localized } from './question-editor.js';
+import { PhonePreview } from './phone-preview.js';
 
 const base = (id: string) => `/api/admin/surveys/versions/${id}`;
 export function SurveyEditor({
@@ -96,10 +97,11 @@ export function SurveyEditor({
     setContent({ ...content, questions: groups.flat() });
   }
   return (
-    <section className="del">
+    <section className="del redigering">
       <h2>
         {saved.label} · {readonly ? 'Publisert' : 'Utkast'}
       </h2>
+      <PhonePreview id={saved.id} content={content} />
       <ErrorMessage error={error} />
       <p role="status">{message}</p>
       <div className="knappar">
@@ -126,7 +128,10 @@ export function SurveyEditor({
         </a>
       </div>
       {dirty && (
-        <p>Du har endringar som ikkje er lagra. Førehandsvisinga viser den lagra versjonen.</p>
+        <p>
+          Du har endringar som ikkje er lagra. Telefonen viser dei alt; «Førehandsvis lagra versjon»
+          viser den lagra versjonen.
+        </p>
       )}
       <fieldset disabled={readonly || busy} className="editor-form">
         <legend>Innhald</legend>

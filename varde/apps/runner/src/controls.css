@@ -1,0 +1,71 @@
+/* Spørsmål og svar: val, initialar i ruter, fritekst, skala og NPS (Vardestien). */
+.sp-hovud { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; min-height: 22px; }
+.seksjon { display: inline-flex; align-items: center; gap: 8px; }
+.sp-nr { font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { .sp-nr { display: none; } }
+.sp { font-size: clamp(1.42rem, 5.2vw, 1.85rem); line-height: 1.24; font-weight: 720; letter-spacing: -0.012em; color: var(--ink-strong); }
+.hjelp { margin-top: 10px; color: var(--ink-muted); font-size: 16px; }
+
+.val { display: grid; gap: 10px; margin-top: 22px; }
+.opt {
+  position: relative; display: grid; grid-template-columns: 26px 1fr; gap: 14px; align-items: center; width: 100%; min-height: 58px;
+  padding: 14px 16px; text-align: left; border-radius: var(--r-lg); background: var(--surface); border: 1.5px solid var(--line);
+  color: var(--ink-strong); font-size: 17px; font-weight: 500; line-height: 1.35; box-shadow: var(--shadow-1), var(--edge);
+  transition: border-color var(--t-quick) var(--ease-sti), background-color var(--t-quick) var(--ease-sti), box-shadow var(--t-base) var(--ease-sti),
+    transform var(--t-spring) var(--ease-fjor), opacity var(--t-base);
+}
+.opt:hover { border-color: var(--line-strong); }
+.opt:active { transform: scale(.985); transition-duration: var(--t-tap); }
+.opt[aria-checked="true"] { border-color: var(--accent); background: var(--accent-soft); font-weight: 680; box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 16%, transparent); }
+.opt[disabled] { opacity: .45; cursor: not-allowed; }
+.opt .ind { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line-strong); display: grid; place-items: center; transition: border-color var(--t-quick), background-color var(--t-quick); }
+.opt .ind::after { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--on-accent); transform: scale(0); transition: transform var(--t-spring) var(--ease-sprett); }
+.opt[aria-checked="true"] .ind { border-color: var(--accent); background: var(--accent); }
+.opt[aria-checked="true"] .ind::after { transform: scale(1); }
+.opt[role="checkbox"] .ind { border-radius: 7px; }
+.opt[role="checkbox"] .ind::after { display: none; }
+.opt[role="checkbox"] .ind svg { width: 16px; height: 16px; fill: none; stroke: var(--on-accent); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 16; stroke-dashoffset: 16; transition: stroke-dashoffset var(--t-base) var(--ease-inn); }
+.opt[role="checkbox"][aria-checked="true"] .ind svg { stroke-dashoffset: 0; }
+.teljar { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 14px; font-weight: 650; color: var(--accent-text); min-height: 22px; }
+
+/* Initialar: ruter som fyllast éin og éin bokstav; det verkelege feltet ligg over rutene */
+.ruter { position: relative; display: inline-flex; gap: 8px; margin-top: 22px; padding: 4px; border-radius: var(--r-lg); }
+.ruter:focus-within { box-shadow: 0 0 0 2px var(--focus); }
+.ruter input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; font-size: 16px; text-transform: uppercase; caret-color: transparent; z-index: 1; }
+.rute {
+  width: 50px; height: 60px; display: grid; place-items: center; border-radius: var(--r-md); background: var(--surface); border: 1.5px solid var(--line-strong);
+  font-family: var(--font-mono); font-size: 26px; font-weight: 700; color: var(--ink-strong); transition: border-color var(--t-quick), background-color var(--t-quick);
+}
+.rute.fylt { border-color: var(--accent); background: var(--accent-soft); }
+.rute.plass { color: var(--ink-muted); opacity: .4; font-weight: 500; }
+.rute.no::after { content: ""; width: 2px; height: 28px; background: var(--accent); border-radius: 2px; animation: blink-caret calc(1000ms * var(--motion-scale)) steps(1) infinite; }
+.ruter:not(:focus-within) .rute.no::after { display: none; }
+@keyframes blink-caret { 50% { opacity: 0; } }
+@media (max-width: 380px) { .rute { width: 44px; height: 54px; font-size: 23px; } .ruter { gap: 6px; } }
+
+/* Fritekst og ei line tekst */
+textarea.fritekst, input.felt { width: 100%; margin-top: 22px; padding: 14px 16px; border-radius: var(--r-lg); background: var(--surface); border: 1.5px solid var(--line-strong); color: var(--ink-strong); font-size: 17px; line-height: 1.5; transition: border-color var(--t-quick), box-shadow var(--t-quick); }
+textarea.fritekst { min-height: 112px; resize: none; overflow: hidden; }
+input.felt.stor { text-transform: uppercase; font-family: var(--font-mono); letter-spacing: .06em; }
+textarea.fritekst:focus-visible, input.felt:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 20%, transparent); }
+.fri-merk { display: flex; justify-content: space-between; margin-top: 8px; font-size: 14px; color: var(--ink-muted); }
+.fri:not([hidden]) { animation: stig-inn var(--t-move) var(--ease-inn); }
+.fri label { display: block; padding-top: 20px; font-size: 15px; font-weight: 600; color: var(--ink); }
+.fri textarea.fritekst { margin-top: 8px; min-height: 96px; }
+
+/* Skala og NPS: tommelen glid til valet */
+.skala { margin-top: 26px; display: grid; gap: 22px; }
+.skala-rad .namn { font-weight: 650; margin-bottom: 8px; color: var(--ink-strong); }
+.skala-knappar { position: relative; display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 6px; padding: 5px; border-radius: var(--r-lg); background: var(--bg-sunken); border: 1px solid var(--line); }
+.skala-knappar button { position: relative; z-index: 1; min-height: 50px; border: 0; border-radius: 11px; background: transparent; font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--ink); transition: color var(--t-quick); }
+.skala-knappar button[aria-checked="true"] { color: var(--on-accent); }
+.skala-tommel { position: absolute; z-index: 0; top: 5px; bottom: 5px; left: 0; border-radius: 11px; background: var(--accent); box-shadow: var(--shadow-2); opacity: 0;
+  transition: transform var(--t-spring) var(--ease-fjor), width var(--t-spring) var(--ease-fjor), opacity var(--t-quick); }
+.skala-endar { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; font-size: 14.5px; color: var(--ink-muted); }
+.nps .skala-knappar { gap: 3px; }
+.nps .skala-knappar button { font-size: 16px; min-height: 48px; }
+@media (max-width: 480px) {
+  .nps .skala-knappar { grid-template-columns: repeat(6, 1fr); }
+  .nps .skala-tommel { display: none; }
+  .nps .skala-knappar button[aria-checked="true"] { background: var(--accent); }
+}

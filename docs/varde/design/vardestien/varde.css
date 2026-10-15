@@ -1,0 +1,252 @@
+/* Varde — felles grunnmur for spørjeskjema og admin.
+   Merkevarefargane kjem frå logoen: blå #236e91, mørkgrå #3f3f42, grå #6b6e70.
+   Skalaene er dei same som i Vardahei Atlas (OKLCH, same lysheitssteg), så produkta til Vardahei IT heng saman. */
+
+:root {
+  /* Primitivar: blå, grå, status, lyng (KI) */
+  --blaa-50: #eff8fe; --blaa-100: #dceffa; --blaa-200: #b8def4; --blaa-300: #8dc7e7; --blaa-400: #64abd1;
+  --blaa-500: #408db3; --blaa-600: #236e91; --blaa-700: #185977; --blaa-800: #10455e; --blaa-900: #0a2f41; --blaa-950: #041d2a;
+  --graa-50: #f9fafb; --graa-100: #f1f3f4; --graa-200: #e4e6e9; --graa-300: #d2d4d7; --graa-400: #acaeb1;
+  --graa-500: #87898c; --graa-600: #6b6e70; --graa-700: #535558; --graa-800: #3f3f42; --graa-900: #242729; --graa-950: #15171a;
+  --green-50: #edf9f1; --green-300: #84d2a5; --green-400: #57b884; --green-600: #227f53; --green-700: #176540;
+  --amber-50: #fff5ea; --amber-300: #fdbc6f; --amber-700: #895709; --amber-800: #6a440b;
+  --orange-50: #fff2ec; --orange-300: #fda578; --orange-400: #ef8448; --orange-500: #db6b25; --orange-800: #783302;
+  --red-50: #fff2f0; --red-300: #f19f95; --red-400: #e66f64; --red-600: #be2f2c; --red-700: #9e2320;
+  --lyng-50: #f8f5fd; --lyng-200: #e2d3f6; --lyng-300: #cdb4eb; --lyng-500: #9674bb; --lyng-600: #7b5a9f; --lyng-700: #624581;
+
+  /* Semantiske fargar, lys tema */
+  --bg: var(--graa-100);
+  --bg-sunken: #e8ebed;
+  --surface: #ffffff;
+  --surface-2: var(--graa-50);
+  --surface-hover: #f4f6f7;
+  --surface-selected: var(--blaa-50);
+  --ink-strong: var(--graa-900);
+  --ink: var(--graa-800);
+  --ink-muted: var(--graa-600);
+  --ink-inverse: #ffffff;
+  --line: var(--graa-200);
+  --line-strong: var(--graa-500);
+  --accent: var(--blaa-600);
+  --accent-hover: var(--blaa-700);
+  --accent-pressed: var(--blaa-800);
+  --on-accent: #ffffff;
+  --accent-soft: var(--blaa-50);
+  --accent-soft-2: var(--blaa-100);
+  --accent-text: var(--blaa-600);
+  --focus: var(--blaa-600);
+  --success-bg: var(--green-50); --success-fg: var(--green-700); --success-line: var(--green-300);
+  --warning-bg: var(--amber-50); --warning-fg: var(--amber-800); --warning-line: var(--amber-300);
+  --danger-bg: var(--red-50); --danger-fg: var(--red-700); --danger-line: var(--red-300); --danger-solid: var(--red-600);
+  --ai-bg: var(--lyng-50); --ai-fg: var(--lyng-700); --ai-line: var(--lyng-300); --ai-solid: var(--lyng-600);
+  --live: #1f8a57;
+
+  /* Sonene frå Master_Analyse: alltid med ord ved sida av fargen */
+  --sone-gron: #2c8a5a; --sone-gron-bg: #e3f4ea;
+  --sone-gul: #e2ad12; --sone-gul-bg: #fdf3d3;
+  --sone-oransje: #d9661f; --sone-oransje-bg: #fde6d6;
+  --sone-raud: #b8322c; --sone-raud-bg: #fbe0dd;
+
+  /* Landskapet: lag på lag med åsar, kalde blågrå tonar */
+  --sky-1: #cfe4f2; --sky-2: #f8dcc2; --sol: #f3b866;
+  --as-bak: #e2e9ee; --as-midt: #d2dde4; --as-fram: #c3d1da;
+  --sti-gjort: var(--blaa-600); --sti-att: #6f7f89; --prikk: #ffffff;
+  --sno: #ffffff; --stein: #8a8f94; --stein-lys: #b5babf; --stein-mork: #5f656b;
+  --gran: #2f5f4c; --gran-lys: #3f7a60; --stamme: #6b4a33;
+  --telt: #e08a2c; --telt-skugge: #bf6f1d; --telt-dor: #5a3a1c;
+  --eld-1: #e2572b; --eld-2: #f39a2b; --eld-3: #fcd25a; --glod: #f39a2b;
+  --hud: #e9b99a; --lue: #c8432f; --sekk: #3f3f43;
+
+  /* Skrift: Atkinson Hyperlegible Next (variabel 200–800) og Mono for kodar, initialar og tal */
+  --font: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Rom, radius, djupn */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px; --s-16: 64px;
+  --r-xs: 4px; --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 22px; --r-full: 999px;
+  --shadow-1: 0 1px 2px rgba(21, 23, 26, .06), 0 1px 1px rgba(21, 23, 26, .04);
+  --shadow-2: 0 6px 16px -6px rgba(16, 69, 94, .16), 0 2px 4px rgba(21, 23, 26, .06);
+  --shadow-3: 0 22px 48px -12px rgba(16, 69, 94, .28), 0 6px 14px rgba(21, 23, 26, .08);
+  --edge: inset 0 0 0 1px transparent;
+
+  /* Rørsle. --motion-scale = 1 vanleg, 4 i «sakte film», 0 med redusert rørsle */
+  --motion-scale: 1;
+  --t-tap: calc(90ms * var(--motion-scale));
+  --t-quick: calc(160ms * var(--motion-scale));
+  --t-base: calc(240ms * var(--motion-scale));
+  --t-move: calc(380ms * var(--motion-scale));
+  --t-spring: calc(620ms * var(--motion-scale));
+  --t-walk: calc(900ms * var(--motion-scale));
+  --t-ceremony: calc(2200ms * var(--motion-scale));
+  --ease-sti: cubic-bezier(0.2, 0, 0, 1);
+  --ease-inn: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-ut: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --ease-gang: cubic-bezier(0.45, 0.05, 0.25, 1);
+  --ease-fjor: linear(0, 0.004 1.3%, 0.017 2.5%, 0.036 3.8%, 0.089 6.3%, 0.195 10%, 0.437 17.5%, 0.55 21.3%, 0.652 25%, 0.711 27.5%, 0.764 30%, 0.831 33.8%, 0.885 37.5%, 0.926 41.3%, 0.957 45%, 0.986 50%, 1.002 55%, 1.011 60%, 1.014 72.5%, 1);
+  --ease-sprett: linear(0, 0.01 1.3%, 0.037 2.5%, 0.078 3.8%, 0.132 5%, 0.263 7.5%, 0.565 12.5%, 0.708 15%, 0.835 17.5%, 0.891 18.8%, 0.986 21.3%, 1.024 22.5%, 1.084 25%, 1.123 27.5%, 1.135 28.7%, 1.147 31.3%, 1.141 35%, 1.116 38.8%, 1.051 46.3%, 1.014 51.2%, 0.995 55%, 0.981 60%, 0.979 67.5%, 1.002 88.8%, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: var(--graa-950); --bg-sunken: #101214; --surface: #1c1e21; --surface-2: #212427; --surface-hover: #26292c; --surface-selected: #0b2a39;
+    --ink-strong: var(--graa-100); --ink: var(--graa-300); --ink-muted: #9c9fa1; --ink-inverse: var(--graa-950);
+    --line: #2e3134; --line-strong: var(--graa-600);
+    --accent: var(--blaa-400); --accent-hover: var(--blaa-300); --accent-pressed: var(--blaa-200); --on-accent: var(--graa-950);
+    --accent-soft: #0b2a39; --accent-soft-2: #10384b; --accent-text: var(--blaa-300); --focus: var(--blaa-300);
+    --success-bg: #112d1e; --success-fg: var(--green-300); --success-line: var(--green-700);
+    --warning-bg: #37250e; --warning-fg: var(--amber-300); --warning-line: var(--amber-700);
+    --danger-bg: #3f1916; --danger-fg: var(--red-300); --danger-line: var(--red-700); --danger-solid: var(--red-600);
+    --ai-bg: #2c203a; --ai-fg: var(--lyng-300); --ai-line: var(--lyng-700); --ai-solid: var(--lyng-500);
+    --live: #4fd08c;
+    --sone-gron: #57b884; --sone-gron-bg: #12301f; --sone-gul: #f0c64a; --sone-gul-bg: #3a2f0c;
+    --sone-oransje: #ef8448; --sone-oransje-bg: #3e200f; --sone-raud: #e66f64; --sone-raud-bg: #3f1916;
+    --sky-1: #08131c; --sky-2: #1b2c3b; --sol: #e9edf2;
+    --as-bak: #1a2228; --as-midt: #1f2a31; --as-fram: #27343d;
+    --sti-gjort: var(--blaa-400); --sti-att: #8394a0; --prikk: #15171a;
+    --sno: #c7d6dd; --stein: #8c9095; --stein-lys: #b7bcc1; --stein-mork: #6b7177;
+    --gran: #4b8a6c; --gran-lys: #62a283; --stamme: #8d6a4f; --telt: #e8973c; --telt-skugge: #c47726; --telt-dor: #3b2614;
+    --hud: #e2b394; --lue: #e0614b; --sekk: #8c9095;
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, .5);
+    --shadow-2: 0 8px 20px -8px rgba(0, 0, 0, .7), 0 2px 4px rgba(0, 0, 0, .4);
+    --shadow-3: 0 24px 56px -12px rgba(0, 0, 0, .8), 0 6px 14px rgba(0, 0, 0, .5);
+    --edge: inset 0 1px 0 rgba(255, 255, 255, .05);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: var(--graa-950); --bg-sunken: #101214; --surface: #1c1e21; --surface-2: #212427; --surface-hover: #26292c; --surface-selected: #0b2a39;
+  --ink-strong: var(--graa-100); --ink: var(--graa-300); --ink-muted: #9c9fa1; --ink-inverse: var(--graa-950);
+  --line: #2e3134; --line-strong: var(--graa-600);
+  --accent: var(--blaa-400); --accent-hover: var(--blaa-300); --accent-pressed: var(--blaa-200); --on-accent: var(--graa-950);
+  --accent-soft: #0b2a39; --accent-soft-2: #10384b; --accent-text: var(--blaa-300); --focus: var(--blaa-300);
+  --success-bg: #112d1e; --success-fg: var(--green-300); --success-line: var(--green-700);
+  --warning-bg: #37250e; --warning-fg: var(--amber-300); --warning-line: var(--amber-700);
+  --danger-bg: #3f1916; --danger-fg: var(--red-300); --danger-line: var(--red-700); --danger-solid: var(--red-600);
+  --ai-bg: #2c203a; --ai-fg: var(--lyng-300); --ai-line: var(--lyng-700); --ai-solid: var(--lyng-500);
+  --live: #4fd08c;
+  --sone-gron: #57b884; --sone-gron-bg: #12301f; --sone-gul: #f0c64a; --sone-gul-bg: #3a2f0c;
+  --sone-oransje: #ef8448; --sone-oransje-bg: #3e200f; --sone-raud: #e66f64; --sone-raud-bg: #3f1916;
+  --sky-1: #08131c; --sky-2: #1b2c3b; --sol: #e9edf2;
+  --as-bak: #1a2228; --as-midt: #1f2a31; --as-fram: #27343d;
+  --sti-gjort: var(--blaa-400); --sti-att: #8394a0; --prikk: #15171a;
+  --sno: #c7d6dd; --stein: #8c9095; --stein-lys: #b7bcc1; --stein-mork: #6b7177;
+  --gran: #4b8a6c; --gran-lys: #62a283; --stamme: #8d6a4f; --telt: #e8973c; --telt-skugge: #c47726; --telt-dor: #3b2614;
+  --hud: #e2b394; --lue: #e0614b; --sekk: #8c9095;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, .5);
+  --shadow-2: 0 8px 20px -8px rgba(0, 0, 0, .7), 0 2px 4px rgba(0, 0, 0, .4);
+  --shadow-3: 0 24px 56px -12px rgba(0, 0, 0, .8), 0 6px 14px rgba(0, 0, 0, .5);
+  --edge: inset 0 1px 0 rgba(255, 255, 255, .05);
+  color-scheme: dark;
+}
+
+/* Sakte film og redusert rørsle styrer same skala, så alle overgangar følgjer med.
+   Med redusert rørsle hoppar alt til sluttilstanden, og ingen løkker går. */
+:root[data-motion="slow"] { --motion-scale: 4; }
+:root[data-motion="reduced"] { --motion-scale: 0.001; }
+:root[data-motion="reduced"] *, :root[data-motion="reduced"] *::before, :root[data-motion="reduced"] *::after { animation-iteration-count: 1 !important; }
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion]) { --motion-scale: 0.001; }
+  :root:not([data-motion]) *, :root:not([data-motion]) *::before, :root:not([data-motion]) *::after { animation-iteration-count: 1 !important; }
+}
+
+/* Grunnstil */
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font);
+  font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; font-optical-sizing: auto;
+  transition: background-color var(--t-base) var(--ease-sti), color var(--t-base) var(--ease-sti);
+}
+h1, h2, h3, h4 { color: var(--ink-strong); text-wrap: balance; margin: 0; }
+p { text-wrap: pretty; margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+.mono { font-family: var(--font-mono); }
+.tnum { font-variant-numeric: tabular-nums; }
+.eyebrow {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-text);
+}
+.muted { color: var(--ink-muted); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.icon { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.icon.sm { width: 16px; height: 16px; }
+
+/* Knappar: trykk krymper litt, slepp fjørar tilbake */
+.btn {
+  --btn-bg: var(--surface); --btn-fg: var(--ink-strong); --btn-line: var(--line);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 18px;
+  border-radius: var(--r-full); border: 1px solid var(--btn-line); background: var(--btn-bg); color: var(--btn-fg);
+  font-weight: 650; font-size: 15px; line-height: 1.2; text-decoration: none; white-space: nowrap; user-select: none;
+  transition: transform var(--t-spring) var(--ease-fjor), background-color var(--t-quick) var(--ease-sti),
+    border-color var(--t-quick) var(--ease-sti), color var(--t-quick) var(--ease-sti), box-shadow var(--t-quick) var(--ease-sti), opacity var(--t-quick);
+}
+.btn:hover { --btn-line: var(--line-strong); }
+.btn:active { transform: scale(.96); transition-duration: var(--t-tap); transition-timing-function: var(--ease-sti); }
+.btn.primary { --btn-bg: var(--accent); --btn-fg: var(--on-accent); --btn-line: var(--accent); box-shadow: var(--shadow-1); }
+.btn.primary:hover { --btn-bg: var(--accent-hover); --btn-line: var(--accent-hover); }
+.btn.ghost { --btn-bg: transparent; --btn-line: transparent; --btn-fg: var(--ink); }
+.btn.ghost:hover { --btn-bg: var(--surface-hover); }
+.btn.danger { --btn-bg: var(--danger-solid); --btn-fg: #fff; --btn-line: var(--danger-solid); }
+.btn.ai { --btn-bg: var(--ai-solid); --btn-fg: #fff; --btn-line: var(--ai-solid); }
+.btn.sm { min-height: 34px; padding: 6px 12px; font-size: 13.5px; }
+.btn[disabled], .btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; transform: none; }
+.linkbtn { white-space: nowrap; background: none; border: 0; padding: 8px 6px; color: var(--ink-muted); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in oklab, currentColor 40%, transparent); }
+.linkbtn:hover { color: var(--ink-strong); }
+
+/* Brikker, merke og segmentkontroll */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: var(--r-full);
+  font-size: 13px; font-weight: 600; background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); white-space: nowrap;
+}
+.chip i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; display: inline-block; }
+.chip.accent { background: var(--accent-soft); color: var(--accent-text); border-color: transparent; }
+.chip.ok { background: var(--success-bg); color: var(--success-fg); border-color: var(--success-line); }
+.chip.warn { background: var(--warning-bg); color: var(--warning-fg); border-color: var(--warning-line); }
+.chip.danger { background: var(--danger-bg); color: var(--danger-fg); border-color: var(--danger-line); }
+.chip.ai { background: var(--ai-bg); color: var(--ai-fg); border-color: var(--ai-line); }
+
+.seg { position: relative; display: inline-flex; max-width: 100%; overflow-x: auto; scrollbar-width: none; padding: 3px; border-radius: var(--r-full); background: var(--bg-sunken); border: 1px solid var(--line); isolation: isolate; }
+.seg::-webkit-scrollbar { display: none; }
+.seg button { position: relative; z-index: 1; flex: none; white-space: nowrap; border: 0; background: none; padding: 5px 12px; border-radius: var(--r-full); font-size: 13.5px; font-weight: 600; color: var(--ink-muted); transition: color var(--t-quick) var(--ease-sti); min-height: 32px; }
+.seg button[aria-pressed="true"] { color: var(--ink-strong); }
+.seg .seg-thumb { position: absolute; z-index: 0; top: 3px; bottom: 3px; left: 0; width: 0; border-radius: var(--r-full); background: var(--surface); box-shadow: var(--shadow-1), var(--edge);
+  transition: transform var(--t-spring) var(--ease-fjor), width var(--t-spring) var(--ease-fjor); }
+
+/* Live-prikk: pulsen fortel at data kjem inn no */
+.live-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--live); display: inline-block; flex: none; }
+.live-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--live); animation: puls calc(1800ms * var(--motion-scale)) var(--ease-ut) infinite; }
+@keyframes puls { 0% { transform: scale(1); opacity: .55; } 80%, 100% { transform: scale(3.2); opacity: 0; } }
+
+/* Felt */
+.field { display: grid; gap: 6px; }
+.field > span { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.input {
+  width: 100%; min-height: 44px; padding: 10px 14px; border-radius: var(--r-md); background: var(--surface); color: var(--ink-strong);
+  border: 1px solid var(--line-strong); transition: border-color var(--t-quick) var(--ease-sti), box-shadow var(--t-quick) var(--ease-sti);
+}
+.input:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 22%, transparent); }
+
+/* Toast: kjem opp med fjør, går ut raskare enn han kom inn */
+.toasts { position: fixed; z-index: 90; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: grid; gap: 8px; width: min(420px, calc(100% - 32px)); pointer-events: none; }
+.toast {
+  pointer-events: auto; display: flex; align-items: center; gap: 12px; padding: 12px 14px 12px 16px; border-radius: var(--r-lg);
+  background: var(--ink-strong); color: var(--bg); box-shadow: var(--shadow-3); font-size: 14.5px; font-weight: 550;
+}
+.toast .btn { --btn-bg: transparent; --btn-fg: var(--bg); --btn-line: color-mix(in oklab, var(--bg) 35%, transparent); margin-left: auto; }
+
+/* Logo: same merke, aldri omteikna. I mørk modus står det på ei lys plate. */
+.logo { display: block; height: 26px; width: auto; }
+.logo-plate { display: inline-flex; align-items: center; border-radius: 10px; padding: 0; transition: background-color var(--t-base), padding var(--t-base); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .logo-plate { background: var(--graa-100); padding: 5px 9px; } }
+:root[data-theme="dark"] .logo-plate { background: var(--graa-100); padding: 5px 9px; }
+
+/* Skjelett: berre når lasting tek meir enn 300 ms */
+.skel { background: linear-gradient(90deg, var(--bg-sunken) 0 40%, var(--surface-hover) 50%, var(--bg-sunken) 60% 100%); background-size: 300% 100%; animation: skel calc(1400ms * var(--motion-scale)) linear infinite; border-radius: var(--r-sm); }
+@keyframes skel { from { background-position: 100% 0; } to { background-position: 0 0; } }
+
+/* Ein felles inngang for innhald: synleg i kvile, rørsla er berre på veg inn */
+@keyframes stig-inn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes ton-inn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes skaler-inn { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }

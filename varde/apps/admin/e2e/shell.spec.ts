@@ -60,9 +60,9 @@ test('CSP and assets are local; light/dark shell screenshots', async ({ page }, 
   await page.evaluate(async () => {
     await document.fonts.ready;
   });
-  expect(await page.evaluate(() => document.fonts.check('15px "Atkinson Hyperlegible"'))).toBe(
-    true,
-  );
+  expect(
+    await page.evaluate(() => document.fonts.check('15px "Atkinson Hyperlegible Next Variable"')),
+  ).toBe(true);
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
     await info.attach(`shell-${colorScheme}`, {

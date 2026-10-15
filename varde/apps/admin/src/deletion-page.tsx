@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { mutate } from './api.js';
 import { ErrorMessage, useClients, useRounds } from './queries.js';
+import { HoldButton } from './widgets.js';
 
 type Counts = { common: number; leader: number; total: number; dry_run: boolean };
 
@@ -133,14 +134,15 @@ export function DeletionPage() {
             {preview.common} vanlege svar og {preview.leader} leiarsvar. Til saman {preview.total}{' '}
             innsendingar.
           </p>
-          <button
+          <HoldButton
+            className="fare"
+            label="Stadfest sletting"
+            hint="Hald inne knappen i over eitt sekund for å slette. Slettinga kan ikkje gjerast om."
             disabled={busy || !preview.total}
-            onClick={() => {
+            onConfirm={() => {
               void act(false);
             }}
-          >
-            Stadfest sletting
-          </button>
+          />
         </div>
       )}
       {done && <p role="status">Svara er sletta.</p>}

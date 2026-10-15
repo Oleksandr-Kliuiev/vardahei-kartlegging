@@ -39,7 +39,7 @@ export function LaunchForm({ clients, versions }: { clients: Client[]; versions:
     });
   }
   return (
-    <section className="del">
+    <section className="del start-runde">
       <h2>Start ein runde</h2>
       <form className="editor-form" onSubmit={submit}>
         <label>

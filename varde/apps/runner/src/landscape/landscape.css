@@ -1,0 +1,107 @@
+/* Landskapet (Vardestien): framdrifta. Turgåaren går stien, kvar seksjon endar ved ein varde, og på toppen ventar telt og bål.
+   Høgda og viewBox blir tweena av JS (landscape.ts), så kameraet glid mellom intro, sti og topp. */
+:root { --stjerner: 0; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --stjerner: 1; } }
+:root[data-theme="dark"] { --stjerner: 1; }
+.landskap { position: relative; margin: 6px 0 0; height: 180px; }
+.landskap svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.boble {
+  position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; white-space: nowrap;
+  font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums;
+  color: var(--on-accent); background: var(--accent); border-radius: 8px; padding: 5px 8px 5px; box-shadow: var(--shadow-2);
+  transition: opacity var(--t-base) var(--ease-sti), background-color var(--t-base);
+}
+/* Pila peikar alltid ned mot turgåaren, også når bobla har glidd til sida */
+.boble::after { content: ""; position: absolute; left: var(--pil, 50%); bottom: -4px; margin-left: -5px; border: 5px solid transparent; border-bottom: 0; border-top-color: var(--accent); }
+.boble[data-skjult="true"] { opacity: 0; }
+.boble .rull { display: inline-block; min-width: 1.2ch; text-align: right; }
+/* Teksten blir klipt når bobla endrar breidd (pila utanfor blir ikkje klipt); litt luft over og under for p og g */
+.boble-tekst { display: block; overflow: hidden; padding: 2px 0; margin: -2px 0; }
+
+.as-bak { fill: var(--as-bak); } .as-midt { fill: var(--as-midt); } .as-fram { fill: var(--as-fram); }
+.sno { fill: var(--sno); opacity: .85; }
+/* Linjer, prikkar, varder og trea følgjer zoomen til stikameraet (--z), så dei har same storleik på skjermen */
+.sti-att { fill: none; stroke: var(--sti-att); stroke-width: calc(1.25px / var(--z, 1)); stroke-dasharray: calc(1.4px / var(--z, 1)) calc(3px / var(--z, 1)); stroke-linecap: round; opacity: .9; }
+.sti-gjort { fill: none; stroke: var(--sti-gjort); stroke-width: calc(2.6px / var(--z, 1)); stroke-linecap: round; stroke-linejoin: round; }
+.sti-fram { fill: none; stroke: var(--sti-gjort); stroke-width: calc(1.4px / var(--z, 1)); stroke-dasharray: calc(1.4px / var(--z, 1)) calc(3px / var(--z, 1)); stroke-linecap: round; opacity: 0; transition: opacity var(--t-base); }
+.landskap[data-forslag="true"] .sti-fram { opacity: .9; }
+.prikk { transform-box: fill-box; transform-origin: center; fill: var(--prikk); stroke: var(--sti-att); stroke-width: calc(1.1px / var(--z, 1)); transition: fill var(--t-base) var(--ease-sti), stroke var(--t-base) var(--ease-sti); }
+.prikk.svart { fill: var(--sti-gjort); stroke: var(--sti-gjort); }
+.prikk.hoppa { fill: var(--prikk); stroke: var(--sti-gjort); stroke-width: calc(1.4px / var(--z, 1)); }
+/* Leiarstega før leiaren har valt: synlege, men tydeleg valfrie */
+.prikk.valfri { fill: var(--prikk); stroke: var(--sti-att); stroke-width: calc(1px / var(--z, 1)); stroke-dasharray: calc(1.3px / var(--z, 1)) calc(1.1px / var(--z, 1)); opacity: .75; }
+.varder .varde, .skaler { transform: scale(calc(1 / var(--z, 1))); }
+.varde .helle { stroke: var(--stein-mork); stroke-width: .35; stroke-linejoin: round; }
+.varde .h0 { fill: var(--stein); } .varde .h1 { fill: var(--stein-lys); } .varde .h2 { fill: color-mix(in oklab, var(--stein) 60%, var(--stein-lys)); }
+.varde .min-stein { fill: var(--accent); stroke: color-mix(in oklab, var(--accent) 70%, #000); stroke-width: .3; opacity: 0; }
+.varde .min-stein.lagt { opacity: 1; }
+.flyg-stein { fill: var(--accent); stroke: color-mix(in oklab, var(--accent) 70%, #000); stroke-width: .3; }
+.gran-a { fill: var(--gran); } .gran-b { fill: var(--gran-lys); } .stamme { fill: var(--stamme); }
+
+/* Himmel og stemning */
+.kveld { opacity: 0; transition: opacity calc(1400ms * var(--motion-scale)) var(--ease-sti); }
+.ferdig .kveld, [data-stemning="kveld"] .kveld { opacity: 1; }
+.sol { fill: var(--sol); opacity: 0; transition: opacity var(--t-move) var(--ease-sti), transform calc(2600ms * var(--motion-scale)) var(--ease-sti); transform-box: fill-box; transform-origin: center; }
+[data-kamera="hero"] .sol, [data-kamera="topp"] .sol { opacity: .72; }
+.ferdig .sol { transform: translateY(16px); }
+.stjerner circle { fill: #e9eef3; opacity: 0; }
+.ferdig .stjerner circle, [data-stemning="kveld"] .stjerner circle { animation: blink calc(3200ms * var(--motion-scale)) ease-in-out infinite alternate; }
+@keyframes blink { from { opacity: calc(var(--stjerner) * .15); } to { opacity: calc(var(--stjerner) * .9); } }
+.take { opacity: 0; transition: opacity calc(900ms * var(--motion-scale)); }
+[data-stemning="take"] .take { opacity: 1; }
+.take rect { fill: var(--bg); }
+.take .t1 { animation: drift calc(16s * var(--motion-scale)) ease-in-out infinite alternate; }
+.take .t2 { animation: drift calc(22s * var(--motion-scale)) ease-in-out infinite alternate-reverse; }
+@keyframes drift { from { transform: translateX(-30px); } to { transform: translateX(30px); } }
+.skilt { opacity: 0; transition: opacity var(--t-move); }
+[data-stemning="take"] .skilt { opacity: 1; }
+
+/* Turgåaren: beina går berre medan han flyttar seg, pustar litt når han står */
+.bein { transform: rotate(0deg); }
+/* Steglengd og fart heng saman: eitt beinsving per ~7 einingar, så føtene ikkje sklir */
+.gaar-no .bein.a { animation: steg-a calc(180ms * var(--motion-scale)) ease-in-out infinite alternate; }
+.gaar-no .bein.b { animation: steg-b calc(180ms * var(--motion-scale)) ease-in-out infinite alternate; }
+.gaar-no .kropp { animation: vugge calc(180ms * var(--motion-scale)) ease-in-out infinite alternate; }
+@keyframes steg-a { from { transform: rotate(-24deg); } to { transform: rotate(22deg); } }
+@keyframes steg-b { from { transform: rotate(22deg); } to { transform: rotate(-24deg); } }
+@keyframes vugge { from { transform: translateY(0); } to { transform: translateY(-1.1px); } }
+.kvile .kropp { animation: pust calc(2600ms * var(--motion-scale)) ease-in-out infinite alternate; }
+@keyframes pust { from { transform: translateY(0); } to { transform: translateY(-.5px); } }
+/* Vinking på toppen (etter at steinen er lagd): den andre armen går opp på skrå framfor hovudet,
+   vinkar to gonger og går ned att. Fremre arm held staven heile tida. */
+.vinkearm { opacity: 0; transform: rotate(165deg); }
+.vinkar .vinkearm { animation: vink calc(1800ms * var(--motion-scale)) ease-in-out calc(350ms * var(--motion-scale)) 1 both; }
+@keyframes vink { 0% { opacity: 0; transform: rotate(165deg); } 10% { opacity: 1; } 26% { transform: rotate(34deg); } 41% { transform: rotate(58deg); } 56% { transform: rotate(32deg); } 71% { transform: rotate(56deg); } 84% { opacity: 1; } 97% { opacity: 0; } 100% { opacity: 0; transform: rotate(165deg); } }
+
+/* Telt og bål: reiser seg når svara er sende */
+.telt, .baal, .glod { opacity: 0; transform: scale(0); transform-box: fill-box; transform-origin: 50% 100%; }
+.ferdig .telt { animation: reis calc(720ms * var(--motion-scale)) var(--ease-sprett) calc(1000ms * var(--motion-scale)) forwards; }
+.ferdig .baal { animation: reis calc(560ms * var(--motion-scale)) var(--ease-sprett) calc(1500ms * var(--motion-scale)) forwards; }
+.ferdig .glod { animation: glod calc(2400ms * var(--motion-scale)) ease-in-out calc(1700ms * var(--motion-scale)) infinite alternate both; transform-origin: 50% 50%; }
+@keyframes reis { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+@keyframes glod { from { opacity: .35; transform: scale(.9); } to { opacity: .7; transform: scale(1.1); } }
+.flamme { transform-box: fill-box; transform-origin: 50% 100%; }
+.ferdig .flamme.f1 { animation: flakk calc(450ms * var(--motion-scale)) ease-in-out infinite alternate; }
+.ferdig .flamme.f2 { animation: flakk calc(380ms * var(--motion-scale)) calc(100ms * var(--motion-scale)) ease-in-out infinite alternate-reverse; }
+.ferdig .flamme.f3 { animation: flakk calc(520ms * var(--motion-scale)) calc(200ms * var(--motion-scale)) ease-in-out infinite alternate; }
+@keyframes flakk { from { transform: scale(1, 1) skewX(0deg); } to { transform: scale(.85, 1.18) skewX(-6deg); } }
+.gnist { opacity: 0; }
+.ferdig .gnist { animation: gnist calc(1600ms * var(--motion-scale)) ease-out calc(1800ms * var(--motion-scale)) infinite; }
+.ferdig .gnist.g2 { animation-delay: calc(2350ms * var(--motion-scale)); }
+.ferdig .gnist.g3 { animation-delay: calc(2900ms * var(--motion-scale)); }
+@keyframes gnist { 0% { opacity: 0; transform: translate(0, 0); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(3px, -16px); } }
+
+.stjerner .s1 { animation-delay: -0.45s; } .stjerner .s2 { animation-delay: -0.9s; } .stjerner .s3 { animation-delay: -1.35s; }
+.stjerner .s4 { animation-delay: -1.8s; } .stjerner .s5 { animation-delay: -2.25s; } .stjerner .s6 { animation-delay: -2.7s; }
+
+/* Redusert rørsle: ingenting rører seg i landskapet, alt står i sluttilstanden med ein gong */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion]) .landskap *, :root:not([data-motion]) .landskap *::before, :root:not([data-motion]) .landskap *::after { animation: none !important; transition: none !important; }
+  :root:not([data-motion]) .ferdig .telt, :root:not([data-motion]) .ferdig .baal { opacity: 1; transform: none; }
+  :root:not([data-motion]) .ferdig .glod { opacity: .5; }
+  :root:not([data-motion]) .ferdig .stjerner circle { opacity: calc(var(--stjerner) * .6); }
+}
+:root[data-motion="reduced"] .landskap *, :root[data-motion="reduced"] .landskap *::before, :root[data-motion="reduced"] .landskap *::after { animation: none !important; transition: none !important; }
+:root[data-motion="reduced"] .ferdig .telt, :root[data-motion="reduced"] .ferdig .baal { opacity: 1; transform: none; }
+:root[data-motion="reduced"] .ferdig .glod { opacity: .5; }
+:root[data-motion="reduced"] .ferdig .stjerner circle { opacity: calc(var(--stjerner) * .6); }

@@ -6,6 +6,9 @@ import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 
 export const RUNNER_CSP =
   "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
+/** The admin preview (`/r?preview=<version>`, admin session only) may be framed by Varde itself: the phone frame in the editor (1.46). */
+export const RUNNER_PREVIEW_CSP = RUNNER_CSP.replace("frame-ancestors 'none'", "frame-ancestors 'self'");
+const isPreview = (url: string) => new URLSearchParams(url.split('?')[1] ?? '').has('preview');
 
 /** Register on Fastify so assets do not involve Nest or database access. */
 export async function registerRunnerStatic(app: NestFastifyApplication): Promise<void> {
@@ -29,10 +32,11 @@ export async function registerRunnerStatic(app: NestFastifyApplication): Promise
     if (path.startsWith('/api/runner/') || path.startsWith('/api/admin/round'))
       void reply.header('cache-control', 'no-store');
     if (path === '/r' || path.startsWith('/r/')) {
+      const preview = (path === '/r' || path === '/r/') && isPreview(request.url);
       void reply
-        .header('content-security-policy', RUNNER_CSP)
+        .header('content-security-policy', preview ? RUNNER_PREVIEW_CSP : RUNNER_CSP)
         .header('referrer-policy', 'no-referrer')
-        .header('x-frame-options', 'DENY')
+        .header('x-frame-options', preview ? 'SAMEORIGIN' : 'DENY')
         .header('x-content-type-options', 'nosniff')
         .header('cache-control', 'no-store');
     }
