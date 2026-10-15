@@ -1,14 +1,10 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { EventsService } from '../modules/events/events.service.js';
 
 @Injectable()
 export class AdminService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly events: EventsService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   clients() {
     return this.prisma.client.findMany({
@@ -20,28 +16,6 @@ export class AdminService {
         employee_count: true,
       },
     });
-  }
-
-  async update(id: string, body: unknown, who: string) {
-    const parsed = z
-      .strictObject({ employee_count: z.number().int().min(1).max(9999).nullable() })
-      .safeParse(body);
-    if (!parsed.success) throw new BadRequestException('Kontroller talet på tilsette.');
-    const client = await this.prisma.$transaction(async (tx) => {
-      if (!(await tx.client.findUnique({ where: { id } })))
-        throw new NotFoundException('Kunden finst ikkje.');
-      const result = await tx.client.update({
-        where: { id },
-        data: parsed.data,
-        select: { id: true, employee_count: true },
-      });
-      await tx.auditLog.create({
-        data: { who: who, what: 'clients.update', target: `client:${id}` },
-      });
-      return result;
-    });
-    this.events.changed('rounds');
-    return client;
   }
 
   versions() {

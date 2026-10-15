@@ -74,6 +74,62 @@ export class RoundsService {
     );
   }
 
+  launch(input: NewRound & { clients: NewRoundClient[]; open: boolean }, who: string) {
+    return this.changed(
+      this.prisma.$transaction(async (tx) => {
+        const version = await this.published(tx, input.template_version_id);
+        if (new Set(input.clients.map((c) => c.client_id)).size !== input.clients.length)
+          throw new BadRequestException('Vel kvar kunde berre éin gong.');
+        const round = await tx.round.create({
+          data: {
+            name: input.name,
+            template_version_id: version.id,
+            type: 'regular',
+          },
+        });
+        const ids: string[] = [];
+        for (const item of input.clients) {
+          const client = await tx.client.findUnique({ where: { id: item.client_id } });
+          if (!client) throw new NotFoundException('Kunden finst ikkje.');
+          const deadline = new Date(item.deadline);
+          if (input.open && deadlineExpiry(deadline) <= new Date())
+            throw new BadRequestException('Vel ein frist fram i tid.');
+          const rc = await tx.roundClient.create({
+            data: {
+              round_id: round.id,
+              client_id: client.id,
+              deadline,
+              population_snapshot:
+                item.population_snapshot === undefined
+                  ? client.employee_count
+                  : item.population_snapshot,
+            },
+          });
+          ids.push(rc.id);
+          await this.audit(tx, who, 'client.add', `round_client:${rc.id}`);
+        }
+        if (input.open) {
+          await tx.round.update({
+            where: { id: round.id },
+            data: {
+              status: 'open',
+              identification: version.identification,
+              opened_at: new Date(),
+            },
+          });
+          for (const id of ids) {
+            await tx.roundClient.update({ where: { id }, data: { status: 'open' } });
+            await this.codes.issue(tx, id, who);
+            await this.audit(tx, who, 'client.open', `round_client:${id}`);
+          }
+        }
+        await this.audit(tx, who, 'launch', `round:${round.id}`);
+        // Invitation endpoint is the only surface the wizard uses to retrieve bearer links.
+        return { id: round.id, round_client_ids: ids, status: input.open ? 'open' : 'draft' };
+      }),
+    );
+  }
+
   setVersion(id: string, version: string, who: string) {
     return this.changed(
       this.prisma.$transaction(async (tx) => {

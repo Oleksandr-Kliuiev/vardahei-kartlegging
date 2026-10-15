@@ -37,7 +37,8 @@ export function templateTexts(
   });
   if (c.invitation) {
     add(['invitation', 'letter'], c.invitation.letter);
-    for (const [key, t] of Object.entries(c.invitation.poster)) add(['invitation', 'poster', key], t);
+    for (const [key, t] of Object.entries(c.invitation.poster))
+      add(['invitation', 'poster', key], t);
   }
   c.questions.forEach((q, n) => {
     const p = ['questions', n];
@@ -187,6 +188,8 @@ export function validateTemplate(c: TemplateContent): TemplateIssue[] {
   });
 
   const langs = new Set(c.required_languages);
+  if (langs.size !== c.required_languages.length)
+    issue('required_languages must be unique', ['required_languages']);
   const needed: Lang[] = c.audience === 'client_survey' ? ['nn', 'en'] : ['nn'];
   for (const lang of needed) {
     if (!langs.has(lang)) issue(`${c.audience} requires ${lang}`, ['required_languages']);

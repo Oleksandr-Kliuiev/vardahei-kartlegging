@@ -7,14 +7,14 @@ import { ImportsModule } from '../modules/imports/imports.module.js';
 import { MetricsModule } from '../modules/metrics/metrics.module.js';
 import { PrivacyModule } from '../modules/privacy/privacy.service.js';
 import { RoundsCoreModule } from '../modules/rounds/rounds-core.module.js';
-import { SurveysModule } from '../modules/surveys/surveys.module.js';
+import { SurveysCoreModule } from '../modules/surveys/surveys-core.module.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 
 @Module({
   imports: [
     PrismaModule,
     PrivacyModule.forApp(),
-    SurveysModule,
+    SurveysCoreModule,
     RoundsCoreModule,
     ImportsModule,
     MetricsModule,

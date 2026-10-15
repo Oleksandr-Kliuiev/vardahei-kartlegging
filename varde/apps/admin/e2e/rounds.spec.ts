@@ -8,7 +8,7 @@ async function newRound(page: Page) {
     name = `${fixture.mark}-${randomUUID()}`;
   await page.getByRole('link', { name: 'Kundar og rundar', exact: true }).click();
   await page.getByLabel('Namn på runden').fill(name);
-  await page.getByLabel('Publisert versjon').selectOption(fixture.version);
+  await page.getByLabel('Publisert versjon', { exact: true }).selectOption(fixture.version);
   await page.getByRole('button', { name: 'Opprett runde' }).click();
   const round = page.getByRole('region', { name, exact: true });
   await expect(round).toBeVisible();
@@ -92,7 +92,7 @@ test('employee count is editable, new snapshots use it, deadline and invitation 
   expect(await client.textContent()).toBe(existing);
   const other = `${fixture.mark}-${randomUUID()}`;
   await page.getByLabel('Namn på runden').fill(other);
-  await page.getByLabel('Publisert versjon').selectOption(fixture.version);
+  await page.getByLabel('Publisert versjon', { exact: true }).selectOption(fixture.version);
   await page.getByRole('button', { name: 'Opprett runde' }).click();
   const next = page.getByRole('region', { name: other, exact: true });
   await next.getByLabel('Kunde', { exact: true }).selectOption(fixture.client);

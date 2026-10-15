@@ -4,7 +4,7 @@ import { api, mutate } from './api.js';
 import type { Invitation, RoundClient } from './models.js';
 import { ErrorMessage, useAction } from './queries.js';
 
-function SendOut({ id }: { id: string }) {
+export function SendOut({ id }: { id: string }) {
   const [lang, setLang] = useState('nn');
   const [message, setMessage] = useState('');
   const invitation = useQuery({
@@ -26,19 +26,16 @@ function SendOut({ id }: { id: string }) {
         om undersøkinga på eit møte først, så ingen trur det er svindel.
       </p>
       <div className="knappar">
-        {[
-          ['nn', 'Nynorsk'],
-          ['en', 'English'],
-        ].map(([code, label]) => (
+        {(invitation.data?.languages ?? ['nn', 'en']).map((code) => (
           <button
             key={code}
             aria-pressed={lang === code}
             onClick={() => {
-              setLang(code!);
+              setLang(code);
               setMessage('');
             }}
           >
-            {label}
+            {{ nn: 'Nynorsk', en: 'English', nb: 'Bokmål' }[code] ?? code}
           </button>
         ))}
       </div>

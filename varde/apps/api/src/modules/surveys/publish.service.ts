@@ -120,7 +120,17 @@ export class PublishService {
   }
 
   async acceptTranslation(versionId: string, lang: Lang, who: string): Promise<Acceptance> {
-    const v = await this.prisma.templateVersion.findUniqueOrThrow({ where: { id: versionId } });
+    return this.prisma.$transaction((tx) => this.acceptIn(tx, versionId, lang, who));
+  }
+
+  async acceptIn(
+    tx: Prisma.TransactionClient,
+    versionId: string,
+    lang: Lang,
+    who: string,
+  ): Promise<Acceptance> {
+    await tx.$queryRaw`SELECT id FROM template_version WHERE id = ${versionId}::uuid FOR UPDATE`;
+    const v = await tx.templateVersion.findUniqueOrThrow({ where: { id: versionId } });
     if (v.status !== 'draft')
       throw new PublishRejected('only a draft takes translation acceptances');
     const acceptance: Acceptance = {
@@ -132,7 +142,7 @@ export class PublishService {
       ...(v.translation_acceptance as unknown as Record<string, Acceptance>),
       [lang]: acceptance,
     };
-    await this.prisma.templateVersion.update({
+    await tx.templateVersion.update({
       where: { id: versionId },
       data: { translation_acceptance: all as unknown as Prisma.InputJsonValue },
     });
@@ -145,66 +155,73 @@ export class PublishService {
     marks: Record<string, FrozenChange> = {},
   ): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
-      const v = await tx.templateVersion.findUniqueOrThrow({
-        where: { id: versionId },
-        include: { template: true },
-      });
-      if (v.status !== 'draft') throw new PublishRejected('version is already published');
-      const parsed = TemplateVersionContent.safeParse(v.content);
-      if (!parsed.success) {
-        throw new PublishRejected(
-          `content: ${parsed.error.issues.map((i) => i.message).join('; ')}`,
-        );
-      }
-      const c = parsed.data;
-      if (c.audience !== v.template.audience)
-        throw new PublishRejected('audience differs from the template');
-      for (const lang of REQUIRED[c.audience]) {
-        if (!c.required_languages.includes(lang))
-          throw new PublishRejected(`${c.audience} requires ${lang}`);
-      }
-      const hash = sourceHash(c);
-      const accepted = v.translation_acceptance as unknown as Record<
-        string,
-        Acceptance | undefined
-      >;
-      for (const lang of c.required_languages) {
-        if (accepted[lang]?.source_hash !== hash)
-          throw new PublishRejected(`language ${lang} is not accepted for the current source`);
-      }
-      const prev = await tx.templateVersion.findFirst({
-        where: { template_id: v.template_id, status: 'published' },
-        orderBy: { version_no: 'desc' },
-      });
-      const changes = prev === null ? [] : frozenChanges(parseShape(prev.content), c, marks);
-      await tx.templateVersion.update({
-        where: { id: versionId },
-        data: {
-          status: 'published',
-          published_at: new Date(),
-          published_by: who,
-          frozen_changes: changes,
-        },
-      });
-      const target = `template_version:${versionId}`;
+      const found = await tx.templateVersion.findUniqueOrThrow({ where: { id: versionId } });
+      await tx.$queryRaw`SELECT id FROM survey_template WHERE id = ${found.template_id}::uuid FOR UPDATE`;
+      await this.publishIn(tx, versionId, who, marks);
+    });
+  }
+
+  async publishIn(
+    tx: Prisma.TransactionClient,
+    versionId: string,
+    who: string,
+    marks: Record<string, FrozenChange> = {},
+  ): Promise<void> {
+    await tx.$queryRaw`SELECT id FROM template_version WHERE id = ${versionId}::uuid FOR UPDATE`;
+    const v = await tx.templateVersion.findUniqueOrThrow({
+      where: { id: versionId },
+      include: { template: true },
+    });
+    if (v.status !== 'draft') throw new PublishRejected('version is already published');
+    const parsed = TemplateVersionContent.safeParse(v.content);
+    if (!parsed.success) {
+      throw new PublishRejected(`content: ${parsed.error.issues.map((i) => i.message).join('; ')}`);
+    }
+    const c = parsed.data;
+    if (c.audience !== v.template.audience)
+      throw new PublishRejected('audience differs from the template');
+    for (const lang of REQUIRED[c.audience]) {
+      if (!c.required_languages.includes(lang))
+        throw new PublishRejected(`${c.audience} requires ${lang}`);
+    }
+    const hash = sourceHash(c);
+    const accepted = v.translation_acceptance as unknown as Record<string, Acceptance | undefined>;
+    for (const lang of c.required_languages) {
+      if (accepted[lang]?.source_hash !== hash)
+        throw new PublishRejected(`language ${lang} is not accepted for the current source`);
+    }
+    const prev = await tx.templateVersion.findFirst({
+      where: { template_id: v.template_id, status: 'published' },
+      orderBy: { version_no: 'desc' },
+    });
+    const changes = prev === null ? [] : frozenChanges(parseShape(prev.content), c, marks);
+    await tx.templateVersion.update({
+      where: { id: versionId },
+      data: {
+        status: 'published',
+        published_at: new Date(),
+        published_by: who,
+        frozen_changes: changes,
+      },
+    });
+    const target = `template_version:${versionId}`;
+    await tx.auditLog.create({
+      data: {
+        who,
+        what: 'surveys.publish',
+        target,
+        details: { template: c.key, label: v.label, version_no: v.version_no },
+      },
+    });
+    for (const change of changes) {
       await tx.auditLog.create({
         data: {
           who,
-          what: 'surveys.publish',
+          what: 'surveys.frozen_change',
           target,
-          details: { template: c.key, label: v.label, version_no: v.version_no },
+          details: { question: change.id, kind: change.kind },
         },
       });
-      for (const change of changes) {
-        await tx.auditLog.create({
-          data: {
-            who,
-            what: 'surveys.frozen_change',
-            target,
-            details: { question: change.id, kind: change.kind },
-          },
-        });
-      }
-    });
+    }
   }
 }

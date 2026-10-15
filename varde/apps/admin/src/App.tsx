@@ -1,3 +1,4 @@
+import { SurveysPage } from './surveys-page.js';
 import { ExportPage } from './export-page.js';
 import { DeletionPage } from './deletion-page.js';
 import { ArchiveReminder } from './archive-reminder.js';
@@ -14,6 +15,7 @@ import { ErrorMessage } from './queries.js';
 const sections = [
   ['/admin', 'Oversikt'],
   ['/admin/rounds', 'Kundar og rundar'],
+  ['/admin/surveys', 'Skjema'],
   ['/admin/dashboard', 'Dashbord'],
   ['/admin/export', 'Eksport'],
   ['/admin/deletion', 'Sletting'],
@@ -93,6 +95,8 @@ function Shell({ name }: { name: string | null }) {
           </>
         ) : path === '/admin/rounds' ? (
           <RoundsPage />
+        ) : path === '/admin/surveys' ? (
+          <SurveysPage />
         ) : path === '/admin/dashboard' ? (
           <DashboardPage />
         ) : path === '/admin/export' ? (

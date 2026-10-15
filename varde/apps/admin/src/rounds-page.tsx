@@ -9,6 +9,8 @@ import {
   useRounds,
   useVersions,
 } from './queries.js';
+import { LaunchForm } from './launch-form.js';
+import { ClientForm } from './clients-form.js';
 import { RoundClientCard } from './round-client.js';
 
 function EmployeeCount({ client }: { client: Client }) {
@@ -156,7 +158,18 @@ export function RoundsPage() {
         </table>
       </section>
       <section className="del">
-        <h2>Ny runde</h2>
+        <h2>Legg til eller endre kunde</h2>
+        <ClientForm />
+        {clients.data?.map((c) => (
+          <details key={c.id}>
+            <summary>Endre {c.name}</summary>
+            <ClientForm key={`${c.name}-${c.employee_count}`} client={c} />
+          </details>
+        ))}
+      </section>
+      <LaunchForm clients={clients.data ?? []} versions={versions.data ?? []} />
+      <section className="del">
+        <h2>Ny tom runde</h2>
         <form className="knappar" onSubmit={create}>
           <label>
             Namn på runden <input required name="name" maxLength={200} />

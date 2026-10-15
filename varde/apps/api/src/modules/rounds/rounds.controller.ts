@@ -35,6 +35,18 @@ function parse<T>(schema: z.ZodType<T>, input: unknown): T {
 export class RoundsController {
   constructor(private readonly rounds: RoundsService) {}
 
+  @Post('/rounds/launch')
+  launch(@Body() input: unknown, @Req() r: AdminRequest) {
+    const value = parse(
+      RoundInput.extend({
+        clients: z.array(ClientInput).min(1).max(500),
+        open: z.boolean(),
+      }),
+      input,
+    );
+    return this.rounds.launch(value, auditWho(r.adminSession));
+  }
+
   @Post('/rounds')
   create(@Body() input: unknown, @Req() r: AdminRequest) {
     return this.rounds.create(parse(RoundInput, input), auditWho(r.adminSession));
