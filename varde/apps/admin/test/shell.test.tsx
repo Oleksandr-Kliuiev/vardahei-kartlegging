@@ -94,8 +94,8 @@ describe('admin shell', () => {
     expect(links.map((a) => a.textContent)).toEqual([
       'Oversikt',
       'Kundar og rundar',
-      'Skjema',
       'Dashbord',
+      'Skjema',
       'Eksport',
       'Sletting',
     ]);
