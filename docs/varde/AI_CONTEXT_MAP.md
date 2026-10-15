@@ -1,6 +1,6 @@
 # Карта контекста Varde
 
-Задача → минимальный набор файлов входа. Пути — от корня репозитория. Путь с пометкой «(появится в …)» ещё не существует. Всегда: `docs/varde/PRINCIPLES.md`, `varde/CLAUDE.md`, пакет своего этапа в `docs/varde/stages/`. Карта обновляется в каждом checkpoint (последнее обновление — 1a).
+Задача → минимальный набор файлов входа. Пути — от корня репозитория. Путь с пометкой «(появится в …)» ещё не существует. Всегда: `docs/varde/PRINCIPLES.md`, `varde/CLAUDE.md`, пакет своего этапа в `docs/varde/stages/`. Карта обновляется в каждом checkpoint (последнее обновление — этап 5).
 
 | Задача                                   | Файлы входа                                                                                                                                                                                                                                                                                                                                                                                                  |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -32,6 +32,8 @@
 | Удаление по запросу | `varde/apps/api/src/modules/retention/forget.service.ts`, `varde/apps/api/src/modules/retention/ledger.ts`, `varde/apps/api/src/modules/privacy/response-store.ts`, `varde/apps/api/test/retention/forget.test.ts`, `varde/apps/api/test/retention/forget-restore.test.ts`; ADR-024 таблица путей |
 | Cutover и rollback | `varde/tools/cutover/`, `varde/tools/staging/`, `varde/infra/caddy/`, `docs/varde/runbooks/cutover.md`, `docs/varde/evidence/stage-1/cutover.md`, `tools/test/lesemodus.test.js` |
 | Админка (UI) | `varde/apps/admin/src/`, `varde/apps/admin/e2e/`; API через PrivacyService; subprocess `e2e/server.cjs` |
+| Отчёт клиенту (5.1) | `varde/apps/api/src/modules/reports/`, `varde/apps/api/test/reports/`, `varde/apps/admin/src/report-page.tsx`, `varde/apps/admin/src/report-sheet.tsx`, `varde/apps/admin/src/report-texts.ts`, `varde/apps/admin/src/report.css`, `varde/apps/admin/e2e/report.spec.ts`, `docs/varde/design/vardestien/admin.js` («Rapportar»); ADR-021/025/026 |
+| Архив раунда: экспорт и restore (5.2) | `varde/apps/api/src/modules/exports/round-archive.ts`, `varde/apps/api/src/modules/exports/round-archive.service.ts`, `varde/apps/api/src/modules/privacy/archive.ts`, `varde/apps/api/src/modules/privacy/prisma-snapshot-store.ts`, `varde/apps/api/src/cli/archive.ts`, `varde/apps/api/test/exports/round-archive.test.ts`, `varde/apps/api/test/exports/round-archive-format.test.ts`; ADR-017/020/021 |
 | Дизайн и движение (Vardestien) | `docs/varde/design/README.md`, `docs/varde/design/vardestien/`, `varde/apps/runner/src/landscape/landscape.ts`, `varde/apps/runner/src/scene.ts`, `varde/apps/runner/e2e/motion.spec.ts`, `varde/packages/ui/src/motion.ts`, `varde/packages/ui/src/tokens.css`, `varde/packages/ui/src/base.css`, PRINCIPLES «Визуальный стиль», `docs/varde/STAGES.md` 1e |
 
 ## Не читать
