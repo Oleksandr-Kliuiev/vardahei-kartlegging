@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, mutate } from './api.js';
-import type { Invitation, RoundClient } from './models.js';
+import type { Invitation, Progress, RoundClient } from './models.js';
 import { ErrorMessage, useAction } from './queries.js';
+import { Ring } from './widgets.js';
 
 export function SendOut({ id }: { id: string }) {
   const [lang, setLang] = useState('nn');
@@ -81,8 +82,20 @@ const statusText: Record<string, string> = {
   closed: 'Stengd',
   archived: 'Arkivert',
 };
+const statusChip: Record<string, string> = {
+  draft: 'chip',
+  open: 'chip ok',
+  closed: 'chip warn',
+  archived: 'chip',
+};
 
-export function RoundClientCard({ rc }: { rc: RoundClient }) {
+export function RoundClientCard({
+  rc,
+  progress,
+}: {
+  rc: RoundClient;
+  progress?: Progress | undefined;
+}) {
   const action = useAction();
   const [confirm, setConfirm] = useState(false);
   const [send, setSend] = useState(false);
@@ -100,15 +113,36 @@ export function RoundClientCard({ rc }: { rc: RoundClient }) {
     action.mutate(work);
   };
   return (
-    <article className="kunde-kort" aria-label={rc.client.name}>
-      <div className="knappar">
-        <h3>{rc.client.name}</h3>
-        <span className="status">{statusText[rc.status] ?? rc.status}</span>
-        <span>
-          {rc.population_snapshot === null
-            ? 'Tal tilsette er ikkje sett'
-            : `${rc.population_snapshot} tilsette i denne runden`}
+    <article className="kort kundekort" aria-label={rc.client.name}>
+      <div className="kundekort-topp">
+        <div>
+          <h3>{rc.client.name}</h3>
+          <small>
+            {rc.population_snapshot === null
+              ? 'Tal tilsette er ikkje sett'
+              : `${rc.population_snapshot} tilsette i denne runden`}
+          </small>
+        </div>
+        <span className={statusChip[rc.status] ?? 'chip'}>
+          {statusText[rc.status] ?? rc.status}
         </span>
+      </div>
+      <div className="kundekort-midt">
+        <Ring
+          value={progress?.responses_total ?? 0}
+          max={rc.population_snapshot}
+          label={
+            rc.population_snapshot === null
+              ? 'Oppslutning: tal tilsette er ikkje sett'
+              : `Oppslutning: ${progress?.responses_total ?? 0} av ${rc.population_snapshot}`
+          }
+        />
+        <dl>
+          <dt>Svar</dt>
+          <dd>{progress?.responses_total ?? 0}</dd>
+          <dt>Siste svar</dt>
+          <dd>{progress?.last_response_day?.slice(0, 10) ?? '–'}</dd>
+        </dl>
       </div>
       <div className="knappar">
         {rc.status === 'draft' && (
