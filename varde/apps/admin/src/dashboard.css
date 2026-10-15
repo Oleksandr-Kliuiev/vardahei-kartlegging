@@ -1,19 +1,13 @@
+/* Sonene: same fargar som i @varde/ui (lys og mørk), alltid med ordet ved sida av fargen */
 :root {
-  --s-gron: #2e7d32;
-  --s-gul: #e8c21e;
-  --s-oransje: #f08a1c;
-  --s-raud: #e5484d;
-  --s-gron-bg: rgba(46, 125, 50, 0.16);
-  --s-gul-bg: rgba(255, 236, 110, 0.42);
-  --s-oransje-bg: rgba(240, 138, 28, 0.26);
-  --s-raud-bg: rgba(229, 72, 77, 0.24);
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --s-gron: #4caf50;
-    --s-gron-bg: rgba(76, 175, 80, 0.22);
-    --s-gul-bg: rgba(232, 194, 30, 0.24);
-  }
+  --s-gron: var(--sone-gron);
+  --s-gul: var(--sone-gul);
+  --s-oransje: var(--sone-oransje);
+  --s-raud: var(--sone-raud);
+  --s-gron-bg: var(--sone-gron-bg);
+  --s-gul-bg: var(--sone-gul-bg);
+  --s-oransje-bg: var(--sone-oransje-bg);
+  --s-raud-bg: var(--sone-raud-bg);
 }
 .dashboard-filter {
   display: flex;
@@ -36,10 +30,11 @@
   color: var(--muted);
 }
 .stor {
-  font-size: 2.2rem;
-  font-weight: 700;
-  line-height: 1.15;
-  color: var(--ink);
+  font-size: 34px;
+  font-weight: 760;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: var(--ink-strong);
   font-variant-numeric: tabular-nums;
 }
 .sone {
