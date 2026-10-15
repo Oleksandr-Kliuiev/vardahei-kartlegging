@@ -13,13 +13,13 @@ describe('runner skeleton (1.12)', () => {
     vi.stubGlobal('fetch', fetcher);
     void act(() => { mount(root); });
     expect(fetcher).toHaveBeenCalledWith('/api/runner/round', expect.objectContaining({ headers: { Authorization: 'Bearer synthetic-link' } }));
-    await vi.waitFor(() => expect(root.textContent).toContain('Lenkja er ikkje gyldig.'));
+    await vi.waitFor(() => expect(root.querySelector('h1')?.textContent).toBe('Denne lenkja verkar ikkje'));
     expect(root.textContent).not.toContain('synthetic-link');
   });
-  it('closed round → completed screen', async () => {
+  it('closed round → closed screen', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 410, json: () => Promise.resolve({}) }));
     void act(() => { mount(root); });
-    await vi.waitFor(() => expect(root.textContent).toContain('Kartlegginga er avslutta.'));
+    await vi.waitFor(() => expect(root.querySelector('h1')?.textContent).toBe('Kartlegginga er avslutta'));
   });
   it('client default language must belong to the version', () => {
     expect(defaultLanguage(['nn', 'en'], 'en')).toBe('en');

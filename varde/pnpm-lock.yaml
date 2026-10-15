@@ -167,9 +167,6 @@ importers:
 
   apps/runner:
     dependencies:
-      '@fontsource/atkinson-hyperlegible':
-        specifier: 5.2.8
-        version: 5.2.8
       '@varde/rules':
         specifier: workspace:*
         version: link:../../packages/rules

@@ -1,58 +1,117 @@
+import { useState } from 'preact/hooks';
 import { evaluate, prune, type Answers } from '@varde/rules/runner';
 import type { TemplateContent } from '@varde/schema/template/template';
 import type { Lang } from '@varde/schema/template/texts';
+import { animate, ease, stagger } from '@varde/ui/motion';
 import nn from './i18n/notice-v2.nn.json';
 import { notice } from './i18n/notice.js';
 import { text, ui } from './i18n/ui.js';
+import { Icon } from './icons.js';
+
+type NoticeKey = keyof typeof nn;
+/** The short answer to «who sees my answers» stays visible; the rest of the approved notice opens on request. */
+const SUMMARY: Record<'identified' | 'anonymous', NoticeKey[]> = {
+  identified: [
+    'notice.identified.intro',
+    'notice.identified.who_sees',
+    'notice.identified.client_gets',
+  ],
+  anonymous: ['notice.anonymous.intro'],
+};
 
 export function Intro({
   version,
   client,
   lang,
-  start,
 }: {
   version: TemplateContent;
   client: string;
   lang: Lang;
-  start: () => void;
+  start?: () => void;
 }) {
-  const prefix = version.identification === 'initials' ? 'notice.identified.' : 'notice.anonymous.';
-  const notices = (Object.keys(nn) as (keyof typeof nn)[]).filter(
-    (k) => k.startsWith(prefix) || k.startsWith('notice.common.'),
+  const mode = version.identification === 'initials' ? 'identified' : 'anonymous';
+  const all = (Object.keys(nn) as NoticeKey[]).filter(
+    (k) => k.startsWith(`notice.${mode}.`) || k.startsWith('notice.common.'),
   );
+  const rest = all.filter((k) => !SUMMARY[mode].includes(k));
+  const [open, setOpen] = useState(false);
   return (
-    <div class="skjerm brev">
-      <div class="ingress">{text(version.intro.short, lang)}</div>
-      <h1>{text(version.intro.title, lang)}</h1>
+    <div class="skjerm intro brev" data-step="intro">
+      <div class="eyebrow anim">{text(version.intro.short, lang)}</div>
+      <h1 class="anim" tabIndex={-1}>
+        {text(version.intro.title, lang)}
+      </h1>
       {version.intro.letter.map((p) => (
-        <p>{text(p, lang)}</p>
+        <p class="anim">{text(p, lang)}</p>
       ))}
-      <p>
+      <p class="anim">
         {ui(lang, 'for')} <span class="kunde">{client}</span>.
       </p>
       <ul class="fakta">
-        <li>
-          <span aria-hidden="true">◷</span>
+        <li class="anim">
+          <Icon name="klokke" />
           <span>{ui(lang, 'f1', version.intro.minutes)}</span>
         </li>
         {version.intro.facts.slice(1).map((fact) => (
-          <li>
-            <span aria-hidden="true">✓</span>
+          <li class="anim">
+            <Icon name="hake" />
             <span>{text(fact, lang)}</span>
           </li>
         ))}
       </ul>
-      <div class="notis">
-        {notices.map((key) => (
-          <p data-notice={key}>{notice(lang, key)}</p>
-        ))}
-      </div>
-      <p class="helsing">
+      <section class="personvern anim" aria-labelledby="kven-ser">
+        <div class="personvern-topp">
+          <span class="merke">
+            <Icon name="skjold" />
+          </span>
+          <div class="notis">
+            <h2 id="kven-ser">{ui(lang, 'kvenSer')}</h2>
+            {SUMMARY[mode].map((key) => (
+              <p data-notice={key}>{notice(lang, key)}</p>
+            ))}
+          </div>
+        </div>
+        <button
+          type="button"
+          class="linkbtn"
+          aria-expanded={open}
+          aria-controls="personvern-meir"
+          onClick={() => {
+            setOpen(!open);
+            if (!open)
+              requestAnimationFrame(
+                () =>
+                  void stagger(
+                    document.querySelectorAll('#personvern-meir li'),
+                    [
+                      { opacity: 0, transform: 'translateY(6px)' },
+                      { opacity: 1, transform: 'none' },
+                    ],
+                    {
+                      duration: 360,
+                      step: 40,
+                      easing: ease.inn,
+                      fill: 'backwards',
+                    },
+                  ),
+              );
+          }}
+        >
+          {ui(lang, open ? 'lesMindre' : 'lesMeir')} <Icon name="ned" small />
+        </button>
+        <div class="meir" id="personvern-meir" data-open={open ? 'true' : 'false'}>
+          <div>
+            <ul>
+              {rest.map((key) => (
+                <li data-notice={key}>{notice(lang, key)}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+      <p class="helsing anim">
         {ui(lang, 'helsing')} {text(version.intro.sender, lang)}
       </p>
-      <button id="start" class="knapp hoved" onClick={start}>
-        {ui(lang, 'start')}
-      </button>
     </div>
   );
 }
@@ -69,24 +128,55 @@ export function selectedTips(version: TemplateContent, answers: Answers) {
     ...hits.filter((t) => t.closing),
   ];
 }
+
+function CopyRow({ value, lang }: { value: string; lang: Lang }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div class="kontakt-rad">
+      <b class="tnum">{value}</b>
+      <button
+        type="button"
+        class="btn sm"
+        onClick={(e) => {
+          const button = e.currentTarget;
+          void navigator.clipboard?.writeText(value).catch(() => undefined);
+          setCopied(true);
+          void animate(button, [{ transform: 'scale(.92)' }, { transform: 'none' }], {
+            duration: 420,
+            easing: ease.sprett,
+          });
+          setTimeout(() => setCopied(false), 1600);
+        }}
+      >
+        {ui(lang, copied ? 'kopiert' : 'kopier')}
+      </button>
+    </div>
+  );
+}
+
 export function Finish({
   version,
   answers,
   lang,
+  client,
 }: {
   version: TemplateContent;
   answers: Answers;
   lang: Lang;
+  client?: string;
 }) {
   const scenarios = version.questions.filter((q) => 'scenario' in q && q.scenario !== undefined);
   const tips = selectedTips(version, answers),
     contact = version.intro.contact;
   return (
     <div class="skjerm slutt">
-      <h1>{ui(lang, 'takk')}</h1>
-      <p>{ui(lang, 'sendt')}</p>
+      <div class="eyebrow anim">{ui(lang, 'toppen')}</div>
+      <h1 class="anim" tabIndex={-1}>
+        {ui(lang, 'takk')}
+      </h1>
+      <p class="ingress anim">{ui(lang, 'sendt')}</p>
       {scenarios.length > 0 && (
-        <section data-section="scenarios">
+        <section data-section="scenarios" class="anim">
           <h2>{ui(lang, scenarios.length === 1 ? 'situasjonen' : 'situasjonane')}</h2>
           {scenarios.map((q) => {
             if (!('scenario' in q) || !q.scenario) return null;
@@ -117,7 +207,7 @@ export function Finish({
         </section>
       )}
       {version.tips.length > 0 && (
-        <section data-section="tips">
+        <section data-section="tips" class="anim">
           <h2>{ui(lang, 'rad')}</h2>
           <div class="tips">
             {tips.map((tip) => (
@@ -129,16 +219,37 @@ export function Finish({
           </div>
         </section>
       )}
-      <section>
+      <h2 class="kva-skjer anim">{ui(lang, 'kvaSkjer')}</h2>
+      <ol class="steg">
+        <li class="gjort anim">
+          <span class="nr" aria-hidden="true">
+            ✓
+          </span>
+          <p>{ui(lang, 'steg1')}</p>
+        </li>
+        <li class="no anim">
+          <span class="nr" aria-hidden="true">
+            2
+          </span>
+          <p>{ui(lang, 'steg2', { k: client ?? '' })}</p>
+        </li>
+        <li class="anim">
+          <span class="nr" aria-hidden="true">
+            3
+          </span>
+          <p>{ui(lang, 'steg3')}</p>
+        </li>
+      </ol>
+      <section class="kontakt anim">
         <h2>{ui(lang, 'kontakt')}</h2>
-        <div class="kontakt">
-          <span>{contact.name}</span>
-          <span>{contact.phone}</span>
-          <span>{contact.email}</span>
-          <small>{text(contact.hours, lang)}</small>
+        <div class="kontakt-rad">
+          <b>{contact.name}</b>
         </div>
+        <CopyRow value={contact.phone} lang={lang} />
+        <CopyRow value={contact.email} lang={lang} />
+        <small class="muted">{text(contact.hours, lang)}</small>
       </section>
-      <p class="helsing">{ui(lang, 'lukk')}</p>
+      <p class="lukk anim">{ui(lang, 'lukk')}</p>
     </div>
   );
 }

@@ -1,0 +1,78 @@
+/* Intro, leiarval, oversyn og toppen (Vardestien). */
+
+/* Intro: brevet, fakta og kort svar på kven som ser svara */
+.intro h1 { font-size: clamp(2.15rem, 8vw, 3rem); line-height: 1.04; font-weight: 800; letter-spacing: -0.026em; margin: 10px 0 18px; }
+.brev { display: grid; gap: 14px; max-width: 34em; }
+.brev > h1 { margin-bottom: 4px; }
+.kunde { display: inline-block; padding: 1px 9px; border-radius: 8px; background: var(--accent-soft); color: var(--ink-strong); font-weight: 700; }
+.fakta { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 12px; }
+.fakta li { display: grid; grid-template-columns: 22px 1fr; gap: 12px; align-items: start; }
+.fakta .icon { margin-top: 3px; color: var(--accent); }
+.personvern { margin-top: 8px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--edge); }
+.personvern-topp { display: grid; grid-template-columns: 36px 1fr; gap: 12px; padding: 16px 16px 4px; }
+.personvern-topp .merke { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); }
+.personvern h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.personvern .notis { display: grid; gap: 8px; font-size: 15.5px; }
+.personvern .linkbtn { display: inline-flex; align-items: center; gap: 6px; margin: 4px 0 8px 58px; }
+.personvern .linkbtn .icon { transition: transform var(--t-base) var(--ease-fjor); }
+.personvern .linkbtn[aria-expanded="true"] .icon { transform: rotate(180deg); }
+.personvern .meir { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--t-move) var(--ease-sti); }
+.personvern .meir[data-open="true"] { grid-template-rows: 1fr; }
+/* Lukka innhald er ikkje berre klipt: det er gøymt for skjermlesar og tabulator når det har gått saman */
+.personvern .meir > div { overflow: hidden; visibility: hidden; transition: visibility 0s linear var(--t-move); }
+.personvern .meir[data-open="true"] > div { visibility: visible; transition-delay: 0s; }
+.personvern .meir ul { margin: 0 16px 16px 64px; padding: 0; display: grid; gap: 10px; font-size: 15px; }
+.helsing { margin-top: 10px; color: var(--ink-muted); font-style: italic; }
+
+/* Leiardelen: to vegar, tydeleg kva som skjer */
+.mellom h1, .oversyn h1, .slutt h1 { font-size: clamp(1.8rem, 6.4vw, 2.4rem); line-height: 1.1; font-weight: 780; letter-spacing: -0.02em; margin: 10px 0 14px; }
+.aerleg { display: grid; grid-template-columns: 22px 1fr; gap: 12px; margin-top: 18px; padding: 14px 16px; border-radius: var(--r-lg); background: var(--warning-bg); color: var(--warning-fg); border: 1px solid var(--warning-line); font-size: 15.5px; }
+.vegval { display: grid; gap: 12px; margin-top: 24px; }
+.veg { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px 14px; width: 100%; padding: 18px; text-align: left; border-radius: var(--r-xl); border: 1.5px solid var(--line); background: var(--surface); color: var(--ink-strong); box-shadow: var(--shadow-1), var(--edge);
+  transition: border-color var(--t-quick), transform var(--t-spring) var(--ease-fjor), box-shadow var(--t-base); }
+.veg:hover { border-color: var(--accent); box-shadow: var(--shadow-2); }
+.veg:active { transform: scale(.985); }
+.veg[disabled] { opacity: .55; cursor: progress; }
+.veg b { font-size: 18px; }
+.veg span { grid-column: 1; color: var(--ink-muted); font-size: 15px; }
+.veg .icon { grid-row: 1 / span 2; grid-column: 2; color: var(--accent); transition: transform var(--t-spring) var(--ease-fjor); }
+.veg:hover .icon { transform: translateX(4px); }
+.veg.hoved { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.veg.hoved span, .veg.hoved .icon { color: color-mix(in oklab, var(--on-accent) 82%, transparent); }
+
+/* Oversyn før sending */
+.lagra { display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 15px; color: var(--ink-muted); }
+.seksjonar { list-style: none; padding: 0; margin: 20px 0 0; display: grid; gap: 10px; }
+.seksjonar > li { border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--edge); }
+.seksjon-knapp { width: 100%; display: grid; grid-template-columns: 22px 1fr auto 18px; gap: 12px; align-items: center; padding: 14px 16px; background: none; border: 0; text-align: left; color: var(--ink-strong); font-weight: 650; min-height: 54px; }
+.seksjon-knapp .tal { font-family: var(--font-mono); font-size: 13px; color: var(--ink-muted); font-weight: 600; }
+.seksjon-knapp .pil { display: grid; transition: transform var(--t-base) var(--ease-fjor); }
+.seksjon-knapp[aria-expanded="true"] .pil { transform: rotate(180deg); }
+.seksjon-svar { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--t-move) var(--ease-sti); }
+.seksjon-svar[data-open="true"] { grid-template-rows: 1fr; }
+.seksjon-svar > div { overflow: hidden; visibility: hidden; transition: visibility 0s linear var(--t-move); }
+.seksjon-svar[data-open="true"] > div { visibility: visible; transition-delay: 0s; }
+.seksjon-svar dl { margin: 0; padding: 0 16px 12px 50px; display: grid; gap: 12px; }
+.seksjon-svar dt { font-size: 14.5px; color: var(--ink-muted); }
+.seksjon-svar dd { margin: 2px 0 0; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; font-weight: 650; color: var(--ink-strong); }
+.seksjon-svar dd .linkbtn { padding: 2px 4px; font-size: 14px; }
+
+/* Toppen: takk, kva som skjer no og kontakt */
+.slutt .ingress { font-size: 18px; max-width: 32em; }
+.slutt section h2, .kva-skjer { margin-top: 28px; font-size: 18px; }
+.fasit, .tips article { margin-top: 12px; padding: 14px 16px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); }
+.fasit h3, .tips h3 { font-size: 16px; margin-bottom: 4px; }
+.fasit .merk { color: var(--success-fg); font-weight: 650; }
+.steg { list-style: none; padding: 0; margin: 20px 0 0; display: grid; }
+.steg li { position: relative; display: grid; grid-template-columns: 28px 1fr; gap: 14px; padding-bottom: 18px; }
+.steg li::before { content: ""; position: absolute; left: 13px; top: 28px; bottom: 0; width: 2px; background: var(--line); }
+.steg li:last-child::before { display: none; }
+.steg .nr { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 1.5px solid var(--line-strong); font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--ink-muted); }
+.steg li.gjort .nr { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.steg li.no .nr { border-color: var(--accent); color: var(--accent-text); }
+.steg p { padding-top: 2px; }
+.kontakt { margin-top: 18px; padding: 18px; border-radius: var(--r-xl); background: var(--surface); border: 1px solid var(--line); display: grid; gap: 10px; box-shadow: var(--edge); }
+.kontakt h2 { font-size: 18px; margin: 0; }
+.kontakt-rad { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; }
+.kontakt-rad b { user-select: all; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.lukk { margin-top: 22px; color: var(--ink-muted); font-style: italic; }

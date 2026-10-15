@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'preact/hooks';
 import { Preview } from './preview.js';
-import { ui } from './i18n/ui.js';
 import { expireCodeDrafts } from './draft.js';
+import type { Landscape } from './landscape/landscape.js';
+import { direct } from './scene.js';
+import { StateScreen, type StateKind } from './screens.js';
+import { Shell } from './shell.js';
 import { Survey } from './survey.js';
 import { loadRound, RunnerError, type RunnerRound } from './round.js';
 
@@ -10,9 +13,19 @@ export function App() {
   return preview ? <Preview id={preview} /> : <LiveApp />;
 }
 
+/** Closed (410), replaced, unknown links and a failed connection each get their own screen and mood. */
+function stateOf(err: RunnerError): StateKind {
+  if (err.status === 410) return 'closed';
+  if (err.status === 0) return 'offline';
+  if (err.status === 403 && err.message.startsWith('Lenkja er bytt ut')) return 'revoked';
+  return 'invalid';
+}
+const EMPTY = { sections: [], marks: [], at: 0, lastCommon: 0, no: 0, total: 0, leaderCount: 0 };
+
 function LiveApp() {
   const [round, setRound] = useState<RunnerRound | null>(null);
   const [error, setError] = useState<RunnerError | null>(null);
+  const [land, setLand] = useState<Landscape | null>(null);
   useEffect(() => {
     const controller = new AbortController();
     const code = new URLSearchParams(location.search).get('c') ?? '';
@@ -29,17 +42,16 @@ function LiveApp() {
       });
     return () => controller.abort();
   }, []);
-  if (error)
-    return (
-      <main class="wrap">
-        <h1>{error.status === 410 ? 'Kartlegginga er avslutta.' : error.message}</h1>
+  const kind: StateKind | null = error ? stateOf(error) : round ? null : 'loading';
+  useEffect(() => {
+    if (land && kind) direct(land, kind, EMPTY, { of: '', top: '' }, kind === 'loading');
+  }, [land, kind]);
+  if (round && !error) return <Survey round={round} />;
+  return (
+    <Shell lang="nn" onLand={setLand}>
+      <main id="main" class="app">
+        <StateScreen kind={kind ?? 'loading'} lang="nn" />
       </main>
-    );
-  if (!round)
-    return (
-      <main class="wrap">
-        <p role="status">{ui('nn', 'loading')}</p>
-      </main>
-    );
-  return <Survey round={round} />;
+    </Shell>
+  );
 }
