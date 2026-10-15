@@ -25,7 +25,8 @@
     "invariants:1a": "bash tools/invariants/run-1a.sh",
     "invariants:1b:runner": "bash tools/invariants/run-1b-runner.sh",
     "invariants:1b": "bash tools/invariants/run-1b.sh",
-    "invariants:1c": "bash tools/invariants/run-1c.sh"
+    "invariants:1c": "bash tools/invariants/run-1c.sh",
+    "invariants:1e": "bash tools/invariants/run-1e.sh"
   },
   "devDependencies": {
     "@types/node": "22.20.5",

@@ -103,3 +103,17 @@
 | Контекст ассистента, отчёт клиенту, ObservationOutbox | В этапе 1 отсутствуют; отрицательные тесты остаются за этапами 4–5 |
 
 Полный прогон: `pnpm invariants:1c`; production cutover — отдельный pending чек-лист, не результат кодерских тестов.
+
+## Дополнение checkpoint 1e (Vardestien)
+
+| Инвариант | Проверка |
+| --- | --- |
+| Фирменные цвета, паритет тёмной темы (по системе и по `data-theme`), зоны в обеих темах, запасной вариант для `linear()` | `varde/packages/ui/test/tokens.test.ts` |
+| Reduced motion: в ландшафте нет анимаций и переходов, палатка стоит сразу; движение по токенам | `varde/apps/runner/e2e/landscape.spec.ts`, `varde/packages/ui/test/motion.test.ts` |
+| Турист реагирует на ответ ≤ 150 мс, нет скачков (> 0,2 ед./мс), камни на пройденных вардах, рука в покое | `varde/apps/runner/e2e/motion.spec.ts` (ответы каждые 700 и 120 мс) |
+| Двойное нажатие «Vidare» на последнем вопросе не отправляет ответы | `varde/apps/runner/e2e/screens.spec.ts` |
+| Встраивать в рамку можно только `/r?preview=` и только в Varde; остальные пути runner — `frame-ancestors 'none'` | `varde/apps/api/test/runner/static.test.ts`; предпросмотр берёт содержимое только от родителя того же origin и после схемы — `varde/apps/runner/test/preview.test.tsx` |
+| Oversikt и карточки раундов: только агрегаты API прогресса; активных меньше 3 — «–» | `varde/apps/admin/e2e/progress.spec.ts`, `varde/apps/admin/test/progress.test.tsx` |
+| Закрытие раунда и удаление — только удержанием 1,2 с; короткое нажатие ничего не делает | `varde/apps/admin/e2e/rounds.spec.ts`, `varde/apps/admin/e2e/sletting.spec.ts` |
+
+Полный прогон без браузера: `pnpm invariants:1e`; браузерные инварианты — в job `e2e`.
