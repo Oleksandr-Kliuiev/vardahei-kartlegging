@@ -38,6 +38,13 @@ const P = {
     <path key="b" d="M10.3 3.9L2.4 18a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" />,
   ],
   pil: [<path key="a" d="M5 12h14M13 6l6 6-6 6" />],
+  lyspare: [
+    <path key="a" d="M9.5 18h5M10.5 21h3" />,
+    <path
+      key="b"
+      d="M12 3a6 6 0 00-3.6 10.8c.7.6 1.1 1.4 1.1 2.3V16h5v-.1c0-.9.4-1.7 1.1-2.3A6 6 0 0012 3z"
+    />,
+  ],
 } satisfies Record<string, ReactElement[]>;
 export type IconName = keyof typeof P;
 

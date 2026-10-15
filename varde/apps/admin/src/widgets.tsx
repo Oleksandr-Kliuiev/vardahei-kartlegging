@@ -1,5 +1,6 @@
-// Small shared pieces of the admin in the Vardestien style: a response ring and a hold-to-confirm button.
-import { useEffect, useId, useRef, useState } from 'react';
+// Small shared pieces of the admin in the Vardestien style: a response ring, a hold-to-confirm button
+// and a segmented control.
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { countTo } from '@varde/ui/motion';
 
 /** Share of employees who answered; the arc and the number roll to new values. */
@@ -16,7 +17,9 @@ export function Ring({ value, max, label }: { value: number; max: number | null;
       el.textContent = '–';
       return;
     }
-    void countTo(el as unknown as HTMLElement, Math.round(share * 100), { format: (v) => `${Math.round(v)} %` });
+    void countTo(el as unknown as HTMLElement, Math.round(share * 100), {
+      format: (v) => `${Math.round(v)} %`,
+    });
   }, [share, max]);
   return (
     <svg className="ring" viewBox="0 0 64 64" role="img" aria-label={label}>
@@ -106,5 +109,52 @@ export function HoldButton({
         {hint}
       </span>
     </span>
+  );
+}
+
+/** Segmented control: the thumb glides to the chosen option (token durations, so reduced motion jumps). */
+export function Seg<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: readonly (readonly [T, string])[];
+  onChange: (value: T) => void;
+}) {
+  const box = useRef<HTMLDivElement>(null),
+    thumb = useRef<HTMLSpanElement>(null),
+    placed = useRef(false);
+  useLayoutEffect(() => {
+    const place = () => {
+      const t = thumb.current,
+        on = box.current?.querySelector<HTMLElement>('button[aria-pressed="true"]');
+      if (!t || !on) return;
+      if (!placed.current) t.style.transition = 'none';
+      t.style.width = `${on.offsetWidth}px`;
+      t.style.transform = `translateX(${on.offsetLeft}px)`;
+      if (!placed.current) {
+        void t.offsetWidth;
+        t.style.transition = '';
+        placed.current = true;
+      }
+    };
+    place();
+    if (typeof ResizeObserver === 'undefined' || !box.current) return;
+    const watch = new ResizeObserver(place);
+    watch.observe(box.current);
+    return () => watch.disconnect();
+  }, [value]);
+  return (
+    <div className="seg" role="group" aria-label={label} ref={box}>
+      <span className="seg-thumb" ref={thumb} aria-hidden="true" />
+      {options.map(([v, text]) => (
+        <button key={v} type="button" aria-pressed={v === value} onClick={() => onChange(v)}>
+          {text}
+        </button>
+      ))}
+    </div>
   );
 }

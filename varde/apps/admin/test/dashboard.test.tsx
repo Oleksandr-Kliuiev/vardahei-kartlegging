@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { DashboardPage } from '../src/dashboard-page.js';
-import { KeyQuestions } from '../src/dashboard-aggregate.js';
+import { Findings, KeyQuestions } from '../src/dashboard-aggregate.js';
 import { EmployeeSection, QuotesSection } from '../src/dashboard-rows.js';
 import type { Dashboard, Employees } from '../src/dashboard-models.js';
 import { mount, settle } from './support.js';
@@ -166,4 +166,36 @@ it('quotes render as plain text and never invent a role omitted by privacy', asy
   expect(view.div.querySelector('script')).toBeNull();
   expect(view.div.querySelector('blockquote')?.textContent).toBe('<script>syntetisk</script>');
   expect(view.div.querySelector('.kjelde')?.textContent).toBe('Daco');
+});
+
+it('a closed round keeps its finding and links to a newer rule version inside the admin', () => {
+  const finding = {
+    key: 'tryggleik.f8',
+    version: 1,
+    latest_version: 2,
+    n: 12,
+    count: 4,
+    share: 4 / 12,
+    level: 'high' as const,
+    text: 'brukar same passord på fleire tenester',
+    action: 'Passordhandterar først.',
+    severity: 'risk',
+    tal: '4 av 12',
+  };
+  const moved = vi.fn();
+  window.addEventListener('popstate', moved);
+  view = mount(
+    <Findings findings={[finding, { ...finding, key: 'tryggleik.f9', latest_version: 1 }]} />,
+  );
+  const links = view.div.querySelectorAll<HTMLAnchorElement>('a.nyare-regel');
+  expect(links).toHaveLength(1);
+  expect(links[0]!.textContent).toBe('Regelen har ein nyare versjon');
+  expect(links[0]!.getAttribute('href')).toBe('/admin/findings?rule=tryggleik.f8');
+  act(() => links[0]!.click());
+  expect(window.location.pathname + window.location.search).toBe(
+    '/admin/findings?rule=tryggleik.f8',
+  );
+  expect(moved).toHaveBeenCalledTimes(1);
+  window.removeEventListener('popstate', moved);
+  window.history.replaceState(null, '', '/');
 });

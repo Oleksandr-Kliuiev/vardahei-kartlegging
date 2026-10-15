@@ -36,6 +36,9 @@ export interface QuestionView {
 }
 export interface Finding {
   key: string;
+  /** Rule version the finding was computed with; a closed round keeps it (2.5). */
+  version?: number;
+  latest_version?: number;
   n: number;
   count: number;
   share: number;

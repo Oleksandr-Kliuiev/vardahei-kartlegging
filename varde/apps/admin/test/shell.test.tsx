@@ -82,7 +82,7 @@ describe('admin shell', () => {
     await settle();
     expect(count()).toBe(before + 1);
   });
-  it('loads the member name with same-origin credentials and navigates six sections using history', async () => {
+  it('loads the member name with same-origin credentials and navigates seven sections using history', async () => {
     view = mount(<App />);
     await settle();
     expect(view.div.textContent).toContain('Syntetisk admin');
@@ -96,6 +96,7 @@ describe('admin shell', () => {
       'Kundar og rundar',
       'Dashbord',
       'Skjema',
+      'Funn',
       'Eksport',
       'Sletting',
     ]);
