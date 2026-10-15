@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './api.js';
 import type { Cell, Progress, Round } from './models.js';
 import { ErrorMessage, useRounds } from './queries.js';
 import { AuditLog } from './rounds-page.js';
+import { ClientTrails, Kpis, OverviewIntro } from './overview.js';
 
 const value = (cell: Cell) => (cell.suppressed ? '–' : cell.value);
 export function ProgressRound({ round }: { round: Round }) {
@@ -17,6 +18,10 @@ export function ProgressRound({ round }: { round: Round }) {
   const clients = progress.data?.clients ?? [];
   return (
     <>
+      <Kpis clients={clients} />
+      <div className="flate">
+        <ClientTrails round={round} clients={clients} />
+      </div>
       <section className="del">
         <h2>Framdrift i {round.name}</h2>
         <p className="under">
@@ -115,10 +120,12 @@ export function ProgressPage() {
     rounds.data?.find((r) => r.id === selected) ??
     rounds.data?.find((r) => r.status === 'open') ??
     rounds.data?.[0];
+  const name = useQueryClient().getQueryData<{ name: string | null }>(['session'])?.name ?? null;
   return (
     <>
+      <OverviewIntro name={name} round={round} />
       <ErrorMessage error={rounds.error} />
-      <label>
+      <label className="velg">
         Runde{' '}
         <select
           aria-label="Runde"
