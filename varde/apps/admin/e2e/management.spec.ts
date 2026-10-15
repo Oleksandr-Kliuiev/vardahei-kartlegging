@@ -63,6 +63,10 @@ test('create template, edit and validate a draft, accept translations, preview w
   await page.locator('.question-card summary').first().click();
   await page.getByLabel('Spørsmålstekst (nn)', { exact: true }).fill('Kva rolle har du?');
   await page.getByLabel('Spørsmålstekst (en)', { exact: true }).fill('What is your role?');
+  // The phone frame in the editor shows the unsaved text at once (1.46).
+  const phone = page.frameLocator('iframe[title="Førehandsvising på telefon"]');
+  await phone.locator('#start').click();
+  await expect(phone.getByRole('heading', { name: 'Kva rolle har du?' })).toBeVisible();
   await page.getByRole('button', { name: 'Lagre utkast', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Utkastet er lagra.' })).toBeVisible();
   for (const lang of ['nn', 'en']) {

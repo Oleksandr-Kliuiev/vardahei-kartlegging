@@ -48,3 +48,8 @@ h1[tabindex="-1"]:focus { outline: none; }
   .handling .tilbake { padding-inline: 12px; }
   .handling .neste { min-width: 0; padding-inline: 18px; }
 }
+@media (max-width: 360px) {
+  .topbar { padding-inline: 14px; gap: 8px; }
+  .topbar .logo { height: 20px; }
+  .sprak button { padding: 4px 9px; font-size: 12.5px; }
+}

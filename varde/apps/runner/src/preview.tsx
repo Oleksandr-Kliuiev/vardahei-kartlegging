@@ -37,6 +37,20 @@ export function Preview({ id }: { id: string }) {
       });
     return () => controller.abort();
   }, [id]);
+  // In the editor's phone frame, unsaved changes arrive from the admin page (same origin, the parent only).
+  useEffect(() => {
+    if (window.parent === window) return;
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== location.origin || e.source !== window.parent) return;
+      const m = e.data as { type?: unknown; content?: unknown } | null;
+      if (m?.type !== 'varde:forhand-innhald') return;
+      const parsed = TemplateVersionContent.safeParse(m.content);
+      if (parsed.success) setContent(parsed.data);
+    };
+    window.addEventListener('message', onMessage);
+    window.parent.postMessage({ type: 'varde:forhand-klar' }, location.origin);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
   return content ? (
     <PreviewSurvey content={content} />
   ) : (
