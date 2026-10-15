@@ -45,3 +45,11 @@ Go/no-go: ____. Подпись Oleksandr: ____. Время: ____.
 
 - [ ] Oleksandr подтвердил удаление архива на Mac: дата/подпись ____.
 - [ ] Ключ VPS удалён; test ! -e прошёл; cutover archive-deleted записан.
+
+## Выполнено 15.10.2026 (упрощённый cutover, решение 15.10)
+
+- Образ `varde-api:cbe82f7b3240` (main после merge 1c), миграции применены, `/health` ok. pg_hba: 1 / reject / 1 / reject. До импорта response=0, snapshot=0.
+- Seed: 6 клиентов, 4 шаблона, 3 раунда. `import runde1`: 57 записей (daco 4, gasta 9, kviknes 12, maskinsenteret 14, sfhs 12, tharaso 6), rejected 0, suppressed 0. `rounds close --imported`: выдано 5429 снимков. `import svar` не выполнялся (пилот).
+- Caddy: блок kartlegging заменён на `kartlegging-legacy.caddy` (бэкап `Caddyfile.bak-<ts>`, validate ok, reload ok). Маршруты `/`, `/runde1.js`, `/auth/login`, `/api/runner/round`, `/health` → 404; `/dashboard` → 302.
+- Старый контейнер `kartlegging-app-1` остановлен. Удалены: `data/svar.jsonl*`, `private/runde1.js` на VPS, `/root/kartlegging-backup-*.tgz`, рабочая папка cutover с дампом. Архив и ключи age не создавались (решение 15.10).
+- Не выполнено: ручная сверка Oleksandr цифр раунда 1 со старым дашбордом; проверка Asbjørn формата Master_Analyse; проверка кода по логам Caddy.
