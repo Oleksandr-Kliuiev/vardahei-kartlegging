@@ -3,6 +3,27 @@ import type { ViewCell } from '../privacy/privacy.service.js';
 import type { FindingRule, FindingView } from './finding-rule.js';
 
 const visible = (c: ViewCell): c is Extract<ViewCell, { suppressed: false }> => !c.suppressed;
+export type SimpleInput =
+  | { state: 'hidden' | 'empty' }
+  | { state: 'visible'; n: number; count: number; share: number; release_id?: string };
+
+/** Input of a simple rule in one group: any suppressed input cell hides the rule (k, ADR-021). */
+export function simpleInput(r: FindingRule, own: readonly ViewCell[]): SimpleInput {
+  const hits = r.options.map((o) => own.find((c) => c.metric_key === `${r.metric_key}.${o}`));
+  const basis = own.find((c) => c.metric_key.startsWith(`${r.basis}.`)) ?? hits[0];
+  if (!basis) return { state: 'empty' };
+  if (!visible(basis) || hits.some((c) => !c || !visible(c))) return { state: 'hidden' };
+  if (!basis.denominator) return { state: 'empty' };
+  const count = hits.reduce((sum, c) => sum + (c && visible(c) ? c.numerator : 0), 0);
+  return {
+    state: 'visible',
+    n: basis.denominator,
+    count,
+    share: count / basis.denominator,
+    ...(basis.release_id ? { release_id: basis.release_id } : {}),
+  };
+}
+
 export function evaluate(
   rules: readonly FindingRule[],
   cells: readonly ViewCell[],
@@ -79,13 +100,9 @@ export function evaluate(
       }
       continue;
     }
-    const hits = r.options.map((o) => own.find((c) => c.metric_key === `${r.metric_key}.${o}`));
-    const basis = own.find((c) => c.metric_key.startsWith(`${r.basis}.`)) ?? hits[0];
-    if (!basis || !visible(basis) || !basis.denominator || hits.some((c) => !c || !visible(c)))
-      continue;
-    const count = hits.reduce((sum, c) => sum + (c && visible(c) ? c.numerator : 0), 0),
-      n = basis.denominator,
-      share = count / n;
+    const input = simpleInput(r, own);
+    if (input.state !== 'visible') continue;
+    const { count, n, share } = input;
     // Simple leader rules are signals of the leader, including one response (§6.2).
     if (channel === 'leader' ? count === 0 : count < r.min_count || share < r.threshold.medium)
       continue;
@@ -99,7 +116,7 @@ export function evaluate(
       level,
       text: r.text.nn,
       tal: `${count} av ${n}${channel === 'leader' ? ' leiarar' : ''}`,
-      ...(basis.release_id ? { release_id: basis.release_id } : {}),
+      ...(input.release_id ? { release_id: input.release_id } : {}),
     });
   }
   return out.sort(

@@ -123,20 +123,17 @@ export class MetricsService {
       where: { id: round },
       include: { template_version: true },
     });
+    // The findings of a new release are computed once, with the rules in effect now, and saved.
     if (r.status === 'closed' || r.status === 'archived') {
       const content = r.template_version!.content as unknown as TemplateContent;
-      for (const client of [undefined, ...clients.map((rc) => rc.client.slug)]) {
+      for (const client of [undefined, ...clients.map((rc) => rc.client)]) {
         const cells = await this.privacy.viewCells(
           round,
           client ? 'round_client' : 'all_clients',
           defs.filter((d) => d.part === 'common'),
-          client,
+          client?.slug,
         );
-        await this.findings.persist(
-          round,
-          client,
-          await this.findings.calculate(content, cells, 'all', 'aggregate'),
-        );
+        await this.findings.released(r, client, content, cells);
       }
     }
     return out;

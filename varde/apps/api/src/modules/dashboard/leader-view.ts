@@ -1,9 +1,19 @@
 import { FindingsService } from '../findings/findings.service.js';
-import type { FindingView } from '../findings/finding-rule.js';
+import type { FindingRule, FindingView } from '../findings/finding-rule.js';
+import { evaluate } from '../findings/evaluate.js';
+import {
+  byLevel,
+  crossCellKey,
+  crossFinding,
+  crossSelected,
+  crossSummary,
+  leaderFinding,
+  type LeaderAnswers,
+} from '../findings/leader-rules.js';
 import { Injectable } from '@nestjs/common';
 import { PrivacyService, type PrivacySession } from '../privacy/privacy.service.js';
 import { questionViews } from './aggregate-view.js';
-import { DashboardContext } from './dashboard-context.js';
+import { DashboardContext, type DashboardScope } from './dashboard-context.js';
 
 // Exact headers and option labels of dashboard.html::LEIAR_KOL/leiartabell.
 export const LEADER_COLUMNS: Record<string, [string, string][]> = {
@@ -78,7 +88,8 @@ export class LeaderView {
     const scope = await this.context.load(round, client);
     const rows = await this.privacy.leaderAnswers({ round, client: scope.client! }, session);
     const columns = LEADER_COLUMNS[scope.content.key] ?? [];
-    const findings = await this.clientFindings(scope, rows);
+    const rules = await this.findings.rulesFor(scope.round, scope.content.key, 'leader');
+    const findings = await this.clientFindings(scope, rows, rules);
     return {
       findings,
       class: 'leader' as const,
@@ -111,34 +122,13 @@ export class LeaderView {
       'leaders_all',
       scope.defs.filter((d) => d.part === 'leader'),
     );
-    const findings = await this.findings.calculate(scope.content, cells, 'all', 'leader');
+    const rules = await this.findings.rulesFor(scope.round, scope.content.key, 'leader');
+    const findings = evaluate(rules, cells, scope.content, 'all', 'leader');
     // Cross-part signals are computed only in the audited leader channel. The response
     // contains a number of clients, never their names, identifiers or leader responses.
-    let count = 0;
-    const crossRule = (await this.findings.rules(scope.content.key, 'leader')).find(
-      (r) => r.computed === 'f12_b13',
-    );
-    if (crossRule)
-      for (const c of scope.clients) {
-        const own = await this.context.load(round, c.slug);
-        const rows = await this.privacy.leaderAnswers({ round, client: c.slug }, session);
-        if ((await this.clientFindings(own, rows)).some((f) => f.key === crossRule.key)) count++;
-      }
-    if (crossRule && count)
-      findings.push({
-        key: crossRule.key,
-        version: crossRule.version,
-        channel: 'leader',
-        n: count,
-        count,
-        share: 0.5,
-        level: 'medium',
-        text: crossRule.text.nn,
-        action: crossRule.action_text.nn,
-        severity: crossRule.severity,
-        tal: `${count} kundar`,
-        order: crossRule.order,
-      });
+    const cross = rules.find((r) => r.computed === 'f12_b13');
+    const [count = 0] = cross ? await this.crossCounts(scope, [cross], session) : [];
+    if (cross && count) findings.push(crossSummary(cross, count));
     return {
       findings,
       class: 'aggregate' as const,
@@ -146,75 +136,51 @@ export class LeaderView {
       questions: questionViews(scope, cells, 'all', 'leader'),
     };
   }
-  private async clientFindings(
-    scope: Awaited<ReturnType<DashboardContext['load']>>,
-    rows: Awaited<ReturnType<PrivacyService['leaderAnswers']>>,
+  /** Clients where each cross rule holds: one audited leader read per client (ADR-026). */
+  async crossCounts(
+    scope: DashboardScope,
+    rules: readonly FindingRule[],
+    session: PrivacySession | undefined,
   ) {
-    const rules = await this.findings.rules(scope.content.key, 'leader');
-    const out: FindingView[] = [];
-    for (const r of rules.filter((r) => !r.computed)) {
-      const basis = rows.filter((row) => row.answers[r.question!] !== undefined);
-      const hit = basis.filter((row) => {
-        const value = row.answers[r.question!];
-        return (Array.isArray(value) ? value : [value]).some((v) =>
-          r.raw_options?.includes(String(v)),
-        );
+    const counts = rules.map(() => 0);
+    for (const c of scope.clients) {
+      const own = await this.context.load(scope.round.id, c.slug);
+      const rows = await this.privacy.leaderAnswers(
+        { round: scope.round.id, client: c.slug },
+        session,
+      );
+      const selected = rules.find((r) => crossSelected(r, rows));
+      const cell = selected ? await this.crossCell(own, selected) : undefined;
+      rules.forEach((r, i) => {
+        if (crossFinding(r, rows, cell)) counts[i]!++;
       });
-      if (hit.length)
-        out.push({
-          key: r.key,
-          version: r.version,
-          channel: 'leader',
-          n: basis.length,
-          count: hit.length,
-          share: hit.length / basis.length,
-          level: r.level ?? 'medium',
-          text: r.text.nn,
-          action: r.action_text.nn,
-          severity: r.severity,
-          tal: 'Leiaren',
-          order: r.order,
-        });
     }
-    const cross = rules.find((r) => r.computed === 'f12_b13');
-    if (cross && rows.some((r) => cross.options.includes(String(r.answers.B13)))) {
-      const common = await this.privacy.viewCells(
-        scope.round.id,
-        'round_client',
-        scope.defs.filter((d) => d.part === 'common'),
-        scope.client,
-      );
-      const c = common.find(
-        (c) => c.metric_key === 'tryggleik.f12.distribution.ja' && c.group === 'all',
-      );
-      if (
-        c &&
-        !c.suppressed &&
-        c.n >= cross.min_count &&
-        c.denominator &&
-        c.numerator / c.denominator >= cross.threshold.medium
-      )
-        out.push({
-          key: cross.key,
-          version: cross.version,
-          channel: 'leader',
-          n: c.denominator,
-          count: c.numerator,
-          share: 0.5,
-          level: 'medium',
-          text: cross.text.nn,
-          action: cross.action_text.nn,
-          severity: cross.severity,
-          tal: `${Math.round((100 * c.numerator) / c.denominator)} %`,
-          order: cross.order,
-        });
-    }
-    return out.sort(
-      (a, b) =>
-        (a.level === b.level ? 0 : a.level === 'high' ? -1 : 1) ||
-        b.share - a.share ||
-        a.order - b.order,
+    return counts;
+  }
+  /** The common F12 cell of one client under k, read through privacy like the dashboard. */
+  async crossCell(scope: DashboardScope, cross: FindingRule) {
+    const common = await this.privacy.viewCells(
+      scope.round.id,
+      'round_client',
+      scope.defs.filter((d) => d.part === 'common'),
+      scope.client,
     );
+    return common.find((c) => c.metric_key === crossCellKey(cross) && c.group === 'all');
+  }
+  async clientFindings(
+    scope: DashboardScope,
+    rows: readonly LeaderAnswers[],
+    rules: readonly FindingRule[],
+  ) {
+    const out: FindingView[] = rules
+      .filter((r) => !r.computed)
+      .flatMap((r) => leaderFinding(r, rows) ?? []);
+    const cross = rules.find((r) => r.computed === 'f12_b13');
+    if (cross && crossSelected(cross, rows)) {
+      const found = crossFinding(cross, rows, await this.crossCell(scope, cross));
+      if (found) out.push(found);
+    }
+    return out.sort(byLevel);
   }
 }
 export type LeaderModel = Awaited<ReturnType<LeaderView['client']>>;
