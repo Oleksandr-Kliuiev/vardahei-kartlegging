@@ -11,6 +11,7 @@
   "dependencies": {
     "@fontsource/atkinson-hyperlegible": "5.2.8",
     "@varde/rules": "workspace:*",
+    "@varde/ui": "workspace:*",
     "preact": "10.29.8"
   },
   "devDependencies": {

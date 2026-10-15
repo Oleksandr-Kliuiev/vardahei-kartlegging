@@ -2,6 +2,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@fontsource/atkinson-hyperlegible/latin-400.css';
 import '@fontsource/atkinson-hyperlegible/latin-700.css';
+import '@varde/ui/fonts.css';
+import '@varde/ui/tokens.css';
 import './style.css';
 import { App } from './App.js';
 
