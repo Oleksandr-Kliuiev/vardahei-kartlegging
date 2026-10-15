@@ -14,6 +14,7 @@ import {
 } from '@varde/schema/metrics/metric-definition';
 import { POPULATIONS } from '@varde/schema/metrics/populations';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { editorMetricPrefix } from '../surveys/editor-metrics.js';
 import { canonical } from '../surveys/hashes.js';
 import {
   type ComputedCell,
@@ -77,6 +78,18 @@ export class MetricsService {
     });
     const key = r.template_version?.template.key;
     if (key === undefined) throw new Error(`round ${round} has no template version`);
+    const generated = await this.prisma.metricDefinition.findMany({
+      where: { key: { startsWith: editorMetricPrefix(r.template_version!.id) } },
+    });
+    const authoredSet = await this.prisma.auditLog.findFirst({
+      where: {
+        what: 'surveys.editor_metrics',
+        target: `template_version:${r.template_version!.id}`,
+      },
+      select: { id: true },
+    });
+    if (generated.length || authoredSet)
+      return generated.map((x) => MetricSchema.parse(x.definition));
     const rows = await this.prisma.metricDefinition.findMany({
       where: { key: { startsWith: `${key}.` } },
       orderBy: [{ key: 'asc' }, { version: 'asc' }],

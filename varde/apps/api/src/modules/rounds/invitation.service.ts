@@ -66,7 +66,12 @@ export class InvitationService {
   }
   async invitation(id: string, lang?: string) {
     const d = await this.data(id, lang);
-    return { lang: d.lang, text: d.fill(d.version.invitation!.letter), link: d.link };
+    return {
+      lang: d.lang,
+      languages: d.version.required_languages,
+      text: d.fill(d.version.invitation!.letter),
+      link: d.link,
+    };
   }
   async poster(id: string, lang?: string) {
     const d = await this.data(id, lang),

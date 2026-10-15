@@ -1,0 +1,49 @@
+import type { FormEvent } from 'react';
+import { mutate } from './api.js';
+import type { Client } from './models.js';
+import { ErrorMessage, useAction } from './queries.js';
+
+export function ClientForm({ client }: { client?: Client }) {
+  const action = useAction();
+  function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const element = e.currentTarget,
+      data = new FormData(element);
+    action.mutate(
+      () =>
+        mutate(
+          client ? `/api/admin/clients/${client.id}` : '/api/admin/clients',
+          client ? 'PUT' : 'POST',
+          {
+            name: data.get('name'),
+            employee_count: data.get('count') === '' ? null : Number(data.get('count')),
+          },
+        ),
+      {
+        onSuccess: () => {
+          if (!client) element.reset();
+        },
+      },
+    );
+  }
+  return (
+    <form className="editor-form" onSubmit={submit}>
+      <label>
+        Kundenamn
+        <input name="name" required maxLength={200} defaultValue={client?.name ?? ''} />
+      </label>
+      <label>
+        Tal tilsette
+        <input
+          name="count"
+          type="number"
+          min={1}
+          max={9999}
+          defaultValue={client?.employee_count ?? ''}
+        />
+      </label>
+      <button disabled={action.isPending}>{client ? 'Lagre kunde' : 'Opprett kunde'}</button>
+      <ErrorMessage error={action.error} />
+    </form>
+  );
+}

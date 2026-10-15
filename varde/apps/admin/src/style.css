@@ -282,3 +282,127 @@ small {
     margin-left: 0;
   }
 }
+
+/* Keep wide tables inside their card at every viewport width. */
+main,
+.del,
+.tabell-wrap,
+.editor-form,
+fieldset {
+  min-width: 0;
+  max-width: 100%;
+}
+.tabell-wrap {
+  width: 100%;
+  overscroll-behavior-x: contain;
+}
+.tabell-wrap:focus-visible {
+  outline-offset: -2px;
+}
+.editor-form {
+  display: grid;
+  gap: 16px;
+  margin: 16px 0;
+}
+.editor-form > label,
+.editor-form fieldset > label {
+  align-items: stretch;
+  flex-direction: column;
+  gap: 6px;
+}
+.editor-form textarea,
+.editor-form input:not([type='checkbox']),
+.editor-form select {
+  max-width: 100%;
+}
+fieldset {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 12px;
+}
+fieldset > label + label {
+  margin-top: 10px;
+}
+legend,
+summary {
+  overflow-wrap: anywhere;
+}
+summary {
+  cursor: pointer;
+  padding: 8px 0;
+}
+.editor-form textarea {
+  min-height: 80px;
+  width: 100%;
+}
+.json-field {
+  display: grid;
+  gap: 8px;
+}
+.json-field textarea {
+  min-height: 220px;
+  width: 100%;
+  font-family: monospace;
+}
+.question-card,
+.launch-client {
+  border-top: 1px solid var(--line);
+  padding: 14px 0;
+}
+.launch-client > .knappar {
+  margin-top: 10px;
+}
+h2,
+h3,
+.question-card summary,
+.distribution > span:first-child {
+  overflow-wrap: anywhere;
+}
+.tilsette thead th {
+  white-space: normal;
+  min-width: 100px;
+  max-width: 240px;
+  vertical-align: bottom;
+}
+@media (max-width: 600px) {
+  .editor-form .knappar {
+    align-items: stretch;
+  }
+  input,
+  select,
+  textarea {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .kompakt td {
+    max-width: 130px;
+  }
+  .tabell-wrap table {
+    min-width: 900px;
+  }
+}
+
+/* Narrow screens: grid children and wide selects must not push the page past the viewport. */
+.editor-form > *,
+.editor-form fieldset > * {
+  min-width: 0;
+}
+.editor-form select,
+.editor-form input:not([type='checkbox']) {
+  width: 100%;
+  text-overflow: ellipsis;
+}
+.launch-client {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+label {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+label select,
+label input:not([type='checkbox']) {
+  min-width: 0;
+  max-width: 100%;
+}

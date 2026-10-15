@@ -20,20 +20,22 @@ export function ProgressRound({ round }: { round: Round }) {
       <section className="del">
         <h2>Framdrift i {round.name}</h2>
         <p className="under">
-          Små grupper er ikkje viste. «–» tyder at talet ikkje er tilgjengeleg.
+          Kolonnane viser tal tilsette, svar og prosent, aktive økter, avbrot, siste svardag og
+          median svartid. Aktive økter: siste 15 minutt; avbrot: minst 30 minutt utan aktivitet. Små
+          grupper er ikkje viste. «–» tyder at talet ikkje er tilgjengeleg.
         </p>
         <ErrorMessage error={progress.error} />
         <div className="tabell-wrap">
-          <table>
+          <table className="framdrift">
             <thead>
               <tr>
-                <th>Kunde</th>
-                <th>Tilsette i runden</th>
-                <th>Oppslutning</th>
-                <th>I gang no</th>
-                <th>Avbrote</th>
-                <th>Siste svar</th>
-                <th>Median tid</th>
+                <th scope="col">Kunde</th>
+                <th scope="col">Tilsette i runden</th>
+                <th scope="col">Svar / oppslutning</th>
+                <th scope="col">Aktive økter</th>
+                <th scope="col">Avbrotne økter</th>
+                <th scope="col">Siste svardag</th>
+                <th scope="col">Median svartid</th>
               </tr>
             </thead>
             <tbody>

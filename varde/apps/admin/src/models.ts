@@ -31,6 +31,7 @@ export interface Audit {
   target: string | null;
 }
 export interface Invitation {
+  languages?: string[];
   lang: string;
   text: string;
   link: string;

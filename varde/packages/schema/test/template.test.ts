@@ -106,6 +106,13 @@ describe('TemplateVersion schema (1.1)', () => {
     );
   });
 
+  it('required languages cannot contain duplicates', () => {
+    rejected(
+      edit((t) => (t.required_languages = ['nn', 'en', 'nn'])),
+      /must be unique/,
+    );
+  });
+
   it('seminar_live with nn only → ok', () => {
     const tpl = edit((t) => {
       t.audience = 'seminar_live';

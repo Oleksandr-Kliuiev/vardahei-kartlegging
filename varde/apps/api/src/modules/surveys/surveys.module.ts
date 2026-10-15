@@ -1,10 +1,11 @@
+import { EditorController } from './editor.controller.js';
 import { Module } from '@nestjs/common';
-import { PublishService } from './publish.service.js';
-import { SeedTemplatesService } from './seed-templates.js';
+import { SurveysCoreModule } from './surveys-core.module.js';
 
 /** Template versions: drafts, translation acceptance, publication, seed (1.5). */
 @Module({
-  providers: [PublishService, SeedTemplatesService],
-  exports: [PublishService, SeedTemplatesService],
+  imports: [SurveysCoreModule],
+  controllers: [EditorController],
+  exports: [SurveysCoreModule],
 })
 export class SurveysModule {}
