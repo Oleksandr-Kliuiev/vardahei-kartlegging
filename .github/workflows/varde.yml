@@ -87,6 +87,7 @@ jobs:
       - run: node ../tools/test/lesemodus.test.js
       - run: bash infra/caddy/test/caddy-legacy.test.sh
       - run: pnpm invariants:1c
+      - run: pnpm invariants:1e
 
   image:
     runs-on: ubuntu-24.04
