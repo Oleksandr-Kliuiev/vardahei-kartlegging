@@ -150,6 +150,18 @@ export class PrivacyService {
       });
   }
 
+  /** Round clients that have released `round_client` snapshots (5.1: a client report can be
+   * made). Existence only: no cell leaves this method. */
+  async releasedRoundClients(rounds: readonly string[]): Promise<Set<string>> {
+    if (rounds.length === 0) return new Set();
+    const found = await this.prisma.aggregateSnapshot.findMany({
+      where: { round_id: { in: [...rounds] }, population: 'round_client', status: 'released' },
+      distinct: ['round_client_id'],
+      select: { round_client_id: true },
+    });
+    return new Set(found.flatMap((s) => (s.round_client_id ? [s.round_client_id] : [])));
+  }
+
   /** Role × client intersections also form a partition of the round's role total.
    * Recheck subtraction against that total; independently safe client cells alone do not suffice. */
   async roleClientCells(

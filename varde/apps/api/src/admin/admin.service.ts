@@ -1,10 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { PrivacyService } from '../modules/privacy/privacy.service.js';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly privacy: PrivacyService,
+  ) {}
 
   clients() {
     return this.prisma.client.findMany({
@@ -26,8 +30,9 @@ export class AdminService {
     });
   }
 
-  rounds() {
-    return this.prisma.round.findMany({
+  /** Rounds with their clients; `released` says a client report can be made (5.1). */
+  async rounds() {
+    const rounds = await this.prisma.round.findMany({
       orderBy: { created_at: 'desc' },
       select: {
         id: true,
@@ -47,6 +52,11 @@ export class AdminService {
         },
       },
     });
+    const released = await this.privacy.releasedRoundClients(rounds.map((r) => r.id));
+    return rounds.map((r) => ({
+      ...r,
+      round_clients: r.round_clients.map((rc) => ({ ...rc, released: released.has(rc.id) })),
+    }));
   }
 
   audit(raw = '40') {

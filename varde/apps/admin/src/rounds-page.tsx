@@ -142,6 +142,7 @@ function RoundSection({ round, clients }: { round: Round; clients: Client[] }) {
             key={rc.id}
             rc={rc}
             progress={progress.data?.clients.find((p) => p.round_client_id === rc.id)}
+            reportReady={['closed', 'archived'].includes(round.status) && rc.released === true}
           />
         ))}
       </div>

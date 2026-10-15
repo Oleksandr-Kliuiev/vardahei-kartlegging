@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, mutate } from './api.js';
 import type { Invitation, Progress, RoundClient } from './models.js';
@@ -89,12 +89,23 @@ const statusChip: Record<string, string> = {
   archived: 'chip',
 };
 
+/** In-app navigation without a page load: the shell follows popstate (App.tsx). */
+function openReport(event: MouseEvent<HTMLAnchorElement>, href: string) {
+  if (event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+  window.history.pushState(null, '', href);
+  window.dispatchEvent(new PopStateEvent('popstate'));
+}
+
 export function RoundClientCard({
   rc,
   progress,
+  reportReady = false,
 }: {
   rc: RoundClient;
   progress?: Progress | undefined;
+  /** The round is closed and released snapshots exist for this client (5.1). */
+  reportReady?: boolean;
 }) {
   const action = useAction();
   const [confirm, setConfirm] = useState(false);
@@ -184,6 +195,15 @@ export function RoundClientCard({
           >
             {confirm ? 'Gamle lenkjer sluttar å verke. Stadfest' : 'Ny kode'}
           </button>
+        )}
+        {reportReady && (
+          <a
+            className="knapp"
+            href={`/admin/reports/${rc.id}`}
+            onClick={(e) => openReport(e, `/admin/reports/${rc.id}`)}
+          >
+            Rapport til kunden
+          </a>
         )}
         {rc.status === 'open' && (
           <button

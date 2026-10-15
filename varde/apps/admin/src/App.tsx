@@ -1,6 +1,7 @@
 import { SurveysPage } from './surveys-page.js';
 import { ExportPage } from './export-page.js';
 import { DeletionPage } from './deletion-page.js';
+import { ReportPage } from './report-page.js';
 import { ArchiveReminder } from './archive-reminder.js';
 import { DashboardPage } from './dashboard-page.js';
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from 'react';
@@ -11,7 +12,7 @@ import { useEvents } from './events.js';
 import { RoundsPage } from './rounds-page.js';
 import { ProgressPage } from './progress-page.js';
 import { ErrorMessage } from './queries.js';
-import { Palette, SECTIONS, Sidebar, Toasts, Topbar } from './shell.js';
+import { Palette, Sidebar, Toasts, Topbar, sectionOf } from './shell.js';
 
 export function createQueryClient() {
   return new QueryClient({
@@ -88,7 +89,9 @@ function Shell({ name }: { name: string | null }) {
     client.clear();
     window.location.assign('/');
   }
-  const section = SECTIONS.find((s) => s.url === path);
+  const section = sectionOf(path);
+  // Client report (5.1): «Rapportar», optionally with a chosen round client from its card.
+  const report = /^\/admin\/reports(?:\/([0-9a-f-]{36}))?$/i.exec(path);
   return (
     <div className="skal">
       <Sidebar
@@ -111,7 +114,10 @@ function Shell({ name }: { name: string | null }) {
         />
         <main className="side" ref={page}>
           <div className="sidetittel">
-            <h1>{section?.label ?? 'Sida finst ikkje'}</h1>
+            <div>
+              <h1>{section?.title ?? section?.label ?? 'Sida finst ikkje'}</h1>
+              {section?.intro && <p>{section.intro}</p>}
+            </div>
           </div>
           {path === '/admin' ? (
             <>
@@ -128,6 +134,8 @@ function Shell({ name }: { name: string | null }) {
             <ExportPage />
           ) : path === '/admin/deletion' ? (
             <DeletionPage />
+          ) : report ? (
+            <ReportPage key={report[1] ?? 'ny'} initial={report[1]} />
           ) : (
             <section className="del">
               <p>{section ? 'Denne delen kjem snart.' : 'Vel ein del i menyen.'}</p>

@@ -49,4 +49,5 @@ export const INTEGRATION_FILES = [
   'test/imports/runde1-import.test.ts',
   'test/metrics/parity.test.ts',
   'test/invariants/1a-completeness.test.ts',
+  'test/reports/client-report.test.ts',
 ];
