@@ -1,6 +1,6 @@
 # Карта контекста Varde
 
-Задача → минимальный набор файлов входа. Пути — от корня репозитория. Путь с пометкой «(появится в …)» ещё не существует. Всегда: `docs/varde/PRINCIPLES.md`, `varde/CLAUDE.md`, пакет своего этапа в `docs/varde/stages/`. Карта обновляется в каждом checkpoint (последнее обновление — 1a).
+Задача → минимальный набор файлов входа. Пути — от корня репозитория. Путь с пометкой «(появится в …)» ещё не существует. Всегда: `docs/varde/PRINCIPLES.md`, `varde/CLAUDE.md`, пакет своего этапа в `docs/varde/stages/`. Карта обновляется в каждом checkpoint (последнее обновление — 2a).
 
 | Задача                                   | Файлы входа                                                                                                                                                                                                                                                                                                                                                                                                  |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -33,6 +33,7 @@
 | Cutover и rollback | `varde/tools/cutover/`, `varde/tools/staging/`, `varde/infra/caddy/`, `docs/varde/runbooks/cutover.md`, `docs/varde/evidence/stage-1/cutover.md`, `tools/test/lesemodus.test.js` |
 | Админка (UI) | `varde/apps/admin/src/`, `varde/apps/admin/e2e/`; API через PrivacyService; subprocess `e2e/server.cjs` |
 | Дизайн и движение (Vardestien) | `docs/varde/design/README.md`, `docs/varde/design/vardestien/`, `varde/apps/runner/src/landscape/landscape.ts`, `varde/apps/runner/src/scene.ts`, `varde/apps/runner/e2e/motion.spec.ts`, `varde/packages/ui/src/motion.ts`, `varde/packages/ui/src/tokens.css`, `varde/packages/ui/src/base.css`, PRINCIPLES «Визуальный стиль», `docs/varde/STAGES.md` 1e |
+| Правила выводов (FindingRule): версии, предпросмотр, страница «Funn» | `varde/apps/api/src/modules/findings/` (`finding-rule.ts`, `findings.service.ts` — сохранённые Finding release и `finding_set`, `rule-versions.service.ts`, `rule-preview.service.ts`, `rule-choices.ts`, `explain.ts`, `leader-rules.ts`), `varde/apps/api/src/modules/dashboard/leader-view.ts`, `varde/config/seed/findings/`, `varde/apps/api/test/findings/`, `varde/apps/admin/src/funn-page.tsx`, `varde/apps/admin/src/funn-editor.tsx`, `varde/apps/admin/src/funn-preview.tsx`, `varde/apps/admin/src/funn-fields.tsx`, `varde/apps/admin/src/funn-models.ts`, `varde/apps/admin/e2e/funn.spec.ts`; ADR-020/021/026 |
 
 ## Не читать
 

@@ -117,3 +117,17 @@
 | Закрытие раунда и удаление — только удержанием 1,2 с; короткое нажатие ничего не делает | `varde/apps/admin/e2e/rounds.spec.ts`, `varde/apps/admin/e2e/sletting.spec.ts` |
 
 Полный прогон без браузера: `pnpm invariants:1e`; браузерные инварианты — в job `e2e`.
+
+## Дополнение checkpoint 2a (редактор FindingRule, 2.5)
+
+| Инвариант | Проверка |
+| --- | --- |
+| Правка — новая версия `max + 1` под advisory lock по ключу и с AuditLog `findings.rule_version` в той же транзакции; параллельные сохранения получают разные номера, из одной базы побеждает одно (409) | `varde/apps/api/test/findings/rule-editor.test.ts` |
+| Не меняется то, что правило измеряет (`key`, `channel`, `metric_key`, `basis`, `computed`, `question`, `raw_options`); `0 ≤ medium ≤ high ≤ 1`; тексты nn и en не пустые; варианты только из метрики или вопроса; у leader-правил варианты зафиксированы | `varde/apps/api/test/findings/rule-draft.test.ts`, `rule-editor.test.ts` |
+| Закрытый раунд показывает сохранённые Finding своего release с их версиями; новая версия не пересчитывает и не дописывает строки; при нескольких строках на правило читается наименьшая версия; новый release считается версиями на момент расчёта и сохраняется один раз (`finding_set`) | `varde/apps/api/test/findings/rule-editor.test.ts` |
+| Версии правил, Finding и `finding_set` не меняются в базе (триггеры) | `rule-editor.test.ts`, `varde/apps/api/test/migrations.test.ts` |
+| Предпросмотр: ячейки только через PrivacyService (k = 3, подавленная ячейка — без чисел); leader — через leader-эндпоинт по клиенту с AuditLog, «alle» — `leaders_all`, F12×B13 при «alle» — по чтению на клиента; предпросмотр ничего не пишет, кроме журнала чтений leader | `rule-editor.test.ts`, `varde/apps/api/test/invariants/1c-no-leak-routes.test.ts` |
+| `seed()` работает, когда в базе есть версии новее файлов, и не трогает их | `rule-editor.test.ts` |
+| Страница «Funn»: в предпросмотр уходят только поля, от которых зависит результат, после паузы; правка текста не читает данные; сохранение шлёт `base_version`; 360 и 1280 px без горизонтальной прокрутки, светлая и тёмная тема, клавиатура | `varde/apps/admin/test/funn.test.tsx`, `varde/apps/admin/e2e/funn.spec.ts` |
+
+Полный прогон без браузера: `pnpm invariants:2a`; браузерные проверки — в job `e2e`.
