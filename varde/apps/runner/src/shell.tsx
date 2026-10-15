@@ -80,19 +80,13 @@ export function ActionBar({
   const root = useRef<HTMLElement>(null);
   const key = buttons.map((b) => b.id).join('|');
   useFlip(root, key);
-  // «Send svara» takes the place of «Vidare» after the last question: for a moment after it appears it
-  // ignores clicks, so a double tap on Vidare cannot send the answers by accident.
-  const shown = useRef<{ key: string; at: Map<string, number> }>({ key, at: new Map() });
-  if (shown.current.key !== key) {
-    const before = new Set(shown.current.key.split('|'));
-    const at = new Map(shown.current.at);
-    for (const b of buttons)
-      if (b.id === 'send' && !before.has(b.id)) at.set(b.id, performance.now());
-    shown.current = { key, at };
-  }
+  // «Send svara» takes the place of «Vidare» after the last question. A click on it that follows a click on
+  // «Vidare» within 450 ms is the second half of a double tap, not a decision to send: it is ignored.
+  const lastNext = useRef(-Infinity);
   const guard = (b: BarButton) => () => {
-    const at = shown.current.at.get(b.id);
-    if (at !== undefined && performance.now() - at < 450) return;
+    const now = performance.now();
+    if (b.id === 'send' && now - lastNext.current < 450) return;
+    if (b.id !== 'send') lastNext.current = b.kind === 'next' ? now : -Infinity;
     b.onClick();
   };
   return (
