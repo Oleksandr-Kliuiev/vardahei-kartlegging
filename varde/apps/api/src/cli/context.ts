@@ -2,6 +2,7 @@
 import { Module, type Type } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { CutoverCoreModule } from '../modules/cutover/cutover.module.js';
+import { RoundArchiveModule } from '../modules/exports/round-archive.module.js';
 import { RetentionCoreModule } from '../modules/retention/retention.module.js';
 import { ImportsModule } from '../modules/imports/imports.module.js';
 import { MetricsModule } from '../modules/metrics/metrics.module.js';
@@ -20,6 +21,7 @@ import { PrismaModule } from '../prisma/prisma.module.js';
     MetricsModule,
     RetentionCoreModule,
     CutoverCoreModule,
+    RoundArchiveModule,
   ],
 })
 export class CliModule {}

@@ -350,3 +350,9 @@ label input:not([type='checkbox']) {
   min-width: 0;
   max-width: 100%;
 }
+.arkiv {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  margin-top: 16px;
+}
