@@ -17,6 +17,11 @@
       "source": "./src/i18n/nn-stoplist.ts",
       "default": "./dist/i18n/nn-stoplist.js"
     },
+    "./survey-draft": {
+      "types": "./src/survey-draft.ts",
+      "source": "./src/survey-draft.ts",
+      "default": "./dist/survey-draft.js"
+    },
     "./metrics/populations": {
       "types": "./src/metrics/populations.ts",
       "source": "./src/metrics/populations.ts",
