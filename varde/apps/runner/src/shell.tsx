@@ -78,7 +78,23 @@ export function ActionBar({
   lang: Lang;
 }) {
   const root = useRef<HTMLElement>(null);
-  useFlip(root, buttons.map((b) => b.id).join('|'));
+  const key = buttons.map((b) => b.id).join('|');
+  useFlip(root, key);
+  // «Send svara» takes the place of «Vidare» after the last question: for a moment after it appears it
+  // ignores clicks, so a double tap on Vidare cannot send the answers by accident.
+  const shown = useRef<{ key: string; at: Map<string, number> }>({ key, at: new Map() });
+  if (shown.current.key !== key) {
+    const before = new Set(shown.current.key.split('|'));
+    const at = new Map(shown.current.at);
+    for (const b of buttons)
+      if (b.id === 'send' && !before.has(b.id)) at.set(b.id, performance.now());
+    shown.current = { key, at };
+  }
+  const guard = (b: BarButton) => () => {
+    const at = shown.current.at.get(b.id);
+    if (at !== undefined && performance.now() - at < 450) return;
+    b.onClick();
+  };
   return (
     <nav
       class="handling"
@@ -90,37 +106,40 @@ export function ActionBar({
         {buttons.map((b) =>
           b.kind === 'back' ? (
             <button
+              key={b.id}
               type="button"
               class="btn ghost tilbake"
               id={b.id}
               data-flip={b.id}
               aria-label={b.label}
               disabled={b.disabled}
-              onClick={b.onClick}
+              onClick={guard(b)}
             >
               <Icon name="bak" small />
               <span class="lbl">{b.label}</span>
             </button>
           ) : b.kind === 'skip' ? (
             <button
+              key={b.id}
               type="button"
               class="linkbtn"
               id={b.id}
               data-flip={b.id}
               disabled={b.disabled}
-              onClick={b.onClick}
+              onClick={guard(b)}
             >
               {b.label}
             </button>
           ) : (
             <button
+              key={b.id}
               type="button"
               class={`btn primary neste${b.full ? ' full' : ''}`}
               id={b.id}
               data-flip={b.id}
               disabled={b.disabled}
               aria-busy={b.busy ? 'true' : undefined}
-              onClick={b.onClick}
+              onClick={guard(b)}
             >
               {b.busy && <span class="spinn" aria-hidden="true" />}
               <span class="lbl">{b.label}</span>
