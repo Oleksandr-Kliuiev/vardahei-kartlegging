@@ -8,6 +8,7 @@ import { RuleEditor } from './funn-editor.js';
 import {
   type Channel,
   type Family,
+  type PreviewScope,
   type RuleSummary,
   familyOf,
   plain,
@@ -35,6 +36,11 @@ export function FindingsPage() {
   );
   const [channel, setChannel] = useState<Channel>('aggregate');
   const [selected, setSelected] = useState<string | null>(asked.current);
+  const [scopes, setScopes] = useState<Partial<Record<Family, PreviewScope>>>({});
+  const onScope = useCallback(
+    (scope: PreviewScope) => setScopes((all) => ({ ...all, [family]: scope })),
+    [family],
+  );
   const dirty = useRef(false);
   const onDirty = useCallback((d: boolean) => {
     dirty.current = d;
@@ -129,7 +135,13 @@ export function FindingsPage() {
         </section>
         <div className="funn-arbeid">
           {selected ? (
-            <RuleEditor key={selected} ruleKey={selected} onDirty={onDirty} />
+            <RuleEditor
+              key={selected}
+              ruleKey={selected}
+              onDirty={onDirty}
+              scope={scopes[family] ?? { round: '', client: 'alle' }}
+              onScope={onScope}
+            />
           ) : (
             <section className="kort funn-redigering">
               <p className="tom">{list.data ? 'Vel ein regel i lista.' : 'Hentar reglane …'}</p>

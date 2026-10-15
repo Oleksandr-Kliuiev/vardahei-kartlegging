@@ -8,6 +8,7 @@ import { Answers, Limits, TextPair } from './funn-fields.js';
 import {
   FIELD_NAMES,
   problems,
+  type PreviewScope,
   type Rule,
   type RuleDetail,
   example,
@@ -28,9 +29,13 @@ const time = (iso: string) => {
 export function RuleEditor({
   ruleKey,
   onDirty,
+  scope,
+  onScope,
 }: {
   ruleKey: string;
   onDirty: (dirty: boolean) => void;
+  scope: PreviewScope;
+  onScope: (scope: PreviewScope) => void;
 }) {
   const detail = useQuery({
     queryKey: ['findings', 'rule', ruleKey],
@@ -46,10 +51,22 @@ export function RuleEditor({
         </div>
       </section>
     );
-  return <EditorForm key={data.key} detail={data} onDirty={onDirty} />;
+  return (
+    <EditorForm key={data.key} detail={data} onDirty={onDirty} scope={scope} onScope={onScope} />
+  );
 }
 
-function EditorForm({ detail, onDirty }: { detail: RuleDetail; onDirty: (d: boolean) => void }) {
+function EditorForm({
+  detail,
+  onDirty,
+  scope,
+  onScope,
+}: {
+  detail: RuleDetail;
+  onDirty: (d: boolean) => void;
+  scope: PreviewScope;
+  onScope: (scope: PreviewScope) => void;
+}) {
   const client = useQueryClient(),
     toast = useToast();
   const [draft, setDraft] = useState<Rule>(detail.rule);
@@ -148,7 +165,7 @@ function EditorForm({ detail, onDirty }: { detail: RuleDetail; onDirty: (d: bool
           </div>
         </div>
       </section>
-      <FindingPreview detail={detail} draft={draft} dirty={dirty}>
+      <FindingPreview detail={detail} draft={draft} dirty={dirty} scope={scope} onScope={onScope}>
         <div className="lagring">
           {dirty &&
             issues.map((p) => (

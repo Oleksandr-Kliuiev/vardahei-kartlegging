@@ -66,6 +66,12 @@ export interface Preview {
   draft: { outcome: Outcome };
 }
 
+/** Round and client of the preview; kept per questionnaire while one moves between rules. */
+export interface PreviewScope {
+  round: string;
+  client: string;
+}
+
 /** The fields that decide whether a rule fires: only these go to the preview. */
 export const EVAL_FIELDS = ['options', 'threshold', 'min_count', 'level', 'minimum_hours'] as const;
 export const evalPart = (r: Rule) =>

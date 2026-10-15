@@ -8,7 +8,8 @@
 | --- | --- |
 | `4ae7275` | API версий FindingRule и предпросмотра; закрытый раунд читает сохранённые Finding своего release; миграция `finding_rule_versions`; unit и integration |
 | `1fd4100` | Страница «Funn» (группа «Innhald» после «Skjema»): список, редактор, живой предпросмотр, версии; подсказка в дашборде; unit и e2e |
-| этот коммит | `invariants:2a`, строки REVIEW-CHECKLIST и AI_CONTEXT_MAP, этот evidence |
+| `6b09f5d` | `invariants:2a`, строки REVIEW-CHECKLIST и AI_CONTEXT_MAP, этот evidence |
+| следующий за ним | «Funn» помнит раунд и клиента предпросмотра при переходе между правилами (по шаблону) |
 
 ## Что сделано
 

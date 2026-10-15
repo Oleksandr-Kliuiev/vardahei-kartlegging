@@ -12,6 +12,7 @@ import {
   numbers,
   type Outcome,
   type Preview,
+  type PreviewScope,
   type Rule,
   type RuleDetail,
 } from './funn-models.js';
@@ -87,11 +88,15 @@ export function FindingPreview({
   detail,
   draft,
   dirty,
+  scope: picked,
+  onScope,
   children,
 }: {
   detail: RuleDetail;
   draft: Rule;
   dirty: boolean;
+  scope: PreviewScope;
+  onScope: (scope: PreviewScope) => void;
   children: ReactNode;
 }) {
   const rounds = useRounds(),
@@ -103,12 +108,12 @@ export function FindingPreview({
   const choices = (Array.isArray(rounds.data) ? rounds.data : []).filter(
     (r) => r.template_version_id && template.get(r.template_version_id) === family,
   );
-  const [chosen, setChosen] = useState(''),
-    [client, setClient] = useState('alle');
   const round =
-    choices.find((r) => r.id === chosen) ?? choices.find((r) => r.status === 'open') ?? choices[0];
+    choices.find((r) => r.id === picked.round) ??
+    choices.find((r) => r.status === 'open') ??
+    choices[0];
   const clients = round?.round_clients ?? [];
-  const scope = clients.some((c) => c.client_id === client) ? client : 'alle';
+  const scope = clients.some((c) => c.client_id === picked.client) ? picked.client : 'alle';
   const { medium, high } = draft.threshold;
   const ready =
     medium >= 0 &&
@@ -156,10 +161,7 @@ export function FindingPreview({
             <select
               className="input"
               value={round?.id ?? ''}
-              onChange={(e) => {
-                setChosen(e.target.value);
-                setClient('alle');
-              }}
+              onChange={(e) => onScope({ round: e.target.value, client: 'alle' })}
             >
               {choices.map((r) => (
                 <option key={r.id} value={r.id}>
@@ -170,7 +172,11 @@ export function FindingPreview({
           </label>
           <label className="field">
             <span>Kunde</span>
-            <select className="input" value={scope} onChange={(e) => setClient(e.target.value)}>
+            <select
+              className="input"
+              value={scope}
+              onChange={(e) => onScope({ round: round?.id ?? '', client: e.target.value })}
+            >
               <option value="alle">Alle</option>
               {clients.map((c) => (
                 <option key={c.client_id} value={c.client_id}>

@@ -78,7 +78,9 @@ test('Funn at 1280 and 360 px, light and dark: no sideways scroll, keyboard reac
   page,
 }, info) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  const s = await openF8(page);
+  await openF8(page);
+  const roundSelect = page.getByRole('combobox', { name: 'Runde', exact: true });
+  const baseline = await roundSelect.inputValue();
   const f8 = page
     .locator('.regel-rad')
     .filter({ has: page.locator('.kjeldebrikke', { hasText: /^F8$/ }) });
@@ -88,17 +90,16 @@ test('Funn at 1280 and 360 px, light and dark: no sideways scroll, keyboard reac
   ] as const) {
     await page.setViewportSize({ width, height });
     if (width === 360) {
-      // Keyboard only: focus a rule and press Enter, then back to F8 in the closed baseline round.
+      // Keyboard only: focus a rule and press Enter, then back to F8; the chosen round stays.
       const other = page.locator('.regel-rad').nth(1);
       await other.focus();
       await page.keyboard.press('Enter');
       await expect(other).toHaveAttribute('aria-current', 'true');
+      await expect(roundSelect).toHaveValue(baseline);
       await f8.focus();
       await page.keyboard.press('Enter');
       await expect(f8).toHaveAttribute('aria-current', 'true');
-      await page
-        .getByRole('combobox', { name: 'Runde', exact: true })
-        .selectOption({ label: `${s.mark}-baseline` });
+      await expect(roundSelect).toHaveValue(baseline);
     }
     await expect(line(page, /^Versjon/)).toContainText('av 6');
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
