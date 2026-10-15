@@ -38,7 +38,13 @@ test('submission ID from quotes → preview → confirmed deletion removes the q
   await page.getByRole('button', { name: 'Vis førehandsvising' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Til saman 1' })).toBeVisible();
   await page.screenshot({ path: info.outputPath('sletting-preview.png'), fullPage: true });
+  // A short press does not delete; holding for 1.2 s does.
   await page.getByRole('button', { name: 'Stadfest sletting' }).click();
+  await expect(
+    page.getByText('Hald inne knappen i over eitt sekund for å slette.', { exact: false }),
+  ).toBeVisible();
+  await expect(page.getByText('Svara er sletta.')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Stadfest sletting' }).click({ delay: 1400 });
   await expect(page.getByText('Svara er sletta.')).toBeVisible();
   const after = (await (await page.request.get(`/api/admin/rows/quotes?round=${f.id}`)).json()) as {
     quotes: { submission_id: string }[];
