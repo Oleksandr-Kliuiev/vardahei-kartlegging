@@ -32,6 +32,7 @@
 | Удаление по запросу | `varde/apps/api/src/modules/retention/forget.service.ts`, `varde/apps/api/src/modules/retention/ledger.ts`, `varde/apps/api/src/modules/privacy/response-store.ts`, `varde/apps/api/test/retention/forget.test.ts`, `varde/apps/api/test/retention/forget-restore.test.ts`; ADR-024 таблица путей |
 | Cutover и rollback | `varde/tools/cutover/`, `varde/tools/staging/`, `varde/infra/caddy/`, `docs/varde/runbooks/cutover.md`, `docs/varde/evidence/stage-1/cutover.md`, `tools/test/lesemodus.test.js` |
 | Админка (UI) | `varde/apps/admin/src/`, `varde/apps/admin/e2e/`; API через PrivacyService; subprocess `e2e/server.cjs` |
+| Дизайн и движение (Vardestien) | `docs/varde/design/README.md`, `docs/varde/design/vardestien/`, `varde/packages/ui/src/` (появится в 1.37), PRINCIPLES «Визуальный стиль», `docs/varde/STAGES.md` 1e |
 
 ## Не читать
 
