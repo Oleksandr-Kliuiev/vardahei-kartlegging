@@ -126,9 +126,7 @@ async function roundTotal(
   own: Own,
   k: number,
 ): Promise<ViewCell[]> {
-  const hidden = answered.filter((c) =>
-    all.some((x) => x.group === `client:${c}` && x.suppressed),
-  );
+  const hidden = answered.filter((c) => all.some((x) => x.group === `client:${c}` && x.suppressed));
   const reports = await Promise.all(hidden.map(own));
   return all
     .filter((c) => c.group === 'all')

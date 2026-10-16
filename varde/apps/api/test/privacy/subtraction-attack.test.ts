@@ -313,7 +313,12 @@ async function releasedInSteps(input: readonly (ResponseRow & { epoch: number })
     v.cells.flatMap((c) => {
       if (c.suppressed || c.metric_key !== METRIC) return [];
       const inside = allClientsCover(c.group);
-      return [{ vector: cells.map((x) => (inside({ ...x, n: 0, yes: 0 }) ? 1 : 0)), origin: v.origin.get(c.group)! }];
+      return [
+        {
+          vector: cells.map((x) => (inside({ ...x, n: 0, yes: 0 }) ? 1 : 0)),
+          origin: v.origin.get(c.group)!,
+        },
+      ];
     }),
   );
   const value = (i: number, e: number) =>
@@ -321,6 +326,48 @@ async function releasedInSteps(input: readonly (ResponseRow & { epoch: number })
       .filter((a) => a.client === cells[i]!.client && a.role === cells[i]!.role && a.epoch <= e)
       .reduce((t, a) => t + a.n, 0);
   return { eqs, views, model: historyLeaks(cells, shown, value, views.length) };
+}
+
+const visibility = (cells: readonly ViewCell[]) =>
+  cells
+    .filter((c) => c.metric_key === METRIC)
+    .map((c) => `${c.group}:${c.suppressed ? 'X' : 'v'}`)
+    .sort();
+
+/** «alle» as before rule 7: each partition with k and complementary suppression on its own. */
+function separately(groups: readonly Group[]): ViewCell[] {
+  const total = groups.reduce((s, g) => s + g.n, 0);
+  const by = (key: (g: Group) => string) => {
+    const m = new Map<string, number>();
+    for (const g of groups) if (key(g) !== '') m.set(key(g), (m.get(key(g)) ?? 0) + g.n);
+    // In the order of @varde/rules (groups by name): ties of complementary suppression.
+    return [...m].sort(([a], [b]) => a.localeCompare(b)).map(([group, n]) => ({ group, n }));
+  };
+  const parts = [by((g) => `client:${g.client}`), by((g) => (g.role ? `role:${g.role}` : ''))];
+  const hidden = new Set<string>(total < K ? ['all'] : []);
+  for (const p of parts) {
+    for (const x of p) if (x.n < K) hidden.add(x.group);
+    for (;;) {
+      const rest = total - p.filter((x) => !hidden.has(x.group)).reduce((s, x) => s + x.n, 0);
+      const next = p.filter((x) => !hidden.has(x.group)).sort((a, b) => a.n - b.n)[0];
+      if (rest === 0 || rest >= K || next === undefined) break;
+      hidden.add(next.group);
+    }
+  }
+  return [{ group: 'all', n: total }, ...parts.flat()].map((x) =>
+    hidden.has(x.group) || hidden.has('all')
+      ? { metric_key: METRIC, metric_version: 1, group: x.group, suppressed: true }
+      : {
+          metric_key: METRIC,
+          metric_version: 1,
+          group: x.group,
+          suppressed: false,
+          n: x.n,
+          numerator: 0,
+          denominator: x.n,
+          missing: 0,
+        },
+  );
 }
 
 describe('«alle» by itself gives away no client × role group below k (release rule 7, live view)', () => {
@@ -344,17 +391,25 @@ describe('«alle» by itself gives away no client × role group below k (release
   it('random rounds: released «alle» determines no set of groups below k', async () => {
     const rand = rng(1610);
     let hiddenRoles = 0;
+    let changed = 0;
     for (let t = 0; t < 1500; t += 1) {
       const r = await closedRound(randomRows(rand, 'r-attack'));
       const view = await alle(r);
       const eqs = equations(r.groups, view, allClientsCover);
       expect(wrong(eqs)).toEqual([]);
       expect(describeLeaks(leaks(r.groups, eqs))).toEqual([]);
+      // Rule 7 changes only rounds whose partitions, each safe alone, leak together.
+      const separate = separately(r.groups);
+      const before = equations(r.groups, separate, allClientsCover);
+      if (leaks(r.groups, before).length === 0)
+        expect(visibility(view)).toEqual(visibility(separate));
+      else changed += 1;
       hiddenRoles += view.filter(
         (c) => c.metric_key === METRIC && c.group.startsWith('role:') && c.suppressed,
       ).length;
     }
     expect(hiddenRoles).toBeGreaterThan(0);
+    expect(changed).toBeGreaterThan(0);
   });
 
   it('random rounds: the live «alle» of an open round determines no set of groups below k', async () => {

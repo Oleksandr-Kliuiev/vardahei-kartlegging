@@ -63,6 +63,9 @@ export type { RowsDb } from './rows.js';
 export type { ViewCell } from './view-cells.js';
 export type { ClientGroup } from './cohort.js';
 export { ReleaseRejected } from './release.js';
+// Pure decisions over margins (release rule 7), exported for their tests; they hold no data.
+export { cellToHide, smallCut } from './cross.js';
+export type { Cut, Structure, View } from './cross.js';
 export { ArchiveRejected, ArchivedSnapshot } from './archive.js';
 export type { ArchiveRefs } from './archive.js';
 export type { DeleteScope, DeleteCounts, ResponsePart } from './response-store.js';

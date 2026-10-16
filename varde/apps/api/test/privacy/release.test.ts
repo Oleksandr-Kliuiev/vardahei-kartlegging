@@ -106,7 +106,12 @@ describe('privacy.release (0.15b)', () => {
   /** Rule 7 input: n per client and role ('' = no role) of F12. */
   const crossOf = (table: Record<string, Record<string, number>>) => ({
     cross: Object.entries(table).flatMap(([client, roles]) => [
-      cell('all', Object.values(roles).reduce((s, n) => s + n, 0), 0, { client }),
+      cell(
+        'all',
+        Object.values(roles).reduce((s, n) => s + n, 0),
+        0,
+        { client },
+      ),
       ...Object.entries(roles).flatMap(([role, n]) =>
         role === '' ? [] : [cell(`role:${role}`, n, 0, { client })],
       ),
@@ -142,6 +147,18 @@ describe('privacy.release (0.15b)', () => {
   it('an unlisted remainder below k needs complementary suppression', async () => {
     const r = await run([cell('all', 20, 9), cell('role:x', 18, 8)]);
     expect(find(r, 'role:x')).toMatchObject({ suppressed: true });
+  });
+
+  it('rule 7: all_clients with role and client cells needs the client × role structure', async () => {
+    const cells = [cell('all', 10, 5), cell('client:a', 10, 5), cell('role:x', 10, 5)].map((c) => {
+      const out = { ...c };
+      delete out.client;
+      return out;
+    });
+    await expect(privacy.release(ROUND, 'all_clients', cells, store, AUTO)).rejects.toBeInstanceOf(
+      ReleaseRejected,
+    );
+    expect(store.writes).toBe(0);
   });
 
   it('history differences protect each overlapping partition and its unlisted remainder', async () => {
@@ -235,6 +252,9 @@ describe('privacy.release (0.15b)', () => {
       crossOf({ a: { x: 10, y: 3 }, b: { y: 11 } }),
     );
     expect(find(second, 'client:b')).toMatchObject({ n: 10, numerator: 10, stale: true });
+    // Rule 7 adds nothing here: rules 1–3 settle first and leave no small cut.
+    expect(find(second, 'role:x')).toMatchObject({ n: 10, suppressed: false });
+    expect(find(second, 'role:y')).toMatchObject({ n: 14, suppressed: false });
     assertReleaseSafety(second.released);
     assertReleaseSafety(second.released, first.released);
   });
