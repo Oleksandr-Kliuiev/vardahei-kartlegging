@@ -128,10 +128,10 @@ afterAll(async () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-async function cli(file: string) {
+async function cli(file: string, ...extra: string[]) {
   const out = captureOutput();
   try {
-    await archiveCommand(['restore', '--file', file]);
+    await archiveCommand(['restore', '--file', file, ...extra]);
     return JSON.parse(out.lines().at(-1) ?? '{}') as { outcome: string; snapshots: number };
   } finally {
     out.restore();
@@ -202,6 +202,8 @@ describe('5.2 round archive', () => {
     const dispose = await temporaryDatabase();
     let copy: TestApp | undefined;
     try {
+      copy = await startApp({});
+      const prisma = copy.app.get(PrismaService);
       const file = save('arkiv.json', archive);
       // Refused archives write nothing: the empty database stays empty.
       const changed = structuredClone(archive);
@@ -223,12 +225,71 @@ describe('5.2 round archive', () => {
         a.snapshots[i] = { ...a.snapshots[i]!, population: 'all_clients' };
       });
       await expect(cli(save('leader.json', leader))).rejects.toThrow(/does not fit/);
-      copy = await startApp({});
-      const prisma = copy.app.get(PrismaService);
+      // Findings must follow from the archive: aggregate rule, release of the same round and
+      // scope, n ≥ k and the numbers evaluate() gives on that release's cells.
+      const a = archive.clients.find((c) => c.slug === `${MARK}-a`)!.id;
+      const own = archive.findings.find((x) => x.client_id === a)!;
+      const leaderRule = archive.finding_rules.find((x) => x.channel === 'leader')!;
+      const allRelease = archive.snapshots.find((x) => x.population === 'all_clients')!.release_id;
+      const finding = (change: (f: RoundArchive['findings'][number]) => void) =>
+        resealed((x) => change(x.findings.find((f) => f.id === own.id)!));
+      for (const [name, bad, message] of [
+        [
+          'leader-finding',
+          resealed((x) => {
+            x.findings.push({
+              ...own,
+              id: randomUUID(),
+              rule_key: leaderRule.key,
+              rule_version: leaderRule.version,
+            });
+          }),
+          /not an aggregate rule/,
+        ],
+        [
+          'small-finding',
+          finding((f) => {
+            f.numbers = { ...f.numbers, n: 2, share: f.numbers.count / 2 };
+          }),
+          /n below k/,
+        ],
+        [
+          'other-n',
+          finding((f) => {
+            f.numbers = { ...f.numbers, n: f.numbers.n + 1 };
+          }),
+          /do not follow from the archived cells/,
+        ],
+        [
+          'other-scope',
+          finding((f) => {
+            f.release_id = allRelease;
+          }),
+          /not a release of this round and scope/,
+        ],
+      ] as const)
+        await expect(cli(save(`${name}.json`, bad)), name).rejects.toThrow(message);
+      await expect(cli(file, '--sha256', 'f'.repeat(64))).rejects.toThrow(
+        /not the one of the export/,
+      );
+      // A new version of a key the database already has would change other rounds.
+      const rule = archive.finding_rules[0]!;
+      await prisma.findingRule.create({
+        data: { key: rule.key, version: 99, channel: rule.channel, definition: rule.definition },
+      });
+      await expect(cli(file)).rejects.toThrow(/in the database in other versions/);
+      await prisma.findingRule.deleteMany({ where: { version: 99 } });
+      const metric = archive.metric_definitions.find((d) => d.definition.kind === 'zone')!;
+      await prisma.metricDefinition.create({
+        data: { key: metric.key, version: 99, definition: metric.definition },
+      });
+      await expect(cli(file)).rejects.toThrow(/in the database in other versions/);
+      await prisma.metricDefinition.deleteMany({ where: { version: 99 } });
       expect(await prisma.round.count()).toBe(0);
       expect(await prisma.client.count()).toBe(0);
+      expect(await prisma.finding.count()).toBe(0);
 
-      expect(await cli(file)).toMatchObject({
+      expect(await cli(file, '--sha256', archive.sha256)).toMatchObject({
         outcome: 'restored',
         snapshots: archive.snapshots.length,
       });
@@ -271,8 +332,8 @@ describe('5.2 round archive', () => {
         ]),
       );
       expect(Number(rows.rows[0]!.n)).toBe(archive.snapshots.length);
-      const other = resealed((a) => {
-        a.findings[0]!.numbers.count += 1;
+      const other = resealed((x) => {
+        x.round.name += ' (endra)';
       });
       await expect(cli(save('other.json', other))).rejects.toThrow(/other content/);
       expect(

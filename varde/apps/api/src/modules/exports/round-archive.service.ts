@@ -14,19 +14,17 @@ import {
   ARCHIVE_FORMAT,
   ARCHIVE_VERSION,
   type ArchiveBody,
+  ArchiveConflict,
   archiveHash,
   releasesOf,
   restorable,
   RoundArchive,
 } from './round-archive.js';
+import { assertArchivedFindings } from './round-archive-findings.js';
 
 const iso = (d: Date | null) => (d === null ? null : d.toISOString());
 const day = (d: Date | null) => (d === null ? null : d.toISOString().slice(0, 10));
 const date = (s: string | null) => (s === null ? null : new Date(`${s}T00:00:00Z`));
-
-export class ArchiveConflict extends Error {
-  override readonly name: string = 'ArchiveConflict';
-}
 
 @Injectable()
 export class RoundArchiveService {
@@ -148,7 +146,9 @@ export class RoundArchiveService {
     return archive;
   }
 
-  async restore(input: unknown, who: string) {
+  /** `expected`: the sha256 from the AuditLog entry of the export (CLI `--sha256`). Without it
+   * the hash only shows that the file is whole, not who wrote it. */
+  async restore(input: unknown, who: string, expected?: string) {
     const parsed = RoundArchive.safeParse(input);
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
@@ -158,6 +158,12 @@ export class RoundArchiveService {
     }
     const { sha256: hash, ...body } = parsed.data;
     if (archiveHash(body) !== hash) throw new ArchiveConflict('sha256 does not match the content');
+    if (expected !== undefined && expected !== hash)
+      throw new ArchiveConflict(
+        'sha256 is not the one of the export (AuditLog); nothing was changed',
+      );
+    assertArchivedFindings(body, this.privacy.minimumGroupSize);
+    await this.assertAggregateRules(body);
     const id = body.round.id;
     const summary = {
       round: id,
@@ -193,6 +199,18 @@ export class RoundArchiveService {
       },
       { timeout: 120_000, maxWait: 10_000 },
     );
+  }
+
+  /** A Finding's rule must be aggregate in the database as well, if the database has it. */
+  private async assertAggregateRules(a: ArchiveBody) {
+    if (a.findings.length === 0) return;
+    const stored = await this.prisma.findingRule.findMany({
+      where: { OR: a.findings.map((f) => ({ key: f.rule_key, version: f.rule_version })) },
+      select: { key: true, version: true, channel: true },
+    });
+    const leader = stored.find((r) => r.channel !== 'aggregate');
+    if (leader)
+      throw new ArchiveConflict(`finding rule ${leader.key}@${leader.version} is not aggregate`);
   }
 
   private audit(
@@ -259,22 +277,49 @@ export class RoundArchiveService {
     });
   }
 
-  /** Versioned definitions are immutable: the same key@version must have the same content. */
+  /** Versioned definitions are immutable: the same key@version must have the same content.
+   * A version is added only for a key the database does not know at all: the newest version of
+   * a key is the one in force (FindingsService.rules), so a new version of a known key would
+   * change the results of other rounds. */
   private async definitions(tx: Prisma.TransactionClient, a: ArchiveBody) {
+    const metricKeys = new Set(
+      (
+        await tx.metricDefinition.findMany({
+          where: { key: { in: a.metric_definitions.map((d) => d.key) } },
+          select: { key: true },
+        })
+      ).map((d) => d.key),
+    );
     for (const d of a.metric_definitions) {
       const found = await tx.metricDefinition.findUnique({
         where: { key_version: { key: d.key, version: d.version } },
       });
       if (found && canonical(found.definition) !== canonical(d.definition))
         throw new ArchiveConflict(`metric ${d.key}@${d.version} differs from the database`);
+      if (!found && metricKeys.has(d.key))
+        throw new ArchiveConflict(
+          `metric ${d.key} is in the database in other versions; adding version ${d.version} would change other rounds`,
+        );
       if (!found) await tx.metricDefinition.create({ data: d });
     }
+    const ruleKeys = new Set(
+      (
+        await tx.findingRule.findMany({
+          where: { key: { in: a.finding_rules.map((x) => x.key) } },
+          select: { key: true },
+        })
+      ).map((x) => x.key),
+    );
     for (const x of a.finding_rules) {
       const found = await tx.findingRule.findUnique({
         where: { key_version: { key: x.key, version: x.version } },
       });
       if (found && canonical(found.definition) !== canonical(x.definition))
         throw new ArchiveConflict(`finding rule ${x.key}@${x.version} differs from the database`);
+      if (!found && ruleKeys.has(x.key))
+        throw new ArchiveConflict(
+          `finding rule ${x.key} is in the database in other versions; adding version ${x.version} would change other rounds`,
+        );
       if (!found) await tx.findingRule.create({ data: x });
     }
     const rules = new Set(a.finding_rules.map((x) => `${x.key}@${x.version}`));

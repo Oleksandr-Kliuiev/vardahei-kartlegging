@@ -25,7 +25,7 @@ const USAGE = `usage: node dist/cli.js break-glass-hash
        node dist/cli.js seed --clients <path> --kundar <path> --tilgang <path>
        node dist/cli.js import svar|runde1 --file <path> [--dry-run]
        node dist/cli.js rounds close --imported
-       node dist/cli.js archive restore --file <path>
+       node dist/cli.js archive restore --file <path> [--sha256 <hex>]
 `;
 
 async function main(argv: string[]): Promise<number> {

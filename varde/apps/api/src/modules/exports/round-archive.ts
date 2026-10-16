@@ -10,6 +10,10 @@ import { FindingRule } from '../findings/finding-rule.js';
 import { ArchivedSnapshot } from '../privacy/privacy.service.js';
 import { canonical, sha256 } from '../surveys/hashes.js';
 
+export class ArchiveConflict extends Error {
+  override readonly name: string = 'ArchiveConflict';
+}
+
 export const ARCHIVE_FORMAT = 'varde.round-archive';
 export const ARCHIVE_VERSION = 1;
 
@@ -132,7 +136,11 @@ export function restorable(a: ArchiveBody): string {
 /** History of releases, derived from the snapshot rows (one release = one population). */
 export function releasesOf(snapshots: readonly ArchivedSnapshot[]): RoundArchive['releases'] {
   const by = new Map<string, ArchivedSnapshot[]>();
-  for (const s of snapshots) by.set(s.release_id, [...(by.get(s.release_id) ?? []), s]);
+  for (const s of snapshots) {
+    const list = by.get(s.release_id);
+    if (list) list.push(s);
+    else by.set(s.release_id, [s]);
+  }
   return [...by.entries()]
     .map(([release_id, cells]) => {
       const first = cells[0]!;
