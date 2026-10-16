@@ -3,6 +3,7 @@
 // (initials in F1, leader parts, small groups, a client below k): no initials, respondent_key,
 // rows, leader metrics or leader rules, and no numbers of hidden cells.
 import 'reflect-metadata';
+import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AggregateView } from '../../src/modules/dashboard/aggregate-view.js';
 import { ComparisonView } from '../../src/modules/dashboard/comparison-view.js';
@@ -10,9 +11,10 @@ import { FindingRule } from '../../src/modules/findings/finding-rule.js';
 import { MetricsService } from '../../src/modules/metrics/metrics.service.js';
 import { PrivacyService } from '../../src/modules/privacy/privacy.service.js';
 import type { ClientReport } from '../../src/modules/reports/report.service.js';
+import { RoundsService } from '../../src/modules/rounds/rounds.service.js';
 import { dashboardFixture, type DashboardFixture } from '../dashboard/fixture.js';
 import { clients, fixtureText } from '../support/fixtures.js';
-import { makeRound } from '../support/rounds.js';
+import { makeRound, withPg } from '../support/rounds.js';
 
 let f: DashboardFixture;
 const made: Awaited<ReturnType<typeof makeRound>>[] = [];
@@ -97,6 +99,33 @@ describe('5.1 client report', () => {
 
   it('never carries initials, keys, rows, leader metrics or leader rules, in every language', async () => {
     const leader = await f.prisma.findingRule.findMany({ where: { channel: 'leader' } });
+    // A leader Finding saved in the current release of every client (high, so it would lead
+    // the list): only the channel filter of the report keeps it out.
+    const cross = leader.find((r) => r.key.endsWith('f12_x_b13'))!;
+    const defs = (await f.app.get(MetricsService).definitionsFor(f.tryggleik)).filter(
+      (d) => d.part === 'common',
+    );
+    const planted: string[] = [];
+    for (const c of clients()) {
+      const cells = await f.app
+        .get(PrivacyService)
+        .viewCells(f.tryggleik, 'round_client', defs, c.slug, true);
+      const release = cells.flatMap((x) => (x.suppressed ? [] : [x.release_id]))[0];
+      if (!release) continue;
+      const client = await f.prisma.client.findUniqueOrThrow({ where: { slug: c.slug } });
+      const row = await f.prisma.finding.create({
+        data: {
+          round_id: f.tryggleik,
+          client_id: client.id,
+          rule_key: cross.key,
+          rule_version: cross.version,
+          release_id: release,
+          numbers: { n: 20, count: 20, share: 1, level: 'high' },
+        },
+      });
+      planted.push(row.id);
+    }
+    expect(planted.length).toBeGreaterThan(3);
     const leaderTexts = leader.flatMap((r) => {
       const d = r.definition as {
         text: { nn: string; en: string };
@@ -105,27 +134,31 @@ describe('5.1 client report', () => {
       return [r.key, d.text.nn, d.text.en, d.action_text.nn, d.action_text.en];
     });
     let checked = 0;
-    for (const [round, lang] of [
-      [f.tryggleik, 'nn'],
-      [f.tryggleik, 'en'],
-      [f.ki, 'nn'],
-      [f.anon, 'en'],
-    ] as const)
-      for (const c of clients()) {
-        const client = await f.prisma.client.findUniqueOrThrow({ where: { slug: c.slug } });
-        const member = await f.prisma.roundClient.count({
-          where: { round_id: round, client_id: client.id },
-        });
-        if (member === 0) continue; // the anonymous KI round has no rows for every client
-        const r = await report(round, c.slug, lang);
-        expect(r.status, `${c.slug} ${lang}`).toBe(200);
-        expect(r.body).not.toMatch(/"(answers|respondent_key|submission_id|free|rows)"\s*:/);
-        expect(r.body).not.toMatch(/leaders_all|\.leiar_|leader_|f12_x_b13/);
-        for (const key of initials) expect(r.body).not.toContain(key);
-        for (const text of leaderTexts) expect(r.body).not.toContain(text);
-        for (const finding of r.json().findings) expect(finding.key).not.toMatch(/leader/);
-        checked++;
-      }
+    try {
+      for (const [round, lang] of [
+        [f.tryggleik, 'nn'],
+        [f.tryggleik, 'en'],
+        [f.ki, 'nn'],
+        [f.anon, 'en'],
+      ] as const)
+        for (const c of clients()) {
+          const client = await f.prisma.client.findUniqueOrThrow({ where: { slug: c.slug } });
+          const member = await f.prisma.roundClient.count({
+            where: { round_id: round, client_id: client.id },
+          });
+          if (member === 0) continue; // the anonymous KI round has no rows for every client
+          const r = await report(round, c.slug, lang);
+          expect(r.status, `${c.slug} ${lang}`).toBe(200);
+          expect(r.body).not.toMatch(/"(answers|respondent_key|submission_id|free|rows)"\s*:/);
+          expect(r.body).not.toMatch(/leaders_all|\.leiar_|leader_|f12_x_b13/);
+          for (const key of initials) expect(r.body).not.toContain(key);
+          for (const text of leaderTexts) expect(r.body).not.toContain(text);
+          for (const finding of r.json().findings) expect(finding.key).not.toMatch(/leader|_x_/);
+          checked++;
+        }
+    } finally {
+      await f.prisma.finding.deleteMany({ where: { id: { in: planted } } });
+    }
     expect(checked).toBeGreaterThan(12);
   });
 
@@ -224,20 +257,74 @@ describe('5.1 client report', () => {
     expect((await report(f.tryggleik, 'daco', 'de')).status).toBe(400);
   });
 
-  it('only a closed round with released snapshots; admin session only', async () => {
-    const open = await makeRound(f.prisma, {
-      mark: `rapport-open-${Date.now()}`,
-      identification: 'initials',
-      status: 'open',
+  it('an open round gives no report, even with answers and released snapshots', async () => {
+    const who = 'test:5.1-open';
+    const rounds = f.app.get(RoundsService);
+    const version = await f.prisma.templateVersion.findFirstOrThrow({
+      where: { template: { key: 'tryggleik' }, label: '2026-10-13', status: 'published' },
     });
+    const mark = `rapport-open-${Date.now().toString(36)}`;
+    const open = await rounds.create({ name: mark, template_version_id: version.id }, who);
+    const client = await f.prisma.client.create({ data: { slug: mark, name: 'Syntetisk open' } });
+    try {
+      const rc = await rounds.addClient(
+        open.id,
+        { client_id: client.id, deadline: '2099-06-01' },
+        who,
+      );
+      await rounds.openClient(rc.id, who);
+      await f.prisma.$transaction((tx) =>
+        f.app.get(PrivacyService).store.insertParts(
+          tx,
+          [0, 1, 2, 3, 4].map((i) => ({
+            round_client_id: rc.id,
+            part: 'common' as const,
+            role: 'kontor',
+            lang: 'nn' as const,
+            respondent_key: `ZZOPEN${i}`,
+            answers: { F2: 'kontor', F12: i < 3 ? 'nei' : 'ja', F14: 'nei', F5: 'ja' },
+            free: {},
+            submission_id: randomUUID(),
+            content_hash: 'b'.repeat(64),
+            source_id: null,
+            duration_s: null,
+            submitted_day: '2026-10-15',
+          })),
+        ),
+      );
+      // A manual release while the round is open: released cells exist, live cells exist.
+      await rounds.release(open.id, who);
+      const listed = (await f.get('/api/admin/rounds', f.cookie)).json<
+        { id: string; round_clients: { id: string; released: boolean }[] }[]
+      >();
+      expect(listed.find((r) => r.id === open.id)?.round_clients[0]?.released).toBe(true);
+      const r = await f.get(`/api/admin/round-clients/${rc.id}/report`, f.cookie);
+      expect(r.statusCode).toBe(409);
+      expect(r.json<{ message: string }>().message).toBe(
+        'Rapporten kan lagast når runden er avslutta.',
+      );
+    } finally {
+      await withPg((c) =>
+        c.query(
+          'DELETE FROM response WHERE round_client_id IN (SELECT id FROM round_client WHERE round_id = $1)',
+          [open.id],
+        ),
+      );
+      await f.prisma.roundClient.deleteMany({ where: { round_id: open.id } });
+      await f.prisma.round.delete({ where: { id: open.id } });
+      await f.prisma.client.delete({ where: { id: client.id } });
+      await f.prisma.auditLog.deleteMany({ where: { who } });
+    }
+  });
+
+  it('only a closed round with released snapshots; admin session only', async () => {
     const empty = await makeRound(f.prisma, {
       mark: `rapport-tom-${Date.now()}`,
       identification: 'initials',
     });
-    made.push(open, empty);
+    made.push(empty);
     const call = (rc: string, cookie = true) =>
       f.get(`/api/admin/round-clients/${rc}/report`, cookie ? f.cookie : undefined);
-    expect((await call(open.clients['kunde-a']!.roundClient)).statusCode).toBe(409);
     const none = await call(empty.clients['kunde-a']!.roundClient);
     expect(none.statusCode).toBe(409);
     expect(none.body).toContain('ingen publiserte tal');
