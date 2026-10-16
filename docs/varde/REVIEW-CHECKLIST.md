@@ -127,7 +127,10 @@
 | Открытый раунд или раунд без released → 409; без сессии → 401; каждый отчёт — AuditLog `report.client` (кто, раунд, клиент, язык) | там же |
 | Печать: в print media нет кнопок, меню и плашки предпросмотра; лист светлый и в тёмной теме; `page.pdf()` даёт файл | `varde/apps/admin/e2e/report.spec.ts` |
 | Архив раунда без Response, `respondent_key`, инициалов, `answers`, свободного текста и кодов ссылок; скрытые ячейки без чисел; экспорт сам проходит схему restore | `varde/apps/api/test/exports/round-archive.test.ts`, `round-archive-format.test.ts` |
-| Restore: sha256, строгая схема; видимая ячейка < k, leader вне `leaders_all`, неизвестная метрика или RoundClient → отказ без записи; повтор — `unchanged`; другое содержимое под тем же id — ошибка | там же |
+| Restore: sha256 (и `--sha256` из AuditLog выгрузки), строгая схема; видимая ячейка < k, leader вне `leaders_all`, неизвестная метрика или RoundClient → отказ без записи; повтор — `unchanged`; другое содержимое под тем же id — ошибка | там же |
+| Restore: Finding только из самого архива — правило `aggregate`, release того же раунда и области, n ≥ k, числа = `evaluate()` на ячейках этого release; иначе отказ без записи | `round-archive.test.ts` (leader-Finding, n < k, другое n, другая область) |
+| Restore не добавляет новую версию MetricDefinition или FindingRule к ключу, который уже есть в базе (действует последняя версия) | `round-archive.test.ts` |
+| Отчёт: подложенный leader-Finding в текущем release не виден; открытый раунд с ответами и release → 409 с текстом | `client-report.test.ts` |
 | Восстановленный раунд: снимки, определения, правила и Finding канонически равны исходным, дашборд тот же | `round-archive.test.ts` |
 | Запись снимков вне `release()` — только `PrivacyService.restoreSnapshots` → `PrismaSnapshotStore.restore` (INSERT в раунд без снимков) | `round-archive-format.test.ts`, `pnpm lint:privacy:selfcheck` |
 | Все зарегистрированные маршруты, отчёт и архив включены, не отдают идентификаторы и ответы | `varde/apps/api/test/invariants/1c-no-leak-routes.test.ts` |
