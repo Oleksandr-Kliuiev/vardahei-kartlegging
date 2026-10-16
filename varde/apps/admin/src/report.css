@@ -82,6 +82,8 @@
 .rapport-tabell td { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .kort-tabell { max-width: 128mm; }
 .rapport-metode p { color: var(--ink-muted); font-size: 9.5pt; }
+.rapport-kontakt p { font-size: 9.5pt; }
+.rapport-kontakt p + p { margin-top: 0; }
 .rapport-fjell { display: block; flex: none; width: calc(100% + 34mm); height: 14mm; margin: auto -17mm 0; }
 .rapport-fjell .bak { fill: var(--blaa-100); }
 .rapport-fjell .fram { fill: var(--blaa-600); opacity: .8; }

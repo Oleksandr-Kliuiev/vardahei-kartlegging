@@ -26,8 +26,12 @@ test('client default is English', async ({ page }) => {
 test('unknown code', async ({ page }) => {
   await page.goto('/r?c=unknown');
   await expect(page.locator('h1')).toHaveText('Denne lenkja verkar ikkje');
+  // Contact as on the finish screen, so a person with a broken link can reach us (16.10).
+  await expect(page.locator('.kontakt')).toContainText('+47 930 94 567');
+  await expect(page.locator('.kontakt')).toContainText('post@vardahei.no');
 });
 test('closed RoundClient', async ({ page }) => {
   await page.goto(`/r?c=${state().closed.code}`);
   await expect(page.locator('h1')).toHaveText('Kartlegginga er avslutta');
+  await expect(page.locator('.kontakt')).toContainText('post@vardahei.no');
 });

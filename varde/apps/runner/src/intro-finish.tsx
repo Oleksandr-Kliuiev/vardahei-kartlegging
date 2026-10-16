@@ -2,11 +2,12 @@ import { useState } from 'preact/hooks';
 import { evaluate, prune, type Answers } from '@varde/rules/runner';
 import type { TemplateContent } from '@varde/schema/template/template';
 import type { Lang } from '@varde/schema/template/texts';
-import { animate, ease, stagger } from '@varde/ui/motion';
+import { ease, stagger } from '@varde/ui/motion';
 import nn from './i18n/notice-v2.nn.json';
 import { notice } from './i18n/notice.js';
 import { text, ui } from './i18n/ui.js';
 import { Icon } from './icons.js';
+import { ContactCard } from './contact.js';
 
 type NoticeKey = keyof typeof nn;
 /** The short answer to «who sees my answers» stays visible; the rest of the approved notice opens on request. */
@@ -129,31 +130,6 @@ export function selectedTips(version: TemplateContent, answers: Answers) {
   ];
 }
 
-function CopyRow({ value, lang }: { value: string; lang: Lang }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <div class="kontakt-rad">
-      <b class="tnum">{value}</b>
-      <button
-        type="button"
-        class="btn sm"
-        onClick={(e) => {
-          const button = e.currentTarget;
-          void navigator.clipboard?.writeText(value).catch(() => undefined);
-          setCopied(true);
-          void animate(button, [{ transform: 'scale(.92)' }, { transform: 'none' }], {
-            duration: 420,
-            easing: ease.sprett,
-          });
-          setTimeout(() => setCopied(false), 1600);
-        }}
-      >
-        {ui(lang, copied ? 'kopiert' : 'kopier')}
-      </button>
-    </div>
-  );
-}
-
 export function Finish({
   version,
   answers,
@@ -240,15 +216,7 @@ export function Finish({
           <p>{ui(lang, 'steg3')}</p>
         </li>
       </ol>
-      <section class="kontakt anim">
-        <h2>{ui(lang, 'kontakt')}</h2>
-        <div class="kontakt-rad">
-          <b>{contact.name}</b>
-        </div>
-        <CopyRow value={contact.phone} lang={lang} />
-        <CopyRow value={contact.email} lang={lang} />
-        <small class="muted">{text(contact.hours, lang)}</small>
-      </section>
+      <ContactCard contact={contact} lang={lang} />
       <p class="lukk anim">{ui(lang, 'lukk')}</p>
     </div>
   );

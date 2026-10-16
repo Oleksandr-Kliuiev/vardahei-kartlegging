@@ -55,6 +55,8 @@ export interface Dashboard {
   roles: { id: string; label: string }[];
   suppression_note: string;
   findings: Finding[];
+  /** One value when every rule of the view shares it, null when the rules differ (2.5). */
+  finding_thresholds?: { min_count: number | null; medium: number | null; high: number | null };
   zones:
     | (Stats & {
         questions: (Stats & { id: string; label: string })[];
