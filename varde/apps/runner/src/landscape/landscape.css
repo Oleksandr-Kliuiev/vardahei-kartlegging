@@ -48,9 +48,10 @@
 .ferdig .stjerner circle, [data-stemning="kveld"] .stjerner circle { animation: blink calc(3200ms * var(--motion-scale)) ease-in-out infinite alternate; }
 @keyframes blink { from { opacity: calc(var(--stjerner) * .15); } to { opacity: calc(var(--stjerner) * .9); } }
 .take { opacity: 0; transition: opacity calc(900ms * var(--motion-scale)); }
-[data-stemning="take"] .take { opacity: 1; }
-.take .t1 { animation: drift calc(16s * var(--motion-scale)) ease-in-out infinite alternate; }
-.take .t2 { animation: drift calc(22s * var(--motion-scale)) ease-in-out infinite alternate-reverse; }
+/* Fog only works (blur, drift) while it is shown: on every other screen it costs nothing per frame. */
+[data-stemning="take"] .take { opacity: 1; filter: url(#takeblur); }
+[data-stemning="take"] .take .t1 { animation: drift calc(16s * var(--motion-scale)) ease-in-out infinite alternate; }
+[data-stemning="take"] .take .t2 { animation: drift calc(22s * var(--motion-scale)) ease-in-out infinite alternate-reverse; }
 @keyframes drift { from { transform: translateX(-30px); } to { transform: translateX(30px); } }
 .skilt { opacity: 0; transition: opacity var(--t-move); }
 [data-stemning="take"] .skilt { opacity: 1; }

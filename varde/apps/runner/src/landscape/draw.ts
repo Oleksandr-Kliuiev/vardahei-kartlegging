@@ -91,7 +91,7 @@ export function drawBackdrop(svg: SVGSVGElement): void {
     { class: 'as-midt', points: polyPoints([...tile(MID), [XMAX, 260], [XMIN, 260]]) },
     svg,
   );
-  const fog = mk('g', { class: 'take', filter: 'url(#takeblur)' }, svg);
+  const fog = mk('g', { class: 'take' }, svg);
   mk(
     'rect',
     { class: 't1', x: -120, y: 112, width: 420, height: 34, rx: 17, fill: 'url(#takegrad)' },
