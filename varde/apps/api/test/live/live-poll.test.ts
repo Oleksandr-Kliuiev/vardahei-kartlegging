@@ -131,6 +131,17 @@ describe('making the poll', () => {
     expect(panel.versions.some((v) => v.problem?.includes('initialar'))).toBe(true);
   });
 
+  it("moving the seminar moves the end of the phones' link with the presenter window", async () => {
+    const p = await livePoll(t);
+    const body = (await import('../support/seminars.js')).seminarBody(t, { date: todayOslo(1) });
+    expect((await t.call('PUT', `/api/admin/seminars/${p.seminar}`, body)).statusCode).toBe(200);
+    const s = await t.prisma.seminar.findUniqueOrThrow({ where: { id: p.seminar } });
+    const rc = await t.prisma.roundClient.findFirstOrThrow({ where: { round_id: p.round } });
+    const { presenterWindow } = await import('../../src/modules/live/window.js');
+    expect(rc.code_expires_at!.toISOString()).toBe(presenterWindow(s).to.toISOString());
+    expect(rc.code_expires_at!.getTime()).toBeGreaterThan(Date.now() + 2 * 86_400_000);
+  });
+
   it('removing works only before anything is asked; the link and key stop with it', async () => {
     const p = await livePoll(t);
     expect((await t.call('DELETE', `/api/admin/seminars/${p.seminar}/live`)).statusCode).toBe(200);

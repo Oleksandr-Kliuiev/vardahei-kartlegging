@@ -31,7 +31,7 @@ export class PresenterGuard implements CanActivate {
       throw new ForbiddenException('Lenkja til storskjermen er trekt tilbake. Be om ei ny.');
     if (access === 'outside')
       throw new ForbiddenException(
-        'Lenkja til storskjermen verkar berre dagen før, på og dagen etter seminaret.',
+        'Lenkja til storskjermen verkar berre frå dagen før til dagen etter seminaret.',
       );
     if (access === 'no-poll') throw new NotFoundException('Seminaret har ingen live-spørsmål.');
     request.presenter = access;

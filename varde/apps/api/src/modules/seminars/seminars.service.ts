@@ -14,6 +14,7 @@ import { PrivacyService, type PrivacySession } from '../privacy/privacy.service.
 import { codeHash, issueCode } from '../rounds/codes.js';
 import { materialsOf } from './materials.service.js';
 import type { ContactInput, SeminarInput } from './seminar-input.js';
+import { presenterWindow } from '../live/window.js';
 import { osloInstant, osloParts, whenText } from './when.js';
 
 const include = { clients: { include: { client: true } } } as const;
@@ -263,6 +264,12 @@ export class SeminarsService {
             clients: { create: input.clients.map((client_id) => ({ client_id })) },
           },
         });
+        // The phones' link of the live poll (3.4) ends with the presenter window: it moves along.
+        if (old.round_live_id !== null)
+          await tx.roundClient.updateMany({
+            where: { round_id: old.round_live_id },
+            data: { code_expires_at: presenterWindow(next).to },
+          });
         await tx.auditLog.create({
           data: { who, what: 'seminars.update', target: `seminar:${id}`, details: { moved } },
         });

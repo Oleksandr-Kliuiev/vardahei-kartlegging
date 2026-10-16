@@ -19,7 +19,6 @@ const nn = {
   forFa: 'For få svar til å vise tal',
   forFaTekst: 'Når færre enn tre har svart, viser vi ingen tal.',
   fleireVal: 'Kvar person kunne velje fleire svar.',
-  svar: '{n} svar',
   tilkopla: 'Tilkopla',
   koplar: 'Koplar til …',
   borte: 'Mista sambandet. Prøver igjen …',
@@ -33,7 +32,6 @@ const nn = {
   styring: 'Styring',
   ingenNokkel: 'Lenkja til storskjermen manglar nøkkelen. Opne lenkja du fekk på nytt.',
   feil: 'Det gjekk ikkje. Prøv igjen.',
-  forhand: 'Førehandsvising av storskjermen',
   sprak: 'Språk',
 };
 const en: typeof nn = {
@@ -53,7 +51,6 @@ const en: typeof nn = {
   forFa: 'Too few answers to show numbers',
   forFaTekst: 'When fewer than three have answered, we show no numbers.',
   fleireVal: 'Each person could choose more than one answer.',
-  svar: '{n} answers',
   tilkopla: 'Connected',
   koplar: 'Connecting …',
   borte: 'Connection lost. Trying again …',
@@ -67,7 +64,6 @@ const en: typeof nn = {
   styring: 'Controls',
   ingenNokkel: 'The big screen link is missing its key. Open the link you got again.',
   feil: 'That did not work. Try again.',
-  forhand: 'Preview of the big screen',
   sprak: 'Language',
 };
 export type ScreenKey = keyof typeof nn;

@@ -36,8 +36,7 @@ const STEP: Record<LiveAction, { from: readonly LiveState[]; to: LiveState }> = 
 
 /** Why a step cannot be taken (nynorsk, shown to the presenter). */
 function refusal(action: LiveAction, state: LiveState): string {
-  if (action === 'open')
-    return 'Resultatet er vist. Eit spørsmål kan ikkje opnast igjen etter at resultatet er vist.';
+  if (action === 'open') return 'Resultatet er vist, så spørsmålet kan ikkje opnast igjen.';
   if (action === 'close') return 'Spørsmålet er ikkje ope.';
   return state === 'open'
     ? 'Steng spørsmålet før du viser resultatet.'
