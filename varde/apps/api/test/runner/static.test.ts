@@ -7,6 +7,7 @@ import { resolve } from 'node:path';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../../src/bootstrap.js';
+import { RUNNER_CSP } from '../../src/runner/static.js';
 import { captureOutput, type Captured } from '../support/capture-output.js';
 
 let app: NestFastifyApplication;
@@ -42,6 +43,34 @@ function logLines(path: string) {
     .map((l) => JSON.parse(l) as { path: string; status: number })
     .filter((l) => l.path === path);
 }
+describe('seminar page (3.2)', () => {
+  it('/s and /s/ → the seminar entry of the runner build, same headers, successful access unlogged', async () => {
+    for (const path of ['/s', '/s/']) {
+      const res = await get(`${path}?c=${code}`);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toContain('/r/assets/seminar-');
+      expect(res.body).not.toContain(code);
+      expect(res.headers).toMatchObject({
+        'cache-control': 'no-store',
+        'referrer-policy': 'no-referrer',
+        'x-frame-options': 'DENY',
+        'x-content-type-options': 'nosniff',
+      });
+      expect(res.headers['content-security-policy']).toBe(RUNNER_CSP);
+      expect(logLines(path)).toEqual([]);
+    }
+  });
+  it('a failed public API call is logged with its path only', async () => {
+    const res = await app
+      .getHttpAdapter()
+      .getInstance()
+      .inject({ method: 'GET', url: `/api/public/seminar?c=${code}` });
+    expect(res.statusCode).toBe(403);
+    expect(res.headers['cache-control']).toBe('no-store');
+    expect(logLines('/api/public/seminar')).toEqual([expect.objectContaining({ status: 403 })]);
+    expect(out.text()).not.toContain(code);
+  });
+});
 describe('runner static (1.12)', () => {
   it('/r and /r/ → compiled HTML, no-store, security headers, successful access unlogged', async () => {
     for (const path of ['/r', '/r/']) {

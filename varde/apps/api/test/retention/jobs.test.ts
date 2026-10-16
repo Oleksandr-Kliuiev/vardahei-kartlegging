@@ -68,7 +68,8 @@ afterAll(async () => {
 });
 it('dry-run counts without committing deletes, including connection prune', async () => {
   const result = await f.app.get(RetentionRun).run(true);
-  expect(result).toMatchObject({ dry_run: true, skipped: ['Proposal', 'Registration', 'Contact'] });
+  // Registration and Contact joined the job in 3.1 (test/seminars/participants.test.ts).
+  expect(result).toMatchObject({ dry_run: true, skipped: ['Proposal'] });
   expect(result.connection_log).toBeGreaterThan(0);
   expect(result.progress_event).toBeGreaterThan(0);
   expect(result.audit_log).toBeGreaterThan(0);

@@ -1,0 +1,440 @@
+// 3.1 (integration): personal data of seminars. Two consents (decision 16.10): the required one
+// on the registration, the optional one to invitations on the contact. The participant list is
+// read under AuditLog; the daily job deletes registrations 90 days after the seminar and, in the
+// same run, a contact with neither a registration nor consent to invitations (dry-run, idempotent,
+// journal in AuditLog), and marks the others for the yearly check; deletion on request by e-mail
+// removes the contact and its registrations with a ledger entry that has no e-mail.
+import 'reflect-metadata';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { PrivacyService } from '../../src/modules/privacy/privacy.service.js';
+import { DeletionLedger } from '../../src/modules/retention/ledger.js';
+import { RetentionRun } from '../../src/modules/retention/run.service.js';
+import { withPg } from '../support/rounds.js';
+import {
+  contactsOf,
+  createSeminar,
+  email,
+  register,
+  registrationsOf,
+  seminarApp,
+  type SeminarApp,
+} from '../support/seminars.js';
+
+let t: SeminarApp;
+const DAY = 86400_000;
+
+beforeAll(async () => {
+  t = await seminarApp();
+  // The retention job prunes varde_audit.connection_log; a plain test database needs the function.
+  await withPg(async (c) => {
+    if (
+      !(await c.query<{ f: string | null }>("SELECT to_regprocedure('varde_audit.prune()') f"))
+        .rows[0]?.f
+    ) {
+      await c.query('CREATE SCHEMA IF NOT EXISTS varde_audit');
+      await c.query(
+        'CREATE TABLE IF NOT EXISTS varde_audit.connection_log (at timestamptz NOT NULL DEFAULT now(), role_name text)',
+      );
+      const sql = readFileSync(resolve('../../infra/sql/varde-db.sql'), 'utf8');
+      await c.query(
+        sql.slice(
+          sql.indexOf('CREATE FUNCTION varde_audit.prune()'),
+          sql.indexOf('ALTER FUNCTION varde_audit.prune()'),
+        ),
+      );
+    }
+  });
+}, 120_000);
+afterAll(async () => {
+  await t.close();
+});
+
+/** A seminar that ended `days` days before now. */
+async function endedAgo(days: number) {
+  const s = await createSeminar(t, { languages: ['nn'], topic_en: undefined });
+  const ends = new Date(Date.now() - days * DAY);
+  await t.prisma.seminar.update({
+    where: { id: s.id },
+    data: { starts_at: new Date(ends.getTime() - 2 * 3600_000), ends_at: ends },
+  });
+  return s;
+}
+
+describe('participant list (class rows of seminars)', () => {
+  it('needs an admin session and writes AuditLog with the count, never names', async () => {
+    const s = await createSeminar(t);
+    await register(t, s.id, email(t, 'a'), { name: 'ZZ Ola Syntetisk' });
+    await register(t, s.id, email(t, 'b'), { name: 'ZZ Kari Syntetisk', lang: 'en' });
+    expect(
+      (await t.call('GET', `/api/admin/seminars/${s.id}/registrations`, undefined, { cookie: '' }))
+        .statusCode,
+    ).toBe(401);
+    const before = await t.prisma.auditLog.count({ where: { what: 'privacy.participants' } });
+    const res = await t.call('GET', `/api/admin/seminars/${s.id}/registrations`);
+    expect(res.statusCode).toBe(200);
+    expect(res.json<{ rows: { name: string; email: string; lang: string }[] }>().rows).toEqual([
+      expect.objectContaining({ name: 'ZZ Ola Syntetisk', email: email(t, 'a'), lang: 'nn' }),
+      expect.objectContaining({ name: 'ZZ Kari Syntetisk', email: email(t, 'b'), lang: 'en' }),
+    ]);
+    const audit = await t.prisma.auditLog.findMany({
+      where: { what: 'privacy.participants', target: `seminar:${s.id}` },
+    });
+    expect(await t.prisma.auditLog.count({ where: { what: 'privacy.participants' } })).toBe(
+      before + 1,
+    );
+    expect(audit[0]).toMatchObject({ who: 'entra:test:seminar-admin', details: { count: 2 } });
+    expect(JSON.stringify(audit)).not.toMatch(/Syntetisk|example\.test/);
+  });
+
+  it('only the required box: no consent to invitations; the optional box gives it', async () => {
+    const one = await createSeminar(t);
+    await register(t, one.id, email(t, 'plain'));
+    await register(t, one.id, email(t, 'invited'), { invite: true });
+    const [plain, invited] = ['plain', 'invited'].map(
+      (n) => async () => (await contactsOf(t)).find((c) => c.email === email(t, n))!,
+    );
+    expect(await plain!()).toMatchObject({ invite_consent_version: null, invite_consent_at: null });
+    expect(await invited!()).toMatchObject({ invite_consent_version: 'invitasjon-v1' });
+    expect(Date.now() - (await invited!()).invite_consent_at!.getTime()).toBeLessThan(60_000);
+    // The required consent is on each registration.
+    for (const r of await registrationsOf(one.id)) expect(r.consent_version).toBe('pamelding-v1');
+  });
+
+  it('a known contact: the form adds a missing consent to invitations, never removes it, changes nothing else', async () => {
+    const one = await createSeminar(t),
+      two = await createSeminar(t),
+      three = await createSeminar(t);
+    expect(await register(t, one.id, email(t, 'r'), { name: 'ZZ Fyrste' })).toBe(true);
+    // A repeat for the same seminar: no second registration, nothing changes.
+    expect(await register(t, one.id, email(t, 'r'), { name: 'ZZ Andre' })).toBe(false);
+    // A year later the yearly check has marked the contact.
+    await withPg((c) =>
+      c.query(
+        `UPDATE contact SET last_confirmed_at = now() - interval '400 days', review_flagged_at = now() - interval '30 days' WHERE email = $1`,
+        [email(t, 'r')],
+      ),
+    );
+    const before = (await contactsOf(t)).find((c) => c.email === email(t, 'r'))!;
+    expect(before.invite_consent_version).toBeNull();
+    // Another seminar, box for invitations ticked: the consent is added, nothing else changes.
+    expect(
+      await register(t, two.id, email(t, 'r'), { name: 'ZZ Andre', company: 'Anna AS', lang: 'en', invite: true }),
+    ).toBe(true);
+    const after = (await contactsOf(t)).find((c) => c.email === email(t, 'r'))!;
+    expect(after.invite_consent_version).toBe('invitasjon-v1');
+    expect({ ...after, invite_consent_version: null, invite_consent_at: null }).toEqual(before);
+    // A third seminar without the box: the consent stays.
+    expect(await register(t, three.id, email(t, 'r'))).toBe(true);
+    expect((await contactsOf(t)).find((c) => c.email === email(t, 'r'))).toEqual(after);
+    // The consent of each registration is on the registration.
+    const second = (await registrationsOf(two.id))[0]!;
+    expect(second).toMatchObject({ contact_id: before.id, lang: 'en', consent_version: 'pamelding-v1' });
+    expect(Date.now() - second.consent_at.getTime()).toBeLessThan(60_000);
+    expect(await registrationsOf(one.id)).toHaveLength(1);
+  });
+
+  it('the admin corrects name and company (AuditLog with field names only); only «Stadfest» clears the mark', async () => {
+    const s = await createSeminar(t);
+    await register(t, s.id, email(t, 'edit'), { name: 'ZZ Skrivefeil', company: 'Feil AS' });
+    const c = (await contactsOf(t)).find((x) => x.email === email(t, 'edit'))!;
+    const put = (body: unknown, id = c.id, cookie?: string) =>
+      t.call('PUT', `/api/admin/contacts/${id}`, body, cookie === undefined ? {} : { cookie });
+    expect((await put({ name: 'ZZ Rett', company: 'Rett AS' }, c.id, '')).statusCode).toBe(401);
+    expect((await put({ name: 'ZZ Rett', company: 'Rett AS' })).statusCode).toBe(200);
+    expect((await contactsOf(t)).find((x) => x.id === c.id)).toMatchObject({
+      name: 'ZZ Rett',
+      company: 'Rett AS',
+      client_id: null,
+      email: c.email,
+    });
+    const audit = await t.prisma.auditLog.findFirstOrThrow({
+      where: { what: 'seminars.contact.update', target: `contact:${c.id}` },
+    });
+    expect(audit.details).toEqual({ fields: ['name', 'company'] });
+    expect(JSON.stringify(audit)).not.toMatch(/ZZ |AS|example\.test/);
+    const client = await t.prisma.client.create({ data: { slug: `${t.mark}-edit`, name: `Syntetisk kunde ${t.mark}` } });
+    expect((await put({ name: 'ZZ Rett', client: client.id })).statusCode).toBe(200);
+    expect((await contactsOf(t)).find((x) => x.id === c.id)).toMatchObject({
+      company: client.name,
+      client_id: client.id,
+    });
+    expect((await put({ name: 'ZZ Rett' })).json<{ message: string }>().message).toBe(
+      'Vel ein kunde eller skriv namnet på bedrifta.',
+    );
+    expect((await put({ name: ' ', company: 'X' })).statusCode).toBe(400);
+    expect((await put({ name: 'ZZ', company: 'X' }, '00000000-0000-4000-8000-000000000000')).statusCode).toBe(404);
+    // The admin withdraws the consent to invitations (never gives it); AuditLog names the field.
+    await register(t, s.id, email(t, 'withdraw'), { invite: true });
+    const w = (await contactsOf(t)).find((x) => x.email === email(t, 'withdraw'))!;
+    expect((await put({ name: w.name, company: w.company, withdraw_invite: true }, w.id)).statusCode).toBe(200);
+    expect((await contactsOf(t)).find((x) => x.id === w.id)).toMatchObject({
+      invite_consent_version: null,
+      invite_consent_at: null,
+    });
+    const withdrawn = await t.prisma.auditLog.findFirstOrThrow({
+      where: { what: 'seminars.contact.update', target: `contact:${w.id}` },
+    });
+    expect(withdrawn.details).toEqual({ fields: ['invite'] });
+    expect((await put({ name: w.name, company: w.company, invite: true }, w.id)).statusCode).toBe(400);
+    // The edit does not count as the yearly check either.
+    expect((await contactsOf(t)).find((x) => x.id === c.id)!.last_confirmed_at).toEqual(c.last_confirmed_at);
+  });
+});
+
+describe('«Fjern påmelding» (admin)', () => {
+  it('removes one registration with AuditLog; the contact without consent to invitations goes in the next daily run', async () => {
+    const s = await createSeminar(t),
+      other = await createSeminar(t);
+    await register(t, s.id, email(t, 'remove'), { name: 'ZZ Fjernast' });
+    const [reg] = await registrationsOf(s.id);
+    const url = `/api/admin/seminars/${s.id}/registrations/${reg!.id}`;
+    expect((await t.call('DELETE', url, undefined, { cookie: '' })).statusCode).toBe(401);
+    // A registration of another seminar is not found through this seminar.
+    expect((await t.call('DELETE', `/api/admin/seminars/${other.id}/registrations/${reg!.id}`)).statusCode).toBe(404);
+    expect((await t.call('DELETE', url)).statusCode).toBe(200);
+    expect(await registrationsOf(s.id)).toHaveLength(0);
+    expect((await contactsOf(t)).some((c) => c.email === email(t, 'remove'))).toBe(true);
+    const audit = await t.prisma.auditLog.findFirstOrThrow({
+      where: { what: 'seminars.registration.remove', target: `seminar:${s.id}` },
+    });
+    expect(audit.details).toEqual({ registration: reg!.id });
+    expect((await t.call('DELETE', url)).statusCode).toBe(404);
+    // The same for a contact that wants invitations: it stays after the run, the other goes.
+    await register(t, s.id, email(t, 'remove-invite'), { invite: true });
+    const [kept] = await registrationsOf(s.id);
+    expect((await t.call('DELETE', `/api/admin/seminars/${s.id}/registrations/${kept!.id}`)).statusCode).toBe(200);
+    await t.app.get(RetentionRun).run();
+    const left = (await contactsOf(t)).map((c) => c.email);
+    expect(left).not.toContain(email(t, 'remove'));
+    expect(left).toContain(email(t, 'remove-invite'));
+  });
+});
+
+describe('retention (1.31 job, classes registration and contact)', () => {
+  it('registrations go 90 days after the seminar; a contact without consent to invitations goes with its last one (dry-run writes nothing)', async () => {
+    const old = await endedAgo(91),
+      recent = await endedAgo(89),
+      coming = await createSeminar(t);
+    await register(t, old.id, email(t, 'old'));
+    await register(t, old.id, email(t, 'old-invite'), { invite: true });
+    await register(t, old.id, email(t, 'old-other'));
+    await register(t, coming.id, email(t, 'old-other'));
+    await register(t, recent.id, email(t, 'recent'));
+    const has = async (n: string) => (await contactsOf(t)).some((c) => c.email === email(t, n));
+    const dry = await t.app.get(RetentionRun).run(true);
+    expect(dry.dry_run).toBe(true);
+    expect(dry.registration).toBeGreaterThanOrEqual(3);
+    expect(dry.contact).toBeGreaterThanOrEqual(1);
+    expect(dry.skipped).toEqual(['Proposal']);
+    // The dry run counts and writes nothing.
+    expect(await registrationsOf(old.id)).toHaveLength(3);
+    expect(await has('old')).toBe(true);
+
+    const audit = await t.prisma.auditLog.count({ where: { what: 'retention.run' } });
+    const real = await t.app.get(RetentionRun).run();
+    expect([real.registration, real.contact]).toEqual([dry.registration, dry.contact]);
+    expect(await registrationsOf(old.id)).toHaveLength(0);
+    expect(await registrationsOf(recent.id)).toHaveLength(1);
+    // Without consent to invitations and without registrations: gone with the last registration.
+    expect(await has('old')).toBe(false);
+    // With consent to invitations, or registered for another seminar: stays.
+    expect(await has('old-invite')).toBe(true);
+    expect(await has('old-other')).toBe(true);
+    expect(await has('recent')).toBe(true);
+    // The journal of the timed deletion: counts only.
+    const journal = await t.prisma.auditLog.findMany({
+      where: { what: 'retention.run' },
+      orderBy: { at: 'desc' },
+      take: 1,
+    });
+    expect(await t.prisma.auditLog.count({ where: { what: 'retention.run' } })).toBe(audit + 1);
+    expect(journal[0]?.who).toBe('system:retention');
+    expect(journal[0]?.details).toMatchObject({ registration: real.registration, contact: real.contact });
+    expect(JSON.stringify(journal)).not.toMatch(/example\.test|ZZ Deltakar/);
+
+    const again = await t.app.get(RetentionRun).run();
+    expect([again.registration, again.contact]).toEqual([0, 0]);
+  });
+
+  it('a registration made while the job runs keeps its contact', async () => {
+    const old = await endedAgo(91),
+      open = await createSeminar(t);
+    await register(t, old.id, email(t, 'race'));
+    // The form registers the same person for a new seminar and has not committed yet.
+    let inside!: () => void, release!: () => void;
+    const registered = new Promise<void>((r) => (inside = r));
+    const done = new Promise<void>((r) => (release = r));
+    const form = t.prisma.$transaction(
+      async (tx) => {
+        const input = {
+          seminar: open.id,
+          name: 'ZZ Deltakar',
+          email: email(t, 'race'),
+          company: 'Syntetisk firma',
+          client: null,
+          lang: 'nn' as const,
+          consent_version: 'pamelding-v1',
+          invite_version: null,
+        };
+        const ok = await t.app.get(PrivacyService).participants.register(tx, input, new Date());
+        inside();
+        await done;
+        return ok;
+      },
+      { timeout: 20_000 },
+    );
+    await registered;
+    // The job sees the contact without a registration (the old one expires, the new one is not
+    // committed): it waits for the lock of the e-mail, then sees the new registration.
+    const job = t.app.get(RetentionRun).run();
+    await new Promise((r) => setTimeout(r, 300));
+    release();
+    expect(await form).toBe(true);
+    await job;
+    expect(await registrationsOf(old.id)).toHaveLength(0);
+    expect(await registrationsOf(open.id)).toHaveLength(1);
+    expect((await contactsOf(t)).some((c) => c.email === email(t, 'race'))).toBe(true);
+  });
+
+  it('marks a contact confirmed more than a year ago, once; the admin sees it and confirms it', async () => {
+    const s = await createSeminar(t);
+    await register(t, s.id, email(t, 'yearly'), { name: 'ZZ Årleg' });
+    const contact = (await contactsOf(t)).find((c) => c.email === email(t, 'yearly'))!;
+    await withPg((c) =>
+      c.query(`UPDATE contact SET last_confirmed_at = now() - interval '366 days' WHERE id = $1`, [
+        contact.id,
+      ]),
+    );
+    const dry = await t.app.get(RetentionRun).run(true);
+    expect(dry.contact_review).toBeGreaterThanOrEqual(1);
+    expect((await contactsOf(t)).find((c) => c.id === contact.id)?.review_flagged_at).toBeNull();
+    await t.app.get(RetentionRun).run();
+    const flagged = (await contactsOf(t)).find((c) => c.id === contact.id)!.review_flagged_at;
+    expect(flagged).not.toBeNull();
+    await t.app.get(RetentionRun).run();
+    expect((await contactsOf(t)).find((c) => c.id === contact.id)!.review_flagged_at).toEqual(
+      flagged,
+    );
+
+    const list = (await t.call('GET', '/api/admin/seminars')).json<{
+      contacts_to_review: number;
+    }>();
+    expect(list.contacts_to_review).toBeGreaterThanOrEqual(1);
+    const review = await t.call('GET', '/api/admin/contacts/review');
+    expect(review.json<{ rows: { id: string; name: string }[] }>().rows).toContainEqual(
+      expect.objectContaining({ id: contact.id, name: 'ZZ Årleg', registrations: 1 }),
+    );
+    expect(
+      await t.prisma.auditLog.count({
+        where: { what: 'privacy.participants', target: 'contacts:review' },
+      }),
+    ).toBeGreaterThan(0);
+    expect((await t.call('POST', `/api/admin/contacts/${contact.id}/confirm`)).statusCode).toBe(
+      201,
+    );
+    const after = (await contactsOf(t)).find((c) => c.id === contact.id)!;
+    expect(after.review_flagged_at).toBeNull();
+    expect(Date.now() - after.last_confirmed_at.getTime()).toBeLessThan(60_000);
+  });
+});
+
+describe('deletion on request, scope «Deltakar» (by e-mail)', () => {
+  it('dry-run shows the contact and its registrations; the real run leaves a ledger without the e-mail', async () => {
+    const one = await createSeminar(t),
+      two = await createSeminar(t);
+    const address = email(t, 'forget');
+    await register(t, one.id, address, { name: 'ZZ Gløym Meg' });
+    await register(t, two.id, address, { name: 'ZZ Gløym Meg' });
+    const contact = (await contactsOf(t)).find((c) => c.email === address)!;
+    const body = (dry_run: boolean, mail = address) => ({
+      scope: { scope: 'participant', email: `  ${mail.toUpperCase()} ` },
+      reason: 'Syntetisk førespurnad',
+      dry_run,
+    });
+    expect(
+      (await t.call('POST', '/api/admin/retention/forget', body(true), { cookie: '' })).statusCode,
+    ).toBe(401);
+    const requests = await t.prisma.deletionRequest.count();
+    const previews = await t.prisma.auditLog.count({ where: { what: 'retention.forget.preview' } });
+    const preview = await t.call('POST', '/api/admin/retention/forget', body(true));
+    expect(preview.json()).toEqual({ dry_run: true, contacts: 1, registrations: 2, total: 3 });
+    expect(await t.prisma.deletionRequest.count()).toBe(requests);
+    // The dry run is in AuditLog: who looked and the counts, nothing else.
+    const looked = await t.prisma.auditLog.findMany({
+      where: { what: 'retention.forget.preview' },
+      orderBy: { at: 'desc' },
+      take: 1,
+    });
+    expect(await t.prisma.auditLog.count({ where: { what: 'retention.forget.preview' } })).toBe(previews + 1);
+    expect(looked[0]).toMatchObject({
+      who: 'entra:test:seminar-admin',
+      target: null,
+      details: { scope: 'participant', contacts: 1, registrations: 2, total: 3 },
+    });
+    expect(JSON.stringify(looked)).not.toMatch(/example\.test|førespurnad|Gløym/);
+
+    const done = await t.call('POST', '/api/admin/retention/forget', body(false));
+    expect(done.json()).toEqual({ dry_run: false, contacts: 1, registrations: 2, total: 3 });
+    expect((await contactsOf(t)).some((c) => c.email === address)).toBe(false);
+    expect(await registrationsOf(one.id)).toHaveLength(0);
+    const request = await t.prisma.deletionRequest.findFirstOrThrow({
+      where: { scope: 'participant' },
+      orderBy: { at: 'desc' },
+      include: { participants: true },
+    });
+    expect(request.scope_ref).toEqual({ contact: contact.id });
+    expect(request.participants).toEqual([
+      expect.objectContaining({ contact_id: contact.id, registrations: 2 }),
+    ]);
+    const audit = await t.prisma.auditLog.findFirstOrThrow({ where: { target: request.id } });
+    expect(audit).toMatchObject({
+      what: 'retention.forget',
+      details: { scope: 'participant', contacts: 1, registrations: 2 },
+    });
+    expect(JSON.stringify([request, audit])).not.toMatch(/example\.test|Gløym/);
+
+    // Unknown address: nothing to do, no ledger entry; the answer does not say more than counts.
+    const none = await t.call(
+      'POST',
+      '/api/admin/retention/forget',
+      body(false, email(t, 'never')),
+    );
+    expect(none.json()).toEqual({ dry_run: false, contacts: 0, registrations: 0, total: 0 });
+    expect(await t.prisma.deletionRequest.count()).toBe(requests + 1);
+    expect(
+      (
+        await t.call('POST', '/api/admin/retention/forget', {
+          ...body(false),
+          scope: { scope: 'participant', email: 'ikkje-ei-adresse' },
+        })
+      ).statusCode,
+    ).toBe(400);
+  });
+
+  it('after a restore from an older copy the ledger removes the contact again', async () => {
+    const s = await createSeminar(t);
+    const address = email(t, 'restore');
+    await register(t, s.id, address);
+    const old = (await contactsOf(t)).find((c) => c.email === address)!;
+    await t.call('POST', '/api/admin/retention/forget', {
+      scope: { scope: 'participant', email: address },
+      reason: 'Syntetisk',
+    });
+    // The restored dump still has the contact and its registration (same ids).
+    await withPg(async (c) => {
+      await c.query(
+        `INSERT INTO contact (id, name, email, company) VALUES ($1, 'ZZ', $2, 'x')`,
+        [old.id, address],
+      );
+      await c.query(
+        `INSERT INTO registration (seminar_id, contact_id, lang, consent_version, consent_at) VALUES ($1, $2, 'nn', 'pamelding-v1', now())`,
+        [s.id, old.id],
+      );
+    });
+    expect(await t.app.get(DeletionLedger).apply()).toBeGreaterThanOrEqual(1);
+    expect((await contactsOf(t)).some((c) => c.email === address)).toBe(false);
+    expect(await registrationsOf(s.id)).toHaveLength(0);
+  });
+});

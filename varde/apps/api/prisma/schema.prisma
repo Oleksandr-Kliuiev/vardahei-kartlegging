@@ -85,14 +85,16 @@ model TemplateVersion {
 
 /// Client (1.4b, ARCHITECTURE §4): mirror of Atlas; in stage 1 filled from kundar.json (1.7).
 model Client {
-  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug              String        @unique
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug              String          @unique
   name              String
   industry          String?
   employee_count    Int?
-  default_lang      String        @default("nn")
+  default_lang      String          @default("nn")
   atlas_external_id String?
   round_clients     RoundClient[]
+  seminars          SeminarClient[]
+  contacts          Contact[]
 
   @@map("client")
 }
@@ -112,6 +114,9 @@ model Round {
   opened_at           DateTime?        @db.Timestamptz(6)
   closed_at           DateTime?        @db.Timestamptz(6)
   round_clients       RoundClient[]
+  seminars_before     Seminar[]        @relation("seminar_round_before")
+  seminars_live       Seminar[]        @relation("seminar_round_live")
+  seminars_after      Seminar[]        @relation("seminar_round_after")
 
   @@map("round")
 }
@@ -119,19 +124,19 @@ model Round {
 /// One client in one round (1.4b, ADR-022, ADR-009): code, snapshot of the population, deadline,
 /// lifecycle `draft → open → closed → archived`. `legacy_code_hash` = sha256 of the kartlegging code.
 model RoundClient {
-  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  round_id            String          @db.Uuid
-  round               Round           @relation(fields: [round_id], references: [id], onDelete: Restrict)
-  client_id           String          @db.Uuid
-  client              Client          @relation(fields: [client_id], references: [id], onDelete: Restrict)
+  id                  String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  round_id            String             @db.Uuid
+  round               Round              @relation(fields: [round_id], references: [id], onDelete: Restrict)
+  client_id           String             @db.Uuid
+  client              Client             @relation(fields: [client_id], references: [id], onDelete: Restrict)
   code                String?
-  code_hash           String?         @unique
-  code_expires_at     DateTime?       @db.Timestamptz(6)
-  code_revoked_at     DateTime?       @db.Timestamptz(6)
+  code_hash           String?            @unique
+  code_expires_at     DateTime?          @db.Timestamptz(6)
+  code_revoked_at     DateTime?          @db.Timestamptz(6)
   legacy_code_hash    String?
   population_snapshot Int?
-  deadline            DateTime?       @db.Date
-  status              String          @default("draft")
+  deadline            DateTime?          @db.Date
+  status              String             @default("draft")
   responses           Response[]
   progress_events     ProgressEvent[]
   revoked_codes       RevokedRoundCode[]
@@ -273,13 +278,14 @@ model FindingSet {
 /// A finding computed over released snapshots (1.4c; retention as released snapshots): one row
 /// per rule and release, written once with its rule version (2.5). Never updated (trigger).
 model Finding {
-  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  round_id     String  @db.Uuid
-  client_id    String? @db.Uuid
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  round_id     String         @db.Uuid
+  client_id    String?        @db.Uuid
   rule_key     String
   rule_version Int
-  numbers      Json    @db.JsonB
-  release_id   String  @db.Uuid
+  numbers      Json           @db.JsonB
+  release_id   String         @db.Uuid
+  status       FindingStatus?
 
   @@index([round_id])
   @@map("finding")
@@ -301,15 +307,17 @@ model ImportManifest {
   @@map("import_manifest")
 }
 
-/// Deletion on request (1.4c, ADR-017): `scope` ∈ {client, respondent, submissions}.
+/// Deletion on request (1.4c, ADR-017): `scope` ∈ {client, respondent, submissions, participant}
+/// (participant: 3.1, a seminar contact by e-mail; its tombstones are ParticipantTombstone).
 model DeletionRequest {
-  id           String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id           String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   requested_by String
   reason       String
   scope        String
-  scope_ref    Json                @db.JsonB
-  at           DateTime            @default(now()) @db.Timestamptz(6)
+  scope_ref    Json                   @db.JsonB
+  at           DateTime               @default(now()) @db.Timestamptz(6)
   tombstones   DeletionTombstone[]
+  participants ParticipantTombstone[]
 
   @@map("deletion_request")
 }
@@ -331,4 +339,184 @@ model DeletionTombstone {
   @@index([source_id, part])
   @@index([submission_id])
   @@map("deletion_tombstone")
+}
+
+/// Seminar (3.1, ARCHITECTURE §4 and §7): topic in nynorsk (and English when `required_languages`
+/// has en), start and end as instants (shown in Europe/Oslo), place, `format` ∈ {onsite, digital},
+/// the clients it is for and the registration link: `code` is a 128-bit bearer looked up by
+/// `code_hash` (ADR-009), replaced by «Ny lenkje» (old hashes in RevokedSeminarCode).
+/// `sequence` grows when time, place or topic change (ICS updates). Rounds
+/// before/live/after are linked in 3c. No personal data: participants are Contact and Registration.
+model Seminar {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  topic_nn           String
+  topic_en           String?
+  starts_at          DateTime             @db.Timestamptz(6)
+  ends_at            DateTime             @db.Timestamptz(6)
+  place              String
+  format             String
+  required_languages String[]
+  code               String
+  code_hash          String               @unique
+  sequence           Int                  @default(0)
+  round_before_id    String?              @db.Uuid
+  round_before       Round?               @relation("seminar_round_before", fields: [round_before_id], references: [id], onDelete: SetNull)
+  round_live_id      String?              @db.Uuid
+  round_live         Round?               @relation("seminar_round_live", fields: [round_live_id], references: [id], onDelete: SetNull)
+  round_after_id     String?              @db.Uuid
+  round_after        Round?               @relation("seminar_round_after", fields: [round_after_id], references: [id], onDelete: SetNull)
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  created_by         String
+  clients            SeminarClient[]
+  registrations      Registration[]
+  finding_statuses   FindingStatus[]
+  materials          SeminarMaterial[]
+  revoked_codes      RevokedSeminarCode[]
+
+  @@index([ends_at])
+  @@map("seminar")
+}
+
+/// Hash-only history of replaced seminar links (3a, ADR-009): an old link, an invitation already
+/// sent or a printed poster gets «Lenkja er bytt ut» instead of a plain 403.
+model RevokedSeminarCode {
+  code_hash  String   @id
+  seminar_id String   @db.Uuid
+  seminar    Seminar  @relation(fields: [seminar_id], references: [id], onDelete: Cascade)
+  revoked_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([seminar_id])
+  @@map("revoked_seminar_code")
+}
+
+/// Material of a seminar (3.3): a title and an http(s) link, no uploaded files (CHECKs). The
+/// seminar page shows the list after the seminar has ended, to everyone who has its link.
+model SeminarMaterial {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  seminar_id String   @db.Uuid
+  seminar    Seminar  @relation(fields: [seminar_id], references: [id], onDelete: Cascade)
+  title      String
+  url        String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  created_by String
+
+  @@index([seminar_id])
+  @@map("seminar_material")
+}
+
+/// The clients a seminar is for (3.1): the registration page offers them as companies.
+model SeminarClient {
+  seminar_id String  @db.Uuid
+  seminar    Seminar @relation(fields: [seminar_id], references: [id], onDelete: Cascade)
+  client_id  String  @db.Uuid
+  client     Client  @relation(fields: [client_id], references: [id], onDelete: Restrict)
+
+  @@id([seminar_id, client_id])
+  @@index([client_id])
+  @@map("seminar_client")
+}
+
+/// A person who registered for a seminar (3.1, ADR-017 class `contact`): personal data, read and
+/// written only through modules/privacy (participants.ts, lint `varde/privacy-only-release`). Kept
+/// while it has a registration or consent to invitations (decision of Oleksandr 16.10): the daily
+/// job deletes a contact with neither, and marks the others a year after `last_confirmed_at` for
+/// the yearly check. `email` is normalized (trimmed, lower case; CHECK), `company` is the chosen
+/// client's name or the person's own text. The consent to this registration is on Registration;
+/// `invite_consent_*` is the optional consent to invitations to later seminars (both or none,
+/// CHECK). The public form creates a contact; of a known one it only adds a missing consent to
+/// invitations. Name, company, client and the withdrawal of that consent are the admin's
+/// (AuditLog); `last_confirmed_at` and the yearly mark change only by «Stadfest».
+model Contact {
+  id                     String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                   String
+  email                  String         @unique
+  client_id              String?        @db.Uuid
+  client                 Client?        @relation(fields: [client_id], references: [id], onDelete: SetNull)
+  company                String
+  role_at_client         String?
+  invite_consent_version String?
+  invite_consent_at      DateTime?      @db.Timestamptz(6)
+  created_at             DateTime       @default(now()) @db.Timestamptz(6)
+  last_confirmed_at      DateTime       @default(now()) @db.Timestamptz(6)
+  review_flagged_at      DateTime?      @db.Timestamptz(6)
+  registrations          Registration[]
+
+  @@index([review_flagged_at])
+  @@map("contact")
+}
+
+/// One contact registered for one seminar (3.1, ADR-017 class `registration`): deleted by the
+/// daily job 90 days after the seminar ends. One per seminar and contact, i.e. per e-mail.
+/// `lang` ∈ {nn, en} (CHECK); the required consent (text version and time) of this registration.
+/// Response never refers to it (ADR-021).
+model Registration {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  seminar_id      String   @db.Uuid
+  seminar         Seminar  @relation(fields: [seminar_id], references: [id], onDelete: Cascade)
+  contact_id      String   @db.Uuid
+  contact         Contact  @relation(fields: [contact_id], references: [id], onDelete: Cascade)
+  lang            String
+  consent_version String
+  consent_at      DateTime @db.Timestamptz(6)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([seminar_id, contact_id])
+  @@index([contact_id])
+  @@map("registration")
+}
+
+/// Ledger of a participant deleted on request (3.1, ADR-017): the contact id and how many
+/// registrations went with it, never the name or e-mail. Reapplied after a restore.
+model ParticipantTombstone {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  request_id    String          @db.Uuid
+  request       DeletionRequest @relation(fields: [request_id], references: [id], onDelete: Restrict)
+  contact_id    String          @db.Uuid
+  registrations Int
+
+  @@index([contact_id])
+  @@map("participant_tombstone")
+}
+
+/// A measure Vardahei can propose, and the seminar topic it leads to (3.1, ARCHITECTURE §4).
+model Action {
+  id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String              @unique
+  description   String
+  seminar_topic String
+  created_at    DateTime            @default(now()) @db.Timestamptz(6)
+  created_by    String
+  rules         FindingRuleAction[]
+
+  @@map("action")
+}
+
+/// FindingRule → Action (3.1, `action_id?` of ARCHITECTURE §4). Rule versions never change
+/// (trigger finding_rule_immutable), so the link lives beside them, by rule key: every version of
+/// the rule points to the same action, and changing the link writes no rule version.
+model FindingRuleAction {
+  rule_key  String   @id
+  action_id String   @db.Uuid
+  action    Action   @relation(fields: [action_id], references: [id], onDelete: Cascade)
+  linked_at DateTime @default(now()) @db.Timestamptz(6)
+  linked_by String
+
+  @@index([action_id])
+  @@map("finding_rule_action")
+}
+
+/// Working status of a finding (3.1, ARCHITECTURE §4); no row means `open`. `status` ∈ {open,
+/// in_seminar, closed}; `in_seminar` needs a seminar and `open` has none (CHECKs). Finding rows
+/// never change (2.5), so the status lives here; every change is also written to AuditLog.
+model FindingStatus {
+  finding_id String   @id @db.Uuid
+  finding    Finding  @relation(fields: [finding_id], references: [id], onDelete: Cascade)
+  status     String
+  seminar_id String?  @db.Uuid
+  seminar    Seminar? @relation(fields: [seminar_id], references: [id], onDelete: Restrict)
+  changed_by String
+  changed_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([seminar_id])
+  @@map("finding_status")
 }

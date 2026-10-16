@@ -169,6 +169,11 @@ require(require.resolve('reflect-metadata', { paths: [resolve(__dirname, '../../
         await db.roundClient.deleteMany({ where: { round_id: id } });
         await db.round.delete({ where: { id } });
       }
+      // Seminars of the e2e (3a) and their participants go first: they hang on the clients.
+      await db.$executeRaw`DELETE FROM contact WHERE email LIKE 'zz-e2e-%@example.test'`;
+      await db.seminar.deleteMany({
+        where: { clients: { some: { client_id: { in: [state.client, state.other_client] } } } },
+      });
       await db.client.deleteMany({ where: { id: { in: [state.client, state.other_client] } } });
       await app.close();
     })().finally(() => process.exit(0));

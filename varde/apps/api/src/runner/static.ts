@@ -29,9 +29,14 @@ export async function registerRunnerStatic(app: NestFastifyApplication): Promise
         return;
       }
     }
-    if (path.startsWith('/api/runner/') || path.startsWith('/api/admin/round'))
+    if (
+      path.startsWith('/api/runner/') ||
+      path.startsWith('/api/admin/round') ||
+      path.startsWith('/api/public/')
+    )
       void reply.header('cache-control', 'no-store');
-    if (path === '/r' || path.startsWith('/r/')) {
+    // The seminar page (3.2) is a second entry of the runner build, under the same headers.
+    if (path === '/r' || path.startsWith('/r/') || path === '/s' || path === '/s/') {
       const preview = (path === '/r' || path === '/r/') && isPreview(request.url);
       void reply
         .header('content-security-policy', preview ? RUNNER_PREVIEW_CSP : RUNNER_CSP)
@@ -63,4 +68,11 @@ export async function registerRunnerStatic(app: NestFastifyApplication): Promise
       .sendFile('index.html', root, { cacheControl: false, etag: false, lastModified: false });
   fastify.get('/r', index);
   fastify.get('/r/', index);
+  if (!existsSync(resolve(root, 'seminar.html'))) return;
+  const seminar = (_request: FastifyRequest, reply: FastifyReply) =>
+    reply
+      .header('cache-control', 'no-store')
+      .sendFile('seminar.html', root, { cacheControl: false, etag: false, lastModified: false });
+  fastify.get('/s', seminar);
+  fastify.get('/s/', seminar);
 }

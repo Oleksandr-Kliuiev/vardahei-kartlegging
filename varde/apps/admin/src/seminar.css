@@ -1,0 +1,76 @@
+/* Seminar (3a, Vardestien «Seminar»): liste, skjema, faner og namnelista. */
+.sem-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.sem-liste a {
+  display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 14px;
+  border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none;
+  transition: border-color var(--t-quick) var(--ease-sti), transform var(--t-spring) var(--ease-fjor);
+}
+.sem-liste a:hover { border-color: var(--accent); }
+.sem-liste a:active { transform: scale(.99); }
+.sem-dato { display: grid; place-items: center; width: 52px; height: 52px; border-radius: var(--r-md); background: var(--accent-soft); color: var(--accent-text); line-height: 1; }
+.sem-dato b { font-size: 20px; font-weight: 780; }
+.sem-dato small { font-size: 12px; font-weight: 650; }
+.sem-namn { display: grid; gap: 2px; min-width: 0; }
+.sem-namn b { color: var(--ink-strong); font-size: 15px; overflow-wrap: anywhere; }
+.sem-namn small, .sem-tal small { color: var(--ink-muted); font-size: 13px; overflow-wrap: anywhere; }
+.sem-tal { display: grid; justify-items: end; gap: 6px; text-align: right; }
+@media (max-width: 560px) {
+  .sem-liste a { grid-template-columns: 44px minmax(0, 1fr); }
+  .sem-dato { width: 44px; height: 44px; }
+  .sem-tal { grid-column: 2; justify-items: start; text-align: left; grid-auto-flow: column; align-items: center; justify-content: start; }
+}
+.sem-sjekk { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.sem-sjekk li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--line); }
+.sem-sjekk li > span { display: grid; gap: 2px; min-width: 0; }
+.sem-sjekk small { color: var(--ink-muted); font-size: 12.5px; overflow-wrap: anywhere; }
+
+/* Skjemaet for nytt eller endra seminar */
+.sem-form fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 14px; max-width: 640px; min-width: 0; }
+.sem-form .field > span { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.sem-form .kryss { display: inline-flex; align-items: center; gap: 8px; font-weight: 500; }
+.sem-form .kryss input { width: 18px; height: 18px; accent-color: var(--accent); }
+.sem-form-tid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+@media (max-width: 480px) { .sem-form-tid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .sem-form-tid > :first-child { grid-column: span 2; } }
+.sem-kundar { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.sem-form .forklaring { margin-top: 0; }
+
+/* Eitt seminar */
+.sem-tilbake { display: inline-flex; align-items: center; gap: 6px; margin: -6px 0 10px; padding-left: 0; text-decoration: none; }
+.sem-topp { margin-bottom: 16px; }
+.sem-tittel { font-size: clamp(20px, 2.4vw, 26px); font-weight: 780; letter-spacing: -0.016em; margin: 6px 0 4px; overflow-wrap: anywhere; }
+.sem-meta { color: var(--ink-muted); overflow-wrap: anywhere; }
+.sem-topp .handlingar { margin-top: 12px; }
+.sem-topp .sem-form { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+.sem-faner { margin-bottom: 16px; max-width: 100%; }
+.sem-later { font-size: 17px; margin-top: 6px; }
+.sem-tal-kort .under { margin: 0; }
+.sem-tal-kort .forklaring { margin-top: 10px; }
+.sem-tal-kort .handlingar { margin-top: 12px; }
+.sem-pamelde { min-width: 0; }
+.sem-pamelde th[scope="row"] { font-weight: 650; color: var(--ink-strong); }
+.sem-pamelde td, .sem-pamelde th { overflow-wrap: break-word; }
+.sem-pamelde td:nth-child(3) { word-break: break-all; min-width: 14ch; }
+.sem-pamelde td:last-child { white-space: nowrap; }
+.sem-materiell-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.sem-materiell-liste li { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface-2); }
+.sem-materiell-liste .icon { color: var(--accent); }
+.sem-materiell-liste span { display: grid; gap: 2px; min-width: 0; }
+.sem-materiell-liste a { color: var(--ink-strong); font-weight: 650; overflow-wrap: anywhere; }
+.sem-materiell-liste small { color: var(--ink-muted); font-size: 12.5px; overflow-wrap: anywhere; }
+
+/* Invitasjon */
+.sem-invitasjon { display: grid; gap: 12px; }
+.sem-invitasjon .forklaring { margin-top: 0; }
+.sem-tekst { min-height: 280px; resize: vertical; font-size: 14px; line-height: 1.5; }
+.sem-lenkje { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 10px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--line); }
+.sem-lenkje code { flex: 1 1 200px; min-width: 0; font-family: var(--font-mono); font-size: 12.5px; overflow-wrap: anywhere; color: var(--ink); }
+.sem-last-ned { margin-top: 12px; }
+
+/* Namnelista: handlingar per rad og retting av ein kontakt */
+.sem-rad-handling { white-space: nowrap; text-align: right; }
+/* Knappane går under kvarandre når kolonnane treng plassen */
+.sem-rad-knappar { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+.sem-kontakt-form fieldset { max-width: 520px; }
+.sem-ny-lenkje { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); display: grid; gap: 6px; justify-items: start; }
+.sem-ny-lenkje .forklaring { margin-top: 0; }
+.sem-varsel { color: var(--danger-fg); font-weight: 600; }

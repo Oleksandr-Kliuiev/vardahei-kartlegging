@@ -13,6 +13,7 @@ interface RoundClientDelegate {
 interface PrismaClient {
   response: ResponseDelegate;
   roundClient: RoundClientDelegate;
+  registration: ResponseDelegate;
   $transaction<T>(fn: (tx: TransactionClient) => Promise<T>): Promise<T>;
 }
 
@@ -30,5 +31,10 @@ export class DashboardBypass {
 
   throughInclude(): Promise<unknown[]> {
     return this.prisma.roundClient.findMany({ include: { responses: true } });
+  }
+
+  /** Seminar participants (3.1): names and e-mail only through privacy/participants.ts. */
+  participants(): Promise<unknown[]> {
+    return this.prisma.registration.findMany();
   }
 }

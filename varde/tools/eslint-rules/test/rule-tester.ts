@@ -33,11 +33,14 @@ interface PrismaClient {
   response: Delegate;
   aggregateSnapshot: Delegate;
   roundClient: Delegate;
+  contact: Delegate;
+  registration: Delegate;
+  seminar: Delegate;
   $queryRaw(strings: TemplateStringsArray, ...values: unknown[]): Promise<unknown>;
   $queryRawUnsafe(sql: string): Promise<unknown>;
   $transaction<T>(fn: (tx: TransactionClient) => Promise<T>): Promise<T>;
 }
-interface TransactionClient { response: Delegate; }
+interface TransactionClient { response: Delegate; contact: Delegate; registration: Delegate; }
 declare const prisma: PrismaClient;
 declare const Prisma: { sql(strings: TemplateStringsArray, ...values: unknown[]): unknown };
 `;

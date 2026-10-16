@@ -12,7 +12,7 @@ test('non-member → 403 and no protected API access', async ({ page }) => {
   await expect(page.locator('body')).toContainText('Du har ikkje tilgang');
   expect((await page.request.get('/api/admin/rounds')).status()).toBe(401);
 });
-test('eight History API sections in menu order, back navigation and direct reload', async ({
+test('nine History API sections in menu order, back navigation and direct reload', async ({
   page,
 }) => {
   await login(page);
@@ -24,6 +24,7 @@ test('eight History API sections in menu order, back navigation and direct reloa
     'Dashbord',
     'Skjema',
     'Funn',
+    'Seminar',
     'Rapportar',
     'Eksport',
     'Sletting',
@@ -32,6 +33,7 @@ test('eight History API sections in menu order, back navigation and direct reloa
     'Kundar og rundar',
     'Skjema',
     'Funn',
+    'Seminar',
     'Rapportar',
     'Dashbord',
     'Eksport',

@@ -32,12 +32,31 @@ require(require.resolve('reflect-metadata', { paths: [resolve(__dirname, '../../
       if (label === 'closed') await service.closeClient(rc.id, 'test:e2e');
       state[label] = { code: opened.code, version: version.id, roundClient: rc.id };
     }
+    // Seminar page (3a): one coming seminar (nn and en, two clients) and one held with material.
+    const { SeminarsService } = require('../../api/dist/modules/seminars/seminars.service.js');
+    const { MaterialsService } = require('../../api/dist/modules/seminars/materials.service.js');
+    const seminars = app.get(SeminarsService);
+    const mark = `e2e-sem-${Date.now().toString(36)}`;
+    const semClients = [];
+    for (const name of ['Syntetisk Gasta', 'Syntetisk Daco'])
+      semClients.push((await db.client.create({ data: { slug: `${mark}-${semClients.length}`, name } })).id);
+    const base = { start: '09:00', end: '11:30', format: 'onsite', clients: semClients };
+    const open = await seminars.create({ ...base, topic_nn: 'Passord og MFA i kvardagen', topic_en: 'Passwords and MFA at work', date: '2099-11-05', place: 'Vardahei IT, Sogndal', languages: ['nn', 'en'] }, 'test:e2e-seminar');
+    const held = await seminars.create({ ...base, topic_nn: 'Backup som faktisk verkar', topic_en: null, date: '2020-09-03', place: 'Teams', format: 'digital', languages: ['nn'], clients: [] }, 'test:e2e-seminar');
+    await app.get(MaterialsService).add(held, { title: 'Lysark frå seminaret', url: 'https://example.test/lysark.pdf' }, 'test:e2e-seminar');
+    const codeOf = async (id) => (await db.seminar.findUniqueOrThrow({ where: { id } })).code;
+    state.seminar_open = { code: await codeOf(open), version: '', roundClient: '' };
+    state.seminar_held = { code: await codeOf(held), version: '', roundClient: '' };
     const origin = new URL(process.env.RUNNER_BASE_URL ?? 'http://127.0.0.1:3098');
     await app.listen(Number(origin.port), origin.hostname);
     const dir = resolve(__dirname, '../test-results');
     mkdirSync(dir, { recursive: true });
     writeFileSync(resolve(dir, 'rounds.json'), JSON.stringify(state));
     const cleanup = async () => {
+      // Disposable synthetic e2e database only: seminars of this run and their contacts.
+      await db.$executeRaw`DELETE FROM contact WHERE email LIKE 'zz-e2e-%@example.test'`;
+      await db.seminar.deleteMany({ where: { created_by: 'test:e2e-seminar' } });
+      await db.client.deleteMany({ where: { slug: { startsWith: mark } } });
       for (const id of ids) {
         // Disposable synthetic e2e database only. No privacy output is exposed by cleanup.
         await db.$executeRaw`DELETE FROM response WHERE round_client_id IN (SELECT id FROM round_client WHERE round_id = ${id}::uuid)`;

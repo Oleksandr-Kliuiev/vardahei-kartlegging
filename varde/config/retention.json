@@ -15,7 +15,8 @@
       "review": "yearly"
     },
     "contact": {
-      "kind": "relationship"
+      "kind": "relationship",
+      "review": "yearly"
     },
     "registration": {
       "after_seminar_days": 90

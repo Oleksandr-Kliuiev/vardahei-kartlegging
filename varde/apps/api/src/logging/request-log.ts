@@ -1,10 +1,11 @@
 // Request log of the api (task 0.6, ADR-009 "codes are not logged", stage-0 §9 p. 8):
 // method, path without query, status, duration. No IP, no headers, no query string.
 // Runner paths (/r/*, /api/runner/*; used from 1.12) are written only on status ≥ 400,
-// so successful submissions leave no trace (neither time nor path).
+// so successful submissions leave no trace (neither time nor path). The same holds for the
+// seminar page and its API (/s, /api/public/*; 3.2): a registration leaves no log line.
 import type { FastifyInstance } from 'fastify';
 
-export const RUNNER_PREFIXES = ['/r/', '/api/runner/'] as const;
+export const RUNNER_PREFIXES = ['/r/', '/api/runner/', '/s/', '/api/public/'] as const;
 
 export type LogSink = (line: string) => void;
 
@@ -19,7 +20,7 @@ export function pathOnly(url: string): string {
 }
 
 export function isRunnerPath(path: string): boolean {
-  return path === '/r' || RUNNER_PREFIXES.some((prefix) => path.startsWith(prefix));
+  return path === '/r' || path === '/s' || RUNNER_PREFIXES.some((prefix) => path.startsWith(prefix));
 }
 
 /** One JSON line per response, written from Fastify's onResponse hook. */

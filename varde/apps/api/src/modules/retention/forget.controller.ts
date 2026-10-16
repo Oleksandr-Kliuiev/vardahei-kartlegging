@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { normalizeRespondentKey, RESPONDENT_KEY_LENGTH } from '@varde/rules/runner';
 import { AdminSessionGuard, type AdminRequest } from '../auth/admin-session.guard.js';
 import { parseInput } from '../dashboard/dashboard.controller.js';
+import { Email } from '../seminars/seminar-input.js';
 import { ForgetService } from './forget.service.js';
 
 const scope = z.discriminatedUnion('scope', [
@@ -22,6 +23,8 @@ const scope = z.discriminatedUnion('scope', [
     scope: z.literal('submissions'),
     submission_ids: z.array(z.uuid()).min(1).max(1000),
   }),
+  // 3.1: a seminar participant (contact and registrations), found by e-mail.
+  z.strictObject({ scope: z.literal('participant'), email: Email }),
 ]);
 const input = z.strictObject({
   scope,

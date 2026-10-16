@@ -49,6 +49,23 @@ const P = {
     <path key="a" d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z" />,
     <path key="b" d="M14 3v6h6M8 13h8M8 17h5" />,
   ],
+  // Seminar (3a)
+  folk: [
+    <circle key="a" cx="9" cy="8" r="3" />,
+    <path key="b" d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />,
+    <circle key="c" cx="17" cy="9" r="2.5" />,
+    <path key="d" d="M15.5 14.2c3 .2 5.5 2.7 5.5 5.8" />,
+  ],
+  kalender: [
+    <rect key="a" x="3" y="5" width="18" height="16" rx="2" />,
+    <path key="b" d="M3 10h18M8 3v4M16 3v4" />,
+  ],
+  kopi: [
+    <rect key="a" x="9" y="9" width="12" height="12" rx="2" />,
+    <path key="b" d="M5 15V5a2 2 0 012-2h10" />,
+  ],
+  pluss: [<path key="a" d="M12 5v14M5 12h14" />],
+  tilbake: [<path key="a" d="M19 12H5M11 6l-6 6 6 6" />],
 } satisfies Record<string, ReactElement[]>;
 export type IconName = keyof typeof P;
 

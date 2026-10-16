@@ -2,7 +2,12 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_ALLOW, globToRegExp, privacyOnlyRelease } from '../rules/privacy-only-release.js';
+import {
+  DEFAULT_ALLOW,
+  globToRegExp,
+  PARTICIPANT_ALLOW,
+  privacyOnlyRelease,
+} from '../rules/privacy-only-release.js';
 import { FIXTURE_ROOT, PRISMA_TYPES, typedRuleTester } from './rule-tester.js';
 
 const rule = privacyOnlyRelease as never;
@@ -13,6 +18,8 @@ const prismaSource = `${FIXTURE_ROOT}apps/api/src/modules/privacy/prisma-source.
 const snapshotStore = `${FIXTURE_ROOT}apps/api/src/modules/privacy/prisma-snapshot-store.ts`;
 const responseStore = `${FIXTURE_ROOT}apps/api/src/modules/privacy/response-store.ts`;
 const privacyOther = `${FIXTURE_ROOT}apps/api/src/modules/privacy/aggregate.ts`;
+const participants = `${FIXTURE_ROOT}apps/api/src/modules/privacy/participants.ts`;
+const reports = `${FIXTURE_ROOT}apps/api/src/modules/reports/report.service.ts`;
 const prismaSeed = `${FIXTURE_ROOT}apps/api/prisma/seed.ts`;
 const controller = `${FIXTURE_ROOT}apps/api/src/modules/rounds/rounds.controller.ts`;
 const gateway = `${FIXTURE_ROOT}apps/api/src/modules/rounds/rounds.gateway.ts`;
@@ -41,7 +48,7 @@ describe('allow-list', () => {
       };
       expect(config.rules?.['varde/privacy-only-release']).toEqual([
         2,
-        { allow: [...DEFAULT_ALLOW] },
+        { allow: [...DEFAULT_ALLOW], participants: [...PARTICIPANT_ALLOW] },
       ]);
     },
   );
@@ -53,6 +60,13 @@ describe('allow-list', () => {
       'apps/api/src/modules/privacy/prisma-source.ts',
       'apps/api/src/modules/privacy/prisma-snapshot-store.ts',
       'apps/api/src/modules/privacy/response-store.ts',
+      'apps/api/prisma/**',
+    ]);
+  });
+
+  it('seminar participants have their own fixed allow-list (3.1)', () => {
+    expect(PARTICIPANT_ALLOW).toEqual([
+      'apps/api/src/modules/privacy/participants.ts',
       'apps/api/prisma/**',
     ]);
   });
@@ -123,12 +137,62 @@ typedRuleTester().run('privacy-only-release', rule, {
       code: code('void prisma.$queryRaw`select 1 from round`;'),
     },
     {
+      name: 'privacy/participants.ts (3.1) may read and write contacts and registrations',
+      filename: participants,
+      code: code(
+        `void prisma.contact.findMany();\nvoid prisma.$transaction((tx: TransactionClient) => tx.registration.findMany());\nvoid prisma.$queryRaw\`select 1 from contact\`;`,
+      ),
+    },
+    {
+      name: 'seminar rows themselves are not personal data',
+      filename: rounds,
+      code: code(`void prisma.seminar.findMany({ include: { clients: true } });`),
+    },
+    {
       name: 'service imports PrismaService',
       filename: rounds,
       code: `import { PrismaService } from '../../prisma/prisma.service.js';\nexport { PrismaService };`,
     },
   ],
   invalid: [
+    {
+      name: 'participants.ts may not read responses (its allow-list is only for participants)',
+      filename: participants,
+      code: code(`void prisma.response.findMany();`),
+      errors: [{ messageId: 'model' }],
+    },
+    {
+      name: 'privacy.service may not read contacts directly (3.1)',
+      filename: privacy,
+      code: code(`void prisma.contact.findMany();`),
+      errors: [{ messageId: 'model' }],
+    },
+    {
+      name: 'a report reading registrations (3.1)',
+      filename: reports,
+      code: code(`void prisma.registration.findMany();`),
+      errors: [{ messageId: 'model' }],
+    },
+    {
+      name: 'tx.contact inside $transaction (3.1)',
+      filename: rounds,
+      code: code(`void prisma.$transaction((tx: TransactionClient) => tx.contact.findMany());`),
+      errors: [{ messageId: 'model' }],
+    },
+    {
+      name: 'include: { registrations: true } and _count of registrations (3.1)',
+      filename: reports,
+      code: code(
+        `void prisma.seminar.findMany({ include: { registrations: true, _count: { select: { registrations: true } } } });`,
+      ),
+      errors: [{ messageId: 'relation' }, { messageId: 'relation' }],
+    },
+    {
+      name: '$queryRaw on contact (3.1)',
+      filename: reports,
+      code: code('void prisma.$queryRaw`select email from contact`;'),
+      errors: [{ messageId: 'raw' }],
+    },
     {
       name: 'other files of modules/privacy may not read responses (0.15)',
       filename: privacyOther,
