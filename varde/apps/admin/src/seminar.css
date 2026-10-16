@@ -74,3 +74,45 @@
 .sem-ny-lenkje { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); display: grid; gap: 6px; justify-items: start; }
 .sem-ny-lenkje .forklaring { margin-top: 0; }
 .sem-varsel { color: var(--danger-fg); font-weight: 600; }
+
+/* Live (3b, Vardestien «Live-spørsmål» og «Storskjerm») */
+.live-innhald { display: grid; gap: 12px; }
+.live-sporsmal { font-size: 17px; color: var(--ink-strong); overflow-wrap: anywhere; }
+.live-svart { font-size: 13.5px; }
+.tilstand-stig { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r-full); overflow: hidden; }
+.tilstand-stig span { padding: 4px 12px; font-size: 12.5px; font-weight: 650; color: var(--ink-muted); background: var(--surface); transition: background-color var(--t-base) var(--ease-sti), color var(--t-base) var(--ease-sti); }
+.tilstand-stig span + span { border-left: 1px solid var(--line); }
+.tilstand-stig span.no { background: var(--accent); color: var(--on-accent); }
+.poll { display: grid; gap: 10px; }
+.poll-rad { display: grid; grid-template-columns: minmax(96px, 200px) minmax(0, 1fr) 48px; gap: 12px; align-items: center; font-size: 14px; }
+.poll-rad > span:first-child { overflow-wrap: anywhere; }
+.poll-rad .bar { height: 22px; border-radius: 8px; background: var(--bg-sunken); overflow: hidden; }
+.poll-rad .bar span { display: block; height: 100%; border-radius: 8px; background: var(--accent); transform-origin: left; transition: transform calc(700ms * var(--motion-scale)) var(--ease-fjor); }
+.poll-rad b { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-strong); }
+.live-for-fa { display: grid; gap: 2px; padding: 10px 12px; border-radius: var(--r-md); border: 1px dashed var(--line-strong); background: var(--surface-2); }
+.live-for-fa span { font-size: 13px; color: var(--ink-muted); }
+.live-liste { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 6px; }
+.live-liste li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 6px 8px; border-radius: var(--r-md); border: 1px solid transparent; }
+.live-liste li.no { border-color: var(--line); background: var(--surface-2); }
+.live-liste .nr { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--bg-sunken); font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; color: var(--ink-muted); }
+.live-liste .tekst { font-size: 13.5px; overflow-wrap: anywhere; }
+.chip.live-open { background: var(--success-bg); color: var(--success-fg); border-color: var(--success-line); }
+.chip.live-closed { background: var(--warning-bg); color: var(--warning-fg); border-color: var(--warning-line); }
+.chip.live-released { background: var(--accent-soft); color: var(--accent-text); border-color: transparent; }
+.live-storskjerm { display: grid; gap: 8px; min-width: 0; }
+.live-ramme { position: relative; aspect-ratio: 16 / 9; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow-3); background: var(--bg); }
+.live-ramme iframe { position: absolute; top: 0; left: 0; display: block; width: 1280px; height: 720px; border: 0; transform-origin: 0 0; pointer-events: none; }
+.live-lag { display: grid; gap: 12px; }
+.live-lag .field { max-width: 520px; }
+.live-utan { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.live-utan li { display: grid; gap: 2px; padding: 8px 10px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--line); font-size: 13px; }
+.live-utan span { color: var(--ink-muted); }
+.live-nokkel .kort-innhald { display: grid; gap: 10px; }
+.live-ny-nokkel { display: grid; gap: 10px; padding: 12px; border-radius: var(--r-md); background: var(--warning-bg); border: 1px solid var(--warning-line); color: var(--ink); }
+.live-ta-bort { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.live-ta-bort .forklaring { margin: 0; }
+@media (max-width: 560px) {
+  .poll-rad { grid-template-columns: minmax(80px, 38%) minmax(0, 1fr) 42px; gap: 8px; }
+  .live-liste li { grid-template-columns: 26px minmax(0, 1fr) auto; }
+  .live-liste li .btn { grid-column: 2 / -1; justify-self: start; }
+}

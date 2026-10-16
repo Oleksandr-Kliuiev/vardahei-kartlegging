@@ -49,6 +49,10 @@ const P = {
     <path key="a" d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z" />,
     <path key="b" d="M14 3v6h6M8 13h8M8 17h5" />,
   ],
+  // Live questions (3b)
+  stopp: [<circle key="a" cx="12" cy="12" r="9" />, <path key="b" d="M9 9h6v6H9z" />],
+  oppdater: [<path key="a" d="M20 11a8 8 0 10-2.3 5.7" />, <path key="b" d="M20 4v7h-7" />],
+  start: [<circle key="a" cx="12" cy="12" r="9" />, <path key="b" d="M10 8.5l5 3.5-5 3.5z" />],
   // Seminar (3a)
   folk: [
     <circle key="a" cx="9" cy="8" r="3" />,

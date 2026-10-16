@@ -1,6 +1,6 @@
-// The presenter's API (3.4; ADR-008): with the presenter key only. Read the poll's snapshot and
-// open / close / show one of its questions. The key decides the poll: there is no seminar or round
-// id in these routes, so no other poll can be named.
+// The presenter's API (3.4, 3.5; ADR-008, ADR-015): with the presenter key only. Read the poll's
+// snapshot, open / close / show one of its questions, and the SSE stream of the big screen. The key
+// decides the poll: there is no seminar or round id in these routes, so no other poll can be named.
 import {
   BadRequestException,
   Controller,
@@ -10,10 +10,13 @@ import {
   Param,
   Post,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { FastifyReply } from 'fastify';
 import { QUESTION_ID } from '@varde/schema/template/question';
 import { LivePollService } from './live-poll.service.js';
+import { LiveStreamService } from './live-stream.service.js';
 import type { LiveAction } from './live-types.js';
 import { LiveView } from './live-view.js';
 import { PresenterGuard, type PresenterRequest } from './presenter.guard.js';
@@ -30,6 +33,7 @@ export class PresenterController {
   constructor(
     private readonly live: LivePollService,
     private readonly view: LiveView,
+    private readonly streams: LiveStreamService,
   ) {}
 
   @Get('/poll')
@@ -68,5 +72,11 @@ export class PresenterController {
   @Header('Cache-Control', 'no-store')
   release(@Req() request: PresenterRequest, @Param('question') question: string) {
     return this.step(request, question, 'release');
+  }
+
+  @Get('/stream')
+  stream(@Req() request: PresenterRequest, @Res() reply: FastifyReply): void {
+    reply.hijack();
+    void this.streams.open(reply.raw, request.presenter!);
   }
 }

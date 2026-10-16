@@ -29,7 +29,13 @@ export function useEvents(client: QueryClient): boolean {
       }
       if (typeof payload !== 'object' || payload === null) return;
       const topic = (payload as { topic?: unknown }).topic;
-      if (topic === 'progress' || topic === 'responses' || topic === 'rounds' || topic === 'seminars')
+      if (
+        topic === 'progress' ||
+        topic === 'responses' ||
+        topic === 'rounds' ||
+        topic === 'seminars' ||
+        topic === 'live'
+      )
         void client.invalidateQueries({ queryKey: [topic] });
     };
     stream.addEventListener('changed', changed);
