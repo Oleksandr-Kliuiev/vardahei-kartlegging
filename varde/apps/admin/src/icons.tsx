@@ -38,6 +38,10 @@ const P = {
     <path key="b" d="M10.3 3.9L2.4 18a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" />,
   ],
   pil: [<path key="a" d="M5 12h14M13 6l6 6-6 6" />],
+  dok: [
+    <path key="a" d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z" />,
+    <path key="b" d="M14 3v6h6M8 13h8M8 17h5" />,
+  ],
 } satisfies Record<string, ReactElement[]>;
 export type IconName = keyof typeof P;
 

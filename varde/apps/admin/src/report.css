@@ -1,0 +1,111 @@
+/* Rapportar (5.1): «Innhald» til venstre, A4-førehandsvising til høgre (Vardestien, admin.css «Rapport (A4)»).
+   Arka er alltid lyse (papir), også i mørk tema og ved utskrift. Sonene har alltid ord ved fargen.
+   Ved utskrift blir berre A4-sidene med. */
+
+.rapport { display: grid; gap: 16px; }
+.rapport-varsel { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 16px; border-style: dashed; }
+.rapport-varsel p { flex: 1 1 320px; font-size: 13.5px; color: var(--ink); }
+.rapport-kontroll { position: sticky; top: 76px; }
+.rapport-kontroll .kort-innhald { display: grid; gap: 14px; }
+.rapport-kontroll .forklaring { margin: 0; }
+.rapport-kontroll select { min-height: 38px; width: 100%; padding: 6px 12px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-strong); font-weight: 600; }
+.rapport-kontroll .btn { justify-self: start; }
+.rapport-kontroll .seg button[aria-pressed='true'] { background: var(--surface); color: var(--ink-strong); box-shadow: var(--shadow-1), var(--edge); }
+.sjekk { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.sjekk li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; font-size: 13.5px; }
+.sjekk .ok { color: var(--success-fg); }
+.sjekk .mangel { color: var(--warning-fg); }
+.brytar { display: inline-flex; align-items: center; gap: 10px; font-weight: 500; color: var(--ink-strong); cursor: pointer; }
+.brytar input { flex: none; appearance: none; width: 42px; height: 24px; padding: 0; border: 0; border-radius: 999px; background: var(--line-strong); position: relative; transition: background-color var(--t-base); cursor: pointer; margin: 0; }
+.brytar input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-1); transition: transform var(--t-spring) var(--ease-fjor); }
+.brytar input:checked { background: var(--accent); }
+.brytar input:checked::after { transform: translateX(18px); }
+.brytar input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.brytar input:disabled { opacity: .5; cursor: default; }
+@media (max-width: 1180px) { .rapport-kontroll { position: static; } }
+
+/* Førehandsvisinga: A4 i full storleik, skalert ned til kolonna (report-page.tsx set --forhand-zoom) */
+.rapport-forhand { min-width: 0; display: grid; gap: 12px; }
+.rapport-forhand .rapport-ark { zoom: var(--forhand-zoom, 1); }
+.rapport-tom { aspect-ratio: 210 / 297; display: grid; place-items: center; padding: 24px; text-align: center; border: 1px dashed var(--line-strong); border-radius: 6px; color: var(--ink-muted); background: var(--surface-2); }
+
+/* Arka: lyse verdiar same kva tema adminen har */
+.rapport-ark {
+  --surface: #ffffff; --ink: var(--graa-800); --ink-strong: var(--graa-950); --ink-muted: var(--graa-600);
+  --line: var(--graa-200); --accent: var(--blaa-600); --accent-text: var(--blaa-600);
+  --sone-gron: #2c8a5a; --sone-gron-bg: #e3f4ea; --sone-gul: #e2ad12; --sone-gul-bg: #fdf3d3;
+  --sone-oransje: #d9661f; --sone-oransje-bg: #fde6d6; --sone-raud: #b8322c; --sone-raud-bg: #fbe0dd;
+  color-scheme: light; display: grid; gap: 24px; width: 210mm; color: var(--ink);
+  font-size: 10.5pt; line-height: 1.45;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.rapport-side {
+  position: relative; box-sizing: border-box; min-height: 297mm; padding: 16mm 17mm 0;
+  display: flex; flex-direction: column; gap: 16px; overflow: hidden;
+  background: var(--surface); border-radius: 6px; box-shadow: var(--shadow-3);
+}
+.rapport-side h1, .rapport-side h2 { color: var(--ink-strong); }
+.rapport-side h2 { font-size: 12.5pt; font-weight: 750; margin: 0 0 4px; }
+.rapport-topp { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--ink-muted); font-size: 9pt; }
+.rapport-logo { height: 24px; width: auto; display: block; }
+.rapport-tittel { display: grid; gap: 2px; }
+.rapport-kicker { font-family: var(--font-mono); font-size: 8.5pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-text); }
+.rapport-tittel h1 { font-size: 24pt; line-height: 1.1; letter-spacing: -0.02em; font-weight: 790; }
+.rapport-tittel p:last-child { color: var(--ink-muted); }
+.rapport-tal { display: flex; flex-wrap: wrap; gap: 10px; }
+.rapport-boks { flex: 1 1 110px; display: grid; align-content: start; gap: 2px; padding: 10px 12px; border-radius: 8px; background: var(--graa-100); }
+.rapport-boks > span { font-size: 9pt; color: var(--ink-muted); font-weight: 600; }
+.rapport-boks > b { font-size: 18pt; line-height: 1.15; color: var(--ink-strong); font-variant-numeric: tabular-nums; }
+.rapport-boks > small { color: var(--ink-muted); font-size: 8.5pt; }
+.rapport-boks.sone-gron { background: var(--sone-gron-bg); }
+.rapport-boks.sone-gul { background: var(--sone-gul-bg); }
+.rapport-boks.sone-oransje { background: var(--sone-oransje-bg); }
+.rapport-boks.sone-raud { background: var(--sone-raud-bg); }
+.rapport-boks .rapport-sone { font-size: 16pt; }
+.rapport-sone { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-weight: 700; color: var(--ink-strong); }
+.rapport-sone i { width: .62em; height: .62em; border-radius: 50%; flex: none; background: var(--ink-muted); }
+.rapport-sone.gron i { background: var(--sone-gron); }
+.rapport-sone.gul i { background: var(--sone-gul); }
+.rapport-sone.oransje i { background: var(--sone-oransje); }
+.rapport-sone.raud i { background: var(--sone-raud); }
+.rapport-merk { color: var(--ink-muted); font-size: 9pt; }
+.rapport-del { display: grid; gap: 6px; }
+.rapport-funn, .rapport-forslag { margin: 0; padding-left: 1.4em; display: grid; gap: 8px; }
+.rapport-funn li::marker, .rapport-forslag li::marker { font-weight: 700; color: var(--accent-text); }
+.rapport-niva { display: inline-block; vertical-align: 1px; margin-left: 4px; font-size: 7pt; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 0 7px; border-radius: 999px; white-space: nowrap; }
+.rapport-niva.high { background: var(--sone-raud-bg); color: #8f2520; }
+.rapport-niva.medium { background: var(--sone-gul-bg); color: #6a440b; }
+.rapport-tabell { width: 100%; min-width: 0; border-collapse: collapse; font-size: 9.5pt; }
+.rapport-tabell th, .rapport-tabell td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.rapport-tabell thead th { font-size: 8.5pt; color: var(--ink-muted); white-space: nowrap; font-weight: 650; }
+.rapport-tabell tbody th { font-weight: 550; color: var(--ink); }
+.rapport-tabell td { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kort-tabell { max-width: 128mm; }
+.rapport-metode p { color: var(--ink-muted); font-size: 9.5pt; }
+.rapport-fjell { display: block; flex: none; width: calc(100% + 34mm); height: 14mm; margin: auto -17mm 0; }
+.rapport-fjell .bak { fill: var(--blaa-100); }
+.rapport-fjell .fram { fill: var(--blaa-600); opacity: .8; }
+
+/* Utskrift og PDF: berre A4-sidene, alltid lyse, éi side per ark */
+@page { size: A4; margin: 15mm 16mm 16mm; }
+@media print {
+  :root { color-scheme: light; }
+  html, body { background: #ffffff !important; }
+  .sidemeny, .topplinje, .sidetittel, .slor, .toasts, .palett, .palett-bakgrunn,
+  .rapport-varsel, .rapport-kontroll, .rapport-tom, [role='alert'] { display: none !important; }
+  .skal { display: block; min-height: 0; background: none; }
+  .side { max-width: none; margin: 0; padding: 0; }
+  .rapport, .flate, .rapport-forhand { display: block; }
+  .rapport-forhand .rapport-ark { zoom: 1; }
+  .rapport-ark { width: auto; display: block; }
+  /* One A4 page each: 297 mm minus the page margins (and a little air), so the band sits at the
+     bottom; a longer page grows on to the next sheet instead of leaving a blank one. */
+  .rapport-side { min-height: 262mm; padding: 0; gap: 12px; border-radius: 0; box-shadow: none; overflow: visible; break-after: page; }
+  .rapport-side:last-child { break-after: auto; }
+  .rapport-del, .rapport-tal, .rapport-boks, .rapport-funn li, .rapport-forslag li, .rapport-tabell tr { break-inside: avoid; }
+  .rapport-side h2 { break-after: avoid; }
+  .rapport-tabell thead { display: table-header-group; }
+  .rapport-tabell { font-size: 9pt; }
+  .rapport-tabell th, .rapport-tabell td { padding: 4px 6px; }
+  .rapport-fjell { width: 100%; margin: auto 0 0; height: 11mm; }
+}

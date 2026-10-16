@@ -22,15 +22,38 @@ export interface Section {
   label: string;
   icon: IconName;
   group: string;
+  /** Page heading and intro when they differ from the menu label (Vardestien «Rapportar»). */
+  title?: string;
+  intro?: string;
+  /** Has pages below its URL (`/admin/reports/<round client>`). */
+  sub?: boolean;
 }
 export const SECTIONS: Section[] = [
   { url: '/admin', label: 'Oversikt', icon: 'heim', group: 'Arbeid' },
   { url: '/admin/rounds', label: 'Kundar og rundar', icon: 'flagg', group: 'Arbeid' },
   { url: '/admin/dashboard', label: 'Dashbord', icon: 'graf', group: 'Arbeid' },
   { url: '/admin/surveys', label: 'Skjema', icon: 'skjema', group: 'Innhald' },
+  {
+    url: '/admin/reports',
+    label: 'Rapportar',
+    icon: 'dok',
+    group: 'Innhald',
+    title: 'Rapport til kunden',
+    intro:
+      'Ein PDF frå publiserte tal, på språket til kunden. Eit menneske sjekkar og sender han sjølv.',
+    sub: true,
+  },
   { url: '/admin/export', label: 'Eksport', icon: 'ned', group: 'Personvern' },
   { url: '/admin/deletion', label: 'Sletting', icon: 'slett', group: 'Personvern' },
 ];
+
+/** The section of a path; a section may have sub-paths (`/admin/reports/<id>`). */
+export function sectionOf(path: string): Section | undefined {
+  return (
+    SECTIONS.find((s) => s.url === path) ??
+    SECTIONS.find((s) => s.sub === true && path.startsWith(`${s.url}/`))
+  );
+}
 
 /* ---------- Toasts ---------- */
 const ToastContext = createContext<(message: string) => void>(() => undefined);
@@ -194,7 +217,7 @@ export function Sidebar({
               <a
                 key={s.url}
                 href={s.url}
-                aria-current={path === s.url ? 'page' : undefined}
+                aria-current={sectionOf(path) === s ? 'page' : undefined}
                 onClick={(e) => go(e, s.url)}
               >
                 <Icon name={s.icon} />

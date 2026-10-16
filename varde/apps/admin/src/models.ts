@@ -11,6 +11,8 @@ export interface RoundClient {
   status: string;
   deadline: string | null;
   population_snapshot: number | null;
+  /** Released round_client snapshots exist (5.1: a client report can be made). */
+  released?: boolean;
 }
 export interface Round {
   id: string;

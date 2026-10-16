@@ -1,9 +1,10 @@
-// CLI of the api image: `node dist/cli.js break-glass-hash` (0.8), `seed` (1.7), `import` (1.8, 1.9), `rounds close --imported` (1.10).
+// CLI of the api image: `node dist/cli.js break-glass-hash` (0.8), `seed` (1.7), `import` (1.8, 1.9), `rounds close --imported` (1.10), `archive restore` (5.2).
 // Generates a ≥ 128-bit password, prints it once to stderr, and prints to stdout only the line
 // VARDE_BREAK_GLASS_PASSWORD_HASH='$argon2id$…' (single quotes: Compose leaves $ alone), so
 // stdout can be appended to app.env as is. Takes no input from argv besides the command.
 import { randomBytes } from 'node:crypto';
 import { hash } from '@node-rs/argon2';
+import { archiveCommand } from './cli/archive.js';
 import { cutoverCommand } from './cli/cutover.js';
 import { ledgerCommand } from './cli/ledger.js';
 import { retentionCommand } from './cli/retention.js';
@@ -24,10 +25,12 @@ const USAGE = `usage: node dist/cli.js break-glass-hash
        node dist/cli.js seed --clients <path> --kundar <path> --tilgang <path>
        node dist/cli.js import svar|runde1 --file <path> [--dry-run]
        node dist/cli.js rounds close --imported
+       node dist/cli.js archive restore --file <path> [--sha256 <hex>]
 `;
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;
+  if (command === 'archive') return archiveCommand(rest);
   if (command === 'cutover') return cutoverCommand(rest);
   if (command === 'ledger') return ledgerCommand(rest);
   if (command === 'retention') return retentionCommand(rest);
