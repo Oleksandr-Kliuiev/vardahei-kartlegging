@@ -14,6 +14,8 @@ export interface State {
   other_client: string;
   version: string;
   rounds: Record<string, Fixture>;
+  /** A published version for live questions (3b). */
+  live_version: string;
   connections: number;
 }
 

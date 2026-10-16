@@ -71,6 +71,33 @@ describe('seminar page (3.2)', () => {
     expect(out.text()).not.toContain(code);
   });
 });
+describe('big screen (3.5)', () => {
+  it('/p and /p/ → the presenter entry of the runner build under the same headers', async () => {
+    for (const path of ['/p', '/p/']) {
+      const res = await get(path);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toContain('/r/assets/presenter-');
+      expect(res.body).toContain('<meta name="referrer" content="no-referrer"');
+      expect(res.headers).toMatchObject({
+        'cache-control': 'no-store',
+        'referrer-policy': 'no-referrer',
+        'x-frame-options': 'DENY',
+        'x-content-type-options': 'nosniff',
+      });
+      expect(res.headers['content-security-policy']).toBe(RUNNER_CSP);
+      // The key lives in the fragment (#t=…): a browser never sends it, so the log has the path only.
+      expect(logLines(path)).toEqual([expect.objectContaining({ path, status: 200 })]);
+    }
+  });
+  it('only the preview in the admin may be framed, by Varde itself', async () => {
+    const preview = await get('/p?preview=1');
+    expect(preview.headers['x-frame-options']).toBe('SAMEORIGIN');
+    expect(preview.headers['content-security-policy']).toContain("frame-ancestors 'self'");
+    expect((await get('/p')).headers['content-security-policy']).toContain(
+      "frame-ancestors 'none'",
+    );
+  });
+});
 describe('runner static (1.12)', () => {
   it('/r and /r/ → compiled HTML, no-store, security headers, successful access unlogged', async () => {
     for (const path of ['/r', '/r/']) {

@@ -18,7 +18,9 @@ export class InvitationService {
       where: { id },
       include: { round: { include: { template_version: true } }, client: true },
     });
-    if (!rc?.round.template_version) throw new NotFoundException('Kartlegginga finst ikkje.');
+    // A seminar live poll (3.4) has no invitation or poster of a survey.
+    if (!rc?.round.template_version || rc.round.type === 'live')
+      throw new NotFoundException('Kartlegginga finst ikkje.');
     if (!rc.code || rc.code_revoked_at)
       throw new ConflictException('Opne kartlegginga og lag ei gyldig lenkje først.');
     const version = rc.round.template_version.content as unknown as TemplateContent;

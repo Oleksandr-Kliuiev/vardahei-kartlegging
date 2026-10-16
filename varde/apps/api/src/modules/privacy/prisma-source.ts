@@ -1,6 +1,7 @@
 // ResponseSource on Prisma (1.4b): the round mode from Round.identification, responses of a
-// round by client (slug) and part; respondent_key only in mode initials; the day only.
-// In the allow-list of varde/privacy-only-release (reads `response`).
+// round by client (slug) and part; respondent_key only in mode initials; the day only. Also the
+// counts of a seminar live poll (3.4) for live.ts. In the allow-list of varde/privacy-only-release
+// (reads `response`).
 import { NotFoundException } from '@nestjs/common';
 import { progressCells } from './progress.js';
 import type { Prisma } from '@prisma/client';
@@ -70,9 +71,10 @@ export function progressView(prisma: PrismaService, k: number, round: string, no
     async (tx) => {
       const found = await tx.round.findUnique({
         where: { id: round },
-        select: { template_version: { select: { content: true } } },
+        select: { type: true, template_version: { select: { content: true } } },
       });
-      if (!found) throw new NotFoundException('Runden finst ikkje.');
+      // A seminar live poll (3.4) has no progress of a survey.
+      if (!found || found.type === 'live') throw new NotFoundException('Runden finst ikkje.');
       const content = found.template_version?.content as { questions?: unknown[] } | undefined;
       const questionCount = content?.questions?.length ?? 0;
       const clients = await tx.roundClient.findMany({
@@ -122,4 +124,31 @@ export function progressView(prisma: PrismaService, k: number, round: string, no
     },
     { isolationLevel: 'RepeatableRead' },
   );
+}
+
+/** Live poll (3.4): how many answered one question of the poll's RoundClient. Each live answer
+ * is its own submission with one question (responses/live-answer.ts). */
+export async function liveAnswered(db: Db, roundClient: string, question: string): Promise<number> {
+  const [row] = await db.$queryRaw<{ n: number }[]>`
+    SELECT count(*)::int AS n FROM response
+     WHERE round_client_id = ${roundClient}::uuid AND part = 'common' AND answers -> ${question} IS NOT NULL`;
+  return row?.n ?? 0;
+}
+
+/** Live poll (3.4): answers per option of one question, tallied here; the values never leave
+ * modules/privacy (live.ts applies k before anything is shown). A multi answer counts once per
+ * chosen option; `n` is the number of answers. */
+export async function liveCounts(
+  db: Db,
+  roundClient: string,
+  question: string,
+): Promise<{ n: number; counts: Map<string, number> }> {
+  const rows = await db.$queryRaw<{ v: unknown }[]>`
+    SELECT answers -> ${question} AS v FROM response
+     WHERE round_client_id = ${roundClient}::uuid AND part = 'common' AND answers -> ${question} IS NOT NULL`;
+  const counts = new Map<string, number>();
+  for (const { v } of rows)
+    for (const option of new Set(Array.isArray(v) ? v : [v]))
+      if (typeof option === 'string') counts.set(option, (counts.get(option) ?? 0) + 1);
+  return { n: rows.length, counts };
 }

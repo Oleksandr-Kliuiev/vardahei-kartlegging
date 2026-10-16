@@ -1,5 +1,5 @@
 // One seminar (Vardestien «Seminar»): what, when and where, then the tabs «Påmelding»,
-// «Materiell», «Invitasjon», «Live» and «Før og etter». The participant list is personal data:
+// «Materiell», «Invitasjon», «Live» (3b) and «Før og etter». The participant list is personal data:
 // it is shown only on request, and every read is written to the log.
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,6 +8,7 @@ import { Icon } from './icons.js';
 import { ErrorMessage } from './queries.js';
 import { SeminarForm } from './seminar-form.js';
 import { Invitation } from './seminar-invitation.js';
+import { Live } from './seminar-live.js';
 import { Materials } from './seminar-materials.js';
 import { NameList } from './seminar-participants.js';
 import {
@@ -179,9 +180,7 @@ export function SeminarView({ id }: { id: string }) {
           {tab === 'pamelding' && <Registrations seminar={s} />}
           {tab === 'materiell' && <Materials seminar={s} />}
           {tab === 'invitasjon' && <Invitation seminar={s} />}
-          {tab === 'live' && (
-            <Later title="Live-spørsmål" text="Spørsmål på mobilen under seminaret, med resultat på storskjermen." />
-          )}
+          {tab === 'live' && <Live seminar={s} />}
           {tab === 'etter' && (
             <Later title="Før og etter" text="Undersøkinga før og etter seminaret, med atterhald om kven som svarte." />
           )}

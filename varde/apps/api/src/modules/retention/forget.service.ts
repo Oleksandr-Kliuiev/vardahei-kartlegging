@@ -60,6 +60,12 @@ export class ForgetService {
       if (!dryRun && counts.total) this.events.changed('seminars');
       return { dry_run: dryRun, ...counts };
     }
+    // By client: customers only; the technical client of live polls (3.4) is nobody's company.
+    if (
+      (scope.scope === 'client' || scope.scope === 'respondent') &&
+      (await this.prisma.client.findUnique({ where: { id: scope.client } }))?.kind !== 'client'
+    )
+      throw new BadRequestException('Kunden finst ikkje.');
     const counts = await this.prisma.$transaction(
       async (tx) => {
         const found = await this.privacy.store.deleteScope(tx, scope, who, reason, dryRun);

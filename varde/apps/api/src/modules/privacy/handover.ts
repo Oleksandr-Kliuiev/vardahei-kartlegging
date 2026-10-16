@@ -15,7 +15,8 @@ export async function handover(
   if (!session) throw new UnauthorizedError();
   return ctx.db.$transaction(async (tx) => {
     const client = await tx.client.findUnique({ where: { id: clientId } });
-    if (!client) throw new NotFoundError();
+    // The technical client of live polls (3.4) is nobody's company: nothing to hand over.
+    if (client?.kind !== 'client') throw new NotFoundError();
     const rounds = await tx.round.findMany({
       where: { round_clients: { some: { client_id: clientId } } },
       include: { template_version: true },

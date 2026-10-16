@@ -1,0 +1,91 @@
+{
+  "key": "seminar-live-test",
+  "audience": "seminar_live",
+  "identification": "none",
+  "required_languages": ["nn", "en"],
+  "leader_roles": [],
+  "intro": {
+    "title": { "nn": "Spørsmål under seminaret", "en": "Questions during the seminar" },
+    "short": { "nn": "Live-spørsmål", "en": "Live questions" },
+    "minutes": 1,
+    "letter": [],
+    "sender": { "nn": "Vardahei IT", "en": "Vardahei IT" },
+    "facts": [],
+    "contact": {
+      "name": "Vardahei IT",
+      "phone": "00 00 00 00",
+      "email": "post@example.test",
+      "hours": { "nn": "Kvardagar 08–16", "en": "Weekdays 08–16" }
+    }
+  },
+  "leader_intro": { "title": { "nn": "", "en": "" }, "text": { "nn": "", "en": "" } },
+  "tips": [],
+  "max_tips": 0,
+  "questions": [
+    {
+      "id": "L1",
+      "part": "common",
+      "type": "single",
+      "role": true,
+      "texts": {
+        "text": { "nn": "Kva arbeider du mest med?", "en": "What do you work with most?" }
+      },
+      "options": [
+        {
+          "id": "kontor",
+          "texts": {
+            "text": { "nn": "Kontor og administrasjon", "en": "Office and administration" }
+          }
+        },
+        {
+          "id": "sal",
+          "texts": { "text": { "nn": "Sal og kundar", "en": "Sales and customers" } }
+        },
+        {
+          "id": "drift",
+          "texts": { "text": { "nn": "Drift og produksjon", "en": "Operations and production" } }
+        }
+      ]
+    },
+    {
+      "id": "L2",
+      "part": "common",
+      "type": "single",
+      "texts": {
+        "text": {
+          "nn": "Brukar du tofaktor (MFA) på jobb-e-posten?",
+          "en": "Do you use two-factor (MFA) on your work e-mail?"
+        }
+      },
+      "options": [
+        { "id": "ja", "texts": { "text": { "nn": "Ja", "en": "Yes" } } },
+        { "id": "nei", "texts": { "text": { "nn": "Nei", "en": "No" } } },
+        { "id": "veit_ikkje", "texts": { "text": { "nn": "Veit ikkje", "en": "Don't know" } } }
+      ]
+    },
+    {
+      "id": "L3",
+      "part": "common",
+      "type": "multi",
+      "texts": {
+        "text": {
+          "nn": "Kva gjer du med ein e-post du ikkje stolar på?",
+          "en": "What do you do with an e-mail you do not trust?"
+        }
+      },
+      "options": [
+        { "id": "slettar", "texts": { "text": { "nn": "Slettar han", "en": "Delete it" } } },
+        {
+          "id": "melder",
+          "texts": { "text": { "nn": "Melder frå til IT", "en": "Report it to IT" } }
+        },
+        {
+          "id": "spor",
+          "texts": { "text": { "nn": "Spør ein kollega", "en": "Ask a colleague" } }
+        },
+        { "id": "ingenting", "texts": { "text": { "nn": "Ingenting", "en": "Nothing" } } }
+      ],
+      "exclusive_options": ["ingenting"]
+    }
+  ]
+}

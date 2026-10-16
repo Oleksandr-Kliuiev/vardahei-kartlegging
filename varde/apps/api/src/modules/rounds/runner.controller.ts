@@ -11,6 +11,8 @@ export class RunnerController {
   @Header('Cache-Control', 'no-store')
   async round(@Req() request: FastifyRequest) {
     const rc = requireCode(await this.codes.resolveCode(bearer(request)));
+    // A seminar live poll (3.6): the phone asks /api/runner/live for the open question only.
+    if (rc.round.type === 'live') return { type: 'live' as const };
     const version = rc.round.template_version!;
     return {
       round_client_id: rc.id,

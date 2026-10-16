@@ -41,7 +41,9 @@ export class DashboardContext {
         round_clients: { include: { client: true } },
       },
     });
-    if (!r?.template_version) throw new NotFoundException('Runden finst ikkje.');
+    // A seminar live poll (3.4) is no survey: it has its own panel in the seminar, not these views.
+    if (!r?.template_version || r.type === 'live')
+      throw new NotFoundException('Runden finst ikkje.');
     const selected =
       client && client !== 'alle'
         ? r.round_clients.find((rc) => rc.client_id === client || rc.client.slug === client)

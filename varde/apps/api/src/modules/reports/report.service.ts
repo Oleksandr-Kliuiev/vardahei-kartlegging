@@ -159,7 +159,9 @@ export class ReportService {
       },
     });
     const version = rc?.round.template_version;
-    if (!rc || !version) throw new NotFoundException('Kartlegginga finst ikkje.');
+    // A seminar live poll (3.4) has no client report, whatever its state.
+    if (!rc || !version || rc.round.type === 'live')
+      throw new NotFoundException('Kartlegginga finst ikkje.');
     const languages = reportLanguages(version.required_languages);
     const lang = (requested ?? defaultLanguage(languages, rc.client.default_lang)) as ReportLang;
     if (!languages.includes(lang))

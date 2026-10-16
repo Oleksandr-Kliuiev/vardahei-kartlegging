@@ -84,10 +84,15 @@ model TemplateVersion {
 }
 
 /// Client (1.4b, ARCHITECTURE §4): mirror of Atlas; in stage 1 filled from kundar.json (1.7).
+/// `kind` ∈ {client, seminar} (CHECK): `seminar` is the one technical client of seminar live polls
+/// (3.4): a live round has one RoundClient for the whole seminar (ADR-022), never split by company,
+/// and `round_client.client_id` stays NOT NULL. At most one (partial unique index); a RoundClient
+/// has it exactly when its round is `live` (trigger round_client_live); hidden from client lists.
 model Client {
   id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   slug              String          @unique
   name              String
+  kind              String          @default("client")
   industry          String?
   employee_count    Int?
   default_lang      String          @default("nn")
@@ -117,6 +122,7 @@ model Round {
   seminars_before     Seminar[]        @relation("seminar_round_before")
   seminars_live       Seminar[]        @relation("seminar_round_live")
   seminars_after      Seminar[]        @relation("seminar_round_after")
+  live_questions      LivePollQuestion[]
 
   @@map("round")
 }
@@ -345,8 +351,9 @@ model DeletionTombstone {
 /// has en), start and end as instants (shown in Europe/Oslo), place, `format` ∈ {onsite, digital},
 /// the clients it is for and the registration link: `code` is a 128-bit bearer looked up by
 /// `code_hash` (ADR-009), replaced by «Ny lenkje» (old hashes in RevokedSeminarCode).
-/// `sequence` grows when time, place or topic change (ICS updates). Rounds
-/// before/live/after are linked in 3c. No personal data: participants are Contact and Registration.
+/// `sequence` grows when time, place or topic change (ICS updates). The live round (3.4) is linked
+/// when the admin makes the live poll (one seminar per live round: partial unique index); before and
+/// after come in 3c. No personal data: participants are Contact and Registration.
 model Seminar {
   id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   topic_nn           String
@@ -372,9 +379,49 @@ model Seminar {
   finding_statuses   FindingStatus[]
   materials          SeminarMaterial[]
   revoked_codes      RevokedSeminarCode[]
+  presenter_tokens   PresenterToken[]
 
   @@index([ends_at])
   @@map("seminar")
+}
+
+/// State of one question of a seminar live poll (3.4, ADR-022 `LivePollQuestionState`): `state` ∈
+/// {waiting, open, closed, released} (CHECK). The server leads: waiting → open → closed → released;
+/// a closed question may open again until it is shown; `released` is final (trigger
+/// live_poll_question_step). At most one open question per poll (partial unique index). No answers
+/// here: they are Response rows of the live round. Every change is in AuditLog.
+model LivePollQuestion {
+  round_id    String    @db.Uuid
+  round       Round     @relation(fields: [round_id], references: [id], onDelete: Cascade)
+  question_id String
+  position    Int
+  state       String    @default("waiting")
+  opened_at   DateTime? @db.Timestamptz(6)
+  closed_at   DateTime? @db.Timestamptz(6)
+  released_at DateTime? @db.Timestamptz(6)
+  changed_at  DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@id([round_id, question_id])
+  @@unique([round_id, position])
+  @@map("live_poll_question")
+}
+
+/// Presenter key of a seminar (3.4, ADR-008): opens the big screen of its live poll without Entra.
+/// Only the sha256 of the 256-bit key is stored; the key is shown once, as a link. Valid from the
+/// day before the seminar to the day after (Europe/Oslo, from the seminar's dates); one active key
+/// per seminar (partial unique index): a new key revokes the old. Issue and revoke are in AuditLog.
+model PresenterToken {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  seminar_id String    @db.Uuid
+  seminar    Seminar   @relation(fields: [seminar_id], references: [id], onDelete: Cascade)
+  token_hash String    @unique
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  created_by String
+  revoked_at DateTime? @db.Timestamptz(6)
+  revoked_by String?
+
+  @@index([seminar_id])
+  @@map("presenter_token")
 }
 
 /// Hash-only history of replaced seminar links (3a, ADR-009): an old link, an invitation already

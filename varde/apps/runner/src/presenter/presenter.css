@@ -1,0 +1,392 @@
+/* Storskjermen (3.5, Vardestien «Storskjerm»): spørsmålet stort, «N har svart», resultatet som stolpar,
+   QR-koden til mobilane på sida og eit fjellband nedst. Følgjer lys og mørk tema; redusert rørsle
+   set stolpar og tal på plass med ein gong (--motion-scale). Styringa til ordstyraren ligg nedst. */
+html,
+body {
+  min-height: 100%;
+}
+body {
+  overflow-x: hidden;
+}
+
+/* The page is the screen: on a projector it fits the window and never scrolls. */
+.p-side {
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.p-side.forhand {
+  grid-template-rows: minmax(0, 1fr);
+  background: var(--bg);
+}
+.p-topp {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 28px;
+  min-width: 0;
+}
+.p-topp .logo {
+  height: 24px;
+}
+.p-topp .tema {
+  flex: 1;
+  min-width: 0;
+  font-weight: 650;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.p-topp .samband.live {
+  background: var(--success-bg);
+  color: var(--success-fg);
+  border-color: var(--success-line);
+}
+.p-topp .samband.offline {
+  background: var(--warning-bg);
+  color: var(--warning-fg);
+  border-color: var(--warning-line);
+}
+.p-topp .seg button {
+  min-height: 32px;
+}
+.p-topp .seg button[aria-pressed='true'] {
+  background: var(--surface);
+  box-shadow: var(--shadow-1), var(--edge);
+}
+
+#main {
+  display: grid;
+  padding: 0 28px 16px;
+  min-height: 0;
+}
+
+.storskjerm {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(200px, min(24vw, 44vh), 380px);
+  gap: clamp(20px, 5%, 72px);
+  align-items: center;
+  padding: clamp(24px, 4.5%, 72px) clamp(24px, 5%, 84px) clamp(64px, 11%, 140px);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  color: var(--ink-strong);
+  box-shadow: var(--shadow-3), var(--edge);
+  min-height: 0;
+}
+.forhand .storskjerm {
+  border-radius: 0;
+  box-shadow: none;
+}
+/* The question stays where it is when the count gives way to the bars: the text column starts at the top. */
+.storskjerm .hovud {
+  display: grid;
+  gap: clamp(12px, 1.6vw, 26px);
+  align-content: start;
+  align-self: start;
+  padding-top: clamp(0px, 5vh, 56px);
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+.storskjerm .topp-linje {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.storskjerm .eyebrow {
+  font-size: clamp(12px, 1.05vw, 16px);
+}
+.storskjerm .tilstand {
+  font-size: clamp(12px, 1vw, 15px);
+}
+.storskjerm .tilstand.open {
+  background: var(--success-bg);
+  color: var(--success-fg);
+  border-color: var(--success-line);
+}
+.storskjerm .tilstand.closed {
+  background: var(--warning-bg);
+  color: var(--warning-fg);
+  border-color: var(--warning-line);
+}
+.storskjerm .tilstand.released {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  border-color: transparent;
+}
+.sporsmal-tekst {
+  font-size: clamp(26px, min(4vw, 7.4vh), 66px);
+  line-height: 1.08;
+  font-weight: 780;
+  letter-spacing: -0.022em;
+  overflow-wrap: anywhere;
+}
+.storskjerm .svart {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: clamp(20px, 2.2vw, 36px);
+  font-weight: 650;
+  color: var(--ink);
+}
+.storskjerm .svart .faerre {
+  font-size: clamp(22px, min(2.6vw, 4.6vh), 44px);
+  font-weight: 700;
+  color: var(--ink-strong);
+}
+.storskjerm .svart .tal {
+  font-size: clamp(48px, min(7.4vw, 13vh), 128px);
+  line-height: 1;
+  font-weight: 800;
+  color: var(--accent-text);
+  letter-spacing: -0.03em;
+}
+.storskjerm .forklaring {
+  color: var(--ink-muted);
+  font-size: clamp(15px, 1.4vw, 22px);
+  max-width: 38em;
+}
+.storskjerm .forklaring.stor {
+  font-size: clamp(18px, 2vw, 30px);
+}
+
+.stolpar {
+  display: grid;
+  gap: clamp(8px, min(1.3vw, 2.2vh), 20px);
+}
+.stolpar .rad {
+  display: grid;
+  grid-template-columns: minmax(110px, 32%) minmax(0, 1fr) 4.4em;
+  gap: clamp(10px, 1.4vw, 22px);
+  align-items: center;
+  font-size: clamp(15px, min(1.75vw, 3.2vh), 30px);
+}
+.stolpar .etikett {
+  font-weight: 650;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.stolpar .stolpe {
+  height: clamp(16px, min(2.6vw, 4.6vh), 44px);
+  border-radius: 10px;
+  background: var(--bg-sunken);
+  overflow: hidden;
+}
+.stolpar .stolpe i {
+  display: block;
+  height: 100%;
+  border-radius: 10px;
+  background: var(--accent);
+  transform-origin: left center;
+}
+.stolpar .prosent {
+  text-align: right;
+  font-weight: 750;
+  color: var(--ink-strong);
+}
+
+.for-fa {
+  display: grid;
+  gap: 6px;
+  padding: clamp(16px, 2vw, 28px);
+  border-radius: var(--r-lg);
+  background: var(--surface-2);
+  border: 1px dashed var(--line-strong);
+}
+.for-fa b {
+  font-size: clamp(20px, 2.2vw, 36px);
+}
+.for-fa p {
+  color: var(--ink-muted);
+  font-size: clamp(15px, 1.3vw, 20px);
+}
+
+.qr-boks {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  text-align: center;
+  padding: clamp(14px, 1.6vw, 26px);
+  border-radius: var(--r-lg);
+  background: #fff;
+  color: var(--graa-900);
+  box-shadow: var(--shadow-2);
+}
+.qr-boks .qr-kode {
+  width: 100%;
+}
+.qr-boks .qr-kode svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.qr-boks b {
+  font-size: clamp(14px, 1.3vw, 20px);
+}
+.qr-boks .lenkje {
+  font-size: clamp(11px, 0.9vw, 14px);
+  color: var(--graa-700);
+}
+.qr-boks .lenkje .mono {
+  display: block;
+  margin-top: 2px;
+  word-break: break-all;
+}
+
+.fjell-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: clamp(40px, 12%, 110px);
+  display: block;
+  pointer-events: none;
+}
+.fjell-band .bak {
+  fill: var(--accent);
+  opacity: 0.12;
+}
+.fjell-band .fram {
+  fill: var(--accent);
+  opacity: 0.3;
+}
+
+/* Styringa til ordstyraren: nummer, det valde spørsmålet og dei tre knappane */
+.styring {
+  display: flex;
+  align-items: center;
+  gap: 14px 18px;
+  flex-wrap: wrap;
+  padding: 12px 28px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.styring .nummer {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.styring .nr {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line-strong);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--ink-muted);
+  transition:
+    transform var(--t-spring) var(--ease-fjor),
+    background-color var(--t-quick),
+    border-color var(--t-quick),
+    color var(--t-quick);
+}
+.styring .nr:active {
+  transform: scale(0.92);
+}
+.styring .nr.open {
+  border-color: var(--live);
+  color: var(--success-fg);
+  background: var(--success-bg);
+}
+.styring .nr.closed {
+  border-color: var(--warning-line);
+  color: var(--warning-fg);
+  background: var(--warning-bg);
+}
+.styring .nr.released {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.styring .nr[aria-pressed='true'] {
+  outline: 2.5px solid var(--focus);
+  outline-offset: 2px;
+}
+.styring .valt {
+  flex: 1;
+  min-width: 12em;
+  font-weight: 650;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.styring .knappar {
+  display: flex;
+  gap: 8px;
+}
+.styring .knappar .btn {
+  min-width: 96px;
+}
+.styring .feil {
+  flex-basis: 100%;
+  color: var(--danger-fg);
+  font-weight: 600;
+}
+
+.p-stopp {
+  align-content: center;
+  justify-items: start;
+  gap: 12px;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding-top: 10vh;
+}
+.p-stopp h1 {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+}
+
+/* A phone or a low window: the page scrolls instead of shrinking the words. */
+@media (max-width: 760px), (max-height: 480px) {
+  .p-side {
+    height: auto;
+    min-height: 100vh;
+  }
+}
+@media (max-width: 760px) {
+  .p-topp {
+    padding: 12px 16px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .p-topp .tema {
+    order: 3;
+    flex-basis: 100%;
+  }
+  #main {
+    padding: 0 12px 12px;
+  }
+  .storskjerm {
+    grid-template-columns: 1fr;
+    padding: 24px 20px 64px;
+  }
+  .qr-boks {
+    max-width: 240px;
+    justify-self: center;
+  }
+  .stolpar .rad {
+    grid-template-columns: minmax(84px, 36%) minmax(0, 1fr) 3.6em;
+  }
+  .styring {
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+  .styring .knappar {
+    width: 100%;
+  }
+  .styring .knappar .btn {
+    flex: 1;
+    min-width: 0;
+  }
+}

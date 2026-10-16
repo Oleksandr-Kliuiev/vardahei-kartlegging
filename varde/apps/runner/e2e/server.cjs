@@ -3,7 +3,7 @@
 // Playwright process breaks `jose` (require(esm)) on Node 22. Seeds the e2e rounds, listens, and
 // cleans up on SIGTERM. Disposable synthetic e2e database only.
 'use strict';
-const { mkdirSync, writeFileSync } = require('node:fs');
+const { mkdirSync, readFileSync, writeFileSync } = require('node:fs');
 const { resolve } = require('node:path');
 
 require(require.resolve('reflect-metadata', { paths: [resolve(__dirname, '../../api')] }));
@@ -47,6 +47,23 @@ require(require.resolve('reflect-metadata', { paths: [resolve(__dirname, '../../
     const codeOf = async (id) => (await db.seminar.findUniqueOrThrow({ where: { id } })).code;
     state.seminar_open = { code: await codeOf(open), version: '', roundClient: '' };
     state.seminar_held = { code: await codeOf(held), version: '', roundClient: '' };
+    // Live poll (3b): a seminar of today with a synthetic version made for live questions; question
+    // L2 is open, so a phone sees it at once.
+    const { LivePollService } = require('../../api/dist/modules/live/live-poll.service.js');
+    const liveContent = JSON.parse(readFileSync(resolve(__dirname, '../../api/test/support/live-template.json'), 'utf8'));
+    liveContent.key = `${mark}-live`;
+    const liveTemplate = await db.surveyTemplate.create({ data: { key: liveContent.key, audience: 'seminar_live', required_languages: ['nn', 'en'] } });
+    const liveVersion = await db.templateVersion.create({ data: {
+      template_id: liveTemplate.id, label: 'v1', version_no: 1, identification: 'none', required_languages: ['nn', 'en'],
+      content: liveContent, origin: 'authored', content_hash: '0'.repeat(64), status: 'published', published_at: new Date(), published_by: 'test:e2e-seminar',
+    } });
+    const oslo = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Oslo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date()).map((x) => [x.type, x.value]));
+    const liveSeminar = await seminars.create({ ...base, clients: [], topic_nn: 'Live-spørsmål på mobilen', topic_en: 'Live questions on the phone', date: `${oslo.year}-${oslo.month}-${oslo.day}`, start: '00:30', end: '23:30', place: 'Vardahei IT, Sogndal', languages: ['nn', 'en'] }, 'test:e2e-seminar');
+    const live = await app.get(LivePollService).create(liveSeminar, liveVersion.id, 'test:e2e-seminar');
+    await app.get(LivePollService).step(live.round, 'L2', 'open', 'test:e2e-seminar');
+    const liveRc = await db.roundClient.findFirstOrThrow({ where: { round_id: live.round } });
+    state.live = { code: liveRc.code, version: liveVersion.id, roundClient: liveRc.id };
+    ids.push(live.round);
     const origin = new URL(process.env.RUNNER_BASE_URL ?? 'http://127.0.0.1:3098');
     await app.listen(Number(origin.port), origin.hostname);
     const dir = resolve(__dirname, '../test-results');
@@ -55,6 +72,8 @@ require(require.resolve('reflect-metadata', { paths: [resolve(__dirname, '../../
     const cleanup = async () => {
       // Disposable synthetic e2e database only: seminars of this run and their contacts.
       await db.$executeRaw`DELETE FROM contact WHERE email LIKE 'zz-e2e-%@example.test'`;
+      // The live seminar points at its round: unlink it first, the round goes with the others below.
+      await db.seminar.updateMany({ where: { created_by: 'test:e2e-seminar' }, data: { round_live_id: null } });
       await db.seminar.deleteMany({ where: { created_by: 'test:e2e-seminar' } });
       await db.client.deleteMany({ where: { slug: { startsWith: mark } } });
       for (const id of ids) {

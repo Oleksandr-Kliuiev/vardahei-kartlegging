@@ -6,7 +6,9 @@ import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 
 export const RUNNER_CSP =
   "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
-/** The admin preview (`/r?preview=<version>`, admin session only) may be framed by Varde itself: the phone frame in the editor (1.46). */
+/** The admin previews may be framed by Varde itself: the phone frame in the editor (`/r?preview=<version>`,
+ * admin session only, 1.46) and the big screen in the seminar's «Live» tab (`/p?preview`, data from the
+ * admin page by postMessage, 3.5). */
 export const RUNNER_PREVIEW_CSP = RUNNER_CSP.replace("frame-ancestors 'none'", "frame-ancestors 'self'");
 const isPreview = (url: string) => new URLSearchParams(url.split('?')[1] ?? '').has('preview');
 
@@ -35,9 +37,10 @@ export async function registerRunnerStatic(app: NestFastifyApplication): Promise
       path.startsWith('/api/public/')
     )
       void reply.header('cache-control', 'no-store');
-    // The seminar page (3.2) is a second entry of the runner build, under the same headers.
-    if (path === '/r' || path.startsWith('/r/') || path === '/s' || path === '/s/') {
-      const preview = (path === '/r' || path === '/r/') && isPreview(request.url);
+    // The seminar page (3.2) and the big screen of a live poll (3.5) are more entries of the runner
+    // build, under the same headers. The big screen's key is in the fragment: never in this URL.
+    if (path === '/r' || path.startsWith('/r/') || ['/s', '/s/', '/p', '/p/'].includes(path)) {
+      const preview = ['/r', '/r/', '/p', '/p/'].includes(path) && isPreview(request.url);
       void reply
         .header('content-security-policy', preview ? RUNNER_PREVIEW_CSP : RUNNER_CSP)
         .header('referrer-policy', 'no-referrer')
@@ -75,4 +78,11 @@ export async function registerRunnerStatic(app: NestFastifyApplication): Promise
       .sendFile('seminar.html', root, { cacheControl: false, etag: false, lastModified: false });
   fastify.get('/s', seminar);
   fastify.get('/s/', seminar);
+  if (!existsSync(resolve(root, 'presenter.html'))) return;
+  const presenter = (_request: FastifyRequest, reply: FastifyReply) =>
+    reply
+      .header('cache-control', 'no-store')
+      .sendFile('presenter.html', root, { cacheControl: false, etag: false, lastModified: false });
+  fastify.get('/p', presenter);
+  fastify.get('/p/', presenter);
 }

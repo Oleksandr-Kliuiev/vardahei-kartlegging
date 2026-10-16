@@ -69,5 +69,20 @@
   "sprak": "Språk",
   "nettTittel": "Fekk ikkje kontakt",
   "nettTekst": "Sjekk nettet og prøv igjen.",
-  "navigasjon": "Navigasjon"
+  "navigasjon": "Navigasjon",
+  "liveEyebrow": "Live-spørsmål",
+  "liveVentTittel": "Vent litt",
+  "liveVentTekst": "Det første spørsmålet kjem straks. Ha sida open, så dukkar det opp her av seg sjølv.",
+  "liveSend": "Send svaret",
+  "liveSender": "Sender …",
+  "liveTakkTittel": "Takk!",
+  "liveTakkTekst": "Svaret ditt er med. Resultatet kjem på skjermen.",
+  "liveNesteTekst": "Neste spørsmål kjem her av seg sjølv.",
+  "liveStengtTittel": "Spørsmålet er stengt",
+  "liveStengtTekst": "Du rakk ikkje å svare på dette. Neste spørsmål kjem her av seg sjølv.",
+  "liveFerdigTittel": "Takk for at du var med!",
+  "liveFerdigTekst": "Alle spørsmåla er stilte. Du kan lukke sida.",
+  "liveSendFeil": "Svaret kom ikkje fram. Sjekk nettet og prøv igjen.",
+  "liveNett": "Fekk ikkje kontakt. Prøver igjen …",
+  "liveAnonym": "Svaret ditt er anonymt og blir ikkje knytt til deg. På skjermen viser vi berre kor mange som valde kvart svar."
 }

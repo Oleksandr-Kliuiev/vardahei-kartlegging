@@ -29,4 +29,28 @@ export class QuotaService {
       { key: `ip:${ip}`, max: this.limits.per_ip_per_10min },
     ]);
   }
+
+  /** Seminar live poll (3.4, ADR-009): at most `live_participants_max` answers per question, and
+   * 10-minute windows of its own, so a hall behind one NAT never meets the limits of surveys. */
+  async consumeLive(
+    roundClient: ResolvedRoundClient,
+    tx: Prisma.TransactionClient,
+    ip: string,
+    question: string,
+  ): Promise<() => void> {
+    await tx.$queryRaw`SELECT id FROM round_client WHERE id = ${roundClient.id}::uuid FOR UPDATE`;
+    if (
+      await this.privacy.live.full(
+        tx,
+        roundClient.round_id,
+        question,
+        this.limits.live_participants_max,
+      )
+    )
+      throw new HttpException(QUOTA_MESSAGE, 429);
+    return this.window.reserve([
+      { key: 'live:global', max: this.limits.live_global_per_10min },
+      { key: `live:ip:${ip}`, max: this.limits.live_per_ip_per_10min },
+    ]);
+  }
 }

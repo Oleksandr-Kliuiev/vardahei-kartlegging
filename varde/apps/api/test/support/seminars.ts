@@ -2,7 +2,7 @@
 // clients, seminars through the admin API and registrations through PrivacyService. Contacts are
 // read and removed with plain `pg`: outside modules/privacy no code touches them through Prisma.
 import { randomUUID } from 'node:crypto';
-import type { LightMyRequestResponse } from 'fastify';
+import type { LightMyRequestResponse, RouteOptions } from 'fastify';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { PrivacyService } from '../../src/modules/privacy/privacy.service.js';
 import { cookieHeader, startApp, type TestApp } from './auth-app.js';
@@ -24,9 +24,13 @@ export interface SeminarApp extends TestApp {
   close: () => Promise<void>;
 }
 
-/** App with the real AppModule; `call` sends the admin cookie unless `headers.cookie` is given. */
-export async function seminarApp(env: Record<string, string | undefined> = {}): Promise<SeminarApp> {
-  const t = await startApp({ PUBLIC_URL, ...env });
+/** App with the real AppModule; `call` sends the admin cookie unless `headers.cookie` is given.
+ * `onRoute` sees every registered route (route walks, 3a/3b). */
+export async function seminarApp(
+  env: Record<string, string | undefined> = {},
+  onRoute?: (route: RouteOptions) => void,
+): Promise<SeminarApp> {
+  const t = await startApp({ PUBLIC_URL, ...env }, onRoute);
   const prisma = t.app.get(PrismaService);
   const session = await t.store.create({
     oid: 'test:seminar-admin',

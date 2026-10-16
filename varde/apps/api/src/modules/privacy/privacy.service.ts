@@ -30,6 +30,7 @@ import {
 } from './archive.js';
 import { ResponseStore } from './response-store.js';
 import { ParticipantStore } from './participants.js';
+import { LiveTally } from './live.js';
 import {
   type ComputedCell,
   release,
@@ -56,7 +57,6 @@ import type {
 } from './types.js';
 
 const PRIVACY_CONFIG = Symbol('PRIVACY_CONFIG');
-
 export type { ResponseSource, SourceQuery } from './source.js';
 export type { RowsDb } from './rows.js';
 export type { ViewCell } from './view-cells.js';
@@ -65,6 +65,7 @@ export { ArchiveRejected, ArchivedSnapshot } from './archive.js';
 export type { ArchiveRefs } from './archive.js';
 export type { DeleteScope, DeleteCounts, ResponsePart } from './response-store.js';
 export type { ContactChange, ParticipantDeleteCounts, ParticipantInput } from './participants.js';
+export type { LiveCount, LiveOptionResult, LiveResult } from './live.js';
 export type {
   ComputedCell,
   HistoricCell,
@@ -101,6 +102,8 @@ export class PrivacyService {
   readonly store = new ResponseStore();
   /** The only read and write path of seminar Contact and Registration (3.1). */
   readonly participants = new ParticipantStore();
+  /** The only outputs of seminar live poll answers (3.4): the count and shown results with k. */
+  readonly live = new LiveTally(() => this.config.k);
 
   /** Live progress is always aggregate; session IDs and duration rows never leave privacy. */
   progress(round: string, now = new Date()) {

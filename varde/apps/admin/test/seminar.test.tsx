@@ -64,7 +64,9 @@ const fetcher = vi.fn((path: string, init?: RequestInit) => {
               ? { rows: [{ id: 'k1', name: 'ZZ Gammal', company: 'X', email: 'gammal@example.test', last_confirmed_at: '2025-01-02T10:00:00Z', registrations: 0 }] }
               : path === '/api/admin/clients'
                 ? [{ id: 'c1', name: 'Syntetisk A' }]
-                : { ok: true };
+                : path.endsWith('/live')
+                  ? { poll: null, versions: [], presenter: { valid_from: '', valid_to: '', valid_text: '', valid_now: false, active: null } }
+                  : { ok: true };
   return Promise.resolve(new Response(JSON.stringify(body)));
 });
 beforeEach(() => {
@@ -343,15 +345,20 @@ describe('one seminar', () => {
     // Nothing is posted from this tab: no request leaves except reading the letter.
     expect(fetcher.mock.calls.filter(([, i]) => i?.method && i.method !== 'GET')).toEqual([]);
   });
-  it('«Live» and «Før og etter» say they come in the next step', async () => {
+  it('«Live» has the live questions (3b); «Før og etter» says it comes in the next step', async () => {
     view = mount(<SeminarPage id={ID} />, true);
     await settle();
-    for (const tab of ['Live', 'Før og etter']) {
-      act(() => {
-        button(view!.div, tab).click();
-      });
-      expect(view.div.textContent).toContain('Kjem i neste steg');
-    }
+    act(() => {
+      button(view!.div, 'Live').click();
+    });
+    await settle();
+    expect(calls('/live')).toHaveLength(1);
+    expect(view.div.textContent).toContain('Spørsmål på mobilen under seminaret, med resultat på storskjermen.');
+    expect(view.div.textContent).not.toContain('Kjem i neste steg');
+    act(() => {
+      button(view!.div, 'Før og etter').click();
+    });
+    expect(view.div.textContent).toContain('Kjem i neste steg');
   });
 });
 

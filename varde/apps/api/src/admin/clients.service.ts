@@ -22,7 +22,7 @@ export class ClientsService {
     const parsed = (countOnly ? CountInput : ClientInput).safeParse(body);
     if (!parsed.success) throw new BadRequestException('Kontroller namn og talet på tilsette.');
     const client = await this.prisma.$transaction(async (tx) => {
-      if (id && !(await tx.client.findUnique({ where: { id } })))
+      if (id && (await tx.client.findUnique({ where: { id } }))?.kind !== 'client')
         throw new NotFoundException('Kunden finst ikkje.');
       const data = parsed.data;
       const result = id

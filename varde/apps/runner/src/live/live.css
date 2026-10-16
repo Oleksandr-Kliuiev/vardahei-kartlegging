@@ -1,0 +1,33 @@
+/* Live-spørsmål på mobilen (3.6): same kolonne og skjermar som spørjeskjemaet; meldingane mellom
+   spørsmåla står stille og tydelege, og ein liten merknad seier at svaret er anonymt. */
+.live-melding h1 {
+  font-size: clamp(1.8rem, 6.4vw, 2.4rem);
+  line-height: 1.1;
+  font-weight: 780;
+  letter-spacing: -0.02em;
+  margin: 10px 0 14px;
+}
+.live-melding p {
+  max-width: 32em;
+}
+.live-melding p + p {
+  margin-top: 10px;
+  color: var(--ink-muted);
+}
+.live-anonym {
+  margin-top: 22px;
+  font-size: 14.5px;
+  color: var(--ink-muted);
+  max-width: 34em;
+}
+.live-nett {
+  margin-top: 18px;
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: var(--r-full);
+  background: var(--warning-bg);
+  color: var(--warning-fg);
+  border: 1px solid var(--warning-line);
+  font-size: 14px;
+  font-weight: 600;
+}

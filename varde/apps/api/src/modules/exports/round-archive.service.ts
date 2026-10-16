@@ -44,7 +44,8 @@ export class RoundArchiveService {
         round_clients: { include: { client: true } },
       },
     });
-    if (!r) throw new NotFoundException('Runden finst ikkje.');
+    // A seminar live poll (3.4) is not archived as a survey round, whatever its state.
+    if (!r || r.type === 'live') throw new NotFoundException('Runden finst ikkje.');
     const v = r.template_version;
     if (!['closed', 'archived'].includes(r.status) || !v || !r.identification)
       throw new ConflictException('Arkivet kan lagast når runden er avslutta.');

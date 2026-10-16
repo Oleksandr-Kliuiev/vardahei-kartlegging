@@ -91,6 +91,7 @@ jobs:
       - run: pnpm invariants:5
       - run: pnpm invariants:2a
       - run: pnpm invariants:3a
+      - run: pnpm invariants:3b
 
   image:
     runs-on: ubuntu-24.04

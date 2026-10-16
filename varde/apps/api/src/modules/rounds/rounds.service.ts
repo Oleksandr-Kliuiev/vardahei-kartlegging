@@ -10,6 +10,11 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { MetricsService } from '../metrics/metrics.service.js';
 import { CodesService, deadlineExpiry } from './codes.js';
 
+/** A seminar live poll is led from its seminar (3.4), never through the round admin. */
+const LIVE_ROUND = 'Live-spørsmåla blir styrte frå seminaret.';
+/** The technical client of live polls (3.4) takes part in no survey. */
+const NOT_A_CUSTOMER = 'Vel ein av kundane.';
+
 export interface NewRound {
   name: string;
   template_version_id: string;
@@ -51,6 +56,7 @@ export class RoundsService {
     await tx.$queryRaw`SELECT id FROM round WHERE id = ${id}::uuid FOR UPDATE`;
     const round = await tx.round.findUnique({ where: { id } });
     if (round === null) throw new NotFoundException('Runden finst ikkje.');
+    if (round.type === 'live') throw new ConflictException(LIVE_ROUND);
     return round;
   }
 
@@ -91,6 +97,7 @@ export class RoundsService {
         for (const item of input.clients) {
           const client = await tx.client.findUnique({ where: { id: item.client_id } });
           if (!client) throw new NotFoundException('Kunden finst ikkje.');
+          if (client.kind !== 'client') throw new BadRequestException(NOT_A_CUSTOMER);
           const deadline = new Date(item.deadline);
           if (input.open && deadlineExpiry(deadline) <= new Date())
             throw new BadRequestException('Vel ein frist fram i tid.');
@@ -154,6 +161,7 @@ export class RoundsService {
           throw new ConflictException('Runden er avslutta.');
         const client = await tx.client.findUnique({ where: { id: input.client_id } });
         if (!client) throw new NotFoundException('Kunden finst ikkje.');
+        if (client.kind !== 'client') throw new BadRequestException(NOT_A_CUSTOMER);
         if (
           await tx.roundClient.findUnique({
             where: { round_id_client_id: { round_id: id, client_id: input.client_id } },
@@ -267,6 +275,7 @@ export class RoundsService {
   async release(id: string, who: string) {
     const round = await this.prisma.round.findUnique({ where: { id } });
     if (round === null) throw new NotFoundException('Runden finst ikkje.');
+    if (round.type === 'live') throw new ConflictException(LIVE_ROUND);
     if (!['open', 'closed'].includes(round.status))
       throw new ConflictException('Runden er ikkje opna.');
     const result = await this.metrics.releaseRound(id, { type: 'manual', who });
