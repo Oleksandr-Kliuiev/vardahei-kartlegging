@@ -5,7 +5,8 @@
 // dashboard, the public seminar page and everything else never carry them; Response never
 // refers to a contact or registration.
 import 'reflect-metadata';
-import type { RouteOptions } from 'fastify';
+import { TextWriter, Uint8ArrayReader, ZipReader } from '@zip.js/zip.js';
+import type { LightMyRequestResponse, RouteOptions } from 'fastify';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { PrivacyService } from '../../src/modules/privacy/privacy.service.js';
 import { dashboardFixture, type DashboardFixture } from '../dashboard/fixture.js';
@@ -18,6 +19,23 @@ const NAME = 'ZZDELTAKAR Syntetisk',
   EMAIL = 'zz-invariant-3a@example.test',
   COMPANY = 'ZZFIRMA Syntetisk';
 let seminar: { id: string; code: string };
+/** The text of a response; a zip is unpacked (its entries are compressed), every file read. */
+async function textOf(res: LightMyRequestResponse): Promise<{ text: string; zip: boolean }> {
+  const raw = res.rawPayload;
+  if (raw.subarray(0, 4).toString('latin1') !== 'PK\u0003\u0004') return { text: res.body, zip: false };
+  const zip = new ZipReader(new Uint8ArrayReader(new Uint8Array(raw)), { useWebWorkers: false });
+  try {
+    const parts: string[] = [];
+    for (const entry of await zip.getEntries()) {
+      parts.push(entry.filename);
+      // An encrypted entry cannot be read here: the test fails instead of looking away.
+      if (!entry.directory) parts.push(await entry.getData(new TextWriter()));
+    }
+    return { text: parts.join('\n'), zip: true };
+  } finally {
+    await zip.close();
+  }
+}
 const PARTICIPANT_CHANNELS = new Set([
   'GET /api/admin/seminars/:id/registrations',
   'GET /api/admin/contacts/review',
@@ -65,7 +83,8 @@ afterAll(async () => {
 it('walks every API route: participant data only in the two named channels, each read audited', async () => {
   const client = await f.prisma.client.findUniqueOrThrow({ where: { slug: 'daco' } });
   const rc = await f.prisma.roundClient.findFirstOrThrow({ where: { round_id: f.tryggleik, client_id: client.id } });
-  const seen = new Set<string>();
+  const seen = new Set<string>(),
+    unzipped = new Set<string>();
   for (const route of routes) {
     if (!(route.url.startsWith('/api/') || route.url.startsWith('/admin/poster/')) || route.url === '/api/admin/events') continue;
     const methods = Array.isArray(route.method) ? route.method : [route.method];
@@ -102,7 +121,8 @@ it('walks every API route: participant data only in the two named channels, each
         });
       const key = `${method} ${route.url}`;
       seen.add(key);
-      const body = res.rawPayload.toString('latin1') + res.body;
+      const { text: body, zip } = await textOf(res);
+      if (zip) unzipped.add(key);
       if (PARTICIPANT_CHANNELS.has(key)) {
         expect(res.statusCode, key).toBe(200);
         expect(res.body, key).toContain(EMAIL);
@@ -123,6 +143,8 @@ it('walks every API route: participant data only in the two named channels, each
     'POST /api/admin/retention/forget',
   ])
     expect(seen, key).toContain(key);
+  // The invitation package was really opened and read, file by file.
+  expect(unzipped).toContain('GET /api/admin/seminars/:id/invitation.zip');
 });
 
 it('the public page of a held seminar shows its material, never a participant', async () => {
