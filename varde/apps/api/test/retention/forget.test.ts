@@ -68,6 +68,20 @@ it('dry-run shows both parts and makes no ledger entry', async () => {
   expect(preview.leader).toBeGreaterThan(0);
   expect(await count()).toBe(before);
   expect(await f.prisma.deletionRequest.count()).toBe(requests);
+  // 3a: the dry run is in AuditLog with the scope and counts only (no client, key or reason).
+  const [looked] = await f.prisma.auditLog.findMany({
+    where: { what: 'retention.forget.preview' },
+    orderBy: { at: 'desc' },
+    take: 1,
+  });
+  expect(looked?.details).toEqual({
+    scope: 'client',
+    common: preview.common,
+    leader: preview.leader,
+    total: preview.total,
+  });
+  expect(JSON.stringify(looked)).not.toContain(r.client_id);
+  expect(JSON.stringify(looked)).not.toContain('synthetic request');
 });
 it.each(['ØH', 'Z', 'ZZTESTAB', ' øh '])(
   'HTTP forget normalizes and deletes respondent key %j',

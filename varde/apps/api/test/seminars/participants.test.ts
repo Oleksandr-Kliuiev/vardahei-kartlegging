@@ -262,9 +262,23 @@ describe('deletion on request, scope «Deltakar» (by e-mail)', () => {
       (await t.call('POST', '/api/admin/retention/forget', body(true), { cookie: '' })).statusCode,
     ).toBe(401);
     const requests = await t.prisma.deletionRequest.count();
+    const previews = await t.prisma.auditLog.count({ where: { what: 'retention.forget.preview' } });
     const preview = await t.call('POST', '/api/admin/retention/forget', body(true));
     expect(preview.json()).toEqual({ dry_run: true, contacts: 1, registrations: 2, total: 3 });
     expect(await t.prisma.deletionRequest.count()).toBe(requests);
+    // The dry run is in AuditLog: who looked and the counts, nothing else.
+    const looked = await t.prisma.auditLog.findMany({
+      where: { what: 'retention.forget.preview' },
+      orderBy: { at: 'desc' },
+      take: 1,
+    });
+    expect(await t.prisma.auditLog.count({ where: { what: 'retention.forget.preview' } })).toBe(previews + 1);
+    expect(looked[0]).toMatchObject({
+      who: 'entra:test:seminar-admin',
+      target: null,
+      details: { scope: 'participant', contacts: 1, registrations: 2, total: 3 },
+    });
+    expect(JSON.stringify(looked)).not.toMatch(/example\.test|førespurnad|Gløym/);
 
     const done = await t.call('POST', '/api/admin/retention/forget', body(false));
     expect(done.json()).toEqual({ dry_run: false, contacts: 1, registrations: 2, total: 3 });

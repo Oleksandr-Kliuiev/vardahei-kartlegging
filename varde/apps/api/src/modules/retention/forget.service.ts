@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import {
   PrivacyService,
@@ -42,15 +43,29 @@ export class ForgetService {
     if (!session) throw new UnauthorizedError();
     if (!reason.trim()) throw new BadRequestException('Skriv inn grunngjevinga.');
     const who = auditWho(session, true);
+    // A dry run is in AuditLog too: who looked and what was found — counts only, no address,
+    // initials, client or reason.
+    const preview = async (tx: Prisma.TransactionClient, counts: object) => {
+      if (dryRun)
+        await tx.auditLog.create({
+          data: { who, what: 'retention.forget.preview', details: { scope: scope.scope, ...counts } },
+        });
+    };
     if (scope.scope === 'participant') {
-      const counts = await this.prisma.$transaction((tx) =>
-        this.privacy.participants.forget(tx, scope.email, who, reason, dryRun),
-      );
+      const counts = await this.prisma.$transaction(async (tx) => {
+        const found = await this.privacy.participants.forget(tx, scope.email, who, reason, dryRun);
+        await preview(tx, found);
+        return found;
+      });
       if (!dryRun && counts.total) this.events.changed('seminars');
       return { dry_run: dryRun, ...counts };
     }
     const counts = await this.prisma.$transaction(
-      (tx) => this.privacy.store.deleteScope(tx, scope, who, reason, dryRun),
+      async (tx) => {
+        const found = await this.privacy.store.deleteScope(tx, scope, who, reason, dryRun);
+        await preview(tx, found);
+        return found;
+      },
       { timeout: 120_000 },
     );
     if (!dryRun && counts.total) this.events.changed('responses');
