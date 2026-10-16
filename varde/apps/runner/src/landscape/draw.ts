@@ -38,7 +38,14 @@ export function drawBackdrop(svg: SVGSVGElement): void {
     ['.7', 0.92],
     ['1', 0],
   ] as const)
-    mk('stop', { offset: o, 'stop-color': 'var(--bg)', 'stop-opacity': a }, tg);
+    mk('stop', { offset: o, 'stop-color': 'var(--take)', 'stop-opacity': a }, tg);
+  // Fog drifts as soft bands: blurred, so a band has no hard top or bottom edge.
+  const blur = mk(
+    'filter',
+    { id: 'takeblur', x: '-20%', y: '-80%', width: '140%', height: '260%' },
+    defs,
+  );
+  mk('feGaussianBlur', { stdDeviation: 6 }, blur);
 
   mk(
     'rect',

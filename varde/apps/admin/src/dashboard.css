@@ -19,6 +19,29 @@
 .dashboard-filter label {
   color: var(--muted);
 }
+/* A label and its menu wrap together; on a phone each pair takes a whole line. */
+.dashboard-filter .filterpar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+.dashboard-filter select {
+  min-width: 0;
+  max-width: 100%;
+}
+@media (max-width: 520px) {
+  .dashboard-filter .filterpar {
+    flex: 1 1 100%;
+  }
+  .dashboard-filter .filterpar select {
+    flex: 1;
+  }
+  .dashboard-filter label {
+    min-width: 3.4em;
+  }
+}
 .hero {
   display: flex;
   flex-wrap: wrap;

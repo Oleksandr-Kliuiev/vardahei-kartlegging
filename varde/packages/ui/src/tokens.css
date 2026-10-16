@@ -49,6 +49,7 @@
 
   /* Landskapet: lag på lag med åsar, kalde blågrå tonar */
   --sky-1: #cfe4f2; --sky-2: #f8dcc2; --sol: #f3b866;
+  --take: var(--bg);
   --as-bak: #e2e9ee; --as-midt: #d2dde4; --as-fram: #c3d1da;
   --sti-gjort: var(--blaa-600); --sti-att: #6f7f89; --prikk: #ffffff;
   --sno: #ffffff; --stein: #8a8f94; --stein-lys: #b5babf; --stein-mork: #5f656b;
@@ -102,6 +103,7 @@
     --sone-gron: #57b884; --sone-gron-bg: #12301f; --sone-gul: #f0c64a; --sone-gul-bg: #3a2f0c;
     --sone-oransje: #ef8448; --sone-oransje-bg: #3e200f; --sone-raud: #e66f64; --sone-raud-bg: #3f1916;
     --sky-1: #08131c; --sky-2: #1b2c3b; --sol: #e9edf2;
+    --take: #3a4650;
     --as-bak: #1a2228; --as-midt: #1f2a31; --as-fram: #27343d;
     --sti-gjort: var(--blaa-400); --sti-att: #8394a0; --prikk: #15171a;
     --sno: #c7d6dd; --stein: #8c9095; --stein-lys: #b7bcc1; --stein-mork: #6b7177;
@@ -128,6 +130,7 @@
   --sone-gron: #57b884; --sone-gron-bg: #12301f; --sone-gul: #f0c64a; --sone-gul-bg: #3a2f0c;
   --sone-oransje: #ef8448; --sone-oransje-bg: #3e200f; --sone-raud: #e66f64; --sone-raud-bg: #3f1916;
   --sky-1: #08131c; --sky-2: #1b2c3b; --sol: #e9edf2;
+  --take: #3a4650;
   --as-bak: #1a2228; --as-midt: #1f2a31; --as-fram: #27343d;
   --sti-gjort: var(--blaa-400); --sti-att: #8394a0; --prikk: #15171a;
   --sno: #c7d6dd; --stein: #8c9095; --stein-lys: #b7bcc1; --stein-mork: #6b7177;
