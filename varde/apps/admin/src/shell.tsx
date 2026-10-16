@@ -33,6 +33,7 @@ export const SECTIONS: Section[] = [
   { url: '/admin/rounds', label: 'Kundar og rundar', icon: 'flagg', group: 'Arbeid' },
   { url: '/admin/dashboard', label: 'Dashbord', icon: 'graf', group: 'Arbeid' },
   { url: '/admin/surveys', label: 'Skjema', icon: 'skjema', group: 'Innhald' },
+  { url: '/admin/findings', label: 'Funn', icon: 'lyspare', group: 'Innhald' },
   {
     url: '/admin/reports',
     label: 'Rapportar',

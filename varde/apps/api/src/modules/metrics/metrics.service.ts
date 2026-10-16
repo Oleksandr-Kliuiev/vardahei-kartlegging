@@ -106,6 +106,7 @@ export class MetricsService {
       orderBy: { client: { slug: 'asc' } },
     });
     const out: RoundRelease = { round, populations: {} };
+    const ids: Partial<Record<string, string>> = {};
     for (const population of POPULATIONS) {
       let cells: ComputedCell[] = [];
       if (population === 'round_client') {
@@ -118,25 +119,25 @@ export class MetricsService {
         metric_set: metricSet,
       });
       out.populations[population] = { cells: r.released.length, carried: r.carried };
+      ids[population] = r.release_id;
     }
     const r = await this.prisma.round.findUniqueOrThrow({
       where: { id: round },
       include: { template_version: true },
     });
+    // The findings of a new release are computed once, with the rules in effect now, and saved.
     if (r.status === 'closed' || r.status === 'archived') {
       const content = r.template_version!.content as unknown as TemplateContent;
-      for (const client of [undefined, ...clients.map((rc) => rc.client.slug)]) {
+      for (const client of [undefined, ...clients.map((rc) => rc.client)]) {
         const cells = await this.privacy.viewCells(
           round,
           client ? 'round_client' : 'all_clients',
           defs.filter((d) => d.part === 'common'),
-          client,
+          client?.slug,
         );
-        await this.findings.persist(
-          round,
-          client,
-          await this.findings.calculate(content, cells, 'all', 'aggregate'),
-        );
+        // The release id also pins the versions when every cell of the scope is hidden.
+        const id = ids[client ? 'round_client' : 'all_clients'];
+        await this.findings.released(r, client, content, cells, id);
       }
     }
     return out;

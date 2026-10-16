@@ -12,18 +12,36 @@ test('non-member → 403 and no protected API access', async ({ page }) => {
   await expect(page.locator('body')).toContainText('Du har ikkje tilgang');
   expect((await page.request.get('/api/admin/rounds')).status()).toBe(401);
 });
-test('six History API sections, back navigation and direct reload', async ({ page }) => {
+test('eight History API sections in menu order, back navigation and direct reload', async ({
+  page,
+}) => {
   await login(page);
+  expect(
+    await page.getByRole('navigation', { name: 'Hovudmeny' }).locator('a').allTextContents(),
+  ).toEqual([
+    'Oversikt',
+    'Kundar og rundar',
+    'Dashbord',
+    'Skjema',
+    'Funn',
+    'Rapportar',
+    'Eksport',
+    'Sletting',
+  ]);
   for (const label of [
     'Kundar og rundar',
     'Skjema',
+    'Funn',
+    'Rapportar',
     'Dashbord',
     'Eksport',
     'Sletting',
     'Oversikt',
   ]) {
     await page.getByRole('link', { name: label, exact: true }).click();
-    await expect(page.getByRole('heading', { name: label, exact: true })).toBeVisible();
+    // «Rapportar» opens the page «Rapport til kunden» (Vardestien).
+    const heading = label === 'Rapportar' ? 'Rapport til kunden' : label;
+    await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible();
   }
   await page.goBack();
   await expect(page.getByRole('heading', { name: 'Sletting', exact: true })).toBeVisible();

@@ -135,7 +135,8 @@ export function findingText(
   const action = rule.action_text[l];
   if (rule.computed === 'routine' || rule.computed === 'heaviest') {
     const tal = `≈ ${Math.round(numbers.count)} ${w.hours}`;
-    let text = rule.text[l].replace('{n}', String(numbers.n));
+    // Every occurrence, as evaluate() fills them in the dashboard (2.5 allows edited texts).
+    let text = rule.text[l].replaceAll('{n}', String(numbers.n));
     if (rule.computed === 'heaviest') {
       const top = cells
         .filter((c) => c.group === 'all' && c.metric_key.startsWith(`${rule.metric_key}.`))
@@ -148,8 +149,8 @@ export function findingText(
           : undefined;
       const label = option ? (option.texts.text[l] ?? option.texts.text.nn) : '';
       text = text
-        .replace('{task}', label.toLowerCase())
-        .replace('{persons}', numbers.n === 1 ? w.person : w.persons);
+        .replaceAll('{task}', label.toLowerCase())
+        .replaceAll('{persons}', numbers.n === 1 ? w.person : w.persons);
     }
     return { tal, text, action };
   }

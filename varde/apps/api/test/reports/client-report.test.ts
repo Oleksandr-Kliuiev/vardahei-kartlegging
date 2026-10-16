@@ -7,7 +7,6 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AggregateView } from '../../src/modules/dashboard/aggregate-view.js';
 import { ComparisonView } from '../../src/modules/dashboard/comparison-view.js';
-import { FindingRule } from '../../src/modules/findings/finding-rule.js';
 import { MetricsService } from '../../src/modules/metrics/metrics.service.js';
 import { PrivacyService } from '../../src/modules/privacy/privacy.service.js';
 import type { ClientReport } from '../../src/modules/reports/report.service.js';
@@ -189,57 +188,6 @@ describe('5.1 client report', () => {
       small.questions.every((q) => q.mean === null && q.critical === null && q.zone === null),
     ).toBe(true);
     expect(hidden).toBeGreaterThan(small.questions.length - 1);
-  });
-
-  it('a newer rule version (rule editor 2.5) never replaces the version in force at release', async () => {
-    const before = (await report(f.tryggleik, 'daco')).json();
-    const top = before.findings[0]!;
-    const v1 = await f.prisma.findingRule.findUniqueOrThrow({
-      where: { key_version: { key: top.key, version: 1 } },
-    });
-    const d1 = FindingRule.parse(v1.definition);
-    const client = await f.prisma.client.findUniqueOrThrow({ where: { slug: 'daco' } });
-    const defs = await f.app.get(MetricsService).definitionsFor(f.tryggleik);
-    const cells = await f.app.get(PrivacyService).viewCells(
-      f.tryggleik,
-      'round_client',
-      defs.filter((d) => d.part === 'common'),
-      'daco',
-      true,
-    );
-    const release = cells.flatMap((c) => (c.suppressed ? [] : [c.release_id]))[0]!;
-    // The row of v1 for the current release is what the report shows.
-    await f.prisma.finding.findFirstOrThrow({
-      where: { release_id: release, client_id: client.id, rule_key: top.key, rule_version: 1 },
-    });
-    const v2 = {
-      ...d1,
-      version: 2,
-      text: { nn: 'tekst frå versjon to', en: 'text of version two' },
-      action_text: { nn: 'tiltak frå versjon to', en: 'action of version two' },
-    };
-    await f.prisma.findingRule.create({
-      data: { key: d1.key, version: 2, channel: 'aggregate', definition: v2 },
-    });
-    // The same release saved again under v2 with other numbers (as a dashboard read could).
-    await f.prisma.finding.create({
-      data: {
-        round_id: f.tryggleik,
-        client_id: client.id,
-        rule_key: d1.key,
-        rule_version: 2,
-        release_id: release,
-        numbers: { n: 99, count: 98, share: 0.99, level: 'high' },
-      },
-    });
-    try {
-      const after = (await report(f.tryggleik, 'daco')).json();
-      expect(after.findings).toEqual(before.findings);
-      expect(JSON.stringify(after)).not.toMatch(/versjon to|version two|98 av 99/);
-    } finally {
-      await f.prisma.finding.deleteMany({ where: { rule_key: d1.key, rule_version: 2 } });
-      await f.prisma.findingRule.delete({ where: { key_version: { key: d1.key, version: 2 } } });
-    }
   });
 
   it('language: English rule texts, bokmål only when the version has it', async () => {

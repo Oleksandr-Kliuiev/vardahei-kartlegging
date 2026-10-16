@@ -16,11 +16,12 @@ import {
   type ArchiveBody,
   ArchiveConflict,
   archiveHash,
+  derivedSets,
   releasesOf,
   restorable,
   RoundArchive,
 } from './round-archive.js';
-import { assertArchivedFindings } from './round-archive-findings.js';
+import { assertArchivedFindings, assertArchivedSets } from './round-archive-findings.js';
 
 const iso = (d: Date | null) => (d === null ? null : d.toISOString());
 const day = (d: Date | null) => (d === null ? null : d.toISOString().slice(0, 10));
@@ -57,6 +58,10 @@ export class RoundArchiveService {
     const findings = await this.prisma.finding.findMany({
       where: { round_id: round },
       orderBy: { id: 'asc' },
+    });
+    const sets = await this.prisma.findingSet.findMany({
+      where: { round_id: round },
+      orderBy: [{ release_id: 'asc' }, { scope: 'asc' }],
     });
     const rcs = [...r.round_clients].sort((a, b) => a.client.slug.localeCompare(b.client.slug));
     const defs = (await this.metrics.definitionsFor(round)).sort(
@@ -123,6 +128,12 @@ export class RoundArchiveService {
         numbers: f.numbers as unknown as RoundArchive['findings'][number]['numbers'],
         release_id: f.release_id,
       })),
+      finding_sets: sets.map((x) => ({
+        release_id: x.release_id,
+        scope: x.scope,
+        rule_keys: x.rule_keys,
+        computed_at: x.computed_at.toISOString(),
+      })),
       releases: releasesOf(snapshots),
     };
   }
@@ -163,6 +174,7 @@ export class RoundArchiveService {
         'sha256 is not the one of the export (AuditLog); nothing was changed',
       );
     assertArchivedFindings(body, this.privacy.minimumGroupSize);
+    assertArchivedSets(body);
     await this.assertAggregateRules(body);
     const id = body.round.id;
     const summary = {
@@ -193,6 +205,18 @@ export class RoundArchiveService {
         });
         await tx.finding.createMany({
           data: body.findings.map((f) => ({ ...f, round_id: id })),
+        });
+        // Without the sets the first dashboard read would compute the releases again with the
+        // newest rules, add Findings and change the client report (2.5 × 5.1).
+        await tx.findingSet.createMany({
+          data: [
+            ...(body.finding_sets ?? []).map((x) => ({
+              ...x,
+              round_id: id,
+              computed_at: new Date(x.computed_at),
+            })),
+            ...derivedSets(body).map((x) => ({ ...x, round_id: id })),
+          ],
         });
         await this.audit(tx, who, id, { ...summary, snapshots: written, outcome: 'restored' });
         return { outcome: 'restored' as const, ...summary, snapshots: written };

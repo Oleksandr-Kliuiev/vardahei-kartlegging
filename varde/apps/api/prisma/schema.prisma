@@ -240,19 +240,38 @@ model RoundMetricSet {
   @@map("round_metric_set")
 }
 
-/// FUNN rule (1.4c, ADR-026): `channel` ∈ {aggregate, leader}.
+/// FUNN rule (1.4c, ADR-026): `channel` ∈ {aggregate, leader}. A version never changes (trigger
+/// finding_rule_immutable); the editor saves a change as version max + 1 (2.5).
 model FindingRule {
-  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   key        String
   version    Int
   channel    String
-  definition Json   @db.JsonB
+  definition Json     @db.JsonB
+  created_at DateTime @default(now()) @db.Timestamptz(6)
 
   @@unique([key, version])
   @@map("finding_rule")
 }
 
-/// A finding computed over released snapshots (1.4c; retention as released snapshots).
+/// The findings of one release are computed once (2.5): `scope` is `all` or the client id,
+/// `rule_keys` (`key@version`) the rules in effect at that moment. A closed round shows the saved
+/// findings of its release; a later rule version never recalculates them. Never updated or
+/// deleted (trigger finding_set_immutable).
+model FindingSet {
+  release_id  String   @db.Uuid
+  scope       String
+  round_id    String   @db.Uuid
+  rule_keys   String[]
+  computed_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@id([release_id, scope])
+  @@index([round_id])
+  @@map("finding_set")
+}
+
+/// A finding computed over released snapshots (1.4c; retention as released snapshots): one row
+/// per rule and release, written once with its rule version (2.5). Never updated (trigger).
 model Finding {
   id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   round_id     String  @db.Uuid

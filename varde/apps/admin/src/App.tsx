@@ -1,4 +1,5 @@
 import { SurveysPage } from './surveys-page.js';
+import { FindingsPage } from './funn-page.js';
 import { ExportPage } from './export-page.js';
 import { DeletionPage } from './deletion-page.js';
 import { ReportPage } from './report-page.js';
@@ -128,6 +129,8 @@ function Shell({ name }: { name: string | null }) {
             <RoundsPage />
           ) : path === '/admin/surveys' ? (
             <SurveysPage />
+          ) : path === '/admin/findings' ? (
+            <FindingsPage />
           ) : path === '/admin/dashboard' ? (
             <DashboardPage />
           ) : path === '/admin/export' ? (

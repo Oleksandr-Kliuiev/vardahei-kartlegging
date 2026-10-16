@@ -193,11 +193,29 @@ export class AggregateView {
         (a, b) =>
           (b.cell.suppressed ? 0 : b.cell.numerator) - (a.cell.suppressed ? 0 : a.cell.numerator),
       );
-    const findings = await this.findings.calculate(content, selectedCells, group, 'aggregate');
-    if (!selectedRole && ['closed', 'archived'].includes(scope.round.status))
-      await this.findings.persist(round, scope.client, findings);
+    // A closed round shows the findings saved once for its release (2.5); role views use the
+    // versions of that release. An open round is calculated live with the latest versions.
+    const closed = ['closed', 'archived'].includes(scope.round.status);
+    const id = scope.clients.find((c) => c.slug === scope.client)?.id;
+    const saved = closed
+      ? await this.findings.released(scope.round, id ? { id } : undefined, content, cells)
+      : undefined;
+    const findings =
+      saved && !selectedRole
+        ? saved.findings
+        : await this.findings.calculate(
+            scope.round,
+            content,
+            selectedCells,
+            group,
+            'aggregate',
+            saved?.release,
+          );
+    const latest = new Map(
+      (await this.findings.rules(prefix, 'aggregate')).map((r) => [r.key, r.version]),
+    );
     return {
-      findings,
+      findings: findings.map((f) => ({ ...f, latest_version: latest.get(f.key) ?? f.version })),
       class: 'aggregate' as const,
       round,
       template: prefix,

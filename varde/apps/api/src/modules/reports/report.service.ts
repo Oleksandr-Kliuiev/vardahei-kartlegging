@@ -93,8 +93,8 @@ export class ReportService {
     const rows = await this.prisma.finding.findMany({
       where: { round_id: round, client_id: clientId, release_id: { in: releases } },
     });
-    // A later rule version (rule editor, 2.5) may save another row for the same release when
-    // the dashboard is read; the report keeps the version in force at release: the lowest one.
+    // A release saves its Findings once (2.5, FindingsService.released); should history hold
+    // a second row of a later version, the report keeps the version in force at release: the lowest.
     const first = new Map<string, (typeof rows)[number]>();
     for (const f of rows) {
       const seen = first.get(f.rule_key);

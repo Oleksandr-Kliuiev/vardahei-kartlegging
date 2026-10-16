@@ -3,6 +3,7 @@ import { RetentionModule } from './modules/retention/retention.module.js';
 import { ExportsModule } from './modules/exports/exports.module.js';
 import { ReportsModule } from './modules/reports/reports.module.js';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
+import { RuleEditorModule } from './modules/findings/rule-editor.module.js';
 import { Module } from '@nestjs/common';
 import { AdminModule } from './admin/admin.module.js';
 import { EventsModule } from './modules/events/events.module.js';
@@ -36,6 +37,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     AdminModule,
     EventsModule,
     DashboardModule,
+    RuleEditorModule,
     ExportsModule,
     ReportsModule,
     RetentionModule,

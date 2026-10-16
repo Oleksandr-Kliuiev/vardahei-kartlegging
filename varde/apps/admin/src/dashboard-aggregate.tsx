@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react';
 import type { Dashboard, QuestionView, Finding, Bucket } from './dashboard-models.js';
 import { numberText, percent, zoneNames, zoneIds } from './dashboard-models.js';
 
@@ -8,6 +9,13 @@ export function Zone({ zone }: { zone: number | null }) {
       {zone === null ? '–' : zoneNames[zone]}
     </span>
   );
+}
+/** Open the rule editor inside the admin (History API), or in a new tab with a modifier key. */
+function openRule(e: MouseEvent<HTMLAnchorElement>) {
+  if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  e.preventDefault();
+  window.history.pushState(null, '', e.currentTarget.getAttribute('href'));
+  window.dispatchEvent(new PopStateEvent('popstate'));
 }
 export function Findings({ findings }: { findings: Finding[] }) {
   return findings.length ? (
@@ -31,6 +39,15 @@ export function Findings({ findings }: { findings: Finding[] }) {
             <b>Forslag: </b>
             {f.action}
           </div>
+          {f.version !== undefined && (f.latest_version ?? f.version) > f.version && (
+            <a
+              className="nyare-regel"
+              href={`/admin/findings?rule=${encodeURIComponent(f.key)}`}
+              onClick={openRule}
+            >
+              Regelen har ein nyare versjon
+            </a>
+          )}
         </li>
       ))}
     </ul>

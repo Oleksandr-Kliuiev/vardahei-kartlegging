@@ -163,6 +163,12 @@
   grid-column: 2;
   color: var(--muted);
 }
+.funn .nyare-regel {
+  grid-column: 2;
+  justify-self: start;
+  font-size: 13px;
+  color: var(--accent-text);
+}
 .niva {
   display: flex;
   align-items: baseline;
@@ -271,7 +277,8 @@ blockquote {
   .funn li {
     grid-template-columns: 1fr;
   }
-  .funn .tiltak {
+  .funn .tiltak,
+  .funn .nyare-regel {
     grid-column: 1;
   }
 }

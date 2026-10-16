@@ -27,6 +27,7 @@
     "invariants:1b": "bash tools/invariants/run-1b.sh",
     "invariants:1c": "bash tools/invariants/run-1c.sh",
     "invariants:1e": "bash tools/invariants/run-1e.sh",
+    "invariants:2a": "bash tools/invariants/run-2a.sh",
     "invariants:5": "bash tools/invariants/run-5.sh"
   },
   "devDependencies": {
