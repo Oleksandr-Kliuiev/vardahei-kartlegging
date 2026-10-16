@@ -4,10 +4,13 @@
 // key is a bearer with its own window and is revoked from the admin (403); AuditLog has issue,
 // revoke and every step, never the key.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { captureOutput, type Captured } from '../support/capture-output.js';
 import { seminarApp, createSeminar, type SeminarApp } from '../support/seminars.js';
 import {
   answer,
   cleanupLive,
+  issuedKeys,
+  keysIn,
   livePoll,
   presenter,
   presenterKey,
@@ -24,10 +27,14 @@ const NO_ENTRA = {
 };
 
 let t: SeminarApp;
+// Everything the app writes goes here: no presenter key may ever be in it (logs, errors).
+let out: Captured;
 beforeAll(async () => {
+  out = captureOutput({ console: true });
   t = await seminarApp(NO_ENTRA);
 });
 afterAll(async () => {
+  out.restore();
   await cleanupLive(t);
   await t.close();
 });
@@ -262,5 +269,14 @@ describe('the key', () => {
     expect((await inject({ authorization: `Bearer ${'A'.repeat(43)}` })).statusCode).toBe(401);
     expect((await inject({ authorization: `Bearer ${p.code}` })).statusCode).toBe(401);
     expect((await t.call('GET', '/api/presenter/poll')).statusCode).toBe(401);
+  });
+});
+
+describe('the output', () => {
+  it('carries no presenter key: not in the request log, errors or anything else', async () => {
+    expect(issuedKeys.length).toBeGreaterThan(3);
+    const text = out.text();
+    expect(text).toContain('/api/presenter/');
+    expect(await keysIn(t, text)).toEqual([]);
   });
 });

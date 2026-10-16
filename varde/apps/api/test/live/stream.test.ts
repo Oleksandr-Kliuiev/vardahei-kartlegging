@@ -3,17 +3,30 @@
 // new one; shown results have passed privacy; no event carries an answer, a free text, a
 // submission id or a code of a phone; a revoked key ends the stream.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { captureOutput, type Captured } from '../support/capture-output.js';
 import { seminarApp, type SeminarApp } from '../support/seminars.js';
-import { answer, cleanupLive, livePoll, presenter, presenterKey } from '../support/live.js';
+import {
+  answer,
+  cleanupLive,
+  issuedKeys,
+  keysIn,
+  livePoll,
+  presenter,
+  presenterKey,
+} from '../support/live.js';
 
 let t: SeminarApp, origin: string;
+// Everything the app writes goes here: no presenter key may ever be in it (logs, errors).
+let out: Captured;
 const controllers: AbortController[] = [];
 beforeAll(async () => {
+  out = captureOutput({ console: true });
   t = await seminarApp();
   await t.app.listen(0, '127.0.0.1');
   origin = await t.app.getUrl();
 });
 afterAll(async () => {
+  out.restore();
   for (const c of controllers) c.abort();
   await cleanupLive(t);
   await t.close();
@@ -185,5 +198,14 @@ describe('presenter stream', () => {
       expect(res.status).toBe(401);
       await res.body?.cancel();
     }
+  });
+});
+
+describe('the output', () => {
+  it('carries no presenter key: not in the request log of the streams, errors or anything else', async () => {
+    expect(issuedKeys.length).toBeGreaterThan(3);
+    const text = out.text();
+    expect(text).toContain('/api/presenter/stream');
+    expect(await keysIn(t, text)).toEqual([]);
   });
 });

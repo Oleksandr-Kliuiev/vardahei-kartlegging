@@ -1,7 +1,7 @@
 // Seminar live poll in tests (3b): a synthetic published `seminar_live` version, a seminar of
 // today (Oslo) so that its presenter key works now, the live poll, the presenter key and answers
 // sent as a phone would. Everything carries the mark of the test file and goes in cleanup.
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import type { LightMyRequestResponse } from 'fastify';
 import type { TemplateContent } from '@varde/schema/template/template';
@@ -68,12 +68,34 @@ export async function livePoll(t: SeminarApp, date = todayOslo()): Promise<LiveP
   return { seminar, round, code: rc.code!, version };
 }
 
+/** Keys issued through presenterKey in this test process (checked against the output). */
+export const issuedKeys: string[] = [];
+
 /** The presenter key from the link the admin gets once. */
 export async function presenterKey(t: SeminarApp, seminar: string): Promise<string> {
   const res = await t.call('POST', `/api/admin/seminars/${seminar}/presenter`);
   if (res.statusCode !== 201) throw new Error(`issue key: ${res.statusCode} ${res.body}`);
   const link = res.json<{ link: string }>().link;
-  return new URL(link).hash.replace(/^#t=/, '');
+  const key = new URL(link).hash.replace(/^#t=/, '');
+  issuedKeys.push(key);
+  return key;
+}
+
+/** Presenter keys found in `text`: every 43-character window of a base64url run whose sha256 is a
+ * stored key (so also a key issued without presenterKey), plus the keys issued here. */
+export async function keysIn(t: SeminarApp, text: string): Promise<string[]> {
+  const hashes = new Set(
+    (await t.prisma.presenterToken.findMany({ select: { token_hash: true } })).map(
+      (r) => r.token_hash,
+    ),
+  );
+  const found = new Set(issuedKeys.filter((k) => text.includes(k)));
+  for (const run of text.match(/[A-Za-z0-9_-]{43,}/g) ?? [])
+    for (let i = 0; i + 43 <= run.length; i++) {
+      const window = run.slice(i, i + 43);
+      if (hashes.has(createHash('sha256').update(window).digest('hex'))) found.add(window);
+    }
+  return [...found];
 }
 
 /** A presenter call: the key as a bearer, never a cookie. */
