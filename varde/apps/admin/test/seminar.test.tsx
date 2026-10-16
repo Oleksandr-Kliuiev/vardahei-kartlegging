@@ -145,6 +145,10 @@ describe('one seminar', () => {
     await settle();
     expect(view.div.querySelector('[data-testid="pamelde"]')?.textContent).toBe('3');
     expect(view.div.textContent).toContain('Syntetisk A 2 · andre 1');
+    // How long the data lives: the registration 90 days, the contact until the yearly check.
+    expect(view.div.textContent).toContain(
+      'Påmeldinga blir sletta 90 dagar etter seminaret. Namn og e-post ligg i kontaktlista til den årlege sjekken eller til du slettar dei.',
+    );
     expect(calls('/registrations')).toHaveLength(0);
     expect(view.div.textContent).not.toContain('zz@example.test');
     act(() => {

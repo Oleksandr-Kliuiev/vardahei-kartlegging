@@ -58,7 +58,8 @@ function Registrations({ seminar }: { seminar: SeminarDetail }) {
           </span>
           {r.total > 0 && <span className="under">{perCompany(r)}</span>}
           <p className="forklaring">
-            Namn og e-post ligg berre i påmeldinga, og påmeldinga blir sletta 90 dagar etter seminaret.
+            Påmeldinga blir sletta 90 dagar etter seminaret. Namn og e-post ligg i kontaktlista til den
+            årlege sjekken eller til du slettar dei.
           </p>
           {seminar.link ? (
             <div className="handlingar">
