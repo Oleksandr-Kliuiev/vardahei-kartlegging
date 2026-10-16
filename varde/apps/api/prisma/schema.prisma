@@ -418,26 +418,28 @@ model SeminarClient {
 
 /// A person who registered for a seminar (3.1, ADR-017 class `contact`): personal data, read and
 /// written only through modules/privacy (participants.ts, lint `varde/privacy-only-release`). Kept
-/// while there is a relationship and consent; never deleted by a timer: the daily job sets
-/// `review_flagged_at` a year after `last_confirmed_at`. `email` is normalized (trimmed, lower
-/// case; CHECK), `company` is the chosen client's name or the person's own text. The public form
-/// creates a contact but never changes a known one: name, company and client change only by the
-/// admin (AuditLog), `last_confirmed_at` and the yearly mark only by «Stadfest». The consent here
-/// is the one the contact was created with; every registration keeps its own.
+/// while it has a registration or consent to invitations (decision of Oleksandr 16.10): the daily
+/// job deletes a contact with neither, and marks the others a year after `last_confirmed_at` for
+/// the yearly check. `email` is normalized (trimmed, lower case; CHECK), `company` is the chosen
+/// client's name or the person's own text. The consent to this registration is on Registration;
+/// `invite_consent_*` is the optional consent to invitations to later seminars (both or none,
+/// CHECK). The public form creates a contact; of a known one it only adds a missing consent to
+/// invitations. Name, company, client and the withdrawal of that consent are the admin's
+/// (AuditLog); `last_confirmed_at` and the yearly mark change only by «Stadfest».
 model Contact {
-  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name              String
-  email             String         @unique
-  client_id         String?        @db.Uuid
-  client            Client?        @relation(fields: [client_id], references: [id], onDelete: SetNull)
-  company           String
-  role_at_client    String?
-  consent_version   String
-  consent_at        DateTime       @db.Timestamptz(6)
-  created_at        DateTime       @default(now()) @db.Timestamptz(6)
-  last_confirmed_at DateTime       @default(now()) @db.Timestamptz(6)
-  review_flagged_at DateTime?      @db.Timestamptz(6)
-  registrations     Registration[]
+  id                     String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                   String
+  email                  String         @unique
+  client_id              String?        @db.Uuid
+  client                 Client?        @relation(fields: [client_id], references: [id], onDelete: SetNull)
+  company                String
+  role_at_client         String?
+  invite_consent_version String?
+  invite_consent_at      DateTime?      @db.Timestamptz(6)
+  created_at             DateTime       @default(now()) @db.Timestamptz(6)
+  last_confirmed_at      DateTime       @default(now()) @db.Timestamptz(6)
+  review_flagged_at      DateTime?      @db.Timestamptz(6)
+  registrations          Registration[]
 
   @@index([review_flagged_at])
   @@map("contact")
@@ -445,7 +447,7 @@ model Contact {
 
 /// One contact registered for one seminar (3.1, ADR-017 class `registration`): deleted by the
 /// daily job 90 days after the seminar ends. One per seminar and contact, i.e. per e-mail.
-/// `lang` ∈ {nn, en} (CHECK); the consent text version and time of this registration.
+/// `lang` ∈ {nn, en} (CHECK); the required consent (text version and time) of this registration.
 /// Response never refers to it (ADR-021).
 model Registration {
   id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid

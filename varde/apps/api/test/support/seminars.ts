@@ -110,7 +110,14 @@ export async function register(
   t: SeminarApp,
   seminar: string,
   email: string,
-  over: { name?: string; company?: string; client?: string | null; lang?: 'nn' | 'en' } = {},
+  over: {
+    name?: string;
+    company?: string;
+    client?: string | null;
+    lang?: 'nn' | 'en';
+    /** Ticks the optional box for invitations. */
+    invite?: boolean;
+  } = {},
 ) {
   return t.prisma.$transaction((tx) =>
     t.app.get(PrivacyService).participants.register(
@@ -122,7 +129,8 @@ export async function register(
         company: over.company ?? 'Syntetisk firma',
         client: over.client ?? null,
         lang: over.lang ?? 'nn',
-        consent_version: 'samtykke-v1',
+        consent_version: 'pamelding-v1',
+        invite_version: over.invite ? 'invitasjon-v1' : null,
       },
       new Date(),
     ),
@@ -142,8 +150,8 @@ export function contactsOf(t: SeminarApp) {
           email: string;
           company: string;
           client_id: string | null;
-          consent_version: string;
-          consent_at: Date;
+          invite_consent_version: string | null;
+          invite_consent_at: Date | null;
           last_confirmed_at: Date;
           review_flagged_at: Date | null;
         }>('SELECT * FROM contact WHERE email LIKE $1 ORDER BY email', [`zz-${t.mark}-%`])

@@ -1,7 +1,9 @@
-// 3.1 (integration): personal data of seminars. The participant list is read under AuditLog;
-// the daily job deletes registrations 90 days after the seminar (dry-run, idempotent, journal in
-// AuditLog) and marks contacts for the yearly check without deleting them; deletion on request
-// by e-mail removes the contact and its registrations with a ledger entry that has no e-mail.
+// 3.1 (integration): personal data of seminars. Two consents (decision 16.10): the required one
+// on the registration, the optional one to invitations on the contact. The participant list is
+// read under AuditLog; the daily job deletes registrations 90 days after the seminar (dry-run,
+// idempotent, journal in AuditLog) and marks contacts for the yearly check without deleting them;
+// deletion on request by e-mail removes the contact and its registrations with a ledger entry that
+// has no e-mail.
 import 'reflect-metadata';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -85,12 +87,27 @@ describe('participant list (class rows of seminars)', () => {
     expect(JSON.stringify(audit)).not.toMatch(/Syntetisk|example\.test/);
   });
 
-  it('a repeat for the same seminar changes nothing; a new seminar changes nothing on the contact either', async () => {
+  it('only the required box: no consent to invitations; the optional box gives it', async () => {
+    const one = await createSeminar(t);
+    await register(t, one.id, email(t, 'plain'));
+    await register(t, one.id, email(t, 'invited'), { invite: true });
+    const [plain, invited] = ['plain', 'invited'].map(
+      (n) => async () => (await contactsOf(t)).find((c) => c.email === email(t, n))!,
+    );
+    expect(await plain!()).toMatchObject({ invite_consent_version: null, invite_consent_at: null });
+    expect(await invited!()).toMatchObject({ invite_consent_version: 'invitasjon-v1' });
+    expect(Date.now() - (await invited!()).invite_consent_at!.getTime()).toBeLessThan(60_000);
+    // The required consent is on each registration.
+    for (const r of await registrationsOf(one.id)) expect(r.consent_version).toBe('pamelding-v1');
+  });
+
+  it('a known contact: the form adds a missing consent to invitations, never removes it, changes nothing else', async () => {
     const one = await createSeminar(t),
-      two = await createSeminar(t);
+      two = await createSeminar(t),
+      three = await createSeminar(t);
     expect(await register(t, one.id, email(t, 'r'), { name: 'ZZ Fyrste' })).toBe(true);
+    // A repeat for the same seminar: no second registration, nothing changes.
     expect(await register(t, one.id, email(t, 'r'), { name: 'ZZ Andre' })).toBe(false);
-    expect((await contactsOf(t)).find((c) => c.email === email(t, 'r'))?.name).toBe('ZZ Fyrste');
     // A year later the yearly check has marked the contact.
     await withPg((c) =>
       c.query(
@@ -99,16 +116,20 @@ describe('participant list (class rows of seminars)', () => {
       ),
     );
     const before = (await contactsOf(t)).find((c) => c.email === email(t, 'r'))!;
-    // The public form cannot change a known contact (no login, e-mail not verified): not the
-    // name, company or client, not the consent, the last confirmation or the yearly mark.
+    expect(before.invite_consent_version).toBeNull();
+    // Another seminar, box for invitations ticked: the consent is added, nothing else changes.
     expect(
-      await register(t, two.id, email(t, 'r'), { name: 'ZZ Andre', company: 'Anna AS', lang: 'en' }),
+      await register(t, two.id, email(t, 'r'), { name: 'ZZ Andre', company: 'Anna AS', lang: 'en', invite: true }),
     ).toBe(true);
-    const contact = (await contactsOf(t)).filter((c) => c.email === email(t, 'r'));
-    expect(contact).toEqual([before]);
-    // The consent of the new registration is on the registration.
+    const after = (await contactsOf(t)).find((c) => c.email === email(t, 'r'))!;
+    expect(after.invite_consent_version).toBe('invitasjon-v1');
+    expect({ ...after, invite_consent_version: null, invite_consent_at: null }).toEqual(before);
+    // A third seminar without the box: the consent stays.
+    expect(await register(t, three.id, email(t, 'r'))).toBe(true);
+    expect((await contactsOf(t)).find((c) => c.email === email(t, 'r'))).toEqual(after);
+    // The consent of each registration is on the registration.
     const second = (await registrationsOf(two.id))[0]!;
-    expect(second).toMatchObject({ contact_id: before.id, lang: 'en', consent_version: 'samtykke-v1' });
+    expect(second).toMatchObject({ contact_id: before.id, lang: 'en', consent_version: 'pamelding-v1' });
     expect(Date.now() - second.consent_at.getTime()).toBeLessThan(60_000);
     expect(await registrationsOf(one.id)).toHaveLength(1);
   });
@@ -143,6 +164,19 @@ describe('participant list (class rows of seminars)', () => {
     );
     expect((await put({ name: ' ', company: 'X' })).statusCode).toBe(400);
     expect((await put({ name: 'ZZ', company: 'X' }, '00000000-0000-4000-8000-000000000000')).statusCode).toBe(404);
+    // The admin withdraws the consent to invitations (never gives it); AuditLog names the field.
+    await register(t, s.id, email(t, 'withdraw'), { invite: true });
+    const w = (await contactsOf(t)).find((x) => x.email === email(t, 'withdraw'))!;
+    expect((await put({ name: w.name, company: w.company, withdraw_invite: true }, w.id)).statusCode).toBe(200);
+    expect((await contactsOf(t)).find((x) => x.id === w.id)).toMatchObject({
+      invite_consent_version: null,
+      invite_consent_at: null,
+    });
+    const withdrawn = await t.prisma.auditLog.findFirstOrThrow({
+      where: { what: 'seminars.contact.update', target: `contact:${w.id}` },
+    });
+    expect(withdrawn.details).toEqual({ fields: ['invite'] });
+    expect((await put({ name: w.name, company: w.company, invite: true }, w.id)).statusCode).toBe(400);
     // The edit does not count as the yearly check either.
     expect((await contactsOf(t)).find((x) => x.id === c.id)!.last_confirmed_at).toEqual(c.last_confirmed_at);
   });
@@ -330,11 +364,11 @@ describe('deletion on request, scope «Deltakar» (by e-mail)', () => {
     // The restored dump still has the contact and its registration (same ids).
     await withPg(async (c) => {
       await c.query(
-        `INSERT INTO contact (id, name, email, company, consent_version, consent_at) VALUES ($1, 'ZZ', $2, 'x', 'samtykke-v1', now())`,
+        `INSERT INTO contact (id, name, email, company) VALUES ($1, 'ZZ', $2, 'x')`,
         [old.id, address],
       );
       await c.query(
-        `INSERT INTO registration (seminar_id, contact_id, lang, consent_version, consent_at) VALUES ($1, $2, 'nn', 'samtykke-v1', now())`,
+        `INSERT INTO registration (seminar_id, contact_id, lang, consent_version, consent_at) VALUES ($1, $2, 'nn', 'pamelding-v1', now())`,
         [s.id, old.id],
       );
     });

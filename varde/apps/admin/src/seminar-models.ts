@@ -48,6 +48,8 @@ export interface Participant {
   email: string;
   lang: string;
   registered_at: string;
+  /** Has said yes to invitations to later seminars (the optional box on the form). */
+  invite: boolean;
 }
 export interface ContactReview {
   id: string;

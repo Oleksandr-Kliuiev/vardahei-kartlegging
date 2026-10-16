@@ -117,7 +117,9 @@ export class PublicSeminarService {
         .map((c) => ({ key: c.client.slug, name: c.client.name }))
         .sort((a, b) => a.name.localeCompare(b.name, 'nb')),
       phase: held ? ('held' as const) : ('open' as const),
-      consent: held ? null : { version: CONSENT.version, ...by((l) => CONSENT[l]) },
+      consent: held
+        ? null
+        : { version: CONSENT.version, invite_version: CONSENT.invite_version, ...by((l) => CONSENT[l]) },
       // 3.3: the material is for everyone with the link, once the seminar is over.
       materials: held ? (await materialsOf(this.prisma, s.id)).map(({ title, url }) => ({ title, url })) : [],
     };
@@ -136,7 +138,10 @@ export class PublicSeminarService {
         if (now >= s.ends_at) throw new HttpException('Påmeldinga er stengd.', 410);
         if (!s.required_languages.includes(input.lang))
           throw new BadRequestException('Språket er ikkje tilgjengeleg.');
-        if (input.consent !== CONSENT.version)
+        if (
+          input.consent !== CONSENT.version ||
+          (input.invite !== undefined && input.invite !== CONSENT.invite_version)
+        )
           throw new ConflictException('Teksten om personvern er endra. Last sida på nytt og prøv igjen.');
         const chosen =
           'client' in input.company
@@ -156,6 +161,7 @@ export class PublicSeminarService {
             client: chosen ? chosen.client_id : null,
             lang: input.lang,
             consent_version: CONSENT.version,
+            invite_version: input.invite === undefined ? null : CONSENT.invite_version,
           },
           now,
         );

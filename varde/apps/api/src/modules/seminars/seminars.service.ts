@@ -142,7 +142,12 @@ export class SeminarsService {
       if (!client) throw new BadRequestException('Kunden finst ikkje.');
       company = client.name;
     }
-    const change = { name: input.name, company, client: input.client };
+    const change = {
+      name: input.name,
+      company,
+      client: input.client,
+      withdraw_invite: input.withdraw_invite,
+    };
     if (!(await this.privacy.participants.update(this.prisma, contact, change, session)))
       throw new NotFoundException('Kontakten finst ikkje.');
     return { ok: true };

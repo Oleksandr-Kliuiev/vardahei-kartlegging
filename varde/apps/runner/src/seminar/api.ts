@@ -3,7 +3,10 @@
 import type { SemLang } from './texts.js';
 
 export interface ConsentText {
+  /** Beside the required box: storing the details for this registration. */
   short: string;
+  /** Beside the optional box: invitations to later seminars. */
+  invite: string;
   full: string[];
 }
 export interface PublicSeminar {
@@ -15,7 +18,7 @@ export interface PublicSeminar {
   /** Clients of the seminar to pick as company: `key` is the client's slug, never a database id. */
   clients: { key: string; name: string }[];
   phase: 'open' | 'held';
-  consent: ({ version: string } & Partial<Record<SemLang, ConsentText>>) | null;
+  consent: ({ version: string; invite_version: string } & Partial<Record<SemLang, ConsentText>>) | null;
   materials?: { title: string; url: string }[];
 }
 export interface Registration {
@@ -23,6 +26,8 @@ export interface Registration {
   email: string;
   company: { client: string } | { name: string };
   consent: string;
+  /** Only when the box for invitations is ticked. */
+  invite?: string;
   lang: SemLang;
   website?: string;
 }

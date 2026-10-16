@@ -73,7 +73,7 @@ describe('public seminar view', () => {
       place: 'Vardahei IT, Sogndal',
       format: 'onsite',
       phase: 'open',
-      consent: { version: CONSENT.version, nn: CONSENT.nn, en: CONSENT.en },
+      consent: { version: CONSENT.version, invite_version: CONSENT.invite_version, nn: CONSENT.nn, en: CONSENT.en },
     });
     expect(res.json<{ clients: { key: string; name: string }[] }>().clients).toEqual(
       [...clients].sort((a, b) => a.name.localeCompare(b.name, 'nb')).map((c) => ({ key: c.slug, name: c.name })),
@@ -112,12 +112,34 @@ describe('registration', () => {
     changed.mockRestore();
     expect(await registrationsOf(s.id)).toHaveLength(1);
     const contact = (await contactsOf(t)).find((c) => c.email === email(t, 1))!;
+    // Only the required box: the consent is on the registration, none to invitations on the contact.
     expect(contact).toMatchObject({
       name: 'ZZ Deltakar 1',
       company: clients[0]!.name,
       client_id: clients[0]!.id,
-      consent_version: CONSENT.version,
+      invite_consent_version: null,
+      invite_consent_at: null,
     });
+    expect((await registrationsOf(s.id))[0]?.consent_version).toBe(CONSENT.version);
+  });
+
+  it('the optional box gives consent to invitations; a later form without it does not take it away', async () => {
+    const one = await createSeminar(t),
+      two = await createSeminar(t);
+    const ticked = body('invite', { company: { name: 'X' }, invite: CONSENT.invite_version });
+    expect((await pub('POST', '/api/public/seminar/registrations', one.code, ticked)).statusCode).toBe(200);
+    const invited = async () => (await contactsOf(t)).find((c) => c.email === email(t, 'invite'))!;
+    expect(await invited()).toMatchObject({ invite_consent_version: CONSENT.invite_version });
+    const before = await invited();
+    const plain = body('invite', { company: { name: 'Y' }, name: 'ZZ Anna' });
+    expect((await pub('POST', '/api/public/seminar/registrations', two.code, plain)).statusCode).toBe(200);
+    expect(await invited()).toEqual(before);
+    expect(await registrationsOf(two.id)).toHaveLength(1);
+    // An old or made-up version of the invitation text is not taken as consent.
+    const old = body('invite-old', { company: { name: 'X' }, invite: 'invitasjon-v0' });
+    expect((await pub('POST', '/api/public/seminar/registrations', one.code, old)).statusCode).toBe(409);
+    expect((await pub('POST', '/api/public/seminar/registrations', one.code, { ...old, invite: true })).statusCode).toBe(400);
+    expect((await contactsOf(t)).some((c) => c.email === email(t, 'invite-old'))).toBe(false);
   });
 
   it('own company text, English, and wrong input with messages that say nothing about others', async () => {
@@ -141,8 +163,12 @@ describe('registration', () => {
     expect(await bad({ company: { client: clients[1]!.slug } })).toEqual([400, 'Vel bedrift, eller skriv namnet på bedrifta.']);
     expect(await bad({ company: { client: clients[0]!.id } })).toEqual([400, 'Vel bedrift, eller skriv namnet på bedrifta.']);
     expect(await bad({ company: {} })).toEqual([400, 'Vel bedrift, eller skriv namnet på bedrifta.']);
-    expect(await bad({ consent: undefined })).toEqual([400, 'Kryss av for samtykket, så kan du melde deg på.']);
-    expect((await bad({ consent: 'samtykke-v0' }))[0]).toBe(409);
+    const tick = 'Kryss av for at vi kan lagre opplysningane for påmeldinga, så kan du melde deg på.';
+    expect(await bad({ consent: undefined })).toEqual([400, tick]);
+    expect(await bad({ consent: undefined, invite: CONSENT.invite_version })).toEqual([400, tick]);
+    // The same answer for a person who is already registered: it says nothing about who is there.
+    expect(await bad({ consent: undefined, email: email(t, 'own') })).toEqual([400, tick]);
+    expect((await bad({ consent: 'pamelding-v0' }))[0]).toBe(409);
     expect((await bad({ lang: 'nb' }))[0]).toBe(400);
     expect((await bad({ extra: 'x' }))[0]).toBe(400);
     expect((await contactsOf(t)).some((c) => c.email === email(t, 'bad'))).toBe(false);

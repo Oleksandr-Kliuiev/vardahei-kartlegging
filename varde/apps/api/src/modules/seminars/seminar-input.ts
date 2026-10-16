@@ -53,6 +53,8 @@ export const ContactInput = z
     name: text(120).pipe(z.string().min(1)),
     company: text(120).optional(),
     client: z.uuid().nullable().default(null),
+    /** The admin may withdraw the consent to invitations, never give it. */
+    withdraw_invite: z.boolean().default(false),
   })
   .refine((c) => c.client !== null || !!c.company, {
     message: 'Vel ein kunde eller skriv namnet på bedrifta.',
@@ -89,7 +91,10 @@ export const RegistrationInput = z.strictObject({
     z.strictObject({ client: z.string().min(1).max(100) }),
     z.strictObject({ name: text(120).pipe(z.string().min(1)) }),
   ]),
+  /** The required consent (version of its text). */
   consent: z.string().min(1).max(40),
+  /** The optional consent to invitations (version of its text), only when ticked. */
+  invite: z.string().min(1).max(40).optional(),
   lang: z.enum(['nn', 'en']),
   website: z.string().max(200).optional(),
 });
@@ -99,7 +104,7 @@ const REGISTRATION_MESSAGES: Record<string, string> = {
   name: 'Skriv namnet ditt.',
   email: 'Skriv ei gyldig e-postadresse.',
   company: 'Vel bedrift, eller skriv namnet på bedrifta.',
-  consent: 'Kryss av for samtykket, så kan du melde deg på.',
+  consent: 'Kryss av for at vi kan lagre opplysningane for påmeldinga, så kan du melde deg på.',
 };
 
 /** The first wrong field says what to do; nothing says whether the person is already registered. */

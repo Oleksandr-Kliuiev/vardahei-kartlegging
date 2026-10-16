@@ -1,5 +1,7 @@
 // Registration form of the seminar page (3.2): name, company (a client of the seminar or own
-// text), e-mail and consent (short text, full text on request; its version goes with the form).
+// text), e-mail and consent in two boxes (decision 16.10): the required one for this registration
+// and the optional one, not ticked, for invitations to later seminars; the full text on request.
+// The versions of the texts go with the form.
 // The hidden «Nettstad» field is a honeypot: people never see or fill it.
 import { useRef, useState } from 'preact/hooks';
 import type { TargetedEvent } from 'preact';
@@ -35,6 +37,7 @@ export function RegistrationForm({
   const [company, setCompany] = useState(seminar.clients.length ? '' : OTHER);
   const [other, setOther] = useState('');
   const [consent, setConsent] = useState(false);
+  const [invite, setInvite] = useState(false);
   const [open, setOpen] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<Field, SemKey>>>({});
   const [failure, setFailure] = useState<SemKey | null>(null);
@@ -73,6 +76,7 @@ export function RegistrationForm({
         email: email.trim(),
         company: company === OTHER ? { name: other.trim() } : { client: company },
         consent: seminar.consent.version,
+        ...(invite ? { invite: seminar.consent.invite_version } : {}),
         lang,
         ...(honey.current?.value ? { website: honey.current.value } : {}),
       });
@@ -196,9 +200,11 @@ export function RegistrationForm({
         </label>
       </div>
       {text && (
-        <div class="sem-samtykke">
+        <fieldset class="sem-samtykke">
+          <legend class="sr-only">{t('samtykke')}</legend>
           <label class="sem-kryss">
             <input
+              id="sem-samtykke"
               type="checkbox"
               data-field="consent"
               checked={consent}
@@ -209,6 +215,18 @@ export function RegistrationForm({
               {...described('consent')}
             />
             <span>{text.short}</span>
+          </label>
+          {error('consent')}
+          <label class="sem-kryss">
+            <input
+              id="sem-invitasjon"
+              type="checkbox"
+              checked={invite}
+              onChange={(e) => setInvite(e.currentTarget.checked)}
+            />
+            <span>
+              {text.invite} <span class="muted">({t('valfritt')})</span>
+            </span>
           </label>
           <button
             type="button"
@@ -229,8 +247,7 @@ export function RegistrationForm({
               </ul>
             </div>
           </div>
-          {error('consent')}
-        </div>
+        </fieldset>
       )}
       {failure && (
         <div role="alert" class="feilmelding">

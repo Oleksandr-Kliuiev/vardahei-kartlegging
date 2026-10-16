@@ -25,9 +25,10 @@ const seminar = (over: Partial<PublicSeminar> = {}): PublicSeminar => ({
   ],
   phase: 'open',
   consent: {
-    version: 'samtykke-v1',
-    nn: { short: 'Eg samtykkjer.', full: ['Heile teksten.'] },
-    en: { short: 'I agree.', full: ['The whole text.'] },
+    version: 'pamelding-v1',
+    invite_version: 'invitasjon-v1',
+    nn: { short: 'Eg samtykkjer.', invite: 'Eg vil ha invitasjonar.', full: ['Heile teksten.'] },
+    en: { short: 'I agree.', invite: 'I want invitations.', full: ['The whole text.'] },
   },
   ...over,
 });
@@ -93,7 +94,7 @@ describe('seminar page (3.2)', () => {
     await open(seminar());
     await submit();
     expect(fetcher).toHaveBeenCalledTimes(1);
-    for (const text of ['Skriv namnet ditt.', 'Vel bedrift, eller skriv namnet på bedrifta.', 'Skriv ei gyldig e-postadresse.', 'Kryss av for samtykket, så kan du melde deg på.'])
+    for (const text of ['Skriv namnet ditt.', 'Vel bedrift, eller skriv namnet på bedrifta.', 'Skriv ei gyldig e-postadresse.', 'Kryss av for at vi kan lagre opplysningane for påmeldinga, så kan du melde deg på.'])
       expect(root.textContent).toContain(text);
     expect(document.activeElement?.id).toBe('sem-namn');
     expect(root.querySelector('#sem-namn')?.getAttribute('aria-invalid')).toBe('true');
@@ -104,7 +105,7 @@ describe('seminar page (3.2)', () => {
     await input('#sem-namn', 'ZZ Deltakar');
     await click('input[value="syntetisk-b"]');
     await input('#sem-epost', 'zz@example.test');
-    await click('.sem-kryss input');
+    await click('#sem-samtykke');
     await input('input[name="website"]', 'bot');
     await submit();
     await vi.waitFor(() => expect(root.querySelector('h1')?.textContent).toBe('Du er påmeld'));
@@ -114,7 +115,7 @@ describe('seminar page (3.2)', () => {
       name: 'ZZ Deltakar',
       email: 'zz@example.test',
       company: { client: 'syntetisk-b' },
-      consent: 'samtykke-v1',
+      consent: 'pamelding-v1',
       lang: 'nn',
       website: 'bot',
     });
@@ -140,12 +141,37 @@ describe('seminar page (3.2)', () => {
     await click('input[value="*"]');
     await input('#sem-anna', 'Eige firma');
     await input('#sem-epost', 'zz@example.test');
-    await click('.sem-kryss input');
+    await click('#sem-samtykke');
     await submit();
     await vi.waitFor(() => expect(root.querySelector('[role="alert"]')?.textContent).toContain('Too many registrations'));
     expect(JSON.parse((fetcher.mock.calls[1] as [string, RequestInit])[1].body as string)).toMatchObject({
       company: { name: 'Eige firma' },
       lang: 'en',
+    });
+  });
+
+  it('two boxes: the required one for this registration, the optional one for invitations, not ticked', async () => {
+    await open(seminar());
+    const required = root.querySelector<HTMLInputElement>('#sem-samtykke')!;
+    const optional = root.querySelector<HTMLInputElement>('#sem-invitasjon')!;
+    expect(required.checked).toBe(false);
+    expect(optional.checked).toBe(false);
+    expect(required.closest('label')?.textContent).toBe('Eg samtykkjer.');
+    expect(optional.closest('label')?.textContent).toBe('Eg vil ha invitasjonar. (valfritt)');
+    // Only the required box is needed to register; the optional one goes along when ticked.
+    await input('#sem-namn', 'ZZ Deltakar');
+    await click('input[value="syntetisk-a"]');
+    await input('#sem-epost', 'zz@example.test');
+    await submit();
+    expect(root.textContent).toContain('Kryss av for at vi kan lagre opplysningane for påmeldinga, så kan du melde deg på.');
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    await click('#sem-samtykke');
+    await click('#sem-invitasjon');
+    await submit();
+    await vi.waitFor(() => expect(root.querySelector('h1')?.textContent).toBe('Du er påmeld'));
+    expect(JSON.parse((fetcher.mock.calls[1] as [string, RequestInit])[1].body as string)).toMatchObject({
+      consent: 'pamelding-v1',
+      invite: 'invitasjon-v1',
     });
   });
 

@@ -49,8 +49,8 @@ CREATE TABLE "contact" (
     "client_id" UUID,
     "company" TEXT NOT NULL,
     "role_at_client" TEXT,
-    "consent_version" TEXT NOT NULL,
-    "consent_at" TIMESTAMPTZ(6) NOT NULL,
+    "invite_consent_version" TEXT,
+    "invite_consent_at" TIMESTAMPTZ(6),
     "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "last_confirmed_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "review_flagged_at" TIMESTAMPTZ(6),
@@ -205,6 +205,9 @@ ALTER TABLE "contact" ADD CONSTRAINT "contact_email_check"
   CHECK ("email" = lower(btrim("email")) AND "email" LIKE '_%@_%');
 ALTER TABLE "contact" ADD CONSTRAINT "contact_text_check"
   CHECK (btrim("name") <> '' AND btrim("company") <> '');
+-- Consent to invitations (decision 16.10): version and time together, or none.
+ALTER TABLE "contact" ADD CONSTRAINT "contact_invite_check"
+  CHECK (("invite_consent_version" IS NULL) = ("invite_consent_at" IS NULL));
 ALTER TABLE "registration" ADD CONSTRAINT "registration_lang_check" CHECK ("lang" IN ('nn', 'en'));
 ALTER TABLE "finding_status" ADD CONSTRAINT "finding_status_status_check"
   CHECK ("status" IN ('open', 'in_seminar', 'closed'));

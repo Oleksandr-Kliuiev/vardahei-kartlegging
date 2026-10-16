@@ -1,5 +1,7 @@
-// «Namneliste» of a seminar (3a): names, companies and e-mail, read only on request (every read
-// is in the log). The admin corrects a contact here; the public form never changes a known one.
+// «Namneliste» of a seminar (3a): names, companies and e-mail, and whether the person wants
+// invitations, read only on request (every read is in the log). The admin corrects a contact here
+// and may withdraw its consent to invitations (never give it); the public form never changes a
+// known contact, except to add that consent when the person ticks the box (decision 16.10).
 import { useEffect, useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, mutate } from './api.js';
@@ -19,6 +21,7 @@ function EditContact({
   const [name, setName] = useState(row.name);
   const [client, setClient] = useState(row.client ?? '');
   const [company, setCompany] = useState(row.client ? '' : row.company);
+  const [withdraw, setWithdraw] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -29,9 +32,16 @@ function EditContact({
       await mutate(`/api/admin/contacts/${row.contact}`, 'PUT', {
         name,
         ...(client ? { client } : { company, client: null }),
+        ...(withdraw ? { withdraw_invite: true } : {}),
       });
       const chosen = clients.data?.find((c) => c.id === client);
-      onDone({ ...row, name: name.trim(), client: client || null, company: chosen?.name ?? company.trim() });
+      onDone({
+        ...row,
+        name: name.trim(),
+        client: client || null,
+        company: chosen?.name ?? company.trim(),
+        invite: row.invite && !withdraw,
+      });
     } catch (e) {
       setError(e instanceof Error ? e : new Error('Noko gjekk gale.'));
       setBusy(false);
@@ -61,7 +71,21 @@ function EditContact({
             <input className="input" required maxLength={120} value={company} onChange={(e) => setCompany(e.target.value)} />
           </label>
         )}
-        <p className="forklaring">Endringa gjeld kontakten i alle seminar. E-posten kan ikkje endrast.</p>
+        <div className="field">
+          <span>Invitasjonar</span>
+          {row.invite ? (
+            <label className="kryss">
+              <input type="checkbox" checked={withdraw} onChange={(e) => setWithdraw(e.target.checked)} /> Ta bort
+              samtykket til invitasjonar
+            </label>
+          ) : (
+            <p className="forklaring">Personen har ikkje sagt ja til invitasjonar.</p>
+          )}
+        </div>
+        <p className="forklaring">
+          Endringa gjeld kontakten i alle seminar. E-posten kan ikkje endrast. Samtykket til invitasjonar kan
+          berre personen sjølv gi, på påmeldingssida.
+        </p>
         <ErrorMessage error={error} />
         <div className="handlingar">
           <button type="submit" className="btn primary sm">
@@ -76,7 +100,8 @@ function EditContact({
   );
 }
 
-/** «Fjern påmelding» in two presses; the contact itself stays (yearly check or «Sletting»). */
+/** «Fjern påmelding» in two presses. A contact left with no registration and no consent to
+ * invitations goes in the next daily run; with that consent it stays (yearly check, «Sletting»). */
 function RemoveRegistration({
   seminar,
   row,
@@ -168,6 +193,7 @@ export function NameList({ seminar }: { seminar: SeminarDetail }) {
                   <th scope="col">Bedrift</th>
                   <th scope="col">E-post</th>
                   <th scope="col">Påmeld</th>
+                  <th scope="col">Invitasjon</th>
                   <th scope="col">
                     <span className="sr-only">Handlingar</span>
                   </th>
@@ -177,7 +203,7 @@ export function NameList({ seminar }: { seminar: SeminarDetail }) {
                 {rows.map((p) =>
                   editing === p.registration ? (
                     <tr key={p.registration}>
-                      <td colSpan={5}>
+                      <td colSpan={6}>
                         <EditContact row={p} onDone={replace} onCancel={() => setEditing(null)} />
                       </td>
                     </tr>
@@ -190,11 +216,14 @@ export function NameList({ seminar }: { seminar: SeminarDetail }) {
                         {shortDate(p.registered_at)}
                         {p.lang === 'en' ? ' · English' : ''}
                       </td>
+                      <td>{p.invite ? 'ja' : 'nei'}</td>
                       <td className="sem-rad-handling">
-                        <button type="button" className="btn sm ghost" aria-label={`Endre ${p.name}`} onClick={() => setEditing(p.registration)}>
-                          Endre
-                        </button>
-                        <RemoveRegistration seminar={seminar.id} row={p} onDone={() => removed(p.registration)} />
+                        <div className="sem-rad-knappar">
+                          <button type="button" className="btn sm ghost" aria-label={`Endre ${p.name}`} onClick={() => setEditing(p.registration)}>
+                            Endre
+                          </button>
+                          <RemoveRegistration seminar={seminar.id} row={p} onDone={() => removed(p.registration)} />
+                        </div>
                       </td>
                     </tr>
                   ),

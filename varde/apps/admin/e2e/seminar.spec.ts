@@ -1,6 +1,7 @@
-// Seminar (3a) end to end: create a seminar → its link → registration on the public page → the
-// registration is in the admin list (read on request) → «Last ned invitasjon», the calendar file
-// and the poster → «Ny lenkje» → the admin corrects the contact → deletion by e-mail on «Sletting».
+// Seminar (3a) end to end: create a seminar → its link → registration on the public page with both
+// boxes ticked → the registration is in the admin list (read on request) with «Invitasjon: ja» →
+// «Last ned invitasjon», the calendar file and the poster → «Ny lenkje» → the admin corrects the
+// contact and withdraws its consent to invitations → deletion by e-mail on «Sletting».
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { login } from './support.js';
@@ -40,7 +41,10 @@ test('create → link → register on /s → visible in the list → invitation,
   await pub.getByLabel('Syntetisk admin kunde').check();
   const email = `zz-e2e-${Date.now()}@example.test`;
   await pub.locator('#sem-epost').fill(email);
-  await pub.locator('.sem-kryss input').check();
+  // Two boxes (decision 16.10): the required one, and the one for invitations, not ticked by default.
+  await expect(pub.locator('#sem-invitasjon')).not.toBeChecked();
+  await pub.locator('#sem-samtykke').check();
+  await pub.locator('#sem-invitasjon').check();
   await pub.getByRole('button', { name: 'Meld meg på' }).click();
   await expect(pub.locator('h1')).toHaveText('Du er påmeld');
   const [calendar] = await Promise.all([
@@ -58,6 +62,8 @@ test('create → link → register on /s → visible in the list → invitation,
   await expect(table).toContainText('ZZ E2E Deltakar');
   await expect(table).toContainText('Syntetisk admin kunde');
   await expect(table).toContainText(email);
+  await expect(table.getByRole('columnheader', { name: 'Invitasjon' })).toBeVisible();
+  await expect(table.getByRole('cell', { name: 'ja', exact: true })).toBeVisible();
   await page.screenshot({ path: info.outputPath('admin-seminar-pamelding.png'), fullPage: true });
 
   // «Invitasjon»: the letter, the package, the calendar file and the poster; nothing is sent.
@@ -105,8 +111,15 @@ test('create → link → register on /s → visible in the list → invitation,
   await page.getByRole('button', { name: 'Endre ZZ E2E Deltakar' }).click();
   const edit = page.getByRole('form', { name: 'Endre kontakten' });
   await edit.getByLabel('Namn').fill('ZZ E2E Retta');
+  await edit.getByLabel('Ta bort samtykket til invitasjonar').check();
+  await page.screenshot({ path: info.outputPath('admin-seminar-endre-kontakt.png'), fullPage: true });
   await edit.getByRole('button', { name: 'Lagre kontakten' }).click();
   await expect(page.locator('table.sem-pamelde')).toContainText('ZZ E2E Retta');
+  await expect(page.locator('table.sem-pamelde').getByRole('cell', { name: 'nei', exact: true })).toBeVisible();
+  // Read again from the server: the consent is gone, only the person can give it again.
+  await page.reload();
+  await page.getByRole('button', { name: 'Vis namnelista' }).click();
+  await expect(page.locator('table.sem-pamelde').getByRole('cell', { name: 'nei', exact: true })).toBeVisible();
 
   // «Sletting», area «Deltakar»: the contact and the registration go, by e-mail.
   await page.getByRole('link', { name: 'Sletting', exact: true }).click();

@@ -62,7 +62,7 @@ beforeAll(async () => {
   await f.prisma.$transaction((tx) =>
     f.app.get(PrivacyService).participants.register(
       tx,
-      { seminar: id, name: NAME, email: EMAIL, company: COMPANY, client: null, lang: 'nn', consent_version: 'samtykke-v1' },
+      { seminar: id, name: NAME, email: EMAIL, company: COMPANY, client: null, lang: 'nn', consent_version: 'pamelding-v1', invite_version: null },
       new Date(),
     ),
   );

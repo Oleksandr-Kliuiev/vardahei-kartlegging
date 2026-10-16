@@ -1,6 +1,7 @@
 // Seminar section of the admin (3a, unit): the list shows counts without names, the participant
-// list is read only on request, a new seminar posts what the form says, and the deletion page
-// words a participant deletion.
+// list is read only on request and says who wants invitations (the admin can only withdraw that
+// consent), a new seminar posts what the form says, and the deletion page words a participant
+// deletion.
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { participantText } from '../src/deletion-page.js';
@@ -42,6 +43,7 @@ const rows = [
     email: 'zz@example.test',
     lang: 'nn',
     registered_at: '2026-10-16T08:00:00Z',
+    invite: true,
   },
 ];
 
@@ -168,6 +170,10 @@ describe('one seminar', () => {
     await settle();
     expect(calls('/registrations')).toHaveLength(1);
     expect(view.div.querySelector('table')?.textContent).toContain('zz@example.test');
+    // «Invitasjon»: ja or nei per person.
+    const heads = [...view.div.querySelectorAll('thead th')].map((th) => th.textContent);
+    const cells = [...view.div.querySelectorAll('tbody tr > *')].map((td) => td.textContent);
+    expect(cells[heads.indexOf('Invitasjon')]).toBe('ja');
   });
   it('«Fjern påmelding» takes two presses and removes only that registration', async () => {
     view = mount(<SeminarPage id={ID} />, true);
@@ -244,6 +250,50 @@ describe('one seminar', () => {
     expect(JSON.parse(put![1]!.body as string)).toEqual({ name: 'ZZ Retta Namn', company: 'Eige firma AS', client: null });
     expect(view.div.querySelector('table')?.textContent).toContain('ZZ Retta Namn');
     expect(view.div.querySelector('table')?.textContent).toContain('Eige firma AS');
+  });
+  it('«Endre kontakten» withdraws the consent to invitations; it never offers to give it', async () => {
+    view = mount(
+      <Toasts>
+        <SeminarPage id={ID} />
+      </Toasts>,
+      true,
+    );
+    await settle();
+    act(() => {
+      button(view!.div, 'Vis namnelista').click();
+    });
+    await settle();
+    const edit = async () => {
+      act(() => {
+        view!.div.querySelector<HTMLButtonElement>('button[aria-label="Endre ZZ Deltakar"]')!.click();
+      });
+      await settle();
+      return view!.div.querySelector<HTMLFormElement>('form[aria-label="Endre kontakten"]')!;
+    };
+    const form = await edit();
+    const box = form.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    expect(box.closest('label')?.textContent?.trim()).toBe('Ta bort samtykket til invitasjonar');
+    expect(box.checked).toBe(false);
+    expect(form.textContent).toContain('Samtykket til invitasjonar kan berre personen sjølv gi, på påmeldingssida.');
+    act(() => {
+      box.click();
+    });
+    act(() => {
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
+    await settle();
+    const put = fetcher.mock.calls.find(([p, i]) => p === '/api/admin/contacts/k1' && i?.method === 'PUT');
+    expect(JSON.parse(put![1]!.body as string)).toEqual({
+      name: 'ZZ Deltakar',
+      client: 'c1',
+      withdraw_invite: true,
+    });
+    const cells = [...view.div.querySelectorAll('tbody tr > *')].map((td) => td.textContent);
+    expect(cells).toContain('nei');
+    // Without the consent there is nothing to tick: only the person can give it.
+    const again = await edit();
+    expect(again.querySelector('input[type="checkbox"]')).toBeNull();
+    expect(again.textContent).toContain('Personen har ikkje sagt ja til invitasjonar.');
   });
   it('«Materiell» posts a title and a link and says when the participants see it', async () => {
     view = mount(<SeminarPage id={ID} />, true);

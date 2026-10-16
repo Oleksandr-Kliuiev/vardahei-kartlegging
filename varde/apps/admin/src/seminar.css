@@ -68,6 +68,8 @@
 
 /* Namnelista: handlingar per rad og retting av ein kontakt */
 .sem-rad-handling { white-space: nowrap; text-align: right; }
+/* Knappane går under kvarandre når kolonnane treng plassen */
+.sem-rad-knappar { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
 .sem-kontakt-form fieldset { max-width: 520px; }
 .sem-ny-lenkje { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); display: grid; gap: 6px; justify-items: start; }
 .sem-ny-lenkje .forklaring { margin-top: 0; }

@@ -1,4 +1,4 @@
-// 3.2 (unit): the consent text is versioned (a change of text needs a new version), nynorsk
+// 3.2 (unit): the two consent texts are versioned (a change of text needs a new version), nynorsk
 // without bokmål forms; seminar times in Europe/Oslo in nynorsk and English.
 import { createHash } from 'node:crypto';
 import { findBokmal } from '@varde/schema/i18n/nn-stoplist';
@@ -6,23 +6,40 @@ import { describe, expect, it } from 'vitest';
 import { CONSENT } from '../../src/modules/seminars/consent.js';
 import { dayText, osloInstant, osloParts, whenText } from '../../src/modules/seminars/when.js';
 
-/** Every consent version ever shown, with the hash of its texts: the contact stores the version. */
+/**
+ * Every consent version ever shown, with the hash of its texts: the registration stores the
+ * version of the required box, the contact that of the box for invitations. «Les meir» belongs
+ * to both: a change there needs two new versions.
+ */
 const VERSIONS: Record<string, string> = {
-  'samtykke-v1': '38b2414f77495248ddf55fe70bfd51a0f822fbca420b6d2f199c3127eeb8b203',
+  'pamelding-v1': 'bacb4a76de12b56fa4ffdef9f8318140e3e5236fb637fd5f9c2d2193d89d5062',
+  'invitasjon-v1': '5573a9c28fc4cfdfedeffe1b6faa4bd43317626886157fa9fdc1929cd4ebd46f',
 };
 
-const hash = () =>
+const hash = (box: 'short' | 'invite') =>
   createHash('sha256')
-    .update(JSON.stringify({ nn: CONSENT.nn, en: CONSENT.en }))
+    .update(JSON.stringify((['nn', 'en'] as const).map((l) => [CONSENT[l][box], CONSENT[l].full])))
     .digest('hex');
 
-describe('consent (3.2)', () => {
-  it('the texts belong to their version: change the text, change the version', () => {
-    expect(Object.keys(VERSIONS)).toContain(CONSENT.version);
-    expect(hash(), `new texts need a version after ${CONSENT.version}`).toBe(VERSIONS[CONSENT.version]);
+describe('consent in two boxes (3.2, decision 16.10)', () => {
+  it('the texts belong to their version: change a text, change its version', () => {
+    for (const [version, box] of [
+      [CONSENT.version, 'short'],
+      [CONSENT.invite_version, 'invite'],
+    ] as const) {
+      expect(Object.keys(VERSIONS)).toContain(version);
+      expect(hash(box), `new texts need a version after ${version}`).toBe(VERSIONS[version]);
+    }
+  });
+  it('the boxes say what Oleksandr decided', () => {
+    expect(CONSENT.nn.short).toBe(
+      'Eg samtykkjer i at Vardahei IT lagrar namnet, bedrifta og e-postadressa mi for denne påmeldinga.',
+    );
+    expect(CONSENT.nn.invite).toBe('Eg vil gjerne få invitasjon til seinare seminar frå Vardahei IT.');
   });
   it('nynorsk without bokmål forms; English has the same parts', () => {
-    for (const line of [CONSENT.nn.short, ...CONSENT.nn.full]) expect(findBokmal(line), line).toEqual([]);
+    for (const line of [CONSENT.nn.short, CONSENT.nn.invite, ...CONSENT.nn.full])
+      expect(findBokmal(line), line).toEqual([]);
     expect(CONSENT.en.full).toHaveLength(CONSENT.nn.full.length);
     expect(CONSENT.nn.full.join(' ')).toContain('90 dagar');
     expect(CONSENT.en.full.join(' ')).toContain('90 days');

@@ -38,7 +38,8 @@
 .sem-feil { color: var(--danger-fg); font-size: 14.5px; font-weight: 600; }
 
 /* Samtykke: kort tekst ved avkryssinga, heile teksten på spørsmål */
-.sem-samtykke { display: grid; gap: 6px; padding: 14px 16px; border-radius: var(--r-lg); background: var(--bg); border: 1px solid var(--line); }
+.sem-samtykke { display: grid; gap: 10px; margin: 0; min-width: 0; padding: 14px 16px; border-radius: var(--r-lg); background: var(--bg); border: 1px solid var(--line); }
+.sem-samtykke .sem-feil { margin: -4px 0 0 34px; }
 .sem-kryss { display: grid; grid-template-columns: 22px 1fr; gap: 12px; align-items: start; font-size: 15.5px; color: var(--ink-strong); cursor: pointer; }
 .sem-kryss input { margin-top: 2px; }
 .sem-samtykke .linkbtn { justify-self: start; display: inline-flex; align-items: center; gap: 6px; margin-left: 28px; padding: 6px 4px; white-space: normal; text-align: left; font-size: 14.5px; }

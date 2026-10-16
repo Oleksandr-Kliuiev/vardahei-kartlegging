@@ -187,7 +187,7 @@ describe('database constraints (3.1)', () => {
       ).rejects.toThrow(/seminar_languages_check/);
       await expect(
         c.query(
-          `INSERT INTO contact (name, email, company, consent_version, consent_at) VALUES ('ZZ', 'ZZ@Example.test', 'x', 'v', now())`,
+          `INSERT INTO contact (name, email, company) VALUES ('ZZ', 'ZZ@Example.test', 'x')`,
         ),
       ).rejects.toThrow(/contact_email_check/);
       const f = await t.prisma.finding.create({

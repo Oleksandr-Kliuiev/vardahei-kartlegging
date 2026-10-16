@@ -20,7 +20,10 @@ export interface ParticipantInput {
   company: string;
   client: string | null;
   lang: ParticipantLang;
+  /** The required consent: storing name, company and e-mail for this registration. */
   consent_version: string;
+  /** The optional consent to invitations to later seminars, if ticked. */
+  invite_version: string | null;
 }
 export interface ParticipantRow {
   registration: string;
@@ -31,12 +34,16 @@ export interface ParticipantRow {
   email: string;
   lang: string;
   registered_at: string;
+  /** Has consented to invitations to later seminars. */
+  invite: boolean;
 }
-/** An admin's correction of a contact (3a). */
+/** An admin's correction of a contact (3a): name and company, and the withdrawal of the consent
+ * to invitations. An admin never gives that consent: only the person does, on the form. */
 export interface ContactChange {
   name: string;
   company: string;
   client: string | null;
+  withdraw_invite: boolean;
 }
 export interface ContactReviewRow {
   id: string;
@@ -74,18 +81,30 @@ export class ParticipantStore {
    * form has no login and the e-mail is not verified, so it never changes a known contact — not
    * the name, company or client, not the consent, `last_confirmed_at` or the yearly mark: only
    * the admin edits a contact (`update`, AuditLog) and only «Stadfest» (`confirm`) starts a new
-   * year. The consent goes on the registration (and on a contact created now). The caller holds
-   * the seminar row lock and has checked the seminar, the company and the consent version. */
+   * year. One exception (decision 16.10): a ticked box for invitations adds that consent to a
+   * known contact without it; the form never removes it. The required consent goes on the
+   * registration. The caller holds the seminar row lock and has checked the seminar, the company
+   * and the consent versions. True when something was written. */
   async register(tx: Prisma.TransactionClient, p: ParticipantInput, now: Date): Promise<boolean> {
     await lockEmail(tx, p.email);
-    const consent = { consent_version: p.consent_version, consent_at: now };
-    const known = await tx.contact.findUnique({ where: { email: p.email }, select: { id: true } });
+    const invite = p.invite_version
+      ? { invite_consent_version: p.invite_version, invite_consent_at: now }
+      : {};
+    const known = await tx.contact.findUnique({
+      where: { email: p.email },
+      select: { id: true, invite_consent_version: true },
+    });
+    let added = false;
+    if (known && p.invite_version && known.invite_consent_version === null) {
+      await tx.contact.update({ where: { id: known.id }, data: invite });
+      added = true;
+    }
     if (known) {
       const again = await tx.registration.findUnique({
         where: { seminar_id_contact_id: { seminar_id: p.seminar, contact_id: known.id } },
         select: { id: true },
       });
-      if (again) return false;
+      if (again) return added;
     }
     const contact =
       known ??
@@ -95,19 +114,26 @@ export class ParticipantStore {
           email: p.email,
           company: p.company,
           client_id: p.client,
-          ...consent,
+          ...invite,
           last_confirmed_at: now,
         },
         select: { id: true },
       }));
     await tx.registration.create({
-      data: { seminar_id: p.seminar, contact_id: contact.id, lang: p.lang, ...consent },
+      data: {
+        seminar_id: p.seminar,
+        contact_id: contact.id,
+        lang: p.lang,
+        consent_version: p.consent_version,
+        consent_at: now,
+      },
     });
     return true;
   }
 
-  /** The admin corrects a contact: name, company and the client it belongs to. AuditLog names the
-   * changed fields, never their values. False if there is no such contact. */
+  /** The admin corrects a contact: name, company and the client it belongs to, and may withdraw
+   * the consent to invitations (never give it). AuditLog names the changed fields, never their
+   * values. False if there is no such contact. */
   update(
     db: RowsDb,
     contact: string,
@@ -118,18 +144,25 @@ export class ParticipantStore {
     return db.$transaction(async (tx) => {
       const old = await tx.contact.findUnique({
         where: { id: contact },
-        select: { name: true, company: true, client_id: true },
+        select: { name: true, company: true, client_id: true, invite_consent_version: true },
       });
       if (!old) return false;
+      const withdraw = change.withdraw_invite && old.invite_consent_version !== null;
       const fields = [
         ...(old.name === change.name ? [] : ['name']),
         ...(old.company === change.company ? [] : ['company']),
         ...(old.client_id === change.client ? [] : ['client']),
+        ...(withdraw ? ['invite'] : []),
       ];
       if (fields.length === 0) return true;
       await tx.contact.update({
         where: { id: contact },
-        data: { name: change.name, company: change.company, client_id: change.client },
+        data: {
+          name: change.name,
+          company: change.company,
+          client_id: change.client,
+          ...(withdraw ? { invite_consent_version: null, invite_consent_at: null } : {}),
+        },
       });
       await tx.auditLog.create({
         data: { who, what: 'seminars.contact.update', target: `contact:${contact}`, details: { fields } },
@@ -189,7 +222,16 @@ export class ParticipantStore {
           id: true,
           lang: true,
           created_at: true,
-          contact: { select: { id: true, name: true, company: true, client_id: true, email: true } },
+          contact: {
+            select: {
+              id: true,
+              name: true,
+              company: true,
+              client_id: true,
+              email: true,
+              invite_consent_version: true,
+            },
+          },
         },
       });
       await tx.auditLog.update({
@@ -205,6 +247,7 @@ export class ParticipantStore {
         email: r.contact.email,
         lang: r.lang,
         registered_at: r.created_at.toISOString(),
+        invite: r.contact.invite_consent_version !== null,
       }));
     });
   }
