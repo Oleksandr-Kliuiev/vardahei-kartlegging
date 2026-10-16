@@ -68,6 +68,14 @@ describe('5.1 client report', () => {
     const dash = await f.app.get(AggregateView).load(f.tryggleik, 'daco');
     expect(r).toMatchObject({ class: 'aggregate', template: 'tryggleik', lang: 'nn' });
     expect(r.languages).toEqual(['nn', 'en']);
+    // Contact as on the finish screen of the survey: intro.contact of the round's version (16.10).
+    const version = await f.prisma.round.findUniqueOrThrow({
+      where: { id: f.tryggleik },
+      include: { template_version: true },
+    });
+    expect(r.contact).toEqual(
+      (version.template_version!.content as { intro: { contact: unknown } }).intro.contact,
+    );
     expect(r.respondents).toBe(dash.zones!.n);
     expect(r.zone).toEqual({
       mean: dash.zones!.mean,

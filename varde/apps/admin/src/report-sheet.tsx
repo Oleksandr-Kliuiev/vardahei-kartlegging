@@ -120,6 +120,21 @@ function Questions({ report, t }: { report: ClientReport; t: ReportTexts }) {
   );
 }
 
+function ContactBlock({ report, t }: { report: ClientReport; t: ReportTexts }) {
+  const c = report.contact;
+  const hours = c.hours[report.lang] ?? c.hours.nn;
+  return (
+    <section className="rapport-del rapport-kontakt">
+      <h2>{t.contact}</h2>
+      <p>{t.contactLead}</p>
+      <p>
+        <b>{c.name}</b> · {c.phone} · {c.email}
+        {hours ? ` · ${hours}` : ''}
+      </p>
+    </section>
+  );
+}
+
 function Method({ t }: { t: ReportTexts }) {
   return (
     <section className="rapport-del rapport-metode">
@@ -214,6 +229,7 @@ export function ReportSheet({ report }: { report: ClientReport }) {
         )}
         {report.comparison && <Comparison c={report.comparison} lang={lang} />}
         <Method t={t} />
+        <ContactBlock report={report} t={t} />
         <Fjell />
       </article>
       {detail && (

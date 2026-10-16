@@ -38,6 +38,8 @@ test.describe('client report (5.1)', () => {
     await expect(sheet).toContainText('Dette bør de ta tak i');
     await expect(sheet).toContainText('Samanlikna med');
     await expect(sheet).toContainText('Kva vi føreslår');
+    // Contact as on the finish screen of the survey (decision of Oleksandr 16.10).
+    await expect(sheet).toContainText('Vardahei IT · +47 930 94 567 · post@vardahei.no');
     await expect(page.locator('.sjekk')).toContainText('Sone for bedrifta og kritisk andel');
     await noSecrets(page);
 

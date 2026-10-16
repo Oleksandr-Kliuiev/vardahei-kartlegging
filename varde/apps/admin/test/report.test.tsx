@@ -38,6 +38,12 @@ const report = (lang: 'nn' | 'en' = 'nn'): ClientReport => ({
   lang,
   languages: ['nn', 'en'],
   generated: '2026-10-16',
+  contact: {
+    name: 'Vardahei IT',
+    phone: '+47 930 94 567',
+    email: 'post@vardahei.no',
+    hours: { nn: 'Måndag til fredag 08–16', en: 'Monday to Friday 08–16' },
+  },
   respondents: 12,
   zone: stats(1.23, 0.31, 1),
   findings: [
@@ -79,6 +85,8 @@ describe('A4 sheet', () => {
     expect(text).toContain('+0,17, verre');
     expect(text).toContain('+4 prosentpoeng, verre');
     expect(text).toMatch(/omtrentleg/);
+    expect(text).toContain('Spørsmål om rapporten? Ta kontakt med oss.');
+    expect(text).toContain('Vardahei IT · +47 930 94 567 · post@vardahei.no · Måndag til fredag 08–16');
     const hiddenRow = [...view.div.querySelectorAll('tbody tr')].find((r) =>
       r.textContent?.startsWith('Opplevd svindelforsøk'),
     )!;
@@ -110,6 +118,8 @@ describe('A4 sheet', () => {
     expect(text).toContain('IT security at');
     expect(text).toContain('Too few people answered');
     expect(text).toContain('We found no clear problems');
+    expect(text).toContain('Questions about the report? Get in touch.');
+    expect(text).toContain('Monday to Friday 08–16');
     expect(text).not.toMatch(/\d+ of \d+|What we suggest|Compared with/);
   });
   it('nynorsk texts have no bokmål forms', () => {

@@ -13,6 +13,7 @@ export interface ClientReport {
   lang: ReportLang;
   languages: ReportLang[];
   generated: string;
+  contact: { name: string; phone: string; email: string; hours: Partial<Record<ReportLang, string>> };
   respondents: number | null;
   zone: Stats | null;
   findings: {
@@ -79,6 +80,8 @@ const nn = {
   method: 'Om tala',
   methodText:
     'Tala er samla frå svara til dei tilsette. Vi viser berre tal som byggjer på minst tre svar, og vi skjuler grupper som kunne avsløre svara til færre enn tre personar. Rapporten har ingen namn eller initialar og ingen enkeltsvar, og svara frå leiarane er ikkje med.',
+  contact: 'Kontakt',
+  contactLead: 'Spørsmål om rapporten? Ta kontakt med oss.',
   zones: ['Grøn', 'Gul', 'Oransje', 'Raud'],
 };
 export type ReportTexts = typeof nn;
@@ -122,6 +125,8 @@ const en: ReportTexts = {
   method: 'About the numbers',
   methodText:
     "The numbers combine the employees' answers. We only show numbers based on at least three answers, and we hide groups that could reveal the answers of fewer than three people. The report contains no names or initials and no individual answers, and the leaders' answers are not included.",
+  contact: 'Contact',
+  contactLead: 'Questions about the report? Get in touch.',
   zones: ['Green', 'Yellow', 'Orange', 'Red'],
 };
 
@@ -164,6 +169,8 @@ const nb: ReportTexts = {
   method: 'Om tallene',
   methodText:
     'Tallene er samlet fra svarene til de ansatte. Vi viser bare tall som bygger på minst tre svar, og vi skjuler grupper som kunne avsløre svarene til færre enn tre personer. Rapporten har ingen navn eller initialer og ingen enkeltsvar, og svarene fra lederne er ikke med.',
+  contact: 'Kontakt',
+  contactLead: 'Spørsmål om rapporten? Ta kontakt med oss.',
   zones: ['Grønn', 'Gul', 'Oransje', 'Rød'],
 };
 

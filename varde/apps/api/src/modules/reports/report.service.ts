@@ -183,6 +183,8 @@ export class ReportService {
       lang,
       languages,
       generated: osloDay(new Date()),
+      // The same contact as the respondents saw on the finish screen (decision of Oleksandr 16.10).
+      contact: content.intro.contact,
       respondents: respondents(now.cells, now.defs, content),
       zone: defs.mean ? scoreStats(now.cells, defs) : null,
       findings: await this.findings(rc.round.id, rc.client_id, now, lang, content),
