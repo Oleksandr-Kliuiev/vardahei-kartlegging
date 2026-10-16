@@ -20,6 +20,7 @@ CREATE INDEX "finding_set_round_id_idx" ON "finding_set"("round_id");
 
 -- Current releases of closed rounds were computed with the versions that existed before 2.5; where a
 -- release already has rows, the smallest version per rule counts (as the client report reads them).
+-- Only the rules of the round's template family (as FindingsService.released() and the archive).
 INSERT INTO "finding_set" ("release_id", "scope", "round_id", "rule_keys")
 SELECT s."release_id", s."scope", s."round_id",
   ARRAY(
@@ -28,16 +29,23 @@ SELECT s."release_id", s."scope", s."round_id",
         WHERE f."release_id" = s."release_id" AND f."rule_key" = k."key"
           AND COALESCE(f."client_id"::text, 'all') = s."scope"),
       k."first")
-    FROM (SELECT "key", min("version") AS "first" FROM "finding_rule" GROUP BY "key") k
+    FROM (
+      SELECT "key", min("version") AS "first" FROM "finding_rule"
+      WHERE starts_with("key", s."family" || '.') GROUP BY "key"
+    ) k
     ORDER BY 1
   )
 FROM (
-  SELECT DISTINCT a."release_id", COALESCE(a."client_id"::text, 'all') AS "scope", a."round_id"
-  FROM "aggregate_snapshot" a JOIN "round" r ON r."id" = a."round_id"
+  SELECT DISTINCT a."release_id", COALESCE(a."client_id"::text, 'all') AS "scope", a."round_id",
+    t."key" AS "family"
+  FROM "aggregate_snapshot" a
+  JOIN "round" r ON r."id" = a."round_id"
+  JOIN "template_version" v ON v."id" = r."template_version_id"
+  JOIN "survey_template" t ON t."id" = v."template_id"
   WHERE a."status" = 'released' AND a."population" IN ('all_clients', 'round_client')
     AND r."status" IN ('closed', 'archived')
 ) s
-WHERE EXISTS (SELECT 1 FROM "finding_rule");
+WHERE EXISTS (SELECT 1 FROM "finding_rule" WHERE starts_with("key", s."family" || '.'));
 
 CREATE FUNCTION "finding_rule_immutable"() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN

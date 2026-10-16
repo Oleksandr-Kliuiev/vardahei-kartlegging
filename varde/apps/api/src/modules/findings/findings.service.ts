@@ -130,7 +130,13 @@ export class FindingsService {
         where: { release_id_scope: { release_id: id, scope: release.scope } },
       });
       if (!set) {
-        const latest = await tx.findingRule.groupBy({ by: ['key'], _max: { version: true } });
+        // The rules of the round's template family in force now (both channels): the set is
+        // what this release was computed with, and what a round archive carries (5.2).
+        const latest = await tx.findingRule.groupBy({
+          by: ['key'],
+          where: { key: { startsWith: `${content.key}.` } },
+          _max: { version: true },
+        });
         const keys = latest.map((l) => `${l.key}@${l._max.version ?? 1}`).sort();
         const rules = await this.at(tx, keys, content.key, 'aggregate');
         const out = evaluate(rules, cells, content, 'all', 'aggregate');

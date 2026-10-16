@@ -1,8 +1,9 @@
 // Round archive (5.2): one closed round as a JSON file of aggregates and their definitions —
 // round metadata without link codes, the published template version (labels and scores the
 // dashboard reads), clients (slug, name) and RoundClients, released and superseded snapshots,
-// MetricDefinitions, FindingRules, Findings, the metric set, the release history and a sha256 of
-// the canonical content. Never Response, respondent_key, initials, answers or free text.
+// MetricDefinitions, FindingRules, Findings, the finding sets (2.5: the rule versions each release
+// was computed with), the metric set, the release history and a sha256 of the canonical content.
+// Never Response, respondent_key, initials, answers or free text.
 import { MetricDefinition } from '@varde/schema/metrics/metric-definition';
 import { POPULATIONS } from '@varde/schema/metrics/populations';
 import { z } from 'zod';
@@ -96,6 +97,17 @@ export const RoundArchive = z.strictObject({
       release_id: z.uuid(),
     }),
   ),
+  // 2.5: absent in archives written before the rule editor; restore then derives them.
+  finding_sets: z
+    .array(
+      z.strictObject({
+        release_id: z.uuid(),
+        scope: z.union([z.literal('all'), z.uuid()]),
+        rule_keys: z.array(z.string().regex(/^[a-z0-9_-]+(\.[a-z0-9_-]+)+@[1-9]\d*$/)),
+        computed_at: Stamp,
+      }),
+    )
+    .optional(),
   releases: z.array(
     z.strictObject({
       release_id: z.uuid(),
@@ -117,6 +129,42 @@ export type ArchiveBody = Omit<RoundArchive, 'sha256'>;
 /** sha256 of the canonical content (sorted keys, everything except the hash itself). */
 export const archiveHash = (body: ArchiveBody): string => sha256(canonical(body));
 
+const scopeOf = (s: { population: string; client_id: string | null }) =>
+  s.population === 'all_clients' ? 'all' : (s.client_id ?? '');
+
+/**
+ * Sets for the current releases the archive has none for (an archive written before 2.5), made
+ * as the 2.5 migration backfills them: per rule the smallest version among the Findings of that
+ * release and scope, else its smallest archived version. Never the newest versions.
+ */
+export function derivedSets(a: ArchiveBody) {
+  const have = new Set((a.finding_sets ?? []).map((x) => `${x.release_id}/${x.scope}`));
+  const scopes = new Map<string, { release_id: string; scope: string }>();
+  for (const s of a.snapshots ?? [])
+    if (s.status === 'released' && ['all_clients', 'round_client'].includes(s.population)) {
+      const id = `${s.release_id}/${scopeOf(s)}`;
+      if (!have.has(id)) scopes.set(id, { release_id: s.release_id, scope: scopeOf(s) });
+    }
+  const first = new Map<string, number>();
+  for (const r of a.finding_rules ?? [])
+    first.set(r.key, Math.min(first.get(r.key) ?? r.version, r.version));
+  return [...scopes.values()].map(({ release_id, scope }) => {
+    const saved = new Map<string, number>();
+    for (const f of a.findings ?? [])
+      if (f.release_id === release_id && (f.client_id ?? 'all') === scope)
+        saved.set(f.rule_key, Math.min(saved.get(f.rule_key) ?? f.rule_version, f.rule_version));
+    const rule_keys = [...first.keys()].map((key) => `${key}@${saved.get(key) ?? first.get(key)}`);
+    return { release_id, scope, rule_keys: rule_keys.sort() };
+  });
+}
+
+/** The finding sets a restore writes (archived and derived), without times, in one order. */
+export function setsOf(a: ArchiveBody) {
+  return [...(a.finding_sets ?? []), ...derivedSets(a)]
+    .map((x) => ({ release_id: x.release_id, scope: x.scope, rule_keys: [...x.rule_keys].sort() }))
+    .sort((x, y) => x.release_id.localeCompare(y.release_id) || x.scope.localeCompare(y.scope));
+}
+
 /** The parts a restore writes; a repeated restore compares exactly these. */
 export function restorable(a: ArchiveBody): string {
   return canonical({
@@ -130,6 +178,7 @@ export function restorable(a: ArchiveBody): string {
     round_metric_set: a.round_metric_set,
     snapshots: a.snapshots,
     findings: a.findings,
+    finding_sets: setsOf(a),
   });
 }
 

@@ -129,6 +129,8 @@
 | Предпросмотр: ячейки только через PrivacyService (k = 3, подавленная ячейка — без чисел); leader — через leader-эндпоинт по клиенту с AuditLog, «alle» — `leaders_all`, F12×B13 при «alle» — по чтению на клиента; предпросмотр ничего не пишет, кроме журнала чтений leader | `rule-editor.test.ts`, `varde/apps/api/test/invariants/1c-no-leak-routes.test.ts` |
 | `seed()` работает, когда в базе есть версии новее файлов, и не трогает их | `rule-editor.test.ts` |
 | Страница «Funn»: в предпросмотр уходят только поля, от которых зависит результат, после паузы; правка текста не читает данные; сохранение шлёт `base_version`; 360 и 1280 px без горизонтальной прокрутки, светлая и тёмная тема, клавиатура | `varde/apps/admin/test/funn.test.tsx`, `varde/apps/admin/e2e/funn.spec.ts` |
+| Архив 5.2 переносит `finding_set`; restore проверяет каждую строку (release этого раунда, scope этого release, правила архива, версия наименьшего Finding) и пишет её в той же транзакции; чужой release → отказ всего архива; архив без `finding_sets` (до 2.5) получает наборы как backfill миграции, без пересчёта по последним версиям; после restore дашборд и отчёт те же, строк Finding не прибавляется | `varde/apps/api/test/exports/round-archive.test.ts` |
+| Finding сохраняются при release, не при просмотре: отчёт 5.1 раунда, закрытого только что, показывает выводы; новая версия правила не меняет отчёт закрытого раунда | `varde/apps/api/test/reports/client-report-versions.test.ts` |
 
 Полный прогон без браузера: `pnpm invariants:2a`; браузерные проверки — в job `e2e`.
 

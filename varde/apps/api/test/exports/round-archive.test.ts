@@ -2,8 +2,11 @@
 // snapshots". A synthetic identified round of its own (initials, free text, leader parts, a
 // client below k; auto release at close plus a manual release, so superseded rows with reasons)
 // keeps the archive small whatever else the test database holds. Snapshots, definitions,
-// rules and Findings are canonically the same after restore, the dashboard equals the original,
-// a repeated restore is a no-op and a changed archive is refused without writing anything.
+// rules, Findings and finding sets are canonically the same after restore, the dashboard and the
+// client report equal the original and reading them adds no Finding, a repeated restore is a
+// no-op and a changed archive is refused without writing anything. An archive written before 2.5
+// (no finding sets) restores with the sets the 2.5 migration would make. Rule versions are never
+// deleted (2.5), so refusals that need a rule in the database run in databases of their own.
 // Negative test: no respondent_key, initials, answers or free text in the archive.
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
@@ -15,8 +18,10 @@ import { archiveCommand } from '../../src/cli/archive.js';
 import {
   type ArchiveBody,
   archiveHash,
+  derivedSets,
   restorable,
   RoundArchive,
+  setsOf,
 } from '../../src/modules/exports/round-archive.js';
 import { RoundArchiveService } from '../../src/modules/exports/round-archive.service.js';
 import { MetricsService } from '../../src/modules/metrics/metrics.service.js';
@@ -150,6 +155,52 @@ function resealed(change: (a: ArchiveBody) => void): RoundArchive {
   return { ...(copy as ArchiveBody), sha256: archiveHash(copy as ArchiveBody) };
 }
 const dashboards = () => ['', `&client=${MARK}-a`, `&client=${MARK}-c`];
+/** Dashboards and client reports of the round, as an app sees them. */
+async function views(app: TestApp, c: Record<string, string>) {
+  const out: unknown[] = [];
+  for (const q of dashboards()) {
+    const r = await app.get(`/api/admin/dashboard?round=${round}${q}`, c);
+    expect(r.statusCode, q).toBe(200);
+    out.push(JSON.parse(r.body));
+  }
+  for (const rc of archive.round_clients) {
+    const r = await app.get(`/api/admin/round-clients/${rc.id}/report`, c);
+    expect(r.statusCode, rc.id).toBe(200);
+    const shown = r.json<Record<string, unknown>>();
+    delete shown.generated; // the day of the reading
+    out.push(shown);
+  }
+  return out;
+}
+async function adminOf(app: TestApp) {
+  const session = await app.store.create({
+    oid: WHO,
+    name: 'Syntetisk admin',
+    via: 'entra',
+    expiresAt: new Date(Date.now() + 3600_000),
+  });
+  return { varde_session: app.app.getHttpAdapter().getInstance().signCookie(session.sid) };
+}
+/** A refusal that needs a rule in the database, in a fresh database of its own: rule versions
+ * are never deleted (2.5). */
+async function refusedWithRule(
+  rule: { key: string; version: number; channel: string; definition: unknown },
+  file: string,
+  message: RegExp,
+) {
+  const dispose = await temporaryDatabase();
+  try {
+    await withPg((c) =>
+      c.query(
+        'INSERT INTO finding_rule (key, version, channel, definition) VALUES ($1, $2, $3, $4)',
+        [rule.key, rule.version, rule.channel, JSON.stringify(rule.definition)],
+      ),
+    );
+    await expect(cli(file)).rejects.toThrow(message);
+  } finally {
+    await dispose();
+  }
+}
 
 describe('5.2 round archive', () => {
   it('export: aggregates and definitions of one closed round with a sha256, audited', async () => {
@@ -168,6 +219,9 @@ describe('5.2 round archive', () => {
     ).toBe(true);
     expect(archive.releases).toHaveLength(6); // three populations, two releases
     expect(archive.findings.length).toBeGreaterThan(0);
+    // 2.5: the rule versions of every current release and scope travel with the round.
+    expect(derivedSets(archive)).toEqual([]);
+    expect(archive.finding_sets!.length).toBeGreaterThanOrEqual(PEOPLE.length + 1);
     expect(archive.clients.map((c) => c.slug)).toEqual(PEOPLE.map(([n]) => `${MARK}-${n}`));
     expect(archive.metric_definitions.some((d) => d.key === 'tryggleik.zone')).toBe(true);
     const audit = await t.app.get(PrismaService).auditLog.findFirstOrThrow({
@@ -190,15 +244,8 @@ describe('5.2 round archive', () => {
     expect(archive.snapshots.filter((s) => s.client_id === c.id && !s.suppressed)).toEqual([]);
   });
 
-  it('restore into an empty database: canonically the same, same dashboard, then a no-op', async () => {
-    const before = await Promise.all(
-      dashboards().map(
-        async (q) =>
-          JSON.parse(
-            (await t.get(`/api/admin/dashboard?round=${round}${q}`, cookie)).body,
-          ) as unknown,
-      ),
-    );
+  it('restore into an empty database: canonically the same, same dashboard and report, then a no-op', async () => {
+    const before = await views(t, cookie);
     const dispose = await temporaryDatabase();
     let copy: TestApp | undefined;
     try {
@@ -274,18 +321,58 @@ describe('5.2 round archive', () => {
           }),
           /not a release of this round and scope/,
         ],
+        // Finding sets (2.5) belong to the archive the same way.
+        [
+          'set-foreign-release',
+          resealed((x) => {
+            x.finding_sets![0]!.release_id = randomUUID();
+          }),
+          /not a release of this round/,
+        ],
+        [
+          'set-other-scope',
+          resealed((x) => {
+            const i = x.finding_sets!.findIndex((y) => y.scope !== 'all');
+            x.finding_sets![i] = { ...x.finding_sets![i]!, scope: 'all' };
+          }),
+          /not a scope of that release/,
+        ],
+        [
+          'set-unknown-rule',
+          resealed((x) => {
+            x.finding_sets![0]!.rule_keys.push(`${archive.template.key}.zz_ukjend@1`);
+          }),
+          /is not a rule of the archive/,
+        ],
+        [
+          'set-other-version',
+          resealed((x) => {
+            // A second version in the archive, named by the set, while the Finding says 1.
+            const rule = x.finding_rules.find((r) => r.key === own.rule_key)!;
+            x.finding_rules.push({
+              ...rule,
+              version: 2,
+              definition: { ...rule.definition, version: 2 },
+            });
+            const set = x.finding_sets!.find(
+              (y) => y.release_id === own.release_id && y.scope === own.client_id,
+            )!;
+            set.rule_keys = set.rule_keys.map((k) =>
+              k === `${own.rule_key}@${own.rule_version}` ? `${own.rule_key}@2` : k,
+            );
+          }),
+          /is not the version of the set/,
+        ],
       ] as const)
         await expect(cli(save(`${name}.json`, bad)), name).rejects.toThrow(message);
       await expect(cli(file, '--sha256', 'f'.repeat(64))).rejects.toThrow(
         /not the one of the export/,
       );
-      // A new version of a key the database already has would change other rounds.
+      // A new version of a key the database already has would change other rounds, and so would
+      // a key that is new to a family the database already has. Rule versions are never deleted
+      // (2.5), so each of these refusals gets a database of its own.
       const rule = archive.finding_rules[0]!;
-      await prisma.findingRule.create({
-        data: { key: rule.key, version: 99, channel: rule.channel, definition: rule.definition },
-      });
-      await expect(cli(file)).rejects.toThrow(/in the database in other versions/);
-      await prisma.findingRule.deleteMany({ where: { version: 99 } });
+      await refusedWithRule({ ...rule, version: 99 }, file, /in the database in other versions/);
       const metric = archive.metric_definitions.find((d) => d.definition.kind === 'zone')!;
       await prisma.metricDefinition.create({
         data: { key: metric.key, version: 99, definition: metric.definition },
@@ -293,21 +380,22 @@ describe('5.2 round archive', () => {
       // The family is now known too, so a sibling key may be the first refusal.
       await expect(cli(file)).rejects.toThrow(/would change other rounds/);
       await prisma.metricDefinition.deleteMany({ where: { version: 99 } });
-      // So would a key that is new to a family the database already has.
       const newKey = `${archive.template.key}.zz_other`;
-      await prisma.findingRule.create({
-        data: {
+      await refusedWithRule(
+        {
           key: newKey,
           version: 1,
           channel: 'aggregate',
           definition: { ...rule.definition, key: newKey },
         },
-      });
-      await expect(cli(file)).rejects.toThrow(/is new to the .* rules in the database/);
-      await prisma.findingRule.deleteMany({ where: { key: newKey } });
+        file,
+        /is new to the .* rules in the database/,
+      );
       expect(await prisma.round.count()).toBe(0);
       expect(await prisma.client.count()).toBe(0);
       expect(await prisma.finding.count()).toBe(0);
+      expect(await prisma.findingSet.count()).toBe(0);
+      expect(await prisma.findingRule.count()).toBe(0);
 
       expect(await cli(file, '--sha256', archive.sha256)).toMatchObject({
         outcome: 'restored',
@@ -319,6 +407,7 @@ describe('5.2 round archive', () => {
         'metric_definitions',
         'finding_rules',
         'findings',
+        'finding_sets',
         'round_metric_set',
         'releases',
         'round',
@@ -330,20 +419,10 @@ describe('5.2 round archive', () => {
       expect(restorable(again)).toBe(restorable(archive));
       expect(await withPg((c) => c.query('SELECT 1 FROM response'))).toMatchObject({ rowCount: 0 });
 
-      const session = await copy.store.create({
-        oid: WHO,
-        name: 'Syntetisk admin',
-        via: 'entra',
-        expiresAt: new Date(Date.now() + 3600_000),
-      });
-      const restored = {
-        varde_session: copy.app.getHttpAdapter().getInstance().signCookie(session.sid),
-      };
-      for (const [i, q] of dashboards().entries()) {
-        const after = await copy.get(`/api/admin/dashboard?round=${round}${q}`, restored);
-        expect(after.statusCode, q).toBe(200);
-        expect(JSON.parse(after.body), q).toEqual(before[i]);
-      }
+      // Dashboard and client report as before; reading them adds no Finding (2.5 × 5.1).
+      expect(await views(copy, await adminOf(copy))).toEqual(before);
+      expect(await prisma.finding.count()).toBe(archive.findings.length);
+      expect(await prisma.findingSet.count()).toBe(archive.finding_sets!.length);
 
       expect(await cli(file)).toMatchObject({ outcome: 'unchanged' });
       const rows = await withPg((c) =>
@@ -361,6 +440,52 @@ describe('5.2 round archive', () => {
           where: { what: 'archive.restore', target: `round:${round}` },
         }),
       ).toBe(2);
+    } finally {
+      await copy?.app.close();
+      await dispose();
+    }
+  });
+
+  it('an archive written before 2.5 (no finding sets) restores with the sets the migration makes', async () => {
+    const before = await views(t, cookie);
+    const old: Partial<RoundArchive> = structuredClone(archive);
+    delete old.sha256;
+    delete old.finding_sets;
+    // A newer version of a quiet rule (F3, nobody answered «nei/usikker») that would fire on
+    // every answer: computing again with the newest rules would add Findings and change views.
+    const f3 = old.finding_rules!.find((r) => r.key === 'tryggleik.f3')!;
+    expect(archive.findings.some((x) => x.rule_key === f3.key)).toBe(false);
+    // Right after version 1, in the order an export writes rules (key, then version), so a
+    // repeated restore compares equal.
+    old.finding_rules!.splice(old.finding_rules!.indexOf(f3) + 1, 0, {
+      ...f3,
+      version: 2,
+      definition: {
+        ...f3.definition,
+        version: 2,
+        options: ['ja', 'delvis', 'nei', 'usikker'],
+        threshold: { medium: 0, high: 0 },
+        min_count: 1,
+      },
+    });
+    const legacy = save('before-2.5.json', { ...old, sha256: archiveHash(old as ArchiveBody) });
+    const dispose = await temporaryDatabase();
+    let copy: TestApp | undefined;
+    try {
+      expect(await cli(legacy)).toMatchObject({ outcome: 'restored' });
+      copy = await startApp({});
+      const prisma = copy.app.get(PrismaService);
+      // The sets of the current releases: the smallest saved version, else the archived one.
+      const current = new Set(
+        archive.snapshots.filter((x) => x.status === 'released').map((x) => x.release_id),
+      );
+      const written = await prisma.findingSet.findMany({ where: { round_id: round } });
+      const restored = setsOf({ finding_sets: written } as unknown as ArchiveBody);
+      expect(restored).toEqual(setsOf(archive).filter((x) => current.has(x.release_id)));
+      expect(restored.every((x) => x.rule_keys.includes(`${f3.key}@1`))).toBe(true);
+      expect(await views(copy, await adminOf(copy))).toEqual(before);
+      expect(await prisma.finding.count()).toBe(archive.findings.length);
+      expect(await cli(legacy)).toMatchObject({ outcome: 'unchanged' });
     } finally {
       await copy?.app.close();
       await dispose();

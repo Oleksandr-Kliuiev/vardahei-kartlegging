@@ -51,5 +51,6 @@ export const INTEGRATION_FILES = [
   'test/metrics/parity.test.ts',
   'test/invariants/1a-completeness.test.ts',
   'test/reports/client-report.test.ts',
+  'test/reports/client-report-versions.test.ts',
   'test/exports/round-archive.test.ts',
 ];
