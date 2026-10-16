@@ -116,8 +116,39 @@ export class PrivacyService {
     return { db: this.prisma, source: this.source };
   }
 
-  /** Dashboard: closed/archived rounds never fall back to raw, even before release. */
-  async viewCells(
+  /** The views every reader may have: all_clients and leaders_all. A client's own round_client
+   * cells leave only through ownCells and adminClientCells (decision 16.10): next to the round's
+   * total, a client hidden there by complementary suppression would give a smaller one away. */
+  viewCells(
+    round: string,
+    population: Exclude<Population, 'round_client'>,
+    defs: readonly MetricDefinition[],
+    releasedOnly = false,
+  ): Promise<ViewCell[]> {
+    if ((population as Population) === 'round_client')
+      return Promise.reject(new PrivacyViolation('round_client: ownCells or adminClientCells'));
+    return this.cells(round, population, defs, undefined, releasedOnly);
+  }
+
+  /** The client's own channel (report 5.1, client CSV): released round_client cells of one
+   * client, also in an open round (ADR-025). They go to that client only, never next to
+   * all_clients or other clients (lint varde/round-client-exits). */
+  ownCells(round: string, client: string, defs: readonly MetricDefinition[]): Promise<ViewCell[]> {
+    return this.cells(round, 'round_client', defs, client, true);
+  }
+
+  /** The admin dashboard (trusted circle, ADR-021 variant B): one client's round_client cells,
+   * live in an open round (lint varde/round-client-exits). */
+  adminClientCells(
+    round: string,
+    client: string,
+    defs: readonly MetricDefinition[],
+  ): Promise<ViewCell[]> {
+    return this.cells(round, 'round_client', defs, client);
+  }
+
+  /** Cells of one view: closed/archived rounds never fall back to raw, even before release. */
+  private async cells(
     round: string,
     population: Population,
     defs: readonly MetricDefinition[],
@@ -199,7 +230,7 @@ export class PrivacyService {
     const parts = (
       await Promise.all(
         clients.map(async (rc) =>
-          (await this.viewCells(round, 'round_client', common, rc.client.slug))
+          (await this.cells(round, 'round_client', common, rc.client.slug))
             .filter((c) => c.group === `role:${role}`)
             .map((c) => ({ ...c, group: `client:${rc.client.slug}` })),
         ),
@@ -265,7 +296,7 @@ export class PrivacyService {
     population: Population,
     defs: readonly MetricDefinition[],
     client?: string,
-  ) => this.viewCells(round, population, defs, client);
+  ) => this.cells(round, population, defs, client);
 
   /** Class `aggregate`: live view of the admins and the input of release(); never rows. */
   async aggregate(query: AggregateQuery): Promise<AggregateResult> {

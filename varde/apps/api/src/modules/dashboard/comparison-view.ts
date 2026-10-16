@@ -23,12 +23,9 @@ export class ComparisonView {
     if (!baseline) return null;
     const defs = scope.defs.filter((d) => d.part === 'common'),
       oldDefs = baseline.defs.filter((d) => d.part === 'common');
-    const current = await this.privacy.viewCells(
-      round,
-      scope.client ? 'round_client' : 'all_clients',
-      defs,
-      scope.client,
-    );
+    const current = scope.client
+      ? await this.privacy.adminClientCells(round, scope.client, defs)
+      : await this.privacy.viewCells(round, 'all_clients', defs);
     const selectedRole = role && role !== 'alle' ? role : undefined,
       group = selectedRole ? `role:${selectedRole}` : 'all';
     const allCurrent = scope.client
@@ -44,7 +41,7 @@ export class ComparisonView {
           await Promise.all(
             participating.map(async (c) => ({
               client: c,
-              cells: await this.privacy.viewCells(round, 'round_client', defs, c),
+              cells: await this.privacy.adminClientCells(round, c, defs),
             })),
           )
         )
@@ -75,8 +72,8 @@ export class ComparisonView {
     for (const slug of [...new Set([...oldParticipants, ...participating])].filter(
       (slug) => !scope.client || slug === scope.client,
     )) {
-      const old = await this.privacy.viewCells(baseline.round.id, 'round_client', oldDefs, slug);
-      const now = await this.privacy.viewCells(round, 'round_client', defs, slug);
+      const old = await this.privacy.adminClientCells(baseline.round.id, slug, oldDefs);
+      const now = await this.privacy.adminClientCells(round, slug, defs);
       clients.push(
         row(
           slug,

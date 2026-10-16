@@ -114,9 +114,7 @@ describe('5.1 client report', () => {
     );
     const planted: string[] = [];
     for (const c of clients()) {
-      const cells = await f.app
-        .get(PrivacyService)
-        .viewCells(f.tryggleik, 'round_client', defs, c.slug, true);
+      const cells = await f.app.get(PrivacyService).ownCells(f.tryggleik, c.slug, defs);
       const release = cells.flatMap((x) => (x.suppressed ? [] : [x.release_id]))[0];
       if (!release) continue;
       const client = await f.prisma.client.findUniqueOrThrow({ where: { slug: c.slug } });
@@ -177,7 +175,7 @@ describe('5.1 client report', () => {
     let hidden = 0;
     for (const c of clients()) {
       const r = (await report(f.tryggleik, c.slug)).json();
-      const cells = await privacy.viewCells(f.tryggleik, 'round_client', defs, c.slug, true);
+      const cells = await privacy.ownCells(f.tryggleik, c.slug, defs);
       for (const q of r.questions) {
         const cell = cells.find(
           (x) => x.metric_key === `tryggleik.mean_score.${q.id}` && x.group === 'all',

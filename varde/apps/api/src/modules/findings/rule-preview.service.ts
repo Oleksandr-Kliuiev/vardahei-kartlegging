@@ -64,12 +64,10 @@ export class RulePreview {
     const [rule] = rules;
     const round = scope.round.id;
     if (rule!.channel === 'aggregate') {
-      const cells = await this.privacy.viewCells(
-        round,
-        scope.client ? 'round_client' : 'all_clients',
-        scope.defs.filter((d) => d.part === 'common'),
-        scope.client,
-      );
+      const common = scope.defs.filter((d) => d.part === 'common');
+      const cells = scope.client
+        ? await this.privacy.adminClientCells(round, scope.client, common)
+        : await this.privacy.viewCells(round, 'all_clients', common);
       return rules.map((r) => explainCells(r, cells, scope.content, 'all'));
     }
     if (scope.client) {

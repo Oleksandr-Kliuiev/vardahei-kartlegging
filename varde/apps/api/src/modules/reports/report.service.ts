@@ -57,7 +57,7 @@ export class ReportService {
   /** Released common cells of one client; never the live view, never leader cells. */
   private async side(round: Round, slug: string): Promise<Side> {
     const defs = (await this.metrics.definitionsFor(round.id)).filter((d) => d.part === 'common');
-    const cells = await this.privacy.viewCells(round.id, 'round_client', defs, slug, true);
+    const cells = await this.privacy.ownCells(round.id, slug, defs);
     return { round, defs, cells };
   }
 

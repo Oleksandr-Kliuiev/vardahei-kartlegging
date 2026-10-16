@@ -75,12 +75,10 @@ describe('2.5 × 5.1 client report and rule versions', () => {
     const top = before.findings[0]!;
     const client = await f.prisma.client.findUniqueOrThrow({ where: { slug: 'daco' } });
     const defs = await f.app.get(MetricsService).definitionsFor(f.tryggleik);
-    const cells = await f.app.get(PrivacyService).viewCells(
+    const cells = await f.app.get(PrivacyService).ownCells(
       f.tryggleik,
-      'round_client',
-      defs.filter((d) => d.part === 'common'),
       'daco',
-      true,
+      defs.filter((d) => d.part === 'common'),
     );
     const release = cells.flatMap((c) => (c.suppressed ? [] : [c.release_id]))[0]!;
     // The row of version 1 for the current release is what the report shows.

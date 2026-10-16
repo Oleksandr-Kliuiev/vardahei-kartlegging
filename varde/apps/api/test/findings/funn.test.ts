@@ -85,14 +85,11 @@ describe('1.28 FUNN as versioned data; golden §6.1/2/11', () => {
               where: { key: { startsWith: `${family}.` } },
             });
             const defs = metrics.map((m) => MetricDefinition.parse(m.definition));
-            const cells = await f.app
-              .get(PrivacyService)
-              .viewCells(
-                context.id,
-                slug === 'alle' ? 'all_clients' : 'round_client',
-                defs,
-                slug === 'alle' ? undefined : slug,
-              );
+            const privacy = f.app.get(PrivacyService);
+            const cells =
+              slug === 'alle'
+                ? await privacy.viewCells(context.id, 'all_clients', defs)
+                : await privacy.adminClientCells(context.id, slug, defs);
             expect(
               cells.some(
                 (c) =>

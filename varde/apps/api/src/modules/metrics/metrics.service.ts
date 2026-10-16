@@ -129,12 +129,11 @@ export class MetricsService {
     if (r.status === 'closed' || r.status === 'archived') {
       const content = r.template_version!.content as unknown as TemplateContent;
       for (const client of [undefined, ...clients.map((rc) => rc.client)]) {
-        const cells = await this.privacy.viewCells(
-          round,
-          client ? 'round_client' : 'all_clients',
-          defs.filter((d) => d.part === 'common'),
-          client?.slug,
-        );
+        const common = defs.filter((d) => d.part === 'common');
+        // A client's findings go to its own report: they are read from its own cells.
+        const cells = client
+          ? await this.privacy.ownCells(round, client.slug, common)
+          : await this.privacy.viewCells(round, 'all_clients', common);
         // The release id also pins the versions when every cell of the scope is hidden.
         const id = ids[client ? 'round_client' : 'all_clients'];
         await this.findings.released(r, client, content, cells, id);
