@@ -117,6 +117,9 @@ export class MetricsService {
       } else cells = await this.privacy.computeCells(round, population, defs);
       const r = await this.privacy.release(round, population, cells, 'db', actor, {
         metric_set: metricSet,
+        ...(population === 'all_clients'
+          ? { cross: await this.privacy.crossCells(round, defs) }
+          : {}),
       });
       out.populations[population] = { cells: r.released.length, carried: r.carried };
       ids[population] = r.release_id;

@@ -162,7 +162,11 @@ export class PrivacyService {
     if (population !== 'round_client' && client)
       throw new PrivacyViolation('population cannot have client');
     if (!releasedOnly && r.status !== 'closed' && r.status !== 'archived') {
-      return liveCells(await this.computeCells(round, population, defs, client), this.config.k);
+      return liveCells(
+        await this.computeCells(round, population, defs, client),
+        this.config.k,
+        population === 'all_clients' ? await this.crossCells(round, defs) : undefined,
+      );
     }
     const c = client ? await this.prisma.client.findUnique({ where: { slug: client } }) : null;
     if (client && !c) throw new NotFoundException('Kunden finst ikkje.');
@@ -281,14 +285,19 @@ export class PrivacyService {
     return cohortCells(this.prisma, this.read, round, clients, defs, role);
   }
 
-  /** Some clients of a round (3.9: the clients of a seminar), from its all_clients view only:
-   * their total and their own cells, a hidden client hides the total (privacy/cohort.ts). */
+  /** Some clients of a round (3.9: the clients of a seminar), from its all_clients view: their
+   * total and their own cells, a hidden client hides the total; the round's total is checked
+   * against the own report of each hidden client, which never leaves (privacy/cohort.ts). */
   clientGroup(
     round: string,
     defs: readonly MetricDefinition[],
     clients: readonly string[],
   ): Promise<ClientGroup> {
-    return clientGroup(this.read, round, defs, clients);
+    const report = async (client: string) => [
+      ...(await this.cells(round, 'round_client', defs, client, true)),
+      ...(await this.cells(round, 'round_client', defs, client)),
+    ];
+    return clientGroup(this.read, round, defs, clients, report, this.config.k);
   }
 
   private readonly read = (
@@ -337,6 +346,30 @@ export class PrivacyService {
     }));
     return defs.flatMap((d) =>
       metricCells(d, rows, population, population === 'round_client' ? client : undefined),
+    );
+  }
+
+  /** Client × role structure of all_clients (release rule 7, privacy/cross.ts): the cells of each
+   * client alone (`all`, `role:<id>`, with `client`). Input of the joint check only — never a view
+   * and never released. */
+  async crossCells(round: string, defs: readonly MetricDefinition[]): Promise<ComputedCell[]> {
+    const read = await this.source.read({ round });
+    const rows = read.map((r) => ({
+      client: r.client,
+      role: r.role,
+      part: r.part,
+      answers: r.answers,
+    }));
+    return [...new Set(rows.map((r) => r.client))].flatMap((client) =>
+      defs.flatMap((d) =>
+        metricCells(
+          d,
+          rows.filter((r) => r.client === client),
+          'all_clients',
+        ).flatMap((c) =>
+          c.group === 'all' || c.group.startsWith('role:') ? [{ ...c, client }] : [],
+        ),
+      ),
     );
   }
 

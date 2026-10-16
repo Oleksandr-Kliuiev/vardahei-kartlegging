@@ -163,3 +163,60 @@ export function leaks(groups: readonly Group[], eqs: readonly Equation[], k = K)
 /** Equations whose number is not the true sum of the groups they cover. */
 export const wrong = (eqs: readonly Equation[]) =>
   eqs.filter((e) => e.n !== e.truth.n || e.yes !== e.truth.yes);
+
+/** One equation of a release: the cells (client, role) it sums and the release its value comes
+ * from (a carried value is the one of an earlier release). */
+export interface Shown {
+  vector: number[];
+  origin: number;
+}
+
+/**
+ * Leaks across releases for an attacker who knows the client × role structure but not who
+ * answered when (the model of release rule 7). Unknowns: the table x_e of every release e over
+ * the cells of the final structure. A set S of cells is determined in release e when 1_S lies
+ * in the span of the equations with origin e; protected are x_e(S) and, for S determined in two
+ * releases, x_e'(S) − x_e(S), when 0 < |n| < k. Candidates: every 2-level cut of the full
+ * client × role graph (role '' included), enumerated over all node subsets — independent of the
+ * merged graph of privacy/cross.ts. Answers only arrive, so a set below k has a cut below k.
+ */
+export function historyLeaks(
+  cells: readonly { client: string; role: string }[],
+  shown: readonly Shown[],
+  value: (cell: number, epoch: number) => number,
+  epochs: number,
+  k = K,
+): string[] {
+  const clients = [...new Set(cells.map((c) => c.client))];
+  const roles = [...new Set(cells.map((c) => c.role))];
+  const nodes = [...clients.map((c) => `c:${c}`), ...roles.map((r) => `r:${r}`)];
+  const cuts = new Map<string, number[]>();
+  for (let mask = 1; mask < 2 ** nodes.length; mask += 1) {
+    const inX = (n: string) => (mask & (1 << nodes.indexOf(n))) !== 0;
+    // Closure: a role in X has all its clients in X.
+    if (cells.some((c) => inX(`r:${c.role}`) && !inX(`c:${c.client}`))) continue;
+    const s = cells.map((c) => (inX(`c:${c.client}`) && !inX(`r:${c.role}`) ? 1 : 0));
+    if (s.some((v) => v === 1)) cuts.set(s.join(''), s);
+  }
+  const span = (e: number) => shown.filter((x) => x.origin === e).map((x) => x.vector);
+  const out: string[] = [];
+  const n = (s: number[], e: number) => s.reduce((t, v, i) => t + v * value(i, e), 0);
+  const label = (s: number[]) =>
+    cells.flatMap((c, i) => (s[i] ? [`${c.client}/${c.role || '–'}`] : [])).join('+');
+  for (const s of cuts.values()) {
+    const at = Array.from({ length: epochs }, (_, i) => {
+      const rows = span(i + 1);
+      return rows.length > 0 && rank([...rows, s]) === rank(rows);
+    });
+    for (let e = 1; e <= epochs; e += 1) {
+      if (!at[e - 1]) continue;
+      const here = n(s, e);
+      if (here > 0 && here < k) out.push(`${label(s)} @${e} n=${here}`);
+      for (let f = e + 1; f <= epochs; f += 1) {
+        const d = n(s, f) - here;
+        if (at[f - 1] && d !== 0 && Math.abs(d) < k) out.push(`${label(s)} @${e}→${f} Δ=${d}`);
+      }
+    }
+  }
+  return out;
+}

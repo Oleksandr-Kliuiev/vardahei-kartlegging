@@ -103,6 +103,16 @@ describe('privacy.release (0.15b)', () => {
     expect(find(r, 'all')).toMatchObject({ suppressed: false, n: 5 });
   });
 
+  /** Rule 7 input: n per client and role ('' = no role) of F12. */
+  const crossOf = (table: Record<string, Record<string, number>>) => ({
+    cross: Object.entries(table).flatMap(([client, roles]) => [
+      cell('all', Object.values(roles).reduce((s, n) => s + n, 0), 0, { client }),
+      ...Object.entries(roles).flatMap(([role, n]) =>
+        role === '' ? [] : [cell(`role:${role}`, n, 0, { client })],
+      ),
+    ]),
+  });
+
   it('all_clients suppresses roles and clients independently', async () => {
     const cells = [
       cell('all', 20, 9),
@@ -115,7 +125,14 @@ describe('privacy.release (0.15b)', () => {
       delete out.client;
       return out;
     });
-    const r = await privacy.release(ROUND, 'all_clients', cells, store, AUTO);
+    const r = await privacy.release(
+      ROUND,
+      'all_clients',
+      cells,
+      store,
+      AUTO,
+      crossOf({ a: { x: 18 }, b: { y: 2 } }),
+    );
     expect(find(r, 'all')).toMatchObject({ n: 20, numerator: 9, suppressed: false });
     for (const g of ['client:a', 'client:b', 'role:x', 'role:y']) {
       expect(find(r, g)).toMatchObject({ n: 0, numerator: 0, suppressed: true });
@@ -136,8 +153,22 @@ describe('privacy.release (0.15b)', () => {
           return out;
         },
       );
-    await privacy.release(ROUND, 'all_clients', cells(20, 10, 10, 10), store, AUTO);
-    const r = await privacy.release(ROUND, 'all_clients', cells(24, 13, 11, 13), store, AUTO);
+    await privacy.release(
+      ROUND,
+      'all_clients',
+      cells(20, 10, 10, 10),
+      store,
+      AUTO,
+      crossOf({ a: { x: 10 }, b: { '': 10 } }),
+    );
+    const r = await privacy.release(
+      ROUND,
+      'all_clients',
+      cells(24, 13, 11, 13),
+      store,
+      AUTO,
+      crossOf({ a: { x: 13 }, b: { '': 11 } }),
+    );
     for (const g of ['client:a', 'client:b', 'role:x'])
       expect(find(r, g)).toMatchObject({ n: 10, stale: true });
   });
@@ -193,6 +224,7 @@ describe('privacy.release (0.15b)', () => {
       cells([20, 10, 10, 10, 10]),
       store,
       AUTO,
+      crossOf({ a: { x: 10 }, b: { y: 10 } }),
     );
     const second = await privacy.release(
       ROUND,
@@ -200,6 +232,7 @@ describe('privacy.release (0.15b)', () => {
       cells([24, 13, 11, 10, 14]),
       store,
       AUTO,
+      crossOf({ a: { x: 10, y: 3 }, b: { y: 11 } }),
     );
     expect(find(second, 'client:b')).toMatchObject({ n: 10, numerator: 10, stale: true });
     assertReleaseSafety(second.released);
