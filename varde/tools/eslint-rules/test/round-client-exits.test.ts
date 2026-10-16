@@ -37,6 +37,7 @@ declare class PrivacyService {
   roleClientCells(round: string, defs: unknown[], role: string): Promise<unknown[]>;
   cohortCells(round: string, clients: string[], defs: unknown[]): Promise<unknown[]>;
   computeCells(round: string, population: string, defs: unknown[]): Promise<unknown[]>;
+  crossCells(round: string, defs: unknown[]): Promise<unknown[]>;
   aggregate(query: unknown): Promise<unknown>;
   archiveSnapshots(round: string): Promise<unknown[]>;
   handover(client: string, reason: string): Promise<unknown>;
@@ -81,6 +82,7 @@ describe('allow-lists', () => {
       roleClientCells: ['apps/api/src/modules/dashboard/**'],
       cohortCells: ['apps/api/src/modules/dashboard/**'],
       computeCells: ['apps/api/src/modules/metrics/metrics.service.ts'],
+      crossCells: ['apps/api/src/modules/metrics/metrics.service.ts'],
       aggregate: [],
       archiveSnapshots: ['apps/api/src/modules/exports/round-archive.service.ts'],
     });
@@ -190,6 +192,7 @@ typedRuleTester().run('round-client-exits', rule, {
         ['roleClientCells', `'r', defs, 'x'`],
         ['cohortCells', `'r', ['c'], defs`],
         ['computeCells', `'r', 'round_client', defs`],
+        ['crossCells', `'r', defs`],
         ['aggregate', `{}`],
         ['archiveSnapshots', `'r'`],
         ['handover', `'c', 'r'`],
