@@ -67,3 +67,32 @@ export function parseWith<T>(schema: z.ZodType<T>, input: unknown): T {
   const own = result.error.issues.find((i) => i.code === 'custom' && i.message);
   throw new BadRequestException(own?.message ?? 'Kontroller opplysningane.');
 }
+
+/** Registration from the public page (3.2). `website` is the honeypot: people never fill it. */
+export const RegistrationInput = z.strictObject({
+  name: text(120).pipe(z.string().min(1)),
+  email: Email,
+  company: z.union([
+    z.strictObject({ client: z.uuid() }),
+    z.strictObject({ name: text(120).pipe(z.string().min(1)) }),
+  ]),
+  consent: z.string().min(1).max(40),
+  lang: z.enum(['nn', 'en']),
+  website: z.string().max(200).optional(),
+});
+export type RegistrationInput = z.infer<typeof RegistrationInput>;
+
+const REGISTRATION_MESSAGES: Record<string, string> = {
+  name: 'Skriv namnet ditt.',
+  email: 'Skriv ei gyldig e-postadresse.',
+  company: 'Vel bedrift, eller skriv namnet på bedrifta.',
+  consent: 'Kryss av for samtykket, så kan du melde deg på.',
+};
+
+/** The first wrong field says what to do; nothing says whether the person is already registered. */
+export function parseRegistration(input: unknown): RegistrationInput {
+  const result = RegistrationInput.safeParse(input);
+  if (result.success) return result.data;
+  const field = result.error.issues.map((i) => String(i.path[0] ?? '')).find((f) => f in REGISTRATION_MESSAGES);
+  throw new BadRequestException(REGISTRATION_MESSAGES[field ?? ''] ?? 'Kontroller opplysningane.');
+}

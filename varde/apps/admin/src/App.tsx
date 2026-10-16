@@ -5,6 +5,7 @@ import { DeletionPage } from './deletion-page.js';
 import { ReportPage } from './report-page.js';
 import { ArchiveReminder } from './archive-reminder.js';
 import { DashboardPage } from './dashboard-page.js';
+import { SeminarPage } from './seminar-page.js';
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from 'react';
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ease, reduced, stagger } from '@varde/ui/motion';
@@ -93,6 +94,8 @@ function Shell({ name }: { name: string | null }) {
   const section = sectionOf(path);
   // Client report (5.1): «Rapportar», optionally with a chosen round client from its card.
   const report = /^\/admin\/reports(?:\/([0-9a-f-]{36}))?$/i.exec(path);
+  // Seminar (3a): the list, or one seminar by its id.
+  const seminar = /^\/admin\/seminars(?:\/([0-9a-f-]{36}))?$/i.exec(path);
   return (
     <div className="skal">
       <Sidebar
@@ -139,6 +142,8 @@ function Shell({ name }: { name: string | null }) {
             <DeletionPage />
           ) : report ? (
             <ReportPage key={report[1] ?? 'ny'} initial={report[1]} />
+          ) : seminar ? (
+            <SeminarPage id={seminar[1]} />
           ) : (
             <section className="del">
               <p>{section ? 'Denne delen kjem snart.' : 'Vel ein del i menyen.'}</p>

@@ -56,4 +56,5 @@ export const INTEGRATION_FILES = [
   'test/exports/round-archive.test.ts',
   'test/seminars/seminars.test.ts',
   'test/seminars/participants.test.ts',
+  'test/seminars/registration.test.ts',
 ];

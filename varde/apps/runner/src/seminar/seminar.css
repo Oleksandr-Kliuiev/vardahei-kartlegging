@@ -1,0 +1,78 @@
+/* Påmeldingssida for seminar (Vardestien): éi smal kolonne som spørjeskjemaet, åsar under topplina,
+   skjema i eit kort. Tokens, knappar og fakta-lista kjem frå @varde/ui og runner. */
+.sem-fjell { display: block; width: 100%; max-width: var(--landskap); height: 44px; margin: 2px auto 0; }
+.sem-fjell .bak { fill: var(--as-bak); }
+.sem-fjell .midt { fill: var(--as-midt); }
+.sem-fjell .fram { fill: var(--as-fram); }
+
+.app.sem { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+.sem h1 { font-size: clamp(2rem, 7.4vw, 2.75rem); line-height: 1.06; font-weight: 800; letter-spacing: -0.024em; margin: 10px 0 18px; overflow-wrap: anywhere; }
+.sem .tilstand h1 { font-size: clamp(1.8rem, 6.4vw, 2.4rem); }
+.sem-eyebrow { display: inline-flex; align-items: center; gap: 8px; }
+.sem .fakta span { overflow-wrap: anywhere; text-wrap: balance; }
+.sem .handlingar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+.sem-merk { margin-top: 18px; font-size: 15.5px; max-width: 34em; }
+
+/* Skjemaet */
+.sem-skjema { margin-top: 28px; padding: 22px 20px; display: grid; gap: 20px; border-radius: var(--r-xl); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1), var(--edge); }
+.sem-skjema h2 { font-size: 21px; font-weight: 760; letter-spacing: -0.01em; }
+.sem-felt { display: grid; gap: 8px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.sem-felt > label[for], .sem-felt > legend { padding: 0; font-size: 15px; font-weight: 650; color: var(--ink-strong); }
+.sem-val > legend { margin-bottom: 8px; }
+.sem-input {
+  width: 100%; min-height: 50px; padding: 12px 14px; border-radius: var(--r-md); background: var(--surface); color: var(--ink-strong);
+  border: 1.5px solid var(--line-strong); font-size: 17px; transition: border-color var(--t-quick) var(--ease-sti), box-shadow var(--t-quick) var(--ease-sti);
+}
+.sem-input:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 20%, transparent); }
+.sem-input[aria-invalid="true"] { border-color: var(--danger-fg); }
+.sem-rad {
+  display: grid; grid-template-columns: 22px 1fr; gap: 12px; align-items: center; min-height: 52px; padding: 12px 14px; cursor: pointer;
+  border-radius: var(--r-lg); background: var(--surface); border: 1.5px solid var(--line); font-weight: 550; color: var(--ink-strong); overflow-wrap: anywhere;
+  transition: border-color var(--t-quick) var(--ease-sti), background-color var(--t-quick) var(--ease-sti);
+}
+.sem-rad:hover { border-color: var(--line-strong); }
+.sem-rad:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); font-weight: 680; }
+.sem-rad input, .sem-kryss input { width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
+.sem-val[aria-invalid="true"] .sem-rad { border-color: var(--danger-line); }
+.sem-anna { margin-top: 4px; animation: stig-inn var(--t-move) var(--ease-inn); }
+.sem-feil { color: var(--danger-fg); font-size: 14.5px; font-weight: 600; }
+
+/* Samtykke: kort tekst ved avkryssinga, heile teksten på spørsmål */
+.sem-samtykke { display: grid; gap: 6px; padding: 14px 16px; border-radius: var(--r-lg); background: var(--bg); border: 1px solid var(--line); }
+.sem-kryss { display: grid; grid-template-columns: 22px 1fr; gap: 12px; align-items: start; font-size: 15.5px; color: var(--ink-strong); cursor: pointer; }
+.sem-kryss input { margin-top: 2px; }
+.sem-samtykke .linkbtn { justify-self: start; display: inline-flex; align-items: center; gap: 6px; margin-left: 28px; padding: 6px 4px; white-space: normal; text-align: left; font-size: 14.5px; }
+.sem-samtykke .linkbtn .icon { transition: transform var(--t-base) var(--ease-fjor); }
+.sem-samtykke .linkbtn[aria-expanded="true"] .icon { transform: rotate(180deg); }
+.sem-meir { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--t-move) var(--ease-sti); }
+.sem-meir[data-open="true"] { grid-template-rows: 1fr; }
+.sem-meir > div { overflow: hidden; visibility: hidden; transition: visibility 0s linear var(--t-move); }
+.sem-meir[data-open="true"] > div { visibility: visible; transition-delay: 0s; }
+.sem-meir ul { margin: 2px 0 6px 34px; padding: 0 0 0 4px; display: grid; gap: 8px; font-size: 14.5px; color: var(--ink); }
+.sem-hp { position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+.sem-send { width: 100%; min-height: 52px; font-size: 16.5px; }
+.sem-send .spinn { width: 16px; height: 16px; }
+@media (min-width: 560px) { .sem-skjema { padding: 26px 28px; } .sem-send { justify-self: start; width: auto; min-width: 220px; } }
+
+/* Påmeld */
+.sem-ok { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: var(--success-bg); color: var(--success-fg); border: 1px solid var(--success-line); box-shadow: var(--shadow-1); }
+.sem-ok .icon { width: 28px; height: 28px; stroke-width: 2.2; }
+.sem-takk h1 { margin-top: 18px; }
+.sem-takk .ingress { font-size: 18px; }
+.sem-tema { margin-top: 18px; font-size: 18px; font-weight: 700; color: var(--ink-strong); overflow-wrap: anywhere; }
+
+/* Etter seminaret: materiell */
+.sem-materiell { margin-top: 28px; padding: 20px; border-radius: var(--r-xl); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1), var(--edge); }
+.sem-materiell > p { margin-top: 8px; }
+.sem-materiell h2 { font-size: 19px; }
+.sem-materiell ul { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 10px; }
+.sem-materiell a {
+  display: grid; grid-template-columns: 22px 1fr; gap: 12px; align-items: center; padding: 14px 16px; border-radius: var(--r-lg);
+  background: var(--bg); border: 1px solid var(--line); color: var(--ink-strong); text-decoration: none;
+  transition: border-color var(--t-quick) var(--ease-sti), transform var(--t-spring) var(--ease-fjor);
+}
+.sem-materiell a:hover { border-color: var(--accent); }
+.sem-materiell a:active { transform: scale(.99); }
+.sem-materiell a .icon { color: var(--accent); }
+.sem-materiell b { display: block; overflow-wrap: anywhere; }
+.sem-materiell small { display: block; color: var(--ink-muted); font-size: 13.5px; overflow-wrap: anywhere; }

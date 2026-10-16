@@ -35,6 +35,14 @@ export const SECTIONS: Section[] = [
   { url: '/admin/surveys', label: 'Skjema', icon: 'skjema', group: 'Innhald' },
   { url: '/admin/findings', label: 'Funn', icon: 'lyspare', group: 'Innhald' },
   {
+    url: '/admin/seminars',
+    label: 'Seminar',
+    icon: 'folk',
+    group: 'Innhald',
+    intro: 'Påmelding, materiell og invitasjon. Varde sender ingenting av seg sjølv.',
+    sub: true,
+  },
+  {
     url: '/admin/reports',
     label: 'Rapportar',
     icon: 'dok',
