@@ -89,6 +89,8 @@ export interface ReleaseResult {
   released: ReleasedSnapshot[];
   superseded: number;
   carried: number;
+  /** Id of this release (metadata only): findings of a release are saved once against it (2.5). */
+  release_id: string;
 }
 
 export class ReleaseRejected extends PrivacyViolation {
@@ -346,12 +348,13 @@ export async function release(
   const superseded = previous.map((s) => transition(s, 'superseded', { reason: 'new release' }));
   if (toFix !== null) await store.fixMetricSet(round, toFix);
   await store.supersede(superseded);
-  await store.save(out, randomUUID());
+  const releaseId = randomUUID();
+  await store.save(out, releaseId);
   await deps.audit.write({
     who: who.type === 'manual' ? who.who : 'system',
     what: who.type === 'manual' ? 'privacy.release.manual' : 'privacy.release.auto',
     target: `round:${round}`,
     details: { round, population, cells: out.length, carried, superseded: superseded.length },
   });
-  return { released: out, superseded: superseded.length, carried };
+  return { released: out, superseded: superseded.length, carried, release_id: releaseId };
 }

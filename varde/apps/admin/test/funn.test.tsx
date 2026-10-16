@@ -31,7 +31,7 @@ const detail = {
   countsAnswers: true,
   questions: [{ id: 'F12', label: 'Veit kor dei skal melde frå' }],
   placeholders: [],
-  versions: [{ version: 1, created_at: '2026-10-16T08:00:00Z', changed: [], rule }],
+  versions: [{ version: 1, created_at: '2026-10-16T08:00:00Z', changed: [] as string[], rule }],
 };
 const outcome = (share: number) => ({
   kind: 'finding',
@@ -55,12 +55,29 @@ function input(el: HTMLInputElement | HTMLTextAreaElement, value: string) {
 
 it('previews only outcome fields after a pause, and saves as the next version', async () => {
   const calls: { url: string; body?: unknown }[] = [];
+  let current = detail;
   const fetcher = vi.fn((url: string, init?: RequestInit) => {
     const body =
       typeof init?.body === 'string'
         ? (JSON.parse(init.body) as Record<string, unknown>)
         : undefined;
     calls.push({ url, body });
+    if (url.endsWith(`${rule.key}/versions`)) {
+      const next = { ...(body!.rule as typeof rule), version: 2 };
+      current = {
+        ...detail,
+        rule: next,
+        versions: [
+          {
+            version: 2,
+            created_at: '2026-10-16T09:00:00Z',
+            changed: ['options', 'text'],
+            rule: next,
+          },
+          ...detail.versions,
+        ],
+      };
+    }
     const json = url.includes('/preview')
       ? {
           round: { id: 'r1', name: 'Syntetisk runde', status: 'open' },
@@ -91,7 +108,7 @@ it('previews only outcome fields after a pause, and saves as the next version', 
             ? [{ id: 'v', label: '2026-10-13', template: { key: 'tryggleik' } }]
             : url.startsWith('/api/admin/finding-rules?')
               ? [{ key: rule.key, version: 1, versions: 1, rule, questions: detail.questions }]
-              : detail;
+              : current;
     return Promise.resolve(new Response(JSON.stringify(json)));
   });
   vi.stubGlobal('fetch', fetcher);
@@ -129,8 +146,14 @@ it('previews only outcome fields after a pause, and saves as the next version', 
   expect(view.div.textContent).toContain('6 av 12 (50 %)');
   act(() => button(view!.div, 'Lagre som versjon 2').click());
   await settle();
+  await wait(450);
+  await settle();
   const saved = calls.find((c) => c.url.endsWith(`${rule.key}/versions`))!;
   expect(saved.body).toMatchObject({ base_version: 1, rule: { text: { nn: 'Ny tekst' } } });
   expect((saved.body as { rule: object }).rule).not.toHaveProperty('version');
   expect(view.div.textContent).toContain('Lagra som versjon 2.');
+  // The saved version becomes the base; the preview reads once more, under the new version.
+  expect(view.div.querySelector('.merkelappar')!.textContent).toBe('Versjon 2');
+  expect(previews()).toHaveLength(3);
+  expect(button(view.div, 'Lagre som versjon 3').disabled).toBe(true);
 });

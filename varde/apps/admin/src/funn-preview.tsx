@@ -137,7 +137,8 @@ export function FindingPreview({
         }),
         signal,
       }),
-    enabled: !!round && ready,
+    // Only a settled draft is read: no request with a half-typed or just-fixed value.
+    enabled: !!round && ready && body === settled,
     placeholderData: keepPreviousData,
   });
   const data = result.data;

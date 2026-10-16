@@ -68,7 +68,7 @@ export function evaluate(
           share: 2,
           level: 'high',
           tal: `≈ ${Math.round(routine.numerator)} timar/veke`,
-          text: r.text.nn.replace('{n}', String(routine.n)) + task,
+          text: r.text.nn.replaceAll('{n}', String(routine.n)) + task,
           ...(routine.release_id ? { release_id: routine.release_id } : {}),
         });
       } else {
@@ -92,9 +92,9 @@ export function evaluate(
           level: 'high',
           tal: `≈ ${Math.round(top.numerator)} timar/veke`,
           text: r.text.nn
-            .replace('{task}', label.toLowerCase())
-            .replace('{n}', String(top.n))
-            .replace('{persons}', top.n === 1 ? 'person' : 'personar'),
+            .replaceAll('{task}', label.toLowerCase())
+            .replaceAll('{n}', String(top.n))
+            .replaceAll('{persons}', top.n === 1 ? 'person' : 'personar'),
           ...(top.release_id ? { release_id: top.release_id } : {}),
         });
       }

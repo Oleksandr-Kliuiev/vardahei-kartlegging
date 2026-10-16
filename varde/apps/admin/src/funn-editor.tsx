@@ -69,11 +69,16 @@ function EditorForm({
 }) {
   const client = useQueryClient(),
     toast = useToast();
+  // `rule` is the version the draft starts from. A newer version replaces it when nothing is
+  // unsaved, or after our own save or «Hent nyaste versjon»; unsaved work is never dropped:
+  // saving it meets a 409 instead of overwriting the other version. The form stays mounted.
+  const [rule, setRule] = useState<Rule>(detail.rule);
   const [draft, setDraft] = useState<Rule>(detail.rule);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState<Error | null>(null);
-  const fields = useRef<HTMLDivElement>(null);
-  const rule = detail.rule;
+  const fields = useRef<HTMLDivElement>(null),
+    take = useRef(false);
+  const latest = detail.rule;
   const dirty = sorted(draft) !== sorted(rule);
   const issues = problems(draft, detail);
   const set = (change: Partial<Rule>) => setDraft((d) => ({ ...d, ...change }));
@@ -81,15 +86,18 @@ function EditorForm({
     onDirty(dirty);
     return () => onDirty(false);
   }, [dirty, onDirty]);
-  // A new version (saved here, or fetched after a conflict) becomes the base; the form stays put,
-  // so the preview keeps its round and client and nothing enters again.
-  const seen = useRef(rule.version);
   useEffect(() => {
-    if (seen.current === rule.version) return;
-    seen.current = rule.version;
-    setDraft(rule);
+    if (latest.version === rule.version || (dirty && !take.current)) return;
+    take.current = false;
+    setRule(latest);
+    setDraft(latest);
     setError(null);
-  }, [rule]);
+  }, [latest, rule.version, dirty]);
+  const refresh = () => {
+    take.current = true;
+    void client.invalidateQueries({ queryKey: ['findings', 'rules'] });
+    return client.invalidateQueries({ queryKey: ['findings', 'rule', rule.key] });
+  };
   // A newly chosen rule enters field by field; with reduced motion it is simply there.
   useLayoutEffect(() => {
     if (!fields.current || reduced()) return;
@@ -114,7 +122,8 @@ function EditorForm({
         { base_version: rule.version, rule: body },
       );
       toast(`Lagra som versjon ${saved.version}.`);
-      await client.invalidateQueries({ queryKey: ['findings'] });
+      // Only the rule and the list: the preview reads again once, under the new version.
+      await refresh();
       void client.invalidateQueries({ queryKey: ['responses'] });
     } catch (e) {
       setError(e instanceof Error ? e : new Error('Kunne ikkje lagre.'));
@@ -174,11 +183,26 @@ function EditorForm({
               </p>
             ))}
           <ErrorMessage error={error} />
-          {error instanceof ApiError && error.status === 409 && (
+          {latest.version !== rule.version && (
+            <p role="status">
+              Nokon har lagra versjon {latest.version} medan du skreiv. Endringane dine er ikkje
+              lagra.
+            </p>
+          )}
+          {((error instanceof ApiError && error.status === 409) ||
+            latest.version !== rule.version) && (
             <button
               type="button"
               className="linkbtn"
-              onClick={() => void client.invalidateQueries({ queryKey: ['findings'] })}
+              onClick={() => {
+                // Already fetched: take it now (an unchanged refetch would not re-render).
+                if (latest.version !== rule.version) {
+                  setRule(latest);
+                  setDraft(latest);
+                  setError(null);
+                }
+                void refresh();
+              }}
             >
               Hent nyaste versjon
             </button>

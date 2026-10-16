@@ -79,6 +79,9 @@ describe('FindingRule schema (2.5)', () => {
     expect(RuleDraft.safeParse({ ...routine, text: { nn: '{task}', en: 'x' } }).success).toBe(
       false,
     );
+    // The action text is shown as it is: a placeholder there would reach the dashboard raw.
+    const action = { nn: 'Start med {n}', en: 'Start with {n}' };
+    expect(RuleDraft.safeParse({ ...routine, action_text: action }).success).toBe(false);
   });
   it('a draft has no version and no duplicate options', () => {
     expect(RuleDraft.safeParse(rule('tryggleik.f12')).success).toBe(false);

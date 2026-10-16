@@ -137,15 +137,19 @@ export function problems(draft: Rule, detail: RuleDetail): string[] {
   const out: string[] = [];
   const texts = [draft.text.nn, draft.text.en, draft.action_text.nn, draft.action_text.en];
   if (texts.some((t) => !t.trim())) out.push('Skriv teksten både på nynorsk og engelsk.');
-  for (const t of texts)
+  // Only the finding text gets its placeholders filled; «Kva vi gjer» is shown as written.
+  texts.forEach((t, i) => {
     for (const m of t.matchAll(/\{([^}]*)\}/g))
-      if (!detail.placeholders.includes(m[1] ?? ''))
+      if (i > 1 || !detail.placeholders.includes(m[1] ?? ''))
         out.push(`Teksten har ein ukjend plasshaldar: {${m[1] ?? ''}}.`);
+  });
   const { medium, high } = draft.threshold;
   if (!(medium >= 0 && medium <= high && high <= 1))
     out.push('«Høg» kan ikkje vere lågare enn «middels», og begge må vere mellom 0 og 100 %.');
   if (!Number.isInteger(draft.min_count) || draft.min_count < 1)
     out.push('«Minst» må vere eit heilt tal frå 1.');
+  if (draft.minimum_hours !== undefined && !(draft.minimum_hours >= 0))
+    out.push('«Minst timar i veka» må vere eit tal frå 0.');
   if (detail.countsAnswers && !detail.locked && draft.options.length === 0)
     out.push('Vel minst eitt svar som skal telje.');
   return [...new Set(out)];

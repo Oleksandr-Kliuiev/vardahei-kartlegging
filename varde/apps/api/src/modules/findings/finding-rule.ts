@@ -49,12 +49,13 @@ function invariants(r: Fields, ctx: z.RefinementCtx) {
     });
   if (new Set(r.options).size !== r.options.length)
     ctx.addIssue({ code: 'custom', path: ['options'], message: 'options: duplicate' });
-  const allowed = PLACEHOLDERS[r.computed ?? ''] ?? [];
+  // evaluate.ts fills placeholders in the finding text only; the action text is shown as it is.
   for (const field of ['text', 'action_text'] as const)
     for (const lang of ['nn', 'en'] as const) {
       const value = r[field][lang];
       if (!value.trim())
         ctx.addIssue({ code: 'custom', path: [field, lang], message: 'text: empty' });
+      const allowed = field === 'text' ? (PLACEHOLDERS[r.computed ?? ''] ?? []) : [];
       for (const m of value.matchAll(/\{([^}]*)\}/g))
         if (!allowed.includes(m[1] ?? ''))
           ctx.addIssue({

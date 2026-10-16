@@ -9,7 +9,8 @@
 | `4ae7275` | API версий FindingRule и предпросмотра; закрытый раунд читает сохранённые Finding своего release; миграция `finding_rule_versions`; unit и integration |
 | `1fd4100` | Страница «Funn» (группа «Innhald» после «Skjema»): список, редактор, живой предпросмотр, версии; подсказка в дашборде; unit и e2e |
 | `6b09f5d` | `invariants:2a`, строки REVIEW-CHECKLIST и AI_CONTEXT_MAP, этот evidence |
-| следующий за ним | «Funn» помнит раунд и клиента предпросмотра при переходе между правилами (по шаблону) |
+| `705eafe` | «Funn» помнит раунд и клиента предпросмотра при переходе между правилами (по шаблону) |
+| следующий за ним | Правки после независимого ревью (ниже, п. 7–10) |
 
 ## Что сделано
 
@@ -29,7 +30,7 @@
 - `pnpm check` — exit 0 (api 137, admin 20, runner 81, rules 81, eslint-rules 61, schema 50, ui 18, parity 17, invariants 16, docs 16, convert 13, context-budget 6). `tools/secrets/run.sh dir` — утечек нет.
 - `pnpm budget` — 0 файлов больше 700 строк; новые файлы до 390 строк.
 - `pnpm invariants:2a` — 5/5 ok.
-- Integration (Postgres `varde_2a`): 48 файлов, 323 теста зелёные; 2 файла пропущены по окружению (rehearsal и restore в Docker, их гоняет `invariants:1c`). Новый `test/findings/rule-editor.test.ts` работает на своей временной базе, чтобы новые версии не попали в тесты паритета.
+- Integration (Postgres `varde_2a`): 48 файлов, 324 теста зелёные; 2 файла пропущены по окружению (rehearsal и restore в Docker, их гоняет `invariants:1c`). Новый `test/findings/rule-editor.test.ts` работает на своей временной базе, чтобы новые версии не попали в тесты паритета.
 - e2e admin (`varde_e2e_admin_2a`, под `lockf`): 34/34 (в том числе 3 новых теста `funn.spec.ts`); e2e runner (`varde_e2e_2a`): 58/58.
 - Скриншоты (Playwright, синтетические данные e2e): `2a/funn-1280-light.png`, `2a/funn-360-dark.png`, `2a/funn-ki-1280-light.png` (K7 × K8), `2a/funn-leader-1280-light.png`; при каждом прогоне e2e они пишутся заново в `varde/apps/admin/test-results/` (360 и 1280, обе темы).
 
@@ -41,12 +42,16 @@
 4. **Закрытые раунды — по сохранённым строкам release, а не по закреплению на раунд** (первый вариант 2.5 заменён решением оркестратора 16.10). `finding_set` — минимальная добавка, без неё «ничего не сработало» нельзя отличить от «ещё не считали».
 5. **Доля из JSONB:** сохранённая `share` может отличаться в последнем знаке, поэтому у простых правил при чтении берётся `count / n` из той же строки.
 6. Текст дашборда «Funn rekna ut frå svara: minst to personar, middels frå 15 %, høg frå 30 %.» не менялся — после правки порогов он может не совпадать с правилом (вопрос ниже).
+7. **`privacy.release()` теперь возвращает `release_id`** (только метаданные, без значений). Нужен для раунда, где все ячейки скрыты (k): скрытая ячейка не несёт `release_id`, и без него версии такого release не закреплялись бы, а leader-выводы закрытого раунда шли бы за новой версией. `releaseRound` передаёт id в `released()`; тест с двумя ответами и одним руководителем.
+8. Плейсхолдеры разрешены только в тексте вывода (`{n}`, `{task}`, `{persons}` подставляются везде, `replaceAll`); в «Kva vi gjer» — нет, он показывается как есть.
+9. UI: предпросмотр уходит только для «устоявшегося» черновика (после паузы), без запроса с полузаполненным значением; после сохранения перечитываются только правило и список — предпросмотр один раз под новой версией (лишних `leader.read` нет). Несохранённый черновик не заменяется молча новой версией другого админа: показывается «Nokon har lagra versjon N medan du skreiv…», сохранение даст 409, «Hent nyaste versjon» берёт новую.
+10. Бэкфилл миграции читает из `aggregate_snapshot` только метаданные (`release_id`, `client_id`, `status`, `population`); миграции — в allow-list `apps/api/prisma/**`.
 
 ## Новые строки на нюношке (на проверку Oleksandr)
 
 Меню и страница: «Funn», «Reglane bak funna i dashbordet. Ei endring blir lagra som ein ny versjon, og du ser med ein gong kva ho gjer med tala i ein runde.», «Tryggleik», «KI», «Felles del», «Leiar», «Reglar», «{n} i alt», «Hentar …», «Hentar reglane …», «Vel ein regel i lista.», «Middels frå 15 %, høg frå 30 %, minst 2», «Leiarsvar, nivå middels», «Rekna ut frå timar i veka», «Rekna ut frå timar, minst 1 t i veka», «Frå 60 % som veit, minst 3 svar», «Du har endringar som ikkje er lagra. Vil du gå vidare utan å lagre?».
 
-Редактор: «Versjon {n}», «Ikkje lagra», «Funnet», «Slik står det i dashbordet: «4 av 12 …».» (для leader — «Leiaren …», для вычисляемых — «≈ 12 timar/veke …», «67 % …»), «Plasshaldarar: …», «Kva vi gjer», «Står som «Forslag» under funnet.», «Nynorsk», «Engelsk», «Middels frå», «Høg frå», «Minst», «personar», «Minst timar i veka», «Nivå når leiaren svarar slik», «Minst del som veit kor dei skal melde frå (F12)», «Minst svar på F12», «Funnet kjem når nokon har svart på kor mykje tid rutinane tek. Det har ingen tersklar.», «Svar som tel», «Leiarsvar som tel (B13)», «Svara i ein leiarregel ligg fast: dei gjeld både kvar leiar og samla tal for alle kundar.», «Type funn», «Risiko», «Moglegheit», «Versjonar», «Første versjon», «Endra: funnet, kva vi gjer, tersklar, minst personar, svar som tel, type, nivå, minst timar», «{d}. oktober, kl. 01.14», «Hent inn i redigeringa».
+Редактор: «Versjon {n}», «Ikkje lagra», «Nokon har lagra versjon {n} medan du skreiv. Endringane dine er ikkje lagra.», ««Minst timar i veka» må vere eit tal frå 0.», «Funnet», «Slik står det i dashbordet: «4 av 12 …».» (для leader — «Leiaren …», для вычисляемых — «≈ 12 timar/veke …», «67 % …»), «Plasshaldarar: …», «Kva vi gjer», «Står som «Forslag» under funnet.», «Nynorsk», «Engelsk», «Middels frå», «Høg frå», «Minst», «personar», «Minst timar i veka», «Nivå når leiaren svarar slik», «Minst del som veit kor dei skal melde frå (F12)», «Minst svar på F12», «Funnet kjem når nokon har svart på kor mykje tid rutinane tek. Det har ingen tersklar.», «Svar som tel», «Leiarsvar som tel (B13)», «Svara i ein leiarregel ligg fast: dei gjeld både kvar leiar og samla tal for alle kundar.», «Type funn», «Risiko», «Moglegheit», «Versjonar», «Første versjon», «Endra: funnet, kva vi gjer, tersklar, minst personar, svar som tel, type, nivå, minst timar», «{d}. oktober, kl. 01.14», «Hent inn i redigeringa».
 
 Предпросмотр и сохранение: «Førehandsvising», «Reknar …», «Runde», «Kunde», «Alle», «Ingen rundar med dette skjemaet enno.», «Rett felta for å sjå kva endringa gjer.», «Med endringa», «Utan endringar», «Ikkje funn», «Skjult: færre enn 3 svar», «Ingen svar å rekne på», «Ingen tal», «Leiaren har ikkje valt desse svara», «{n} av {m} leiarar», «{n} kunde/kundar», «Publiserte tal frå den avslutta runden.», «Levande tal frå den opne runden.», «Dashbordet for denne runden viser versjon {n} og endrar seg ikkje når du lagrar.», «Leiarsvar blir lesne og logga på same måte som i dashbordet.», «Grupper med færre enn 3 svar blir ikkje viste.», «Lagre som versjon {n}», «Forkast endringane», «Hent nyaste versjon», «Opne rundar får den nye versjonen med ein gong. Avslutta rundar held fram med funna dei fekk då dei vart avslutta.», «Lagra som versjon {n}.», в дашборде — «Regelen har ein nyare versjon».
 

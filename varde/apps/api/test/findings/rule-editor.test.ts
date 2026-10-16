@@ -4,8 +4,10 @@
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AggregateView } from '../../src/modules/dashboard/aggregate-view.js';
+import { LeaderView } from '../../src/modules/dashboard/leader-view.js';
 import { FindingsService } from '../../src/modules/findings/findings.service.js';
 import { MetricsService } from '../../src/modules/metrics/metrics.service.js';
+import { RoundsService } from '../../src/modules/rounds/rounds.service.js';
 import { dashboardFixture, type DashboardFixture } from '../dashboard/fixture.js';
 import { cookieHeader } from '../support/auth-app.js';
 import { insertResponse, withPg } from '../support/rounds.js';
@@ -254,6 +256,56 @@ describe('2.5 closed rounds keep their saved findings (orchestrator 16.10)', () 
     expect(rows.find((r) => r.rule_key === changed.key)?.rule_version).toBe(2);
     await f.app.get(AggregateView).load(f.tryggleik);
     expect(await saved()).toHaveLength(rows.length);
+  });
+});
+
+describe('2.5 a closed round with only hidden cells', () => {
+  it('still keeps the rule versions of its release, also for leader findings', async () => {
+    const version = await f.prisma.templateVersion.findFirstOrThrow({
+      where: { template: { key: 'tryggleik' }, label: '2026-10-13' },
+    });
+    const client = await f.prisma.client.findUniqueOrThrow({ where: { slug: 'gasta' } });
+    const round = await f.prisma.round.create({
+      data: {
+        name: 'synthetic-2.5-hidden',
+        type: 'regular',
+        status: 'open',
+        identification: 'initials',
+        template_version_id: version.id,
+      },
+    });
+    const rc = await f.prisma.roundClient.create({
+      data: { round_id: round.id, client_id: client.id, status: 'open' },
+    });
+    await withPg(async (db) => {
+      for (const key of ['ZZH', 'ZZI'])
+        await insertResponse(db, {
+          round_client_id: rc.id,
+          respondent_key: key,
+          answers: { F12: 'nei' },
+        });
+      await insertResponse(db, {
+        round_client_id: rc.id,
+        part: 'leader',
+        respondent_key: 'ZZH',
+        answers: { B13: 'nei' },
+      });
+    });
+    // Two answers: every common cell is hidden (k = 3), yet the release fixes its versions.
+    await f.app.get(RoundsService).close(round.id, 'test:2.5');
+    expect(await f.prisma.findingSet.count({ where: { round_id: round.id } })).toBe(2);
+    const b13 = (await detail('tryggleik.leader_b13')).rule;
+    const leader = () => f.app.get(LeaderView).client(round.id, client.slug, f.session);
+    const shown = async () => (await leader()).findings.find((x) => x.key === b13.key);
+    expect(await shown()).toMatchObject({ version: b13.version, level: 'medium' });
+    const saved = await save(b13.key, { ...draftOf(b13), level: 'high' }, b13.version);
+    expect(saved.statusCode).toBe(201);
+    expect(await shown()).toMatchObject({ version: b13.version, level: 'medium' });
+    const p = await preview(b13.key, { rule: draftOf(b13), round: round.id, client: 'alle' });
+    expect(p.json()).toMatchObject({
+      fixed_version: b13.version,
+      current: { version: b13.version + 1 },
+    });
   });
 });
 

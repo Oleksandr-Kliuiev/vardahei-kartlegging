@@ -116,8 +116,11 @@ export class FindingsService {
     client: { id: string } | undefined,
     content: TemplateContent,
     cells: readonly ViewCell[],
+    releaseId?: string,
   ): Promise<{ findings: FindingView[]; release?: ReleaseScope }> {
-    const id = cells.flatMap((c) => (c.suppressed || !c.release_id ? [] : [c.release_id]))[0];
+    // Hidden cells carry no release id: right after a release the caller passes it explicitly.
+    const id =
+      cells.flatMap((c) => (c.suppressed || !c.release_id ? [] : [c.release_id]))[0] ?? releaseId;
     if (!id) return { findings: [] };
     const release = { id, scope: client?.id ?? 'all' };
     const findings = await this.prisma.$transaction(async (tx) => {
