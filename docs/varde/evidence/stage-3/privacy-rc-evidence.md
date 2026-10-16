@@ -80,7 +80,14 @@
 | M16 raw SQL шаблоном по `finding` не проверяется | `round-client-exits.test.ts` |
 | M17 raw SQL вызовом (`$queryRawUnsafe`) по `finding` не проверяется | `round-client-exits.test.ts` |
 
-- **Полный локальный прогон шагов CI** — результат ниже (раздел заполняется после прогона).
+- **Полный локальный прогон шагов CI** на `b3e00ef` (GitHub Actions заблокирован лимитом; скрипт по образцу local-ci оркестратора: свежие базы `varde_prc_*` в `varde-dev-postgres-1`, `VARDE_RESTORE_DOCKER=1` в job integration, как в CI, integration и браузерные прогоны под `lockf -k /private/tmp/varde-e2e.lock`): **30/30 ok**.
+  - check: install, `pnpm -r lint`, `pnpm -r test`, `pnpm -r build`, budget, budget:selfcheck, lint:privacy:selfcheck;
+  - integration: migrate; `test:integration` — 68 файлов зелёные, 1 пропущен (`cutover/rehearsal`, нужна `VARDE_REHEARSAL_DATABASE`), 445 тестов, 8 пропущено;
+  - invariants 0a, 0b, 0c, 1a, 1b:runner, 1b, 1c, 1e, 5, 2a, 3a, 3b, 3c (7/7); lesemodus, caddy-legacy;
+  - e2e: admin 40/40, runner 66/66; golden старого дашборда;
+  - secrets: утечек нет, secrets:selfcheck;
+  - образ linux/amd64 собран.
+  Первый прогон (на `d31b45d`) я остановил после `inv-0a`: в правило добавилась проверка raw SQL по `finding`, и полный прогон повторён на финальном коммите.
 
 ## Решения и отклонения
 
