@@ -1,0 +1,28 @@
+{
+  "at": "2026-10-16T13:43:36.314Z",
+  "phones": 60,
+  "seconds": 3,
+  "one_ip": "203.0.113.50",
+  "wall_s": 5.5,
+  "answers_ms": {
+    "n": 60,
+    "p50": 16,
+    "p95": 23,
+    "p99": 29,
+    "max": 29
+  },
+  "polls_ms": {
+    "n": 40,
+    "p50": 6,
+    "p95": 10,
+    "p99": 22,
+    "max": 22
+  },
+  "statuses": {
+    "answer 201": 60
+  },
+  "shown_n": 60,
+  "screen_snapshots": 5,
+  "node": "v25.8.1",
+  "ok": true
+}

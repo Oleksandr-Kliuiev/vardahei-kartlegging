@@ -139,8 +139,10 @@ test('slow motion ×4 for the film strip; reduced motion stands still at once', 
   const { frame, post } = await screen(page);
   await frame.evaluate(() => document.documentElement.setAttribute('data-motion', 'slow'));
   await post({ type: 'varde:storskjerm', snapshot: snapshot('released') });
+  // Frames at these moments after «Vis» (slow time; a screenshot takes some ms of its own).
+  const start = Date.now();
   for (const at of [0, 400, 800, 1300, 2000, 3600]) {
-    await page.waitForTimeout(at === 0 ? 0 : 300);
+    await page.waitForTimeout(Math.max(0, start + at - Date.now()));
     await page
       .locator('#storskjerm')
       .screenshot({ path: info.outputPath(`film-${String(at).padStart(4, '0')}.png`) });

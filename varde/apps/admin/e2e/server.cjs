@@ -138,6 +138,30 @@ require(require.resolve('reflect-metadata', { paths: [resolve(__dirname, '../../
     await db.$transaction((tx) => app.get(PrivacyService).store.insertParts(tx, parts));
     await rounds.close(reportRound.id, 'test:admin-e2e');
     state.rounds.report = { id: reportRound.id, rc: reportRc.id, name: reportRound.name, code: '' };
+    // 3b: a published version made for live questions (synthetic, apps/api/test/support/live-template.json).
+    const liveContent = JSON.parse(
+      readFileSync(resolve(__dirname, '../../api/test/support/live-template.json'), 'utf8'),
+    );
+    liveContent.key = `${mark}-live`;
+    const liveTemplate = await db.surveyTemplate.create({
+      data: { key: liveContent.key, audience: 'seminar_live', required_languages: ['nn', 'en'] },
+    });
+    const liveVersion = await db.templateVersion.create({
+      data: {
+        template_id: liveTemplate.id,
+        label: 'v1',
+        version_no: 1,
+        identification: 'none',
+        required_languages: ['nn', 'en'],
+        content: liveContent,
+        origin: 'authored',
+        content_hash: '0'.repeat(64),
+        status: 'published',
+        published_at: new Date(),
+        published_by: 'test:admin-e2e',
+      },
+    });
+    state.live_version = liveVersion.id;
     writeFileSync(stateFile, JSON.stringify(state));
   }
   const server = app.getHttpAdapter().getInstance();
@@ -168,6 +192,20 @@ require(require.resolve('reflect-metadata', { paths: [resolve(__dirname, '../../
         await db.progressEvent.deleteMany({ where: { round_client: { round_id: id } } });
         await db.roundClient.deleteMany({ where: { round_id: id } });
         await db.round.delete({ where: { id } });
+      }
+      // Live polls of the e2e seminars (3b): answers, the round client and the round.
+      const live = await db.seminar.findMany({
+        where: {
+          clients: { some: { client_id: { in: [state.client, state.other_client] } } },
+          round_live_id: { not: null },
+        },
+        select: { id: true, round_live_id: true },
+      });
+      for (const s of live) {
+        await db.seminar.update({ where: { id: s.id }, data: { round_live_id: null } });
+        await db.$executeRaw`DELETE FROM response WHERE round_client_id IN (SELECT id FROM round_client WHERE round_id = ${s.round_live_id}::uuid)`;
+        await db.roundClient.deleteMany({ where: { round_id: s.round_live_id } });
+        await db.round.delete({ where: { id: s.round_live_id } });
       }
       // Seminars of the e2e (3a) and their participants go first: they hang on the clients.
       await db.$executeRaw`DELETE FROM contact WHERE email LIKE 'zz-e2e-%@example.test'`;
