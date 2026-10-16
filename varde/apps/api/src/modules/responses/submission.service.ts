@@ -12,6 +12,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { PrivacyService } from '../privacy/privacy.service.js';
 import { CodesService, requireCode } from '../rounds/codes.js';
 import { contentHash } from '../surveys/hashes.js';
+import { checkLiveAnswer } from './live-answer.js';
 import { QuotaService } from './quota.service.js';
 import { Submission } from './submission.schema.js';
 
@@ -33,6 +34,7 @@ export class SubmissionService {
     const initial = requireCode(await this.codes.resolveCode(code));
     let undo: (() => void) | undefined;
     let inserted = false;
+    const live = initial.round.type === 'live';
     try {
       await this.prisma.$transaction(async (tx) => {
         // UUID-wide serialization also covers concurrent requests on different clients.
@@ -68,6 +70,8 @@ export class SubmissionService {
             throw new ConflictException('Innsendinga har anna innhald.');
           return;
         }
+        // Seminar live poll (3.4): one answer to the question that is open now.
+        const question = live ? await checkLiveAnswer(tx, rc.round_id, payload) : null;
         const version = rc.round.template_version!.content as unknown as TemplateContent;
         if (!version.required_languages.includes(payload.lang))
           throw new BadRequestException('Språket er ikkje tilgjengeleg.');
@@ -108,7 +112,12 @@ export class SubmissionService {
             );
           }),
         );
-        undo = await this.quotas.consume(rc, tx, ip);
+        if (question !== null && !(question in answers))
+          throw new BadRequestException('Svaret er ikkje gyldig.');
+        undo =
+          question === null
+            ? await this.quotas.consume(rc, tx, ip)
+            : await this.quotas.consumeLive(rc, tx, ip, question);
         const role = roleQuestion ? clean[roleQuestion.id] : undefined;
         await this.privacy.store.insertParts(tx, [
           {
@@ -134,7 +143,8 @@ export class SubmissionService {
       // Prisma errors can contain answers/initials. Never pass them to the exception logger.
       throw new ServiceUnavailableException('Svara kom ikkje fram. Prøv igjen.');
     }
-    if (inserted) {
+    if (inserted && live) this.events.liveChanged(initial.round_id);
+    else if (inserted) {
       this.events.changed('responses');
       this.events.changed('progress');
     }

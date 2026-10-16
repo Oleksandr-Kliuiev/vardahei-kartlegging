@@ -10,6 +10,9 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { MetricsService } from '../metrics/metrics.service.js';
 import { CodesService, deadlineExpiry } from './codes.js';
 
+/** A seminar live poll is led from its seminar (3.4), never through the round admin. */
+const LIVE_ROUND = 'Live-spørsmåla blir styrte frå seminaret.';
+
 export interface NewRound {
   name: string;
   template_version_id: string;
@@ -51,6 +54,7 @@ export class RoundsService {
     await tx.$queryRaw`SELECT id FROM round WHERE id = ${id}::uuid FOR UPDATE`;
     const round = await tx.round.findUnique({ where: { id } });
     if (round === null) throw new NotFoundException('Runden finst ikkje.');
+    if (round.type === 'live') throw new ConflictException(LIVE_ROUND);
     return round;
   }
 
@@ -267,6 +271,7 @@ export class RoundsService {
   async release(id: string, who: string) {
     const round = await this.prisma.round.findUnique({ where: { id } });
     if (round === null) throw new NotFoundException('Runden finst ikkje.');
+    if (round.type === 'live') throw new ConflictException(LIVE_ROUND);
     if (!['open', 'closed'].includes(round.status))
       throw new ConflictException('Runden er ikkje opna.');
     const result = await this.metrics.releaseRound(id, { type: 'manual', who });

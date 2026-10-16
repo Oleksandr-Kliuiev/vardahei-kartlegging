@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   HttpException,
   Injectable,
   ServiceUnavailableException,
@@ -27,6 +28,9 @@ export class ProgressService {
     const result = Progress.safeParse(body);
     if (!result.success) throw new BadRequestException('Framdrifta er ikkje gyldig.');
     const initial = requireCode(await this.codes.resolveCode(code));
+    // A seminar live poll (3.6) has no progress: each answer is its own submission.
+    if (initial.round.type === 'live')
+      throw new ConflictException('Live-spørsmål har inga framdrift.');
     const undo = this.limits.reserve([
       { key: `ip:${ip}`, max: 3000 },
       { key: `session:${initial.id}:${result.data.session_id}`, max: 300 },

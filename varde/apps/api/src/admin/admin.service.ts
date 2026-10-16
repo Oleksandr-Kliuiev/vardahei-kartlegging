@@ -11,7 +11,9 @@ export class AdminService {
   ) {}
 
   clients() {
+    // The technical client of seminar live polls (3.4) is nobody's customer: never listed.
     return this.prisma.client.findMany({
+      where: { kind: 'client' },
       orderBy: { name: 'asc' },
       select: {
         id: true,
@@ -32,7 +34,9 @@ export class AdminService {
 
   /** Rounds with their clients; `released` says a client report can be made (5.1). */
   async rounds() {
+    // Live polls belong to their seminar (3.4): not in the lists of rounds, insight or reports.
     const rounds = await this.prisma.round.findMany({
+      where: { type: { not: 'live' } },
       orderBy: { created_at: 'desc' },
       select: {
         id: true,

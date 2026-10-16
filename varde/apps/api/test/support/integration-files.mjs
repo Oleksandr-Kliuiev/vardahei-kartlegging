@@ -60,4 +60,9 @@ export const INTEGRATION_FILES = [
   'test/seminars/materials.test.ts',
   'test/seminars/invitation.test.ts',
   'test/invariants/3a-participants.test.ts',
+  'test/live/live-poll.test.ts',
+  'test/live/presenter.test.ts',
+  'test/live/stream.test.ts',
+  'test/live/runner-live.test.ts',
+  'test/invariants/3b-presenter-routes.test.ts',
 ];
