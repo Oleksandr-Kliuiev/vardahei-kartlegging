@@ -74,6 +74,14 @@
 - **Ограничение restore в базе с seed** — в рисках ниже.
 - Проверки после замечаний (из `varde/`; integration и invariants — каждый прогон на заново созданной и мигрированной базе): `pnpm check` exit 0 (596 тестов); integration-файлы findings, migrations и exports — 7 файлов, 40 тестов (unit-файлы этих папок — в `pnpm check`); `pnpm invariants:2a` 5/5; `pnpm invariants:5` 5/5; `pnpm budget` — 0 файлов >700; gitleaks — чисто. UI не менялся, e2e не гонялся.
 
+## Приёмка, merge и выкатка (оркестратор, 16.10)
+
+- Приёмка приватности (чистая сессия Opus 5.5 xhigh, мутации) на `5124744`: «принято с замечаниями», blocking и important нет; minor закрыты в `d2ef669`…`5bc9a79` без повторного ревью (протокол 13.10).
+- CI на `5bc9a79` — все пять job зелёные; merge в `main` — `cda42f3`. На `main` e2e упёрся в лимит job 15 мин (прогоны шли 13–14,5 мин, этот 15:17; тесты не падали) — лимит e2e поднят до 30 мин (`5b529fc`, тест workflow обновлён). CI на `5b529fc` — все пять job зелёные (e2e 14:20).
+- Выкатка 16.10.2026 (05:38 по Норвегии), `varde-api:5b529fc666ae`: копия базы `/root/deploy-20261016-0338/varde-pre.dump` (345 230 байт, `0600`; 57 ответов, 5429 снимков); `migrate deploy` — «All migrations have been successfully applied» (`20261016100000_finding_rule_versions`); `varde-app` healthy через 7 с.
+- Проверка после (только чтение): backfill дал 7 строк `finding_set` для закрытого раунда 1 (6 клиентов и «alle»), во всех наборах только версии 1; триггеры `finding_rule_immutable`, `finding_immutable`, `finding_set_immutable` на месте; правил 39, все v1; ответов 57. `prod-check`: `/health` с версией, заголовки runner и предпросмотра, экран ошибки ссылки в light/dark на 390 и 1280, `finding-rules`, `report`, `archive.json` без входа → 401; ошибок в журнале нет.
+- Откат (не понадобился): `VARDE_SHA=c9dd3b37c85e`, `up -d`, затем `down.sql` миграции через unix socket `atlas-db-1` (runbook `varde/infra/README.md` «Откат деплоя»).
+
 ## Новые строки на нюношке (на проверку Oleksandr)
 
 Меню и страница: «Funn», «Reglane bak funna i dashbordet. Ei endring blir lagra som ein ny versjon, og du ser med ein gong kva ho gjer med tala i ein runde.», «Tryggleik», «KI», «Felles del», «Leiar», «Reglar», «{n} i alt», «Hentar …», «Hentar reglane …», «Vel ein regel i lista.», «Middels frå 15 %, høg frå 30 %, minst 2», «Leiarsvar, nivå middels», «Rekna ut frå timar i veka», «Rekna ut frå timar, minst 1 t i veka», «Frå 60 % som veit, minst 3 svar», «Du har endringar som ikkje er lagra. Vil du gå vidare utan å lagre?».
