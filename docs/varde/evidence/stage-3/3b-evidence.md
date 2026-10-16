@@ -100,6 +100,21 @@
 - Ссылка для телефонов общая для зала (как общая ссылка анкеты): один человек может ответить с нескольких устройств или повторно после очистки хранилища — принятый остаточный риск (решение приёмки 16.10, решение 9); квота на вопрос ограничивает накрутку.
 - CI не запускался (GitHub Actions заблокирован лимитом расходов 16.10); push не делался.
 
+## Приёмка, merge и выкатка (оркестратор, 16.10)
+
+- Приёмка безопасности и приватности (чистая сессия Opus 5.5 xhigh, мутации) на `bf91558`: «принято с замечаниями», blocking нет. Important — «N har svart» без порога k до «Vis» — исправлено в `6ef4166` (вариант b: k = 3, ниже — «Færre enn tre har svart»). Minor закрыты в `4f7e4bf`, `4f59adf`, `91487b9`. Повторная проверка на `5102c50` закрыла все пункты, оба мутанта убиты.
+- Решения Oleksandr 16.10 (BESLUTNINGER): отступления от эталона приняты; выкатка по полному локальному прогону, пока Actions заблокирован.
+- Полный локальный прогон шагов CI на `5102c50` — **29/29** (check, integration с инвариантами 0a–3b, e2e admin и runner, golden, secrets, образ).
+- Merge → `main` `8d9dddd`. Выкатка `varde-api:8d9dddd522f0` в 17:35 по Норвегии:
+  - копия базы `/root/deploy-20261016-1535/varde-pre.dump` (384 146 байт, `0600`; 57 ответов, 5429 снимков);
+  - миграция `20261016140000_live_poll` применена; healthy через 7 с.
+- Проверка после:
+  - `/api/presenter/poll` и `/stream` без ключа и с неверным ключом → 401;
+  - `/p` — 200, CSP без `unsafe-*` и внешних хостов, `Referrer-Policy: no-referrer`;
+  - клиентов по-прежнему 6, технический клиент семинара появится с первым live-опросом;
+  - `prod-check` 27/27; ошибок в журнале нет; ответов 57.
+- Откат: `VARDE_SHA=99db63a6e2c4`, `up -d`, затем `down.sql` миграции `live_poll`.
+
 ## Новые строки на нюношке (на проверку Oleksandr)
 
 Телефон (`apps/runner/src/i18n/ui.nn.json`): «Live-spørsmål» · «Vent litt» · «Det første spørsmålet kjem straks. Ha sida open, så dukkar det opp her av seg sjølv.» · «Send svaret» · «Sender …» · «Takk!» · «Svaret ditt er med. Resultatet kjem på skjermen.» · «Neste spørsmål kjem her av seg sjølv.» · «Spørsmålet er stengt» · «Du rakk ikkje å svare på dette. Neste spørsmål kjem her av seg sjølv.» · «Takk for at du var med!» · «Alle spørsmåla er stilte. Du kan lukke sida.» · «Svaret kom ikkje fram. Sjekk nettet og prøv igjen.» · «Fekk ikkje kontakt. Prøver igjen …» · «Svaret ditt er anonymt og blir ikkje knytt til deg. På skjermen viser vi berre kor mange som valde kvart svar.»
