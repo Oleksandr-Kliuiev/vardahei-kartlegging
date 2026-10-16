@@ -7,6 +7,7 @@ import { api } from './api.js';
 import { Icon } from './icons.js';
 import { ErrorMessage } from './queries.js';
 import { SeminarForm } from './seminar-form.js';
+import { Materials } from './seminar-materials.js';
 import {
   copy,
   draftOf,
@@ -185,9 +186,7 @@ export function SeminarView({ id }: { id: string }) {
             <Seg label="Del" value={tab} options={TABS} onChange={setTab} />
           </div>
           {tab === 'pamelding' && <Registrations seminar={s} />}
-          {tab === 'materiell' && (
-            <Later title="Materiell" text="Lysark og lenkjer som deltakarane ser på påmeldingssida etter seminaret." />
-          )}
+          {tab === 'materiell' && <Materials seminar={s} />}
           {tab === 'invitasjon' && (
             <Later title="Invitasjon" text="Tekst, kalenderfil og plakat med QR-kode til å sende ut sjølv." />
           )}

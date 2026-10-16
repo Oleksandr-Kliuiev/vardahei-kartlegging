@@ -45,3 +45,9 @@
 .sem-later { font-size: 17px; margin-top: 6px; }
 .sem-pamelde th[scope="row"] { font-weight: 650; color: var(--ink-strong); }
 .sem-pamelde td, .sem-pamelde th { overflow-wrap: anywhere; }
+.sem-materiell-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.sem-materiell-liste li { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface-2); }
+.sem-materiell-liste .icon { color: var(--accent); }
+.sem-materiell-liste span { display: grid; gap: 2px; min-width: 0; }
+.sem-materiell-liste a { color: var(--ink-strong); font-weight: 650; overflow-wrap: anywhere; }
+.sem-materiell-liste small { color: var(--ink-muted); font-size: 12.5px; overflow-wrap: anywhere; }

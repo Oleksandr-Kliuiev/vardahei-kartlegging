@@ -152,6 +152,30 @@ describe('one seminar', () => {
     expect(calls('/registrations')).toHaveLength(1);
     expect(view.div.querySelector('table')?.textContent).toContain('zz@example.test');
   });
+  it('«Materiell» posts a title and a link and says when the participants see it', async () => {
+    view = mount(<SeminarPage id={ID} />, true);
+    await settle();
+    act(() => {
+      button(view!.div, 'Materiell').click();
+    });
+    expect(view.div.textContent).toContain('Ikkje noko materiell enno.');
+    expect(view.div.textContent).toContain('Synleg etter seminaret');
+    const set = (selector: string, value: string) => {
+      act(() => {
+        const el = view!.div.querySelector<HTMLInputElement>(selector)!;
+        Reflect.set(HTMLInputElement.prototype, 'value', value, el);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    };
+    set('.sem-form input[maxlength="200"]', 'Lysark');
+    set('.sem-form input[type="url"]', 'https://example.test/lysark.pdf');
+    act(() => {
+      view!.div.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
+    await settle();
+    const post = fetcher.mock.calls.find(([p]) => p === `/api/admin/seminars/${ID}/materials`);
+    expect(JSON.parse(post![1]!.body as string)).toEqual({ title: 'Lysark', url: 'https://example.test/lysark.pdf' });
+  });
   it('«Live» and «Før og etter» say they come in the next step', async () => {
     view = mount(<SeminarPage id={ID} />, true);
     await settle();

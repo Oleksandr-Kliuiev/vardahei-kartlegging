@@ -12,6 +12,7 @@ import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { PrivacyService, type PrivacySession } from '../privacy/privacy.service.js';
 import { codeHash, issueCode } from '../rounds/codes.js';
+import { materialsOf } from './materials.service.js';
 import type { SeminarInput } from './seminar-input.js';
 import { osloInstant, osloParts, whenText } from './when.js';
 
@@ -99,6 +100,7 @@ export class SeminarsService {
     });
     return {
       ...this.view(s, counts[id], now),
+      materials: await materialsOf(this.prisma, id),
       findings: findings.map((f) => ({
         id: f.finding_id,
         status: f.status,

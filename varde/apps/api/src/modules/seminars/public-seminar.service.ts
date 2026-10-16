@@ -21,6 +21,7 @@ import { SlidingWindow } from '../responses/sliding-window.js';
 import { codeHash } from '../rounds/codes.js';
 import { CONSENT } from './consent.js';
 import { calendarFile } from './ics.js';
+import { materialsOf } from './materials.service.js';
 import { parseRegistration } from './seminar-input.js';
 import { publicOrigin, registrationLink, topicOf } from './seminars.service.js';
 import { whenText, type WhenLang } from './when.js';
@@ -114,6 +115,8 @@ export class PublicSeminarService {
         .sort((a, b) => a.name.localeCompare(b.name, 'nb')),
       phase: held ? ('held' as const) : ('open' as const),
       consent: held ? null : { version: CONSENT.version, ...by((l) => CONSENT[l]) },
+      // 3.3: the material is for everyone with the link, once the seminar is over.
+      materials: held ? (await materialsOf(this.prisma, s.id)).map(({ title, url }) => ({ title, url })) : [],
     };
   }
 
