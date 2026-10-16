@@ -443,6 +443,7 @@ describe('«alle» by itself gives away no client × role group below k (release
     // releases (historyLeaks). One who also knows that is beyond rules 2, 3 and 7 (evidence).
     const rand = rng(3610);
     let carried = 0;
+    let lost = 0;
     for (let t = 0; t < 1500; t += 1) {
       const epochs = 2 + Math.floor(rand() * 2);
       const rows = randomRows(rand, 'r-attack').map((x) => ({
@@ -451,6 +452,10 @@ describe('«alle» by itself gives away no client × role group below k (release
       }));
       if (!rows.some((x) => x.epoch === 1)) rows[0]!.epoch = 1;
       const { eqs, views, model } = await releasedInSteps(rows);
+      for (const v of views)
+        lost += v.cells.filter(
+          (c) => c.metric_key === METRIC && (c.suppressed || (c as { stale?: boolean }).stale),
+        ).length;
       expect(wrong(eqs)).toEqual([]);
       expect(model).toEqual([]);
       carried += views.reduce(
@@ -459,6 +464,9 @@ describe('«alle» by itself gives away no client × role group below k (release
       );
     }
     expect(carried).toBeGreaterThan(0);
+    // Rule 7 waits for rules 1–3 and answers only what they leave: hiding more is a regression
+    // (16.10: 14 128 cells hidden or carried; 14 519 when rule 7 ran before rules 1–3 settled).
+    expect(lost).toBeLessThanOrEqual(14_128);
   });
 });
 
