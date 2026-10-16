@@ -45,6 +45,8 @@ const fetcher = vi.fn((path: string, init?: RequestInit) => {
           ? seminar
           : path.endsWith('/registrations')
             ? { rows }
+            : path.includes('/invitation?lang=')
+              ? { text: 'Hei!\n\nVardahei IT inviterer til seminaret «Passord og MFA».', link: seminar.link }
             : path === '/api/admin/contacts/review'
               ? { rows: [{ id: 'k1', name: 'ZZ Gammal', company: 'X', email: 'gammal@example.test', last_confirmed_at: '2025-01-02T10:00:00Z', registrations: 0 }] }
               : path === '/api/admin/clients'
@@ -175,6 +177,30 @@ describe('one seminar', () => {
     await settle();
     const post = fetcher.mock.calls.find(([p]) => p === `/api/admin/seminars/${ID}/materials`);
     expect(JSON.parse(post![1]!.body as string)).toEqual({ title: 'Lysark', url: 'https://example.test/lysark.pdf' });
+  });
+  it('«Invitasjon» shows the letter and the link; the package, the calendar file and the poster are downloads', async () => {
+    view = mount(
+      <Toasts>
+        <SeminarPage id={ID} />
+      </Toasts>,
+      true,
+    );
+    await settle();
+    act(() => {
+      button(view!.div, 'Invitasjon').click();
+    });
+    await settle();
+    expect(view.div.querySelector('textarea')?.value).toContain('Vardahei IT inviterer til seminaret');
+    expect(view.div.querySelector('.sem-lenkje code')?.textContent).toBe(seminar.link);
+    const links = [...view.div.querySelectorAll<HTMLAnchorElement>('.sem-last-ned a')].map((a) => [a.textContent, a.getAttribute('href')]);
+    expect(links).toEqual([
+      ['Last ned invitasjon', `/api/admin/seminars/${ID}/invitation.zip`],
+      ['Kalenderfil (ICS)', `/api/admin/seminars/${ID}/calendar.ics?lang=nn`],
+      ['Opne plakaten (A4)', `/admin/poster/seminar/${ID}?lang=nn`],
+    ]);
+    expect(view.div.textContent).toContain('Varde sender ingenting sjølv.');
+    // Nothing is posted from this tab: no request leaves except reading the letter.
+    expect(fetcher.mock.calls.filter(([, i]) => i?.method && i.method !== 'GET')).toEqual([]);
   });
   it('«Live» and «Før og etter» say they come in the next step', async () => {
     view = mount(<SeminarPage id={ID} />, true);

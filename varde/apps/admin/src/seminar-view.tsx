@@ -7,6 +7,7 @@ import { api } from './api.js';
 import { Icon } from './icons.js';
 import { ErrorMessage } from './queries.js';
 import { SeminarForm } from './seminar-form.js';
+import { Invitation } from './seminar-invitation.js';
 import { Materials } from './seminar-materials.js';
 import {
   copy,
@@ -187,9 +188,7 @@ export function SeminarView({ id }: { id: string }) {
           </div>
           {tab === 'pamelding' && <Registrations seminar={s} />}
           {tab === 'materiell' && <Materials seminar={s} />}
-          {tab === 'invitasjon' && (
-            <Later title="Invitasjon" text="Tekst, kalenderfil og plakat med QR-kode til å sende ut sjølv." />
-          )}
+          {tab === 'invitasjon' && <Invitation seminar={s} />}
           {tab === 'live' && (
             <Later title="Live-spørsmål" text="Spørsmål på mobilen under seminaret, med resultat på storskjermen." />
           )}

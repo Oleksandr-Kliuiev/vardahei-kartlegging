@@ -51,3 +51,11 @@
 .sem-materiell-liste span { display: grid; gap: 2px; min-width: 0; }
 .sem-materiell-liste a { color: var(--ink-strong); font-weight: 650; overflow-wrap: anywhere; }
 .sem-materiell-liste small { color: var(--ink-muted); font-size: 12.5px; overflow-wrap: anywhere; }
+
+/* Invitasjon */
+.sem-invitasjon { display: grid; gap: 12px; }
+.sem-invitasjon .forklaring { margin-top: 0; }
+.sem-tekst { min-height: 280px; resize: vertical; font-size: 14px; line-height: 1.5; }
+.sem-lenkje { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 10px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--line); }
+.sem-lenkje code { flex: 1 1 200px; min-width: 0; font-family: var(--font-mono); font-size: 12.5px; overflow-wrap: anywhere; color: var(--ink); }
+.sem-last-ned { margin-top: 12px; }

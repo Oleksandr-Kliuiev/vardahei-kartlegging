@@ -58,4 +58,5 @@ export const INTEGRATION_FILES = [
   'test/seminars/participants.test.ts',
   'test/seminars/registration.test.ts',
   'test/seminars/materials.test.ts',
+  'test/seminars/invitation.test.ts',
 ];
