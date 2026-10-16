@@ -120,6 +120,23 @@
 - Реестр обработки (`docs/varde/personvern/behandlingsregister-varde.md`) не содержит записи о регистрации на семинары — нужен текст.
 - Операционная заметка: при остановке своего временного сервера проверки вёрстки я один раз выполнил `pkill -f "node dist/main.js"` — это могло остановить чужой локальный dev-сервер с той же командой; дальше останавливал только по PID.
 
+## Приёмка, merge и выкатка (оркестратор, 16.10)
+
+- Приёмка приватности (чистая сессия Opus 5.5 xhigh, 10 мутаций) на `6cd8d08`: «принято с замечаниями», blocking и important нет. 6 minor закрыты в `935ce25`…`3f4ab3a` без повторного ревью, по протоколу. До приёмки оркестратор закрыл перезапись известного контакта публичной формой (`6cd8d08`).
+- Решение Oleksandr 16.10 — согласие двумя галочками: `5469002`, `97e42bb`, `ebbe5e6`.
+- GitHub Actions заблокирован лимитом расходов. Полный локальный прогон шагов CI на `ebbe5e6` — **28/28** (check, integration с инвариантами 0a–3a, e2e admin и runner, golden, secrets, образ). Выкатку по нему разрешил Oleksandr (BESLUTNINGER 16.10).
+- Merge → `main` `99db63a`. Выкатка `varde-api:99db63a6e2c4` в 14:33 по Норвегии:
+  - копия базы `/root/deploy-20261016-1233/varde-pre.dump` (357 748 байт, `0600`; 57 ответов, 5429 снимков);
+  - миграции `20261016120000_seminars` и `20261016130000_seminar_materials` применены;
+  - healthy через 7 с.
+- Проверка после:
+  - таблицы семинаров пустые (seminar 0, contact 0, registration 0);
+  - `/s` отвечает 200 со строгим CSP без `unsafe-*` и внешних хостов;
+  - `/api/admin/seminars` без входа → 401, публичный API с неизвестным кодом → 403;
+  - страница `/s?c=<неверный>` на проде показывает «Denne lenkja verkar ikkje» с карточкой контакта, без JS-ошибок и внешних запросов;
+  - `prod-check` 27/27; ошибок в журнале нет; ответов 57.
+- Откат: `VARDE_SHA=929a75d40b21`, `up -d`, затем `down.sql` двух миграций в обратном порядке (materials, потом seminars).
+
 ## Новые строки на нюношке (на проверку Oleksandr)
 
 - **Страница регистрации** (`varde/apps/runner/src/seminar/texts.ts`, английский там же): «Seminar frå Vardahei IT», «Når», «Kvar», «Digitalt», «For … og …», «Meld deg på», «Namn», «Bedrift», «Anna bedrift», «Namnet på bedrifta», «E-post», «Les meir om korleis vi handsamar opplysningane», «Vis mindre», «Meld meg på», «Sender …», «Skriv namnet ditt.», «Skriv ei gyldig e-postadresse.», «Vel bedrift, eller skriv namnet på bedrifta.», «Kryss av for samtykket, så kan du melde deg på.» (заменено 16.10), «Sjekk det du har skrive, og prøv igjen.», «Påmeldinga er stengd.», «Teksten om personvern er endra. Last sida på nytt og prøv igjen.», «For mange påmeldingar akkurat no. Prøv igjen om litt.», «Påmeldinga kom ikkje fram. Sjekk nettet og prøv igjen.», «Du er påmeld», «Takk! Vi gler oss til å sjå deg.», «Legg i kalenderen», «Kalenderfila kom ikkje. Prøv igjen.», «Ta vare på lenkja til denne sida. Etter seminaret finn du lysark og lenkjer her.», «Seminaret er over», «Materiell frå seminaret», «Materiellet er ikkje lagt ut enno. Kom gjerne tilbake seinare.», «Opnar i ei ny fane», «Denne lenkja verkar ikkje», «Sjekk at du har heile lenkja frå invitasjonen, med alle teikna på slutten. Spør den som sende deg ho, eller ta kontakt med oss.», «Ingen kontakt med Varde», «Sjekk nettet og last sida på nytt.», «Hentar seminaret …».
