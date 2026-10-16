@@ -17,6 +17,20 @@ Til protokollen til Vardahei, som eiga oppføring ved sida av «Kartlegging av I
 > - **Tiltak:** Modellen får berre det personvernmodulen i Varde slepper ut: samla tal for grupper på minst tre og ingen svar per person. Varde avviser alt som inneheld initialar, respondentnøkkel eller svar frå éin person før noko blir sendt. Fritekst blir aldri sendt automatisk; berre utdrag som eit menneske har godkjent. Alt frå modellen er eit forslag som eit menneske må godkjenne. API-nøkkelen ligg berre på serveren til Varde. Varde har eige arbeidsområde hos Anthropic med utgiftsgrense og varsel. Berre dei tre tilsette i Vardahei IT har tilgang. All trafikk er kryptert (HTTPS).
 > - **Sletting hos Vardahei:** Forslag frå modellen blir sletta i Varde etter 12 månader.
 
+Til protokollen til Vardahei, som eiga oppføring (utkast 16.10.2026, sjekkpunkt 3a, ikkje godkjent; gjeld frå første seminar med påmelding i Varde):
+
+> **Seminar i Varde: påmelding og invitasjonar**
+>
+> - **Rolle:** Vardahei IT er behandlingsansvarleg. Seminara er Vardahei IT sine eigne arrangement for kundane.
+> - **Føremål:** Halde styr på kven som er påmeld eit seminar, gi ein kalenderinvitasjon og vise materiell etter seminaret. Berre når deltakaren har kryssa av for det: invitere til seinare seminar. Varde sender ingenting sjølv; invitasjonar går frå e-posten til ein tilsett i Vardahei IT.
+> - **Kven det gjeld:** Personar som melder seg på eit seminar, oftast tilsette hos kundane.
+> - **Opplysningar:** Namn, bedrift, e-postadresse, språk, når påmeldinga skjedde og kva versjon av samtykketeksten som vart godkjend.
+> - **Behandlingsgrunnlag:** Samtykke (personvernforordninga art. 6 nr. 1 bokstav a): eitt som må til for sjølve påmeldinga, og eitt frivillig for invitasjonar til seinare seminar. Begge kan trekkjast tilbake.
+> - **Mottakarar:** Ingen utanfor Vardahei IT. Opplysningane går ikkje inn i rapportar til kundane, arkiv, KI-assistenten eller andre system.
+> - **Lagring:** På serveren til Varde (leverandør og land: fyll inn).
+> - **Sletting:** Påmeldinga blir sletta 90 dagar etter seminaret. Kontaktopplysningar utan samtykke til invitasjonar blir sletta saman med den siste påmeldinga. Med samtykke blir dei sjekka éin gong i året og sletta når samtykket blir trekt tilbake eller nokon ber om det.
+> - **Tiltak:** Påmeldingslenkja kan ikkje gjettast og kan bytast ut. Berre dei tre tilsette i Vardahei IT ser namnelista, og kvar lesing blir logga. Talet på påmeldingar frå same nettadresse er avgrensa. All trafikk er kryptert (HTTPS).
+
 ## Пометки для Oleksandr
 
 - Черновик, не утверждён. Каждый факт об Anthropic — из чек-листа 0.13 (`docs/varde/evidence/stage-0/0.13-anthropic-checklist.md`, ссылки проверены 16.10.2026); пока там `pending`, запись не вносится в протокол.
@@ -26,3 +40,4 @@ Til protokollen til Vardahei, som eiga oppføring ved sida av «Kartlegging av I
 - Роль Anthropic — underdatabehandlar: databehandleravtalar с клиентами должны разрешать Vardahei привлекать субподрядчиков (GDPR ст. 28(2)); проверить вместе с Asbjørn (пункт 1 раздела «Что ещё сделать» в `docs/personvern.md`).
 - «Berre dei tre tilsette i Vardahei IT har tilgang» — подтвердить строкой `access` (роли в Console). «Forslag … etter 12 månader» — класс `proposal` в `varde/config/retention.json`.
 - Уведомление респондентам v2 (`notice.common.ai_processing`, 0.18) уже говорит, что модель получает только сводные цифры; передачу в США оно не называет — решить, нужна ли правка текста уведомления.
+- Семинары (запись выше, 3a): для них Vardahei IT — behandlingsansvarleg (свои мероприятия), а не databehandlar клиента, как в опросах. Проверь, так ли вы это видите. Основание — согласие двумя галочками (решение 16.10). Строку «Lagring» допиши сам: провайдер VPS и страна. Тексты согласия `pamelding-v1` и `invitasjon-v1` (в коде runner; список — `evidence/stage-3/3a-evidence.md`) ждут утверждения, в том числе обещание «vi deler dei ikkje med andre».
