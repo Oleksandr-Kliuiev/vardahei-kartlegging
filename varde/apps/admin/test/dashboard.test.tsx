@@ -1,6 +1,6 @@
 import { act } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { DashboardPage } from '../src/dashboard-page.js';
+import { DashboardPage, thresholdText } from '../src/dashboard-page.js';
 import { Findings, KeyQuestions } from '../src/dashboard-aggregate.js';
 import { EmployeeSection, QuotesSection } from '../src/dashboard-rows.js';
 import type { Dashboard, Employees } from '../src/dashboard-models.js';
@@ -198,4 +198,17 @@ it('a closed round keeps its finding and links to a newer rule version inside th
   expect(moved).toHaveBeenCalledTimes(1);
   window.removeEventListener('popstate', moved);
   window.history.replaceState(null, '', '/');
+});
+
+it('names the thresholds of the rules, or points to «Funn» when the rules differ (16.10)', () => {
+  expect(thresholdText({ min_count: 2, medium: 0.15, high: 0.3 })).toBe(
+    'Funn rekna ut frå svara: minst 2 personar, middels frå 15 %, høg frå 30 %.',
+  );
+  expect(thresholdText({ min_count: 3, medium: 0.125, high: 0.3 })).toBe(
+    'Funn rekna ut frå svara: minst 3 personar, middels frå 12,5 %, høg frå 30 %.',
+  );
+  for (const t of [{ min_count: 2, medium: null, high: 0.3 }, undefined])
+    expect(thresholdText(t)).toBe(
+      'Funn rekna ut frå svara etter tersklane i kvar regel (sjå «Funn»).',
+    );
 });

@@ -79,9 +79,7 @@ function DashboardRound({
           {data.zones && <Zones data={data.zones} />}
           <section className="del">
             <h2>{data.template === 'ki' ? 'Kvar KI kan hjelpe' : 'Dette bør vi ta tak i'}</h2>
-            <p className="under">
-              Funn rekna ut frå svara: minst to personar, middels frå 15 %, høg frå 30 %.
-            </p>
+            <p className="under">{thresholdText(data.finding_thresholds)}</p>
             <Findings findings={data.findings} />
           </section>
           {data.template === 'ki' && data.mode === 'initials' && (
@@ -101,6 +99,16 @@ function DashboardRound({
       )}
     </>
   );
+}
+
+const percentText = (share: number) =>
+  `${new Intl.NumberFormat('nn-NO', { maximumFractionDigits: 1 }).format(share * 100)} %`;
+
+/** The thresholds of the rules in force, or a pointer to «Funn» when the rules differ (16.10). */
+export function thresholdText(t: Dashboard['finding_thresholds']): string {
+  if (!t || t.min_count === null || t.medium === null || t.high === null)
+    return 'Funn rekna ut frå svara etter tersklane i kvar regel (sjå «Funn»).';
+  return `Funn rekna ut frå svara: minst ${t.min_count} personar, middels frå ${percentText(t.medium)}, høg frå ${percentText(t.high)}.`;
 }
 export function DashboardPage() {
   const rounds = useRounds(),

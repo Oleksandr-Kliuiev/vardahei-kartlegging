@@ -214,8 +214,21 @@ export class AggregateView {
     const latest = new Map(
       (await this.findings.rules(prefix, 'aggregate')).map((r) => [r.key, r.version]),
     );
+    // The thresholds these findings were computed with (editable per rule since 2.5): one value
+    // when every counted rule of the view shares it, otherwise null.
+    const used = closed
+      ? await this.findings.rulesFor(scope.round, prefix, 'aggregate', saved?.release)
+      : await this.findings.rules(prefix, 'aggregate');
+    const counted = used.filter((r) => !r.computed);
+    const same = (values: number[]) =>
+      values.length > 0 && values.every((v) => v === values[0]) ? values[0]! : null;
     return {
       findings: findings.map((f) => ({ ...f, latest_version: latest.get(f.key) ?? f.version })),
+      finding_thresholds: {
+        min_count: same(counted.map((r) => r.min_count)),
+        medium: same(counted.map((r) => r.threshold.medium)),
+        high: same(counted.map((r) => r.threshold.high)),
+      },
       class: 'aggregate' as const,
       round,
       template: prefix,

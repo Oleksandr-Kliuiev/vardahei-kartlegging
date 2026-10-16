@@ -24,6 +24,8 @@ describe('1.27 aggregate dashboard: golden runs (a)/(b), §6 exceptions 1 and 11
       const g = section(golden(`tryggleik.${slug}.json`), 'Soner');
       expect(v.class).toBe('aggregate');
       expect(v.source).toBe('released');
+      // Seed rules share one set of thresholds, so the dashboard can name them (16.10).
+      expect(v.finding_thresholds, slug).toEqual({ min_count: 2, medium: 0.15, high: 0.3 });
       if (slug === 'tharaso') {
         expect(v.zones!.mean, '§6.1 small client').toBeNull();
         continue;
