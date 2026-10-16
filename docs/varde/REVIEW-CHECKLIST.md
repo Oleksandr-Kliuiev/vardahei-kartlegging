@@ -204,3 +204,15 @@
 | «Предыдущий раунд» шаблона (решение 16.10) — только `regular` или импортированный раунд 1 (`PREVIOUS_TYPES`): отчёт клиенту, «Svar per tilsett» и его экспорт, сравнение с раундом 1 не берут `post_seminar` и `live`; «Før og etter» сравнивает с `post_seminar` | `varde/apps/api/test/reports/previous-round.test.ts` |
 
 Полный прогон без браузера: `pnpm invariants:3c` (job `integration`); браузерные проверки — `apps/admin/e2e/seminar-day.spec.ts` в job `e2e` (весь семинар: регистрация на `/s`, live с тремя телефонами, опрос после из мастера, «Før og etter» на 360 и 1280 px, светлая и тёмная тема).
+
+## Дополнение privacy: куда уходят числа одного клиента (решение 16.10)
+
+| Инвариант / путь утечки | Проверка |
+| --- | --- |
+| Ячейки `round_client` выходят из privacy только через `ownCells` (отчёт 5.1, клиентский CSV, findings release для отчёта клиента), `handover`, `adminClientCells`, `roleClientCells`, `cohortCells` (дашборд админа), `computeCells` (release раунда), `archiveSnapshots` (архив раунда); `viewCells` отдаёт только `all_clients` и `leaders_all` | `varde/tools/eslint-rules/test/round-client-exits.test.ts` (allow-list зафиксированы), `varde/tools/eslint-rules/test/boundaries.test.ts` (настоящий `PrivacyService`), `pnpm lint:privacy:selfcheck`, `varde/apps/api/test/privacy/subtraction-attack.test.ts` («two named doors») |
+| Собственный канал клиента не читает общих видов (`viewCells`, `clientGroup`): в раунде из двух клиентов итог − свои = второй клиент | `round-client-exits.test.ts` (`mixed`) |
+| `ownCells` — только released-снимки, и в открытом раунде; `adminClientCells` в открытом раунде — живые ячейки | `subtraction-attack.test.ts` |
+| Сохранённые Finding клиента (`numbers` — его n и count) читают только findings, отчёт клиента и архив раунда; `count` и select без `numbers` — где угодно | `round-client-exits.test.ts`, `pnpm lint:privacy:selfcheck` |
+| Атака вычитанием: свой канал клиента, скрытого в «alle», рядом с «alle» восстанавливает C (пример приёмки 3c A4/B3/C1/D3 и случайные раунды), поэтому он уходит только этому клиенту; «alle» и суммы `clientGroup` по всем поднаборам клиентов не дают ни одного набора клиентов < k (линейный ранг) и ничего не добавляют к «alle» по группам клиент × роль | `varde/apps/api/test/privacy/subtraction-attack.test.ts` |
+| Остаточный риск: разбиения по клиентам и по ролям внутри `all_clients` (итог роли − клиент целиком в этой роли) | BACKLOG, «privacy, до этапа 4 (найдено 16.10)» |
+
