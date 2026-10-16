@@ -359,11 +359,20 @@ describe('«alle» by itself gives away no client × role group below k (release
 
   it('random rounds: the live «alle» of an open round determines no set of groups below k', async () => {
     const rand = rng(2610);
+    const shape = (cells: readonly ViewCell[]) =>
+      cells
+        .filter((c) => c.metric_key === METRIC)
+        .map((c) => `${c.group}=${c.suppressed ? 'X' : c.n}`)
+        .sort();
     for (let t = 0; t < 1500; t += 1) {
-      const r = await releasedRound(randomRows(rand, 'r-attack'), 'open');
-      const eqs = equations(r.groups, await alle(r), allClientsCover);
+      const rows = randomRows(rand, 'r-attack');
+      const r = await releasedRound(rows, 'open');
+      const live = await alle(r);
+      const eqs = equations(r.groups, live, allClientsCover);
       expect(wrong(eqs)).toEqual([]);
       expect(describeLeaks(leaks(r.groups, eqs))).toEqual([]);
+      // The live view hides what the first release hides, no more (no blanket role hiding).
+      expect(shape(live)).toEqual(shape(await alle(await closedRound(rows))));
     }
   });
 
