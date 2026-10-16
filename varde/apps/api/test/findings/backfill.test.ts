@@ -1,8 +1,9 @@
 // 2.5 (integration): the backfill of migration 20261016100000 on a database of its own. Closed
 // rounds hold saved Findings and finding sets; the migration is taken back (down.sql), every rule
-// gets a version 2 with another text, and the migration runs again. The sets come back the same
-// (the smallest saved version, else the smallest version of the key), none names a version 2, and
-// the dashboards of the closed rounds do not change.
+// gets a version 2 with another text, every saved Finding a copy with version 2 (history may have
+// left several rows of one rule in a release), and the migration runs again. The sets come back
+// the same (the smallest saved version, else the smallest version of the key), none names a
+// version 2, and the dashboards of the closed rounds do not change.
 import 'reflect-metadata';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -90,6 +91,15 @@ describe('2.5 migration backfill of finding sets', () => {
           jsonb_set(jsonb_set(definition, '{version}', '2'), '{text,nn}', '"tekst frå versjon 2"')
         FROM finding_rule WHERE version = 1`),
     );
+    // A second saved row of the same rule in the same release, with the newer version.
+    const copied = await withPg(
+      async (c) =>
+        (
+          await c.query(`INSERT INTO finding (round_id, client_id, rule_key, rule_version, numbers, release_id)
+            SELECT round_id, client_id, rule_key, 2, numbers, release_id FROM finding`)
+        ).rowCount,
+    );
+    expect(copied).toBeGreaterThan(0);
     run('migration.sql');
 
     const again = await sets();
