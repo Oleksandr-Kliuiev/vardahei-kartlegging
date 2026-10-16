@@ -83,3 +83,7 @@
 Полный локальный прогон шагов CI на `f5408ef` (GitHub Actions заблокирован лимитом; скрипт по образцу local-ci: свежие базы `varde_p2d_*` в `varde-dev-postgres-1`, `VARDE_RESTORE_DOCKER=1` в integration, integration и браузерные прогоны под `lockf -k /private/tmp/varde-e2e.lock`): **30/30 ok**. Integration — 445 тестов (8 skipped), e2e admin 40/40, runner 66/66, invariants 0a–3c, golden, secrets, образ. После прогона менялись только документы (ADR-021, BACKLOG, этот файл).
 
 Выкатка — только с разрешения Oleksandr. Откат — предыдущий `VARDE_SHA`.
+
+## Выкатка 17.10
+
+Влито `6c0177d`, выкачено `6c0177d83a02` по полному локальному прогону 31/31 (2275 с) с разрешения Oleksandr. Миграций нет. Копия данных до выкатки: `/root/deploy-20261016-2215` (57 ответов, 5429 снимков). После: `/health` с новой версией, prod-check 27/27, ошибок в журнале 0, админский API без входа — 401. Откат: `rollback.sh 888668e3e400` (миграций нет).
