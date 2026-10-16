@@ -47,6 +47,18 @@ export const SeminarInput = z
   });
 export type SeminarInput = z.infer<typeof SeminarInput>;
 
+/** The admin's correction of a contact (3a): a client of Varde, or the company as text. */
+export const ContactInput = z
+  .strictObject({
+    name: text(120).pipe(z.string().min(1)),
+    company: text(120).optional(),
+    client: z.uuid().nullable().default(null),
+  })
+  .refine((c) => c.client !== null || !!c.company, {
+    message: 'Vel ein kunde eller skriv namnet på bedrifta.',
+  });
+export type ContactInput = z.infer<typeof ContactInput>;
+
 export const FindingStatusInput = z.discriminatedUnion('status', [
   z.strictObject({ status: z.literal('open') }),
   z.strictObject({ status: z.literal('in_seminar'), seminar: z.uuid() }),

@@ -40,8 +40,11 @@ export interface SeminarList {
   contacts_to_review: number;
 }
 export interface Participant {
+  registration: string;
+  contact: string;
   name: string;
   company: string;
+  client: string | null;
   email: string;
   lang: string;
   registered_at: string;

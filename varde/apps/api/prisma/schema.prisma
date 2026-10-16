@@ -406,7 +406,10 @@ model SeminarClient {
 /// written only through modules/privacy (participants.ts, lint `varde/privacy-only-release`). Kept
 /// while there is a relationship and consent; never deleted by a timer: the daily job sets
 /// `review_flagged_at` a year after `last_confirmed_at`. `email` is normalized (trimmed, lower
-/// case; CHECK), `company` is the chosen client's name or the person's own text.
+/// case; CHECK), `company` is the chosen client's name or the person's own text. The public form
+/// creates a contact but never changes a known one: name, company and client change only by the
+/// admin (AuditLog), `last_confirmed_at` and the yearly mark only by «Stadfest». The consent here
+/// is the one the contact was created with; every registration keeps its own.
 model Contact {
   id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name              String
@@ -428,15 +431,18 @@ model Contact {
 
 /// One contact registered for one seminar (3.1, ADR-017 class `registration`): deleted by the
 /// daily job 90 days after the seminar ends. One per seminar and contact, i.e. per e-mail.
-/// `lang` ∈ {nn, en} (CHECK). Response never refers to it (ADR-021).
+/// `lang` ∈ {nn, en} (CHECK); the consent text version and time of this registration.
+/// Response never refers to it (ADR-021).
 model Registration {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  seminar_id String   @db.Uuid
-  seminar    Seminar  @relation(fields: [seminar_id], references: [id], onDelete: Cascade)
-  contact_id String   @db.Uuid
-  contact    Contact  @relation(fields: [contact_id], references: [id], onDelete: Cascade)
-  lang       String
-  created_at DateTime @default(now()) @db.Timestamptz(6)
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  seminar_id      String   @db.Uuid
+  seminar         Seminar  @relation(fields: [seminar_id], references: [id], onDelete: Cascade)
+  contact_id      String   @db.Uuid
+  contact         Contact  @relation(fields: [contact_id], references: [id], onDelete: Cascade)
+  lang            String
+  consent_version String
+  consent_at      DateTime @db.Timestamptz(6)
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
 
   @@unique([seminar_id, contact_id])
   @@index([contact_id])

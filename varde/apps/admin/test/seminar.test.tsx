@@ -32,7 +32,18 @@ const seminar = {
   registrations: { total: 3, companies: [{ company: 'Syntetisk A', n: 2 }], other: 1 },
   findings: [],
 };
-const rows = [{ name: 'ZZ Deltakar', company: 'Syntetisk A', email: 'zz@example.test', lang: 'nn', registered_at: '2026-10-16T08:00:00Z' }];
+const rows = [
+  {
+    registration: 'r1',
+    contact: 'k1',
+    name: 'ZZ Deltakar',
+    company: 'Syntetisk A',
+    client: 'c1',
+    email: 'zz@example.test',
+    lang: 'nn',
+    registered_at: '2026-10-16T08:00:00Z',
+  },
+];
 
 let view: ReturnType<typeof mount> | undefined;
 const fetcher = vi.fn((path: string, init?: RequestInit) => {
@@ -157,6 +168,42 @@ describe('one seminar', () => {
     await settle();
     expect(calls('/registrations')).toHaveLength(1);
     expect(view.div.querySelector('table')?.textContent).toContain('zz@example.test');
+  });
+  it('the admin corrects a contact in the name list: name and own company text', async () => {
+    view = mount(
+      <Toasts>
+        <SeminarPage id={ID} />
+      </Toasts>,
+      true,
+    );
+    await settle();
+    act(() => {
+      button(view!.div, 'Vis namnelista').click();
+    });
+    await settle();
+    act(() => {
+      view!.div.querySelector<HTMLButtonElement>('button[aria-label="Endre ZZ Deltakar"]')!.click();
+    });
+    await settle();
+    const form = view.div.querySelector<HTMLFormElement>('form[aria-label="Endre kontakten"]')!;
+    expect(form.textContent).toContain('Endringa gjeld kontakten i alle seminar.');
+    const set = (el: HTMLInputElement | HTMLSelectElement, value: string) => {
+      act(() => {
+        Reflect.set(Object.getPrototypeOf(el) as object, 'value', value, el);
+        el.dispatchEvent(new Event(el instanceof HTMLSelectElement ? 'change' : 'input', { bubbles: true }));
+      });
+    };
+    set(form.querySelector('input')!, 'ZZ Retta Namn');
+    set(form.querySelector('select')!, '');
+    set(form.querySelectorAll('input')[1]!, 'Eige firma AS');
+    act(() => {
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
+    await settle();
+    const put = fetcher.mock.calls.find(([p, i]) => p === '/api/admin/contacts/k1' && i?.method === 'PUT');
+    expect(JSON.parse(put![1]!.body as string)).toEqual({ name: 'ZZ Retta Namn', company: 'Eige firma AS', client: null });
+    expect(view.div.querySelector('table')?.textContent).toContain('ZZ Retta Namn');
+    expect(view.div.querySelector('table')?.textContent).toContain('Eige firma AS');
   });
   it('«Materiell» posts a title and a link and says when the participants see it', async () => {
     view = mount(<SeminarPage id={ID} />, true);

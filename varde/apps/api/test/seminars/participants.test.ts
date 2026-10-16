@@ -85,26 +85,66 @@ describe('participant list (class rows of seminars)', () => {
     expect(JSON.stringify(audit)).not.toMatch(/Syntetisk|example\.test/);
   });
 
-  it('a repeat for the same seminar changes nothing; a new seminar renews only the consent', async () => {
+  it('a repeat for the same seminar changes nothing; a new seminar changes nothing on the contact either', async () => {
     const one = await createSeminar(t),
       two = await createSeminar(t);
     expect(await register(t, one.id, email(t, 'r'), { name: 'ZZ Fyrste' })).toBe(true);
     expect(await register(t, one.id, email(t, 'r'), { name: 'ZZ Andre' })).toBe(false);
     expect((await contactsOf(t)).find((c) => c.email === email(t, 'r'))?.name).toBe('ZZ Fyrste');
-    const before = (await contactsOf(t)).find((c) => c.email === email(t, 'r'))!;
-    // The public form cannot rewrite a known contact (no login, e-mail not verified).
-    expect(await register(t, two.id, email(t, 'r'), { name: 'ZZ Andre' })).toBe(true);
-    const contact = (await contactsOf(t)).filter((c) => c.email === email(t, 'r'));
-    expect(contact).toHaveLength(1);
-    expect(contact[0]!.name).toBe('ZZ Fyrste');
-    expect([contact[0]!.company, contact[0]!.client_id]).toEqual([
-      before.company,
-      before.client_id,
-    ]);
-    expect(contact[0]!.last_confirmed_at.getTime()).toBeGreaterThanOrEqual(
-      before.last_confirmed_at.getTime(),
+    // A year later the yearly check has marked the contact.
+    await withPg((c) =>
+      c.query(
+        `UPDATE contact SET last_confirmed_at = now() - interval '400 days', review_flagged_at = now() - interval '30 days' WHERE email = $1`,
+        [email(t, 'r')],
+      ),
     );
+    const before = (await contactsOf(t)).find((c) => c.email === email(t, 'r'))!;
+    // The public form cannot change a known contact (no login, e-mail not verified): not the
+    // name, company or client, not the consent, the last confirmation or the yearly mark.
+    expect(
+      await register(t, two.id, email(t, 'r'), { name: 'ZZ Andre', company: 'Anna AS', lang: 'en' }),
+    ).toBe(true);
+    const contact = (await contactsOf(t)).filter((c) => c.email === email(t, 'r'));
+    expect(contact).toEqual([before]);
+    // The consent of the new registration is on the registration.
+    const second = (await registrationsOf(two.id))[0]!;
+    expect(second).toMatchObject({ contact_id: before.id, lang: 'en', consent_version: 'samtykke-v1' });
+    expect(Date.now() - second.consent_at.getTime()).toBeLessThan(60_000);
     expect(await registrationsOf(one.id)).toHaveLength(1);
+  });
+
+  it('the admin corrects name and company (AuditLog with field names only); only «Stadfest» clears the mark', async () => {
+    const s = await createSeminar(t);
+    await register(t, s.id, email(t, 'edit'), { name: 'ZZ Skrivefeil', company: 'Feil AS' });
+    const c = (await contactsOf(t)).find((x) => x.email === email(t, 'edit'))!;
+    const put = (body: unknown, id = c.id, cookie?: string) =>
+      t.call('PUT', `/api/admin/contacts/${id}`, body, cookie === undefined ? {} : { cookie });
+    expect((await put({ name: 'ZZ Rett', company: 'Rett AS' }, c.id, '')).statusCode).toBe(401);
+    expect((await put({ name: 'ZZ Rett', company: 'Rett AS' })).statusCode).toBe(200);
+    expect((await contactsOf(t)).find((x) => x.id === c.id)).toMatchObject({
+      name: 'ZZ Rett',
+      company: 'Rett AS',
+      client_id: null,
+      email: c.email,
+    });
+    const audit = await t.prisma.auditLog.findFirstOrThrow({
+      where: { what: 'seminars.contact.update', target: `contact:${c.id}` },
+    });
+    expect(audit.details).toEqual({ fields: ['name', 'company'] });
+    expect(JSON.stringify(audit)).not.toMatch(/ZZ |AS|example\.test/);
+    const client = await t.prisma.client.create({ data: { slug: `${t.mark}-edit`, name: `Syntetisk kunde ${t.mark}` } });
+    expect((await put({ name: 'ZZ Rett', client: client.id })).statusCode).toBe(200);
+    expect((await contactsOf(t)).find((x) => x.id === c.id)).toMatchObject({
+      company: client.name,
+      client_id: client.id,
+    });
+    expect((await put({ name: 'ZZ Rett' })).json<{ message: string }>().message).toBe(
+      'Vel ein kunde eller skriv namnet på bedrifta.',
+    );
+    expect((await put({ name: ' ', company: 'X' })).statusCode).toBe(400);
+    expect((await put({ name: 'ZZ', company: 'X' }, '00000000-0000-4000-8000-000000000000')).statusCode).toBe(404);
+    // The edit does not count as the yearly check either.
+    expect((await contactsOf(t)).find((x) => x.id === c.id)!.last_confirmed_at).toEqual(c.last_confirmed_at);
   });
 });
 
@@ -259,7 +299,7 @@ describe('deletion on request, scope «Deltakar» (by e-mail)', () => {
         [old.id, address],
       );
       await c.query(
-        `INSERT INTO registration (seminar_id, contact_id, lang) VALUES ($1, $2, 'nn')`,
+        `INSERT INTO registration (seminar_id, contact_id, lang, consent_version, consent_at) VALUES ($1, $2, 'nn', 'samtykke-v1', now())`,
         [s.id, old.id],
       );
     });

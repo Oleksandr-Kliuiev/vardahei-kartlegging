@@ -143,6 +143,7 @@ export function contactsOf(t: SeminarApp) {
           company: string;
           client_id: string | null;
           consent_version: string;
+          consent_at: Date;
           last_confirmed_at: Date;
           review_flagged_at: Date | null;
         }>('SELECT * FROM contact WHERE email LIKE $1 ORDER BY email', [`zz-${t.mark}-%`])
@@ -154,8 +155,14 @@ export function registrationsOf(seminar: string) {
   return withPg(
     async (c) =>
       (
-        await c.query<{ id: string; contact_id: string; lang: string }>(
-          'SELECT id, contact_id, lang FROM registration WHERE seminar_id = $1',
+        await c.query<{
+          id: string;
+          contact_id: string;
+          lang: string;
+          consent_version: string;
+          consent_at: Date;
+        }>(
+          'SELECT id, contact_id, lang, consent_version, consent_at FROM registration WHERE seminar_id = $1',
           [seminar],
         )
       ).rows,

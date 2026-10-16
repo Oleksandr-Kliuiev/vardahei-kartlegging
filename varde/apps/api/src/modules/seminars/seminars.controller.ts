@@ -15,7 +15,13 @@ import { z } from 'zod';
 import { AdminSessionGuard, type AdminRequest } from '../auth/admin-session.guard.js';
 import { auditWho } from '../auth/audit-who.js';
 import { FindingStatusService } from './finding-status.service.js';
-import { ActionInput, FindingStatusInput, parseWith, SeminarInput } from './seminar-input.js';
+import {
+  ActionInput,
+  ContactInput,
+  FindingStatusInput,
+  parseWith,
+  SeminarInput,
+} from './seminar-input.js';
 import { SeminarsService } from './seminars.service.js';
 
 const Attach = z.strictObject({ findings: z.array(z.uuid()).min(1).max(100) });
@@ -67,6 +73,14 @@ export class SeminarsController {
   @Get('contacts/review')
   review(@Req() req: AdminRequest) {
     return this.seminars.contactsToReview(req.adminSession);
+  }
+  @Put('contacts/:id')
+  updateContact(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: unknown,
+    @Req() req: AdminRequest,
+  ) {
+    return this.seminars.updateContact(id, parseWith(ContactInput, body), req.adminSession);
   }
   @Post('contacts/:id/confirm')
   confirm(@Param('id', ParseUUIDPipe) id: string, @Req() req: AdminRequest) {

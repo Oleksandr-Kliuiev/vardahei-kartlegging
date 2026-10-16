@@ -13,7 +13,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { PrivacyService, type PrivacySession } from '../privacy/privacy.service.js';
 import { codeHash, issueCode } from '../rounds/codes.js';
 import { materialsOf } from './materials.service.js';
-import type { SeminarInput } from './seminar-input.js';
+import type { ContactInput, SeminarInput } from './seminar-input.js';
 import { osloInstant, osloParts, whenText } from './when.js';
 
 const include = { clients: { include: { client: true } } } as const;
@@ -125,6 +125,20 @@ export class SeminarsService {
   /** Contacts marked by the yearly check (AuditLog). */
   async contactsToReview(session: PrivacySession | undefined) {
     return { rows: await this.privacy.participants.reviewList(this.prisma, session) };
+  }
+
+  /** The admin corrects name and company of a contact (the public form never does). */
+  async updateContact(contact: string, input: ContactInput, session: PrivacySession | undefined) {
+    let company = input.company ?? '';
+    if (input.client !== null) {
+      const client = await this.prisma.client.findUnique({ where: { id: input.client } });
+      if (!client) throw new BadRequestException('Kunden finst ikkje.');
+      company = client.name;
+    }
+    const change = { name: input.name, company, client: input.client };
+    if (!(await this.privacy.participants.update(this.prisma, contact, change, session)))
+      throw new NotFoundException('Kontakten finst ikkje.');
+    return { ok: true };
   }
 
   async confirmContact(contact: string, session: PrivacySession | undefined) {

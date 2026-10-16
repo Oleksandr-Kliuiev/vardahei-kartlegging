@@ -9,16 +9,15 @@ import { ErrorMessage } from './queries.js';
 import { SeminarForm } from './seminar-form.js';
 import { Invitation } from './seminar-invitation.js';
 import { Materials } from './seminar-materials.js';
+import { NameList } from './seminar-participants.js';
 import {
   copy,
   draftOf,
   go,
   names,
-  type Participant,
   perCompany,
   registered,
   type SeminarDetail,
-  shortDate,
 } from './seminar-models.js';
 import { useToast } from './shell.js';
 import { Seg } from './widgets.js';
@@ -34,16 +33,6 @@ const TABS: readonly (readonly [Tab, string])[] = [
 
 function Registrations({ seminar }: { seminar: SeminarDetail }) {
   const toast = useToast();
-  const [rows, setRows] = useState<Participant[] | null>(null);
-  const [error, setError] = useState<Error | null>(null);
-  const show = async () => {
-    setError(null);
-    try {
-      setRows((await api<{ rows: Participant[] }>(`/api/admin/seminars/${seminar.id}/registrations`)).rows);
-    } catch (e) {
-      setError(e instanceof Error ? e : new Error('Noko gjekk gale.'));
-    }
-  };
   const r = seminar.registrations;
   return (
     <div className="flate">
@@ -76,52 +65,7 @@ function Registrations({ seminar }: { seminar: SeminarDetail }) {
           )}
         </div>
       </section>
-      <section className="kort s8">
-        <div className="kort-hovud">
-          <h2>Namneliste</h2>
-          {rows === null && (
-            <button type="button" className="btn sm" onClick={() => void show()} disabled={r.total === 0}>
-              Vis namnelista
-            </button>
-          )}
-        </div>
-        <div className="kort-innhald">
-          <ErrorMessage error={error} />
-          {rows === null ? (
-            <p className="forklaring">
-              Lista har namn og e-post. Kvar gong nokon opnar ho, blir det skrive i loggen.
-            </p>
-          ) : rows.length === 0 ? (
-            <p className="tom">Ingen har meldt seg på enno.</p>
-          ) : (
-            <div className="tabell-wrap">
-              <table className="sem-pamelde">
-                <thead>
-                  <tr>
-                    <th scope="col">Namn</th>
-                    <th scope="col">Bedrift</th>
-                    <th scope="col">E-post</th>
-                    <th scope="col">Påmeld</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((p) => (
-                    <tr key={p.email}>
-                      <th scope="row">{p.name}</th>
-                      <td>{p.company}</td>
-                      <td>{p.email}</td>
-                      <td>
-                        {shortDate(p.registered_at)}
-                        {p.lang === 'en' ? ' · English' : ''}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </section>
+      <NameList seminar={seminar} />
     </div>
   );
 }

@@ -64,7 +64,7 @@ export { ReleaseRejected } from './release.js';
 export { ArchiveRejected, ArchivedSnapshot } from './archive.js';
 export type { ArchiveRefs } from './archive.js';
 export type { DeleteScope, DeleteCounts, ResponsePart } from './response-store.js';
-export type { ParticipantDeleteCounts, ParticipantInput } from './participants.js';
+export type { ContactChange, ParticipantDeleteCounts, ParticipantInput } from './participants.js';
 export type {
   ComputedCell,
   HistoricCell,

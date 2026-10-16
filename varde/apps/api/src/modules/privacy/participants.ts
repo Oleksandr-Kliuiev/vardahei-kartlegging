@@ -23,11 +23,20 @@ export interface ParticipantInput {
   consent_version: string;
 }
 export interface ParticipantRow {
+  registration: string;
+  contact: string;
   name: string;
   company: string;
+  client: string | null;
   email: string;
   lang: string;
   registered_at: string;
+}
+/** An admin's correction of a contact (3a). */
+export interface ContactChange {
+  name: string;
+  company: string;
+  client: string | null;
 }
 export interface ContactReviewRow {
   id: string;
@@ -61,22 +70,15 @@ const lockEmail = (tx: Prisma.TransactionClient, email: string) =>
   tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${'contact:' + email}, 0))`;
 
 export class ParticipantStore {
-  /** Idempotent per seminar and e-mail: a repeat changes nothing and returns false. A new
-   * registration of a known contact renews only its consent: the public form has no login and
-   * the e-mail is not verified, so it never rewrites the name, company or client someone gave
-   * before (an admin can). The caller holds the seminar row lock and has checked the seminar,
-   * the company and the consent version. */
+  /** Idempotent per seminar and e-mail: a repeat changes nothing and returns false. The public
+   * form has no login and the e-mail is not verified, so it never changes a known contact — not
+   * the name, company or client, not the consent, `last_confirmed_at` or the yearly mark: only
+   * the admin edits a contact (`update`, AuditLog) and only «Stadfest» (`confirm`) starts a new
+   * year. The consent goes on the registration (and on a contact created now). The caller holds
+   * the seminar row lock and has checked the seminar, the company and the consent version. */
   async register(tx: Prisma.TransactionClient, p: ParticipantInput, now: Date): Promise<boolean> {
     await lockEmail(tx, p.email);
-    const details = {
-      name: p.name,
-      company: p.company,
-      client_id: p.client,
-      consent_version: p.consent_version,
-      consent_at: now,
-      last_confirmed_at: now,
-      review_flagged_at: null,
-    };
+    const consent = { consent_version: p.consent_version, consent_at: now };
     const known = await tx.contact.findUnique({ where: { email: p.email }, select: { id: true } });
     if (known) {
       const again = await tx.registration.findUnique({
@@ -84,23 +86,56 @@ export class ParticipantStore {
         select: { id: true },
       });
       if (again) return false;
-      await tx.contact.update({
-        where: { id: known.id },
-        data: {
-          consent_version: details.consent_version,
-          consent_at: details.consent_at,
-          last_confirmed_at: details.last_confirmed_at,
-          review_flagged_at: null,
-        },
-      });
     }
     const contact =
       known ??
-      (await tx.contact.create({ data: { ...details, email: p.email }, select: { id: true } }));
+      (await tx.contact.create({
+        data: {
+          name: p.name,
+          email: p.email,
+          company: p.company,
+          client_id: p.client,
+          ...consent,
+          last_confirmed_at: now,
+        },
+        select: { id: true },
+      }));
     await tx.registration.create({
-      data: { seminar_id: p.seminar, contact_id: contact.id, lang: p.lang },
+      data: { seminar_id: p.seminar, contact_id: contact.id, lang: p.lang, ...consent },
     });
     return true;
+  }
+
+  /** The admin corrects a contact: name, company and the client it belongs to. AuditLog names the
+   * changed fields, never their values. False if there is no such contact. */
+  update(
+    db: RowsDb,
+    contact: string,
+    change: ContactChange,
+    session: PrivacySession | null | undefined,
+  ): Promise<boolean> {
+    const who = auditWho(requireSession(session), true);
+    return db.$transaction(async (tx) => {
+      const old = await tx.contact.findUnique({
+        where: { id: contact },
+        select: { name: true, company: true, client_id: true },
+      });
+      if (!old) return false;
+      const fields = [
+        ...(old.name === change.name ? [] : ['name']),
+        ...(old.company === change.company ? [] : ['company']),
+        ...(old.client_id === change.client ? [] : ['client']),
+      ];
+      if (fields.length === 0) return true;
+      await tx.contact.update({
+        where: { id: contact },
+        data: { name: change.name, company: change.company, client_id: change.client },
+      });
+      await tx.auditLog.create({
+        data: { who, what: 'seminars.contact.update', target: `contact:${contact}`, details: { fields } },
+      });
+      return true;
+    });
   }
 
   count(db: Prisma.TransactionClient, seminar: string): Promise<number> {
@@ -151,9 +186,10 @@ export class ParticipantStore {
         where: { seminar_id: seminar },
         orderBy: { created_at: 'asc' },
         select: {
+          id: true,
           lang: true,
           created_at: true,
-          contact: { select: { name: true, company: true, email: true } },
+          contact: { select: { id: true, name: true, company: true, client_id: true, email: true } },
         },
       });
       await tx.auditLog.update({
@@ -161,8 +197,11 @@ export class ParticipantStore {
         data: { details: { count: rows.length } },
       });
       return rows.map((r) => ({
+        registration: r.id,
+        contact: r.contact.id,
         name: r.contact.name,
         company: r.contact.company,
+        client: r.contact.client_id,
         email: r.contact.email,
         lang: r.lang,
         registered_at: r.created_at.toISOString(),

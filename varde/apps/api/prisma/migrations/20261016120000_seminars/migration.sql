@@ -54,6 +54,8 @@ CREATE TABLE "registration" (
     "seminar_id" UUID NOT NULL,
     "contact_id" UUID NOT NULL,
     "lang" TEXT NOT NULL,
+    "consent_version" TEXT NOT NULL,
+    "consent_at" TIMESTAMPTZ(6) NOT NULL,
     "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "registration_pkey" PRIMARY KEY ("id")

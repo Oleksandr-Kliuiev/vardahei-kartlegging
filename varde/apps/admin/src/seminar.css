@@ -65,3 +65,7 @@
 .sem-lenkje { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 10px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--line); }
 .sem-lenkje code { flex: 1 1 200px; min-width: 0; font-family: var(--font-mono); font-size: 12.5px; overflow-wrap: anywhere; color: var(--ink); }
 .sem-last-ned { margin-top: 12px; }
+
+/* Namnelista: handlingar per rad og retting av ein kontakt */
+.sem-rad-handling { white-space: nowrap; text-align: right; }
+.sem-kontakt-form fieldset { max-width: 520px; }
