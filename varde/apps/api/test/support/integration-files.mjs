@@ -65,4 +65,5 @@ export const INTEGRATION_FILES = [
   'test/live/stream.test.ts',
   'test/live/runner-live.test.ts',
   'test/invariants/3b-presenter-routes.test.ts',
+  'test/live/migration-rollback.test.ts',
 ];

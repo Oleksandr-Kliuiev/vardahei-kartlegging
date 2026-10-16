@@ -4,6 +4,10 @@
 -- AlterTable
 ALTER TABLE "client" ADD COLUMN     "kind" TEXT NOT NULL DEFAULT 'client';
 
+-- Hand-written: after a rollback with down.sql the client row of live polls stays (its live rounds
+-- refer to it); applied again, this migration makes it the technical client again.
+UPDATE "client" SET "kind" = 'seminar' WHERE "slug" = 'varde-seminar-live';
+
 -- CreateTable
 CREATE TABLE "live_poll_question" (
     "round_id" UUID NOT NULL,

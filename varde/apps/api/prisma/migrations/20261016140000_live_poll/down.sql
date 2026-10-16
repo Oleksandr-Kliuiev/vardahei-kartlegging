@@ -1,6 +1,7 @@
 -- Down migration for 20261016140000_live_poll (hand-written; test databases and rollback only:
 -- the question states of live polls and the presenter keys are dropped. Live rounds and their
--- answers stay; the technical client «Seminar» becomes an ordinary client row).
+-- answers stay; the technical client «Seminar (live)» is an ordinary client row until the
+-- migration is applied again, which makes it the technical client again by its slug).
 DROP TRIGGER IF EXISTS "seminar_round_live_type" ON "seminar";
 DROP FUNCTION IF EXISTS "seminar_round_live_type"();
 DROP TRIGGER IF EXISTS "round_client_live" ON "round_client";
