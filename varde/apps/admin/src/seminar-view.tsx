@@ -8,11 +8,11 @@ import { api, mutate } from './api.js';
 import { Icon } from './icons.js';
 import { ErrorMessage } from './queries.js';
 import { SeminarForm } from './seminar-form.js';
+import { BeforeAfterTab } from './seminar-before-after.js';
 import { Invitation } from './seminar-invitation.js';
 import { Live } from './seminar-live.js';
 import { Materials } from './seminar-materials.js';
 import { NameList } from './seminar-participants.js';
-import { RoundsCard } from './seminar-rounds.js';
 import {
   copy,
   draftOf,
@@ -169,11 +169,7 @@ export function SeminarView({ id }: { id: string }) {
           {tab === 'materiell' && <Materials seminar={s} />}
           {tab === 'invitasjon' && <Invitation seminar={s} />}
           {tab === 'live' && <Live seminar={s} />}
-          {tab === 'etter' && (
-            <div className="flate">
-              <RoundsCard seminar={s} onLive={() => setTab('live')} />
-            </div>
-          )}
+          {tab === 'etter' && <BeforeAfterTab seminar={s} onLive={() => setTab('live')} />}
         </>
       )}
     </>

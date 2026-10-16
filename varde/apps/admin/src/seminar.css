@@ -127,9 +127,43 @@
 .sem-steg-tekst small { font-size: 12.5px; overflow-wrap: anywhere; }
 .sem-steg-lenkjer { display: flex; flex-wrap: wrap; gap: 2px 14px; }
 .sem-steg-lenkjer a, .sem-steg-lenkjer .linkbtn { font-size: 13px; padding: 2px 0; }
-.sem-kople { display: grid; gap: 8px; margin-top: 6px; }
+.sem-kople { display: grid; gap: 8px; margin-top: 6px; justify-items: start; }
+.sem-kople .field { justify-self: stretch; }
 .sem-kople .forklaring { margin-top: 0; }
 .sem-kople select { max-width: 100%; }
 .sem-steg .handlingar { margin-top: 6px; }
 .sem-etter-start { display: grid; gap: 8px; justify-items: start; }
 .sem-etter-start > .del { margin-top: 0; justify-self: stretch; }
+
+/* Før og etter (3.9, Vardestien «Etter»): grå stolpe før, blå etter, atterhald alltid synlege */
+.sem-fe-innhald { display: grid; gap: 14px; }
+.sem-fe-innhald > .seg { justify-self: start; }
+.sem-atterhald { display: grid; gap: 6px; padding: 12px 14px; border-radius: var(--r-md); background: var(--warning-bg); border: 1px solid var(--warning-line); color: var(--ink); font-size: 13.5px; }
+.sem-atterhald b { color: var(--warning-fg); }
+.sem-atterhald ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.sem-fe-forklaring { margin: 0; font-size: 13.5px; color: var(--ink-muted); line-height: 1.7; }
+.sem-fe-prikk { display: inline-block; width: 18px; height: 8px; margin-right: 6px; border-radius: var(--r-full); vertical-align: middle; }
+.sem-fe-prikk.for { background: var(--line-strong); }
+.sem-fe-prikk.etter { background: var(--accent); }
+.sem-fe-sporsmal { display: grid; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); min-width: 0; }
+.sem-fe-sporsmal h3 { font-size: 15px; font-weight: 650; color: var(--ink-strong); overflow-wrap: anywhere; }
+.poll-rad.sem-fe-rad { grid-template-columns: minmax(96px, 200px) minmax(0, 1fr) 52px; }
+.poll-rad .bar.sem-to-band { display: grid; gap: 3px; height: auto; background: none; overflow: visible; }
+.poll-rad .bar.sem-to-band span { height: 10px; border-radius: var(--r-full); }
+.poll-rad .bar.sem-to-band .for { background: var(--line-strong); }
+.sem-fe-tal { display: grid; justify-items: end; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.sem-fe-tal small { font-size: 11.5px; color: var(--ink-muted); }
+.sem-fe-tal b { font-size: 13.5px; color: var(--ink-strong); }
+.sem-fe-n { margin-top: 0; }
+.sem-fe-score { font-size: 13.5px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.sem-merke { margin: 0; padding: 8px 10px; border-radius: var(--r-md); font-size: 13px; border: 1px dashed var(--line-strong); background: var(--surface-2); color: var(--ink); }
+.sem-merke.approximate { border-style: solid; background: var(--warning-bg); border-color: var(--warning-line); }
+.sem-fe-kundar .tabell-wrap { overflow-x: auto; }
+.sem-fe-kundar .sem-sum th, .sem-fe-kundar .sem-sum td { font-weight: 700; }
+.sem-fe-kundar td small { display: block; color: var(--ink-muted); font-size: 12px; }
+.poll-rad.sem-fe-rad > span:first-child { overflow-wrap: break-word; }
+@media (max-width: 560px) {
+  /* On a phone the answer gets its own line; the two bars and their shares go below it. */
+  .poll-rad.sem-fe-rad { grid-template-columns: minmax(0, 1fr) 44px; row-gap: 4px; }
+  .poll-rad.sem-fe-rad > span:first-child { grid-column: 1 / -1; }
+}

@@ -18,11 +18,8 @@ let version: string;
 
 beforeAll(async () => {
   t = await seminarApp();
-  [a, b, c] = (await makeClients(t, ['Syntetisk A', 'Syntetisk B', 'Syntetisk C'])) as [
-    typeof a,
-    typeof a,
-    typeof a,
-  ];
+  const made = await makeClients(t, ['Syntetisk A', 'Syntetisk B', 'Syntetisk C']);
+  [a, b, c] = [made[0]!, made[1]!, made[2]!];
   version = await surveyVersion(t);
 }, 120_000);
 afterAll(async () => {

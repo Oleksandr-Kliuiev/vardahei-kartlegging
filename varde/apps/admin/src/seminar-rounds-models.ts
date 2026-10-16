@@ -68,3 +68,98 @@ export function liveState(questions: { state: string }[] | null): [string, strin
   if (questions.every((q) => q.state === 'released')) return ['Ferdig', 'chip warn'];
   return ['I gang', 'chip ok'];
 }
+
+/** «Før og etter» (3.9, GET /api/admin/seminars/:id/before-after): class aggregate from privacy. */
+export type Degree = 'comparable' | 'approximate' | 'incomparable';
+export interface Comparable {
+  degree: Degree;
+  note: string;
+}
+export type Change = { delta: number; kind: string } | null;
+/** One side of a question: the answered count and the share per option; null where hidden. */
+export interface Bars {
+  n: number | null;
+  shares: (number | null)[];
+}
+export interface ScorePair {
+  comparable: Comparable;
+  before: { mean: number | null; critical: number | null } | null;
+  after: { mean: number | null; critical: number | null } | null;
+  change: Change;
+  critical_change: Change;
+}
+export interface QuestionPair {
+  id: string;
+  label: string;
+  text: string;
+  multi: boolean;
+  comparable: Comparable;
+  options: { id: string; label: string }[];
+  before: Bars | null;
+  after: Bars | null;
+  score: ScorePair | null;
+}
+export interface Side {
+  respondents: number | null;
+  mean: number | null;
+  critical: number | null;
+}
+export interface PairRow {
+  before: Side;
+  after: Side;
+  change: Change;
+  critical_change: Change;
+}
+export interface RoundInfo {
+  id: string;
+  name: string;
+  status: string;
+  source: 'released' | 'live';
+}
+export type BeforeAfter =
+  | {
+      class: 'aggregate';
+      caveats: string[];
+      ready: false;
+      missing: { before: boolean; after: boolean };
+    }
+  | {
+      class: 'aggregate';
+      caveats: string[];
+      ready: true;
+      rounds: { before: RoundInfo; after: RoundInfo };
+      client: string | null;
+      cohort: { slug: string; name: string }[];
+      not_both: { name: string; before: boolean; after: boolean }[];
+      total: PairRow & { comparable: Comparable | null };
+      clients: (PairRow & { slug: string; name: string })[];
+      questions: QuestionPair[];
+      only_before: string[];
+      only_after: string[];
+    };
+
+export const DEGREE: Record<Degree, string> = {
+  comparable: 'Kan samanliknast',
+  approximate: 'Omtrent samanliknbart',
+  incomparable: 'Kan ikkje samanliknast',
+};
+
+/** «12 svar»; a hidden group (below k, or one that could give a small group away) has no number. */
+export const svar = (n: number | null) => (n === null ? 'talet er skjult' : `${n} svar`);
+
+export const HIDDEN_NOTE =
+  'Grupper med færre enn tre svar, og grupper som kan røpe ei lita gruppe, blir ikkje viste.';
+
+/** «−0,94, betre» or «−43 poeng, betre»; «likt» within the rounding of the dashboard. */
+export function changeText(c: Change, points = false): string {
+  if (!c) return '';
+  if (c.kind === 'likt') return 'likt';
+  const size = points
+    ? `${Math.abs(c.delta)} poeng`
+    : Math.abs(c.delta).toFixed(2).replace('.', ',');
+  return `${c.delta > 0 ? '+' : '−'}${size}, ${c.kind}`;
+}
+
+/** Where a client of the seminar is missing: «berre før», «berre etter» or «ingen svar». */
+export const whereMissing = (c: { before: boolean; after: boolean }) =>
+  c.before ? 'svarte berre før' : c.after ? 'svarte berre etter' : 'har ikkje svart';

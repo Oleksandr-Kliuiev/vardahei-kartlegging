@@ -68,7 +68,9 @@ const fetcher = vi.fn((path: string, init?: RequestInit) => {
                   ? { poll: null, versions: [], presenter: { valid_from: '', valid_to: '', valid_text: '', valid_now: false, active: null } }
                   : path.endsWith('/rounds')
                     ? { before: null, live: null, after: null, choices: { before: [], after: [] }, versions: [] }
-                    : { ok: true };
+                    : path.endsWith('/before-after')
+                      ? { class: 'aggregate', caveats: ['Vi ser endringa, men kan ikkje seie at seminaret gjorde det.'], ready: false, missing: { before: true, after: true } }
+                      : { ok: true };
   return Promise.resolve(new Response(JSON.stringify(body)));
 });
 beforeEach(() => {
@@ -362,6 +364,8 @@ describe('one seminar', () => {
     await settle();
     expect(calls('/rounds')).toHaveLength(1);
     expect(view.div.querySelector('#rundar-tittel')?.textContent).toBe('Rundar');
+    expect(view.div.querySelector('#for-etter-tittel')?.textContent).toBe('Før og etter');
+    expect(view.div.textContent).toContain('Vi ser endringa, men kan ikkje seie at seminaret gjorde det.');
     expect(view.div.textContent).toContain('Før seminaret');
     expect(view.div.textContent).toContain('Etter seminaret');
     expect(view.div.textContent).not.toContain('Kjem i neste steg');

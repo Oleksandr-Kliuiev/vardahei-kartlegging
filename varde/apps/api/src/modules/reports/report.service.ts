@@ -13,7 +13,7 @@ import type { MetricDefinition } from '@varde/schema/metrics/metric-definition';
 import type { TemplateContent } from '@varde/schema/template/template';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { auditWho } from '../auth/audit-who.js';
-import { change } from '../dashboard/comparison-view.js';
+import { change } from '../dashboard/round-pair.js';
 import { FindingRule } from '../findings/finding-rule.js';
 import { MetricsService } from '../metrics/metrics.service.js';
 import { PrivacyService, type PrivacySession, type ViewCell } from '../privacy/privacy.service.js';

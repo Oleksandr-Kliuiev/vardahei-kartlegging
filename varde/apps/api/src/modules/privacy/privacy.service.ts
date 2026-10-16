@@ -9,7 +9,7 @@ import {
   NotFoundException,
   type Provider,
 } from '@nestjs/common';
-import { zone, cells as metricCells } from '@varde/rules/findings';
+import { cells as metricCells } from '@varde/rules/findings';
 import type { MetricDefinition } from '@varde/schema/metrics/metric-definition';
 import type { Population } from '@varde/schema/metrics/populations';
 import type { Prisma } from '@prisma/client';
@@ -17,6 +17,7 @@ import { type PrivacyConfig, readPrivacyConfig } from '../../config/privacy-conf
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { suppressedGroups, aggregate, assertAggregateQuery } from './aggregate.js';
 import { liveCells, type ViewCell } from './view-cells.js';
+import { type ClientGroup, clientGroup, cohortCells } from './cohort.js';
 import { PrivacyViolation } from './types.js';
 import { PrismaSnapshotStore } from './prisma-snapshot-store.js';
 import { PrismaResponseSource, progressView } from './prisma-source.js';
@@ -60,6 +61,7 @@ const PRIVACY_CONFIG = Symbol('PRIVACY_CONFIG');
 export type { ResponseSource, SourceQuery } from './source.js';
 export type { RowsDb } from './rows.js';
 export type { ViewCell } from './view-cells.js';
+export type { ClientGroup } from './cohort.js';
 export { ReleaseRejected } from './release.js';
 export { ArchiveRejected, ArchivedSnapshot } from './archive.js';
 export type { ArchiveRefs } from './archive.js';
@@ -239,88 +241,31 @@ export class PrivacyService {
 
   /** Filter a historical population using already released client cells. Hidden components
    * cannot be treated as zero or reconstructed by subtracting from the historical total. */
-  async cohortCells(
+  cohortCells(
     round: string,
     clients: readonly string[],
     defs: readonly MetricDefinition[],
     role?: string,
   ): Promise<ViewCell[]> {
-    const r = await this.prisma.round.findUnique({ where: { id: round } });
-    if (!r || !['closed', 'archived'].includes(r.status))
-      throw new NotFoundException('Førre runde er ikkje publisert.');
-    const all = await this.viewCells(
-      round,
-      'all_clients',
-      defs.filter((d) => d.part === 'common'),
-    );
-    const participants = [
-      ...new Set(all.filter((c) => c.group.startsWith('client:')).map((c) => c.group.slice(7))),
-    ];
-    const selected = participants.filter((c) => clients.includes(c));
-    const group = role ? `role:${role}` : 'all';
-    if (!selected.length) return [];
-    if (selected.length === participants.length)
-      return all.filter((c) => c.group === group).map((c) => ({ ...c, group: 'all' }));
-    const parts = await Promise.all(
-      selected.map((c) =>
-        this.viewCells(
-          round,
-          'round_client',
-          defs.filter((d) => d.part === 'common'),
-          c,
-        ),
-      ),
-    );
-    const keys = [...new Set(all.map((c) => c.metric_key))];
-    const values: ViewCell[] = keys
-      .filter((key) => !key.includes('.zone.'))
-      .map((key): ViewCell => {
-        const inputs = parts.map((p) => p.find((c) => c.group === group && c.metric_key === key));
-        const base = {
-          metric_key: key,
-          metric_version: inputs.find((c) => c)?.metric_version ?? 1,
-          group: 'all',
-        };
-        if (inputs.some((c) => !c || c.suppressed)) return { ...base, suppressed: true };
-        const sum = (key: 'n' | 'numerator' | 'denominator' | 'missing') =>
-          inputs.reduce((s, c) => s + (c && !c.suppressed ? c[key] : 0), 0);
-        return {
-          ...base,
-          suppressed: false,
-          n: sum('n'),
-          numerator: sum('numerator'),
-          denominator: sum('denominator'),
-          missing: sum('missing'),
-        };
-      });
-    const zoneDef = defs.find((d) => d.kind === 'zone');
-    if (zoneDef)
-      for (const mean of values.filter((c) =>
-        c.metric_key.startsWith(`${zoneDef.key.replace(/zone$/, 'mean_score')}.`),
-      )) {
-        const base = {
-          metric_key: mean.metric_key.replace('.mean_score.', '.zone.'),
-          metric_version: zoneDef.version,
-          group: 'all',
-        };
-        values.push(
-          mean.suppressed || !mean.denominator
-            ? { ...base, suppressed: true }
-            : {
-                ...base,
-                suppressed: false,
-                n: mean.n,
-                numerator: zone(
-                  mean.numerator / mean.denominator,
-                  zoneDef.thresholds!.aggregate.bounds,
-                ),
-                denominator: 1,
-                missing: mean.missing,
-              },
-        );
-      }
-    return values;
+    return cohortCells(this.prisma, this.read, round, clients, defs, role);
   }
+
+  /** Some clients of a round (3.9: the clients of a seminar), from its all_clients view only:
+   * their total and their own cells, a hidden client hides the total (privacy/cohort.ts). */
+  clientGroup(
+    round: string,
+    defs: readonly MetricDefinition[],
+    clients: readonly string[],
+  ): Promise<ClientGroup> {
+    return clientGroup(this.read, round, defs, clients);
+  }
+
+  private readonly read = (
+    round: string,
+    population: Population,
+    defs: readonly MetricDefinition[],
+    client?: string,
+  ) => this.viewCells(round, population, defs, client);
 
   /** Class `aggregate`: live view of the admins and the input of release(); never rows. */
   async aggregate(query: AggregateQuery): Promise<AggregateResult> {

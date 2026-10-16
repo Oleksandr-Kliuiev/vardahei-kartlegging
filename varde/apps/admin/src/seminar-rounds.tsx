@@ -27,10 +27,10 @@ function Links({ round }: { round: string }) {
   const insight = `/admin/dashboard?round=${round}`;
   return (
     <span className="sem-steg-lenkjer">
-      <a href={insight} onClick={(e) => go(e, insight)}>
+      <a className="linkbtn" href={insight} onClick={(e) => go(e, insight)}>
         Sjå i Innsikt
       </a>
-      <a href="/admin/rounds" onClick={(e) => go(e, '/admin/rounds')}>
+      <a className="linkbtn" href="/admin/rounds" onClick={(e) => go(e, '/admin/rounds')}>
         Sjå under Rundar
       </a>
     </span>
