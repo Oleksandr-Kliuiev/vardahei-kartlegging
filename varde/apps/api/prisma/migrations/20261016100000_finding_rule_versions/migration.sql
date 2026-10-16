@@ -67,5 +67,7 @@ END
 $$;
 CREATE TRIGGER "finding_immutable" BEFORE UPDATE ON "finding"
   FOR EACH ROW EXECUTE FUNCTION "finding_immutable"();
-CREATE TRIGGER "finding_set_immutable" BEFORE UPDATE ON "finding_set"
+-- A set is never deleted either: without it the next dashboard read would compute the closed
+-- release again with the newest rules.
+CREATE TRIGGER "finding_set_immutable" BEFORE UPDATE OR DELETE ON "finding_set"
   FOR EACH ROW EXECUTE FUNCTION "finding_immutable"();

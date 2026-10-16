@@ -434,6 +434,8 @@ describe('2.5 seed and database guards', () => {
       [`DELETE FROM finding_rule WHERE key = 'tryggleik.f12'`, /finding_rule_immutable/],
       ['UPDATE finding SET numbers = numbers', /finding_immutable/],
       ['UPDATE finding_set SET rule_keys = rule_keys', /finding_immutable/],
+      // Without its set the next dashboard read would compute the closed release again.
+      ['DELETE FROM finding_set', /finding_immutable/],
     ] as const)
       await expect(withPg((c) => c.query(sql))).rejects.toThrow(error);
   });

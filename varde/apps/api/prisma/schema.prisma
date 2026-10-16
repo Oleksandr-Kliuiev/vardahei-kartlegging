@@ -256,7 +256,8 @@ model FindingRule {
 
 /// The findings of one release are computed once (2.5): `scope` is `all` or the client id,
 /// `rule_keys` (`key@version`) the rules in effect at that moment. A closed round shows the saved
-/// findings of its release; a later rule version never recalculates them. Never updated.
+/// findings of its release; a later rule version never recalculates them. Never updated or
+/// deleted (trigger finding_set_immutable).
 model FindingSet {
   release_id  String   @db.Uuid
   scope       String
