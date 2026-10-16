@@ -67,6 +67,12 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // A client's own round_client cells: only its own channel and the admin dashboard (16.10).
+    files: ['apps/api/src/**/*.{ts,tsx}'],
+    ignores: ['apps/api/src/modules/privacy/**'],
+    rules: { 'varde/round-client-exits': 'error' },
+  },
   ...boundaries,
   {
     files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
