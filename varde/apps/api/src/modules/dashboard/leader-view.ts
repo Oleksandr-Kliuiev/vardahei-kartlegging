@@ -11,7 +11,11 @@ import {
   type LeaderAnswers,
 } from '../findings/leader-rules.js';
 import { Injectable } from '@nestjs/common';
-import { PrivacyService, type PrivacySession } from '../privacy/privacy.service.js';
+import {
+  PrivacyService,
+  PrivacyViolation,
+  type PrivacySession,
+} from '../privacy/privacy.service.js';
 import { questionViews } from './aggregate-view.js';
 import { DashboardContext, type DashboardScope } from './dashboard-context.js';
 
@@ -159,11 +163,11 @@ export class LeaderView {
   }
   /** The common F12 cell of one client under k, read through privacy like the dashboard. */
   async crossCell(scope: DashboardScope, cross: FindingRule) {
-    const common = await this.privacy.viewCells(
+    if (!scope.client) throw new PrivacyViolation('round_client needs a client');
+    const common = await this.privacy.adminClientCells(
       scope.round.id,
-      'round_client',
-      scope.defs.filter((d) => d.part === 'common'),
       scope.client,
+      scope.defs.filter((d) => d.part === 'common'),
     );
     return common.find((c) => c.metric_key === crossCellKey(cross) && c.group === 'all');
   }

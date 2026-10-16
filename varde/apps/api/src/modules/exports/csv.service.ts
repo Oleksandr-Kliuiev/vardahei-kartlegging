@@ -12,12 +12,11 @@ export class CsvService {
   async client(round: string, client: string) {
     const scope = await this.context.load(round, client);
     if (!scope.client) throw new BadRequestException('Vel éin kunde.');
-    const cells = await this.privacy.viewCells(
+    // ADR-025: the client channel always reads released cells, even in an open round.
+    const cells = await this.privacy.ownCells(
       round,
-      'round_client',
-      scope.defs.filter((d) => d.part === 'common'),
       scope.client,
-      true, // ADR-025: the client channel always reads released cells, even in an open round.
+      scope.defs.filter((d) => d.part === 'common'),
     );
     return csv(
       ['Spørsmål', 'Svar', 'Måling', 'Versjon', 'Gruppe', 'n', 'Teljar', 'Nemnar', 'Del', 'Sone'],

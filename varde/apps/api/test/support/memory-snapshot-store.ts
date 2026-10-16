@@ -70,3 +70,46 @@ export class MemorySnapshotStore implements SnapshotStore {
     return Promise.resolve();
   }
 }
+
+/** The same store with the equivalence of PrismaSnapshotStore (1.32): `round_client` X `all` ↔
+ * `all_clients` `client:X`, for tests that release both populations of a round in order. */
+export class LinkedMemorySnapshotStore extends MemorySnapshotStore {
+  private static mapped<T extends { client?: string | undefined; group: string }>(
+    population: Population,
+    cell: T,
+  ): T | undefined {
+    if (population === 'all_clients' && cell.client && cell.group === 'all') {
+      const out = { ...cell, group: `client:${cell.client}` };
+      delete out.client;
+      return out;
+    }
+    if (population === 'round_client' && cell.group.startsWith('client:'))
+      return { ...cell, client: cell.group.slice(7), group: 'all' };
+    return undefined;
+  }
+
+  private static other(population: Population): Population | undefined {
+    if (population === 'leaders_all') return undefined;
+    return population === 'all_clients' ? 'round_client' : 'all_clients';
+  }
+
+  async listLinkedReleased(round: string, population: Population): Promise<ReleasedSnapshot[]> {
+    const other = LinkedMemorySnapshotStore.other(population);
+    if (!other) return [];
+    return (await this.listReleased(round, other)).flatMap((s) => {
+      const m = LinkedMemorySnapshotStore.mapped(population, s);
+      return m ? [{ ...m, population }] : [];
+    });
+  }
+
+  async listLinkedHistory(round: string, population: Population): Promise<HistoricCell[][]> {
+    const other = LinkedMemorySnapshotStore.other(population);
+    if (!other) return [];
+    return (await this.listHistory(round, other)).map((cells) =>
+      cells.flatMap((c) => {
+        const m = LinkedMemorySnapshotStore.mapped(population, c);
+        return m ? [m] : [];
+      }),
+    );
+  }
+}

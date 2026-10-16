@@ -229,3 +229,35 @@ it('blocks privacy dynamic imports in static template strings and facade constru
     ),
   ).toContain('no-restricted-syntax');
 });
+
+describe('round_client exits with the real PrivacyService (decision 16.10)', () => {
+  const body = (
+    call: string,
+  ) => `import type { MetricDefinition } from '@varde/schema/metrics/metric-definition';
+import type { PrivacyService } from '../../privacy/privacy.service.js';
+
+export const read = (privacy: PrivacyService, defs: MetricDefinition[]) => ${call};
+`;
+
+  it.each([
+    ["privacy.ownCells('r', 'c', defs)", ['varde/round-client-exits']],
+    ["privacy.adminClientCells('r', 'c', defs)", ['varde/round-client-exits']],
+    ["privacy.computeCells('r', 'all_clients', defs)", ['varde/round-client-exits']],
+    ["privacy.viewCells('r', 'all_clients', defs)", []],
+    ["privacy.clientGroup('r', defs, ['c'])", []],
+  ])('a seminar module: %s → %j', async (call, expected) => {
+    const name = call.split('(')[0]!.split('.')[1]!;
+    expect(
+      await ruleIds(`apps/api/src/modules/seminars/__boundaries__/${name}.ts`, body(call)),
+    ).toEqual(expected);
+  });
+
+  it('the client report reads its own cells', async () => {
+    expect(
+      await ruleIds(
+        'apps/api/src/modules/reports/__boundaries__/own.ts',
+        body("privacy.ownCells('r', 'c', defs)"),
+      ),
+    ).toEqual([]);
+  });
+});

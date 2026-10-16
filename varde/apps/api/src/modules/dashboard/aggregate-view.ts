@@ -102,12 +102,9 @@ export class AggregateView {
     const scope = await this.context.load(round, client);
     const { content, defs } = scope;
     const common = defs.filter((d) => d.part === 'common');
-    const cells = await this.privacy.viewCells(
-      round,
-      scope.client ? 'round_client' : 'all_clients',
-      common,
-      scope.client,
-    );
+    const cells = scope.client
+      ? await this.privacy.adminClientCells(round, scope.client, common)
+      : await this.privacy.viewCells(round, 'all_clients', common);
     const roleQ = content.questions.find((q) => q.role);
     const roleDefs = common.find(
       (d) => d.questions[0]?.key === roleQ?.id && d.kind === 'distribution',
