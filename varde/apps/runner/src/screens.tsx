@@ -7,6 +7,7 @@ import type { Lang } from '@varde/schema/template/texts';
 import { notice } from './i18n/notice.js';
 import { text, ui } from './i18n/ui.js';
 import { CairnMark, Icon } from './icons.js';
+import { ContactCard, VARDAHEI_CONTACT } from './contact.js';
 
 export function LeaderScreen({
   version,
@@ -213,6 +214,7 @@ export function StateScreen({ kind, lang }: { kind: StateKind; lang: Lang }) {
         {ui(lang, title)}
       </h1>
       <p class="anim">{ui(lang, body)}</p>
+      <ContactCard contact={VARDAHEI_CONTACT} lang={lang} />
     </div>
   );
 }
