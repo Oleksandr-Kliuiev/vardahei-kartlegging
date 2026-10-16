@@ -20,6 +20,7 @@ export const INTEGRATION_FILES = [
   'test/dashboard/privacy-filters.test.ts',
   'test/findings/funn.test.ts',
   'test/findings/rule-editor.test.ts',
+  'test/findings/backfill.test.ts',
   'test/admin/data.test.ts',
   'test/admin/break-glass.test.ts',
   'test/events/stream.test.ts',

@@ -24,16 +24,19 @@ CREATE INDEX "finding_set_round_id_idx" ON "finding_set"("round_id");
 INSERT INTO "finding_set" ("release_id", "scope", "round_id", "rule_keys")
 SELECT s."release_id", s."scope", s."round_id",
   ARRAY(
-    SELECT k."key" || '@' || COALESCE(
-      (SELECT min(f."rule_version") FROM "finding" f
-        WHERE f."release_id" = s."release_id" AND f."rule_key" = k."key"
-          AND COALESCE(f."client_id"::text, 'all') = s."scope"),
-      k."first")
-    FROM (
-      SELECT "key", min("version") AS "first" FROM "finding_rule"
-      WHERE starts_with("key", s."family" || '.') GROUP BY "key"
-    ) k
-    ORDER BY 1
+    SELECT e."rule_key" FROM (
+      SELECT k."key" || '@' || COALESCE(
+        (SELECT min(f."rule_version") FROM "finding" f
+          WHERE f."release_id" = s."release_id" AND f."rule_key" = k."key"
+            AND COALESCE(f."client_id"::text, 'all') = s."scope"),
+        k."first") AS "rule_key"
+      FROM (
+        SELECT "key", min("version") AS "first" FROM "finding_rule"
+        WHERE starts_with("key", s."family" || '.') GROUP BY "key"
+      ) k
+    ) e
+    -- Byte order, as FindingsService.released() sorts its keys.
+    ORDER BY e."rule_key" COLLATE "C"
   )
 FROM (
   SELECT DISTINCT a."release_id", COALESCE(a."client_id"::text, 'all') AS "scope", a."round_id",
