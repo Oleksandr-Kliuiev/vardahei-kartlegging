@@ -309,18 +309,25 @@ async function releasedInSteps(input: readonly (ResponseRow & { epoch: number })
   );
   // The same releases as equations over the cells of the final structure (rule 7's model).
   const cells = groupsOf([...input]).map((g) => ({ client: g.client, role: g.role }));
-  const shown = views.flatMap((v) =>
-    v.cells.flatMap((c) => {
-      if (c.suppressed || c.metric_key !== METRIC) return [];
-      const inside = allClientsCover(c.group);
-      return [
-        {
-          vector: cells.map((x) => (inside({ ...x, n: 0, yes: 0 }) ? 1 : 0)),
-          origin: v.origin.get(c.group)!,
-        },
-      ];
-    }),
-  );
+  // A group a release does not list had no answers then: the attacker reads a zero.
+  const groups = [
+    ...new Set(cells.flatMap((x) => [`client:${x.client}`, ...(x.role ? [`role:${x.role}`] : [])])),
+  ];
+  const shown = views.flatMap((v, i) => {
+    const listed = new Set(v.cells.filter((c) => c.metric_key === METRIC).map((c) => c.group));
+    const zeros = groups.filter((g) => !listed.has(g)).map((group) => ({ group, origin: i + 1 }));
+    return [
+      ...v.cells.flatMap((c) =>
+        c.suppressed || c.metric_key !== METRIC
+          ? []
+          : [{ group: c.group, origin: v.origin.get(c.group)! }],
+      ),
+      ...zeros,
+    ].map(({ group, origin }) => {
+      const inside = allClientsCover(group);
+      return { vector: cells.map((x) => (inside({ ...x, n: 0, yes: 0 }) ? 1 : 0)), origin };
+    });
+  });
   const value = (i: number, e: number) =>
     list
       .filter((a) => a.client === cells[i]!.client && a.role === cells[i]!.role && a.epoch <= e)
