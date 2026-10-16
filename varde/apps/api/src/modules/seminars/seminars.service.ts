@@ -140,7 +140,8 @@ export class SeminarsService {
     let company = input.company ?? '';
     if (input.client !== null) {
       const client = await this.prisma.client.findUnique({ where: { id: input.client } });
-      if (!client) throw new BadRequestException('Kunden finst ikkje.');
+      // The technical client of live polls (3.4) is nobody's company.
+      if (client?.kind !== 'client') throw new BadRequestException('Kunden finst ikkje.');
       company = client.name;
     }
     const change = {
@@ -161,7 +162,8 @@ export class SeminarsService {
   }
 
   private async requireClients(tx: Prisma.TransactionClient, ids: readonly string[]) {
-    if ((await tx.client.count({ where: { id: { in: [...ids] } } })) !== ids.length)
+    // Customers only: the technical client of live polls (3.4) is never one of them.
+    if ((await tx.client.count({ where: { id: { in: [...ids] }, kind: 'client' } })) !== ids.length)
       throw new BadRequestException('Ein av kundane finst ikkje.');
   }
 

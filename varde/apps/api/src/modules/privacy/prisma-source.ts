@@ -71,9 +71,10 @@ export function progressView(prisma: PrismaService, k: number, round: string, no
     async (tx) => {
       const found = await tx.round.findUnique({
         where: { id: round },
-        select: { template_version: { select: { content: true } } },
+        select: { type: true, template_version: { select: { content: true } } },
       });
-      if (!found) throw new NotFoundException('Runden finst ikkje.');
+      // A seminar live poll (3.4) has no progress of a survey.
+      if (!found || found.type === 'live') throw new NotFoundException('Runden finst ikkje.');
       const content = found.template_version?.content as { questions?: unknown[] } | undefined;
       const questionCount = content?.questions?.length ?? 0;
       const clients = await tx.roundClient.findMany({

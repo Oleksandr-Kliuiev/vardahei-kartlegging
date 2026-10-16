@@ -3,7 +3,15 @@
 // to the open question («Spørsmålet er stengt.» otherwise), every step in AuditLog, the database
 // refuses what the service refuses, and the live round stays out of the round and client lists.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { seminarApp, type SeminarApp } from '../support/seminars.js';
+import { captureOutput } from '../support/capture-output.js';
+import {
+  contactsOf,
+  email,
+  register,
+  seminarApp,
+  seminarBody,
+  type SeminarApp,
+} from '../support/seminars.js';
 import { withPg } from '../support/rounds.js';
 import {
   answer,
@@ -359,5 +367,99 @@ describe('the rest of the admin keeps out', () => {
         })
       ).statusCode,
     ).toBe(404);
+  });
+
+  it('the technical client is in no choice of a client: seminars, contacts, rounds, handover, deletion', async () => {
+    const p = await livePoll(t);
+    const tech = await t.prisma.client.findFirstOrThrow({ where: { kind: 'seminar' } });
+    await register(t, p.seminar, email(t, 'tech'));
+    const contact = (await contactsOf(t)).find((c) => c.email === email(t, 'tech'))!;
+    const draft = (
+      await t.call('POST', '/api/admin/rounds', {
+        name: `${t.mark} draft`,
+        template_version_id: p.version,
+      })
+    ).json<{ id: string }>();
+    const out = captureOutput();
+    try {
+      const status = async (method: 'POST' | 'PUT', url: string, body: object) =>
+        (await t.call(method, url, body)).statusCode;
+      expect(
+        await status('POST', '/api/admin/seminars', seminarBody(t, { clients: [tech.id] })),
+      ).toBe(400);
+      expect(
+        await status(
+          'PUT',
+          `/api/admin/seminars/${p.seminar}`,
+          seminarBody(t, { date: todayOslo(), clients: [tech.id] }),
+        ),
+      ).toBe(400);
+      expect(
+        await status('PUT', `/api/admin/contacts/${contact.id}`, {
+          name: 'ZZ Retta',
+          client: tech.id,
+        }),
+      ).toBe(400);
+      // Rounds refuse it before the database would (no 500, no Prisma error in the log).
+      const launch = {
+        name: `${t.mark} launch`,
+        template_version_id: p.version,
+        clients: [{ client_id: tech.id, deadline: '2099-06-01' }],
+        open: false,
+      };
+      expect(await status('POST', '/api/admin/rounds/launch', launch)).toBe(400);
+      expect(
+        await status('POST', `/api/admin/rounds/${draft.id}/clients`, {
+          client_id: tech.id,
+          deadline: '2099-06-01',
+        }),
+      ).toBe(400);
+      // No handover of «all live answers», no deletion by it.
+      expect(
+        await status('POST', `/api/admin/clients/${tech.id}/handover`, {
+          reason: 'ZZ test',
+          recipient: 'ZZ',
+        }),
+      ).toBe(404);
+      expect(
+        await status('POST', '/api/admin/retention/forget', {
+          scope: { scope: 'client', client: tech.id },
+          reason: 'ZZ test',
+          dry_run: true,
+        }),
+      ).toBe(400);
+      expect(out.text()).not.toMatch(/round_client_live|PrismaClient/);
+    } finally {
+      out.restore();
+      await t.prisma.round.deleteMany({ where: { name: { startsWith: t.mark } } });
+    }
+    expect(
+      await t.prisma.roundClient.count({
+        where: { client_id: tech.id, round: { type: { not: 'live' } } },
+      }),
+    ).toBe(0);
+  });
+
+  it('a live round by its id: the survey views, exports, report, invitation and progress answer 404', async () => {
+    const p = await livePoll(t);
+    const rc = await t.prisma.roundClient.findFirstOrThrow({ where: { round_id: p.round } });
+    for (const url of [
+      `/api/admin/dashboard?round=${p.round}`,
+      `/api/admin/dashboard/comparison?round=${p.round}`,
+      `/api/admin/rows/per-employee?round=${p.round}`,
+      `/api/admin/rows/quotes?round=${p.round}`,
+      `/api/admin/leader-answers?round=${p.round}`,
+      `/api/admin/clients/${rc.client_id}/leader-answers?round=${p.round}`,
+      `/api/admin/exports/client.csv?round=${p.round}&client=${rc.client_id}`,
+      `/api/admin/exports/rows.csv?round=${p.round}`,
+      `/api/admin/exports/analyse.csv?round=${p.round}`,
+      `/api/admin/exports/analyse-personar.csv?round=${p.round}`,
+      `/api/admin/exports/archive.json?round=${p.round}`,
+      `/api/admin/rounds/${p.round}/progress`,
+      `/api/admin/round-clients/${rc.id}/report`,
+      `/api/admin/round-clients/${rc.id}/invitation`,
+      `/admin/poster/${rc.id}`,
+    ])
+      expect((await t.call('GET', url)).statusCode, url).toBe(404);
   });
 });
