@@ -11,8 +11,9 @@
 //      next to its own cells, the round's total gives the other clients away (in a round of two
 //      clients, total − own = the other one);
 //  (c) reads of saved findings (`finding`: per client, `numbers` holds that client's n and count)
-//      outside their allow-list: the model on a Prisma client, or the relation in include/select
-//      unless a nested `select` leaves `numbers` out. `count` tells nothing per client.
+//      outside their allow-list: the model on a Prisma client, the relation in include/select
+//      unless a nested `select` leaves `numbers` out, or raw SQL on the table `finding`. `count`
+//      tells nothing per client.
 
 import { globToRegExp } from './privacy-only-release.js';
 
@@ -59,6 +60,16 @@ const METHODS = new Set(Object.keys(ROUND_CLIENT_EXITS));
 const SHARED = new Set(['viewCells', 'clientGroup']);
 const FINDING_RELATIONS = new Set(['finding', 'findings']);
 const PRISMA_TYPE = /\b(PrismaClient|TransactionClient)\b/;
+const RAW_METHODS = new Set(['$queryRaw', '$queryRawUnsafe', '$executeRaw', '$executeRawUnsafe']);
+const FINDING_TABLE = /\bfinding\b/i;
+
+/** Static text of a raw SQL argument or template (interpolations are values, not SQL). */
+function sqlText(/** @type {any} */ node) {
+  if (node?.type === 'Literal' && typeof node.value === 'string') return node.value;
+  if (node?.type === 'TemplateLiteral')
+    return node.quasis.map((/** @type {any} */ q) => q.value.cooked ?? q.value.raw).join(' ');
+  return '';
+}
 
 /** Name of a member or pattern key; undefined for a computed key that is not a string literal. */
 function keyName(/** @type {{ computed?: boolean }} */ owner, /** @type {any} */ key) {
@@ -229,7 +240,20 @@ export const roundClientExits = {
       },
       CallExpression(node) {
         if (findingsAllowed || node.callee.type !== 'MemberExpression') return;
+        if (RAW_METHODS.has(keyName(node.callee, node.callee.property) ?? '')) {
+          if (node.arguments.some((arg) => FINDING_TABLE.test(sqlText(arg)))) reportFinding(node);
+          return;
+        }
         if (chainHasPrisma(node.callee)) for (const arg of node.arguments) checkArgs(arg, false);
+      },
+      TaggedTemplateExpression(node) {
+        const tag = /** @type {any} */ (node.tag);
+        if (findingsAllowed || tag.type !== 'MemberExpression') return;
+        const name = keyName(tag, tag.property);
+        const raw =
+          RAW_METHODS.has(name ?? '') ||
+          (name === 'sql' && tag.object.type === 'Identifier' && tag.object.name === 'Prisma');
+        if (raw && FINDING_TABLE.test(sqlText(node.quasi))) reportFinding(node);
       },
     };
   },

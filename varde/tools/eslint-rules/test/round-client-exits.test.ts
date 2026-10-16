@@ -52,6 +52,8 @@ interface PrismaClient {
   findingStatus: Delegate;
   templateVersion: Delegate;
   $transaction<T>(fn: (tx: TransactionClient) => Promise<T>): Promise<T>;
+  $queryRaw(strings: TemplateStringsArray, ...values: unknown[]): Promise<unknown>;
+  $queryRawUnsafe(sql: string): Promise<unknown>;
 }
 interface TransactionClient { finding: Delegate; }
 declare const privacy: PrivacyService;
@@ -163,6 +165,16 @@ typedRuleTester().run('round-client-exits', rule, {
       code: code(`void prisma.finding.findMany();`),
     },
     {
+      name: 'raw SQL on finding_status and the findings module reading finding are fine',
+      filename: seminars,
+      code: code('void prisma.$queryRaw`select status from finding_status`;'),
+    },
+    {
+      name: 'the findings module may read finding with raw SQL',
+      filename: findings,
+      code: code('void prisma.$queryRaw`select numbers from finding`;'),
+    },
+    {
       name: 'count and a select without numbers tell nothing per client',
       filename: seminars,
       code: code(
@@ -267,6 +279,14 @@ typedRuleTester().run('round-client-exits', rule, {
       filename: seminars,
       code: code(`void prisma.$transaction((tx: TransactionClient) => tx.finding.findFirst());`),
       errors: [{ messageId: 'finding' }],
+    },
+    {
+      name: 'saved findings through raw SQL',
+      filename: seminars,
+      code: code(
+        "void prisma.$queryRaw`select numbers from finding`;\nvoid prisma.$queryRawUnsafe('SELECT numbers FROM finding');",
+      ),
+      errors: [{ messageId: 'finding' }, { messageId: 'finding' }],
     },
     {
       name: 'saved findings through include',
