@@ -38,6 +38,8 @@ stat -c '%a %u:%g %n' /var/lib/varde/run /var/lib/varde/ledger-out /etc/varde/re
 
 ## 2. Образ коммита (на Mac оператора) и перенос
 
+**Готовые скрипты (с 16.10): `infra/ops/`.** Образ и перенос — `bash infra/ops/ship-image.sh <sha12>`; деплой (проверка чистого checkout, копия данных, rsync, миграции, переключение версии, ожидание healthy и версии в `/health`) — `bash infra/ops/deploy.sh <sha12>`; откат — `bash infra/ops/rollback.sh <прежний sha12> [<миграция> …]`. Любая ошибка останавливает скрипт; `.env` и `VERSION` на VPS пишутся только после успешных миграций. Тест без VPS: `bash infra/ops/test/deploy.test.sh`. Ручные команды ниже — то, что скрипты делают по шагам.
+
 ```bash
 cd <checkout>/varde
 SHA=$(git rev-parse --short=12 HEAD)

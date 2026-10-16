@@ -86,6 +86,7 @@ jobs:
       - run: pnpm invariants:1b
       - run: node ../tools/test/lesemodus.test.js
       - run: bash infra/caddy/test/caddy-legacy.test.sh
+      - run: bash infra/ops/test/deploy.test.sh
       - run: pnpm invariants:1c
       - run: pnpm invariants:1e
       - run: pnpm invariants:5
