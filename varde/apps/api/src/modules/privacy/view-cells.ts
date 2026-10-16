@@ -45,7 +45,7 @@ export function liveCells(
       const memo = [
         structure === undefined
           ? '-'
-          : [...structure].map(([c, rs]) => `${c}:${[...rs]}`).join(';'),
+          : [...structure].map(([c, rs]) => `${c}:${[...rs].join(',')}`).join(';'),
         ...block.map((c) => `${c.group}=${c.n}${hidden.has(c.group) ? 'x' : ''}`),
       ].join('|');
       const known = joint.get(memo);

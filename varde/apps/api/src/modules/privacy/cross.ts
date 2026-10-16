@@ -18,14 +18,14 @@
 // A total that is not visible but equals the sum of all visible clients (or roles) still counts.
 //
 // Two releases (rule 7 on differences): S is determined in both exactly when its indicator lies
-// in both spans. For a connected structure that intersection is the graph whose hidden classes
-// are those of each release, merged where they share a member; a node's value is its margin now
-// minus its margin then, so a cut gives n_now(S) − n_then(S). The attacker is assumed to know the
-// structure, not who answered between the two releases (a sound superset of the structure is
-// the current one: answers only arrive, and fewer edges only add cuts).
+// in both spans (twoViews below: per connected component of the structure, each with its own
+// total). Answers are assumed only to arrive between the two (a difference per group ≥ 0): then
+// the current structure is a superset of the old one and a small difference has a small cut.
+// Answers deleted in between are outside this model (BACKLOG). The attacker is assumed to know
+// the structure, not who answered between the two releases.
 //
-// Enumeration: every subset R of the role nodes, its forced clients N(R), and any extra clients
-// (they bring their own margin) — exact, small (2^roles), no linear algebra at runtime.
+// Enumeration: every subset of the role nodes, its forced clients, and any extra clients (they
+// bring their own margin) — exact, small (2^roles, at most MAX_ROLE_NODES), no linear algebra.
 import type { ComputedCell } from './release.js';
 
 /** Non-empty (client, role) groups of one metric; role '' = answers without a role. */
