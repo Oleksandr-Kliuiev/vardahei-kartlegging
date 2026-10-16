@@ -11,7 +11,13 @@
 | 3.6 | `4fedbfd` | Runner в live-режиме: только открытый вопрос, опрос состояния раз в 2,5 с, отправка сразу, черновик с теми же байтами запроса, экраны ожидания, «Takk!», «Spørsmålet er stengt», конец; nn/en; e2e |
 | 3.7 | `c7100b9` | Нагрузочный тест `tools/invariants/load-3b.mjs` (+ `load-3b-server.cjs`), не в CI |
 | 3.4, правка | `2078770` | Перенос семинара двигает и срок ссылки телефонов (иначе семинар, перенесённый на день позже, отказал бы телефонам в свой день); два отказа на нюношке проще; лишние тексты экрана убраны |
-| закрытие | этот коммит | `run-3b.sh` и `invariants:3b`; e2e админки (полный сценарий); кадры киноленты в `presenter-motion.spec.ts` в свои моменты; строки REVIEW-CHECKLIST и AI_CONTEXT_MAP; этот evidence, результаты нагрузки, скриншоты |
+| закрытие | `65f152b` | `run-3b.sh` и `invariants:3b`; e2e админки (полный сценарий); кадры киноленты в `presenter-motion.spec.ts` в свои моменты; строки REVIEW-CHECKLIST и AI_CONTEXT_MAP; этот evidence, результаты нагрузки, скриншоты |
+| CI (оркестратор) | `bf91558` | `pnpm invariants:3b` в job `integration` |
+| приёмка, important | `6ef4166` | «N har svart» через privacy с k = 3: меньше трёх — «Færre enn tre har svart» без числа (экран, поток, админка); квота получает только «да/нет» |
+| приёмка, minor 1–2 | `4f7e4bf` | Технический клиент не принимается ни одним выбором клиента; live-раунд по явному id — 404 в видах анкет, экспорте, прогрессе, отчёте, архиве, приглашении |
+| приёмка, minor 4 | `4f59adf` | Тесты ведущего и потока ловят ключ в любом выводе (console тоже); мутант «ключ в stdout» убит |
+| приёмка, minor 5 | `91487b9` | down → up оставляет технического клиента техническим; тест на своей базе |
+| приёмка, evidence | этот коммит | Решения 1, 5, 7, 9, 18, риски, открытые вопросы, проверки |
 
 ## Что сделано
 
@@ -40,13 +46,14 @@
 
 ## Проверки (локально, Node 25.8.1, Postgres `varde-dev-postgres-1`, базы `varde_3b`, `varde_e2e_3b`, `varde_e2e_admin_3b`)
 
-Прогон на коммите кода `2078770` плюс файлы этого коммита (e2e, `run-3b.sh`):
+Прогон после замечаний приёмки — на коде `91487b9` плюс этот коммит (e2e со скриншотом «Færre enn tre har svart»):
 
-- `pnpm check` — exit 0: api 188, admin 43, runner 110, eslint-rules 70, schema 59, rules 81, ui 18, docs 23 (+1 skipped), invariants 16, parity 17, eval 50 (+2 skipped), convert 13, context-budget 6; lint и build всех пакетов.
-- `pnpm budget` — 604 файла, 0 больше 700; одно предупреждение: `apps/api/prisma/schema.prisma` 569 строк (решение 16). `pnpm budget:selfcheck`, `pnpm lint:privacy:selfcheck` — ok; `pnpm secrets` (gitleaks, папка и история) — утечек нет.
-- Integration целиком на свежей `varde_3b` с `VARDE_RESTORE_DOCKER=1` (как в CI), под `lockf -k /private/tmp/varde-e2e.lock`: 64 файла, 415 тестов зелёные; пропущен только `cutover/rehearsal` (нужна `VARDE_REHEARSAL_DATABASE`). Миграция вперёд и назад — в `migrations.test.ts`.
-- `pnpm invariants:3b` — 7/7 ok; `bash tools/invariants/run-3b.sh --load` — 8/8 ok (60 телефонов: p95 ответов 42 мс, опросов 16 мс); `pnpm invariants:3a` — 7/7; `pnpm invariants:5` — 5/5; `pnpm invariants:2a` — 5/5.
-- e2e admin — 39/39 (новый `live.spec.ts`: семинар сегодняшнего дня → «Lag live-spørsmål» → ссылка ведущего → большой экран 1280 × 720 → «Opne spørsmålet» → три телефона 360 px (светлая и тёмная тема) отвечают → «3 har svart» → четвёртый телефон не успел → «Steng spørsmålet» → у него «Spørsmålet er stengt» → «Vis resultatet» → полосы 67/33/0 % на экране и в админке → ведущий сам открывает, закрывает и показывает вопрос 2 с одним ответом → «For få svar til å vise tal» → экран на 360 px без горизонтальной прокрутки → ни один запрос не уходит с сайта и ни один URL не несёт ключ → «Trekk tilbake» останавливает экран). e2e runner — 66/66 (новые `live.spec.ts`: открытый вопрос на 360 и 1280 px, светлая и тёмная тема, nn и en, без запросов наружу; потерянное подтверждение → те же байты, одна строка в базе; `presenter-motion.spec.ts` — ниже). Оба под `lockf` на свежих `varde_e2e_3b`, `varde_e2e_admin_3b`.
+- `pnpm check` — exit 0: api 188, admin 44, runner 111, eslint-rules 70, schema 59, rules 81, ui 18, docs 23 (+1 skipped), invariants 16, parity 17, eval 50 (+2 skipped), convert 13, context-budget 6; lint и build всех пакетов.
+- `pnpm budget` — 605 файлов, 0 больше 700; одно предупреждение: `apps/api/prisma/schema.prisma` 569 строк (решение 16). `pnpm budget:selfcheck`, `pnpm lint:privacy:selfcheck` — ok; `pnpm secrets` (до замечаний) — утечек нет.
+- Integration целиком на свежей `varde_3b` с `VARDE_RESTORE_DOCKER=1` (как в CI), под `lockf -k /private/tmp/varde-e2e.lock`: 65 файлов, 421 тест зелёные; пропущен только `cutover/rehearsal` (нужна `VARDE_REHEARSAL_DATABASE`). Миграция вперёд и назад — `migrations.test.ts`, откат и повторное применение одной миграции 3b — `live/migration-rollback.test.ts`.
+- `pnpm invariants:3b` — 7/7 ok; `bash tools/invariants/run-3b.sh --load` — 8/8 ok (60 телефонов: p95 ответов 44 мс, опросов 17 мс); `pnpm invariants:3a` — 7/7; `pnpm invariants:5` — 5/5; `pnpm invariants:2a` — 5/5.
+- e2e admin — 39/39 (`live.spec.ts`: семинар сегодняшнего дня → «Lag live-spørsmål» → ссылка ведущего → большой экран 1280 × 720 → «Opne spørsmålet» → три телефона 360 px (светлая и тёмная тема) отвечают, после первого и второго на экране «Færre enn tre har svart», после третьего «3 har svart» → четвёртый телефон не успел → «Steng spørsmålet» → у него «Spørsmålet er stengt» → «Vis resultatet» → полосы 67/33/0 % на экране и в админке → ведущий сам открывает, закрывает и показывает вопрос 2 с одним ответом → «For få svar til å vise tal» → экран на 360 px без горизонтальной прокрутки → ни один запрос не уходит с сайта и ни один URL не несёт ключ → «Trekk tilbake» останавливает экран). e2e runner — 66/66 (`live.spec.ts`: открытый вопрос на 360 и 1280 px, светлая и тёмная тема, nn и en, без запросов наружу; потерянное подтверждение → те же байты, одна строка в базе; `presenter-motion.spec.ts` — ниже). Оба под `lockf` на свежих `varde_e2e_3b`, `varde_e2e_admin_3b`.
+- Мутации приёмки: ключ ведущего в `console.log` при выпуске роняет оба теста вывода; без UPDATE в миграции падает `migration-rollback.test.ts`.
 - Движение (кадры через requestAnimationFrame в рамке 1280 × 720): каждая полоса начинается с нуля (< 2 % в первом кадре), за кадр меняется меньше чем на четверть своей доли, перелёт пружины < 3 %, итог равен доле; полосы стартуют по очереди; проценты не идут назад, не больше итога и не дальше 6 пунктов от своей полосы ни в одном кадре; вопрос не сдвигается, когда счётчик сменяется полосами; с reduced motion всё на месте в первом кадре. Первый прогон поймал рассинхрон «37 % при короткой полосе» — число шло своей кривой; теперь оно на той же кривой, что полоса.
 - Размер runner: весь JS 75 КБ gzip (лимит 100); у страницы `/p` свой чанк 5 КБ.
 - CI не запускался: GitHub Actions заблокирован лимитом расходов (BESLUTNINGER 16.10), push не делался.
@@ -73,7 +80,7 @@
 6. **Released не хранится снимком**: результат считается при чтении, а входы заморожены (ответ на закрытый вопрос отклоняется, `released` окончательно). `AggregateSnapshot`/`privacy.release()` для live не используются: метрики раунда и снимки ADR-021 — для анкет; удаление отдельных live-ответов по запросу невозможно (нет ключа человека).
 7. **Счётчик** «N har svart» (замечание приёмки, решение оркестратора 16.10 — вариант b) — через `privacy` с k = 3, как счётчики прогресса админки: при n ≥ 3 — число, при n < 3 — `{suppressed: true}` и текст «Færre enn tre har svart» (en: «Fewer than three have answered»), у открытого и закрытого вопроса; у показанного вопроса счётчика нет (`answered: null`). Ниже k не уходит ни одно число — ни в snapshot, ни в поток, ни в админку. Было: точный счётчик как исключение ADR-021 п. 6.
 8. **Админ-карточка** показывает «N har svart» и результат только после «Vis» — как экран; в эталоне карточка админки показывает живые числа по вариантам во время открытого вопроса (ноутбук ведущего часто на проекторе). Нужно согласие Oleksandr.
-9. **Квоты live** — новые ключи `live_*` (см. нагрузку); ADR-009 «по числу вопросов × участников» = не больше `live_participants_max` на вопрос.
+9. **Квоты live** — новые ключи `live_*` (см. нагрузку); ADR-009 «по числу вопросов × участников» = не больше `live_participants_max` на вопрос (настраивается). Повторные ответы с одного устройства (очищенное хранилище, другой браузер) не блокируются — принятый остаточный риск (решение приёмки 16.10): live-опрос анонимный и неформальный, потолок на вопрос ограничивает накрутку.
 10. **Цепочка состояний** — «Ope → Stengt → Vist», как в эталоне (`stengt` согласуется со «spørsmålet»); в задании было «Stengd».
 11. **Короткая ссылка**: отдельного короткого кода нет (ADR-009: код ≥ 128 бит); на экране ссылка без `https://`, моноширинным шрифтом, и QR.
 12. **SSE через fetch**, не EventSource: иначе ключ пришлось бы класть в query или cookie.
@@ -82,20 +89,22 @@
 15. **Экран ведущего** — полноэкранный вариант «Storskjerm» эталона: текстовая колонка прижата к верху (вопрос не прыгает), светлая и тёмная тема по токенам (в эталоне карточка экрана всегда тёмная), на 1280 × 720 помещается без прокрутки, на телефоне прокручивается.
 16. **Лимит строк**: `apps/api/prisma/schema.prisma` — 569 строк (> 500, предупреждение `pnpm budget`; было 522 до 3b); разбивать Prisma-схему на папку — отдельная инфраструктурная правка. `privacy.service.ts` — ровно 500.
 17. **Тестовые шаблоны** `seminar_live` (опубликованные версии неизменяемы) остаются в тестовых базах, как у других тестов.
+18. **Откат и повторное применение миграции** (замечание приёмки): `down.sql` оставляет строку технического клиента (на неё ссылаются live-раунды) обычным клиентом; миграция `20261016140000_live_poll` (ещё не выкачена, правлена на месте) сразу после добавления `kind` возвращает этой строке, найденной по slug `varde-seminar-live`, `kind = 'seminar'`. Выбран этот путь, а не удаление live-раундов в `down.sql`: ничего не теряется. Тест `live/migration-rollback.test.ts` на своей базе: опрос → down → up → новый опрос на том же клиенте (без UPDATE падает).
+19. **Ключ в выводе**: тесты ведущего и потока перехватывают всё, что пишет приложение, включая console (Vitest забирает console в своих воркерах, поэтому у `captureOutput` есть `{ console: true }`), и в конце проверяют, что в выводе нет ни одного ключа: ни выданного в тестах, ни любого 43-символьного окна, чей sha256 есть в `presenter_token`. Мутант «console.log ключа в `issue()`» обе проверки роняют.
 
 ## Приватность и риски
 
 - Live-раунд анонимный: `identification = none`, триггер базы не пускает `respondent_key`; один вопрос на отправку — ответы одного человека на разные вопросы не связаны; IP и время дальше дня не хранятся (как у анкет).
 - Экран ведущего — публичная страница с ключом; ключ не попадает в логи (Caddy без access log, фильтр ошибок удаляет Authorization; журнал приложения — без query и заголовков), запросы и Referer (fragment, `no-referrer`). Риск: ключ лежит в sessionStorage вкладки ведущего и в истории буфера обмена у того, кто его скопировал — срок окна и «Trekk tilbake» ограничивают его.
 - Остаточный риск «потерянная ссылка ведущего на проекторе»: адресная строка ключ уже не показывает; но кто сфотографирует ссылку в админке — получит управление вопросами этого опроса до конца окна (данных людей ключ не открывает).
-- Ссылка для телефонов общая для зала (как общая ссылка анкеты): один человек может ответить с нескольких устройств — это не обещается (ADR-006); квота на вопрос ограничивает накрутку.
+- Ссылка для телефонов общая для зала (как общая ссылка анкеты): один человек может ответить с нескольких устройств или повторно после очистки хранилища — принятый остаточный риск (решение приёмки 16.10, решение 9); квота на вопрос ограничивает накрутку.
 - CI не запускался (GitHub Actions заблокирован лимитом расходов 16.10); push не делался.
 
 ## Новые строки на нюношке (на проверку Oleksandr)
 
 Телефон (`apps/runner/src/i18n/ui.nn.json`): «Live-spørsmål» · «Vent litt» · «Det første spørsmålet kjem straks. Ha sida open, så dukkar det opp her av seg sjølv.» · «Send svaret» · «Sender …» · «Takk!» · «Svaret ditt er med. Resultatet kjem på skjermen.» · «Neste spørsmål kjem her av seg sjølv.» · «Spørsmålet er stengt» · «Du rakk ikkje å svare på dette. Neste spørsmål kjem her av seg sjølv.» · «Takk for at du var med!» · «Alle spørsmåla er stilte. Du kan lukke sida.» · «Svaret kom ikkje fram. Sjekk nettet og prøv igjen.» · «Fekk ikkje kontakt. Prøver igjen …» · «Svaret ditt er anonymt og blir ikkje knytt til deg. På skjermen viser vi berre kor mange som valde kvart svar.»
 
-Большой экран (`apps/runner/src/presenter/texts.ts`): «Storskjerm» · «Live-spørsmål» · «Svar på mobilen» · «Skann koden for å svare» · «eller gå til» · «Det første spørsmålet kjem straks.» · «Spørsmål {i} av {n}» · «Ope» · «Stengt» · «Vist» · «Ventar» · «har svart» · «Spørsmålet er stengt. Resultatet kjem når det blir vist.» · «For få svar til å vise tal» · «Når færre enn tre har svart, viser vi ingen tal.» · «Kvar person kunne velje fleire svar.» · «Tilkopla» · «Koplar til …» · «Mista sambandet. Prøver igjen …» · «Opne» · «Steng» · «Vis» · «Vel spørsmål» · «Styring» · «Lenkja til storskjermen manglar nøkkelen. Opne lenkja du fekk på nytt.» · «Det gjekk ikkje. Prøv igjen.»
+Большой экран (`apps/runner/src/presenter/texts.ts`): «Storskjerm» · «Live-spørsmål» · «Svar på mobilen» · «Skann koden for å svare» · «eller gå til» · «Det første spørsmålet kjem straks.» · «Spørsmål {i} av {n}» · «Ope» · «Stengt» · «Vist» · «Ventar» · «har svart» · «Færre enn tre har svart» (en: «Fewer than three have answered») · «Spørsmålet er stengt. Resultatet kjem når det blir vist.» · «For få svar til å vise tal» · «Når færre enn tre har svart, viser vi ingen tal.» · «Kvar person kunne velje fleire svar.» · «Tilkopla» · «Koplar til …» · «Mista sambandet. Prøver igjen …» · «Opne» · «Steng» · «Vis» · «Vel spørsmål» · «Styring» · «Lenkja til storskjermen manglar nøkkelen. Opne lenkja du fekk på nytt.» · «Det gjekk ikkje. Prøv igjen.»
 
 Ответы сервера: «Spørsmålet er stengt.» · «Spørsmålet er ikkje ope enno.» · «Spørsmål N er ope. Steng det før du opnar eit nytt.» · «Resultatet er vist, så spørsmålet kan ikkje opnast igjen.» · «Steng spørsmålet før du viser resultatet.» · «Spørsmålet er ikkje stilt enno.» · «Lenkja til storskjermen er ikkje gyldig.» · «Lenkja til storskjermen er trekt tilbake. Be om ei ny.» · «Lenkja til storskjermen verkar berre frå dagen før til dagen etter seminaret.» · «Lenkja er ikkje til live-spørsmål.»
 
@@ -103,13 +112,14 @@
 
 ## Открытые вопросы для Oleksandr
 
-1. Строки на нюношке выше (особенно «Spørsmålet er stengt», «For få svar til å vise tal», «Svaret ditt er anonymt …»).
-2. Отклонения от эталона: нет «Start på nytt» после «Vis» (решение 2), карточка админки без живых чисел по вариантам (решение 8), экран ведущего в светлой теме тоже (решение 15).
+1. Строки на нюношке выше (особенно «Spørsmålet er stengt», «Færre enn tre har svart», «For få svar til å vise tal», «Svaret ditt er anonymt …»).
+
+Отклонения от эталона (нет «Start på nytt» после «Vis», в карточке админки пока вопрос открыт — только «N har svart», большой экран и в светлой теме, подпись «Stengt») приняты Oleksandr 16.10 (`docs/BESLUTNINGER.md` в `main`).
 
 ## Скриншоты
 
 `docs/varde/evidence/stage-3/3b/` (e2e, синтетические данные):
-- `storskjerm-1280-light-ope.png` — открытый вопрос, «3 har svart», QR; `storskjerm-1280-light-vist.png`, `storskjerm-1280-dark-vist.png` — полосы после «Vis»; `storskjerm-1280-dark-for-fa.png` — один ответ, «For få svar til å vise tal»; `storskjerm-360-dark.png` — экран ведущего на телефоне;
+- `storskjerm-1280-light-faerre.png` — открытый вопрос с одним ответом: «Færre enn tre har svart»; `storskjerm-1280-light-ope.png` — «3 har svart», QR; `storskjerm-1280-light-vist.png`, `storskjerm-1280-dark-vist.png` — полосы после «Vis»; `storskjerm-1280-dark-for-fa.png` — один ответ, «For få svar til å vise tal»; `storskjerm-360-dark.png` — экран ведущего на телефоне;
 - `storskjerm-film.png` — кинолента ×4 роста полос (0, 0,4, 0,8, 1,3, 2,0, 3,6 с замедленного времени);
 - `mobil-360-light-sporsmal.png`, `mobil-360-dark-sporsmal.png` — вопрос на телефоне; `mobil-360-light-takk.png` — после ответа; `mobil-360-light-stengt.png` — вопрос закрылся раньше ответа; `live-1280-dark-nn.png`, `live-360-light-en.png` — телефон на 1280 и по-английски;
 - `admin-live-1280-light-ope.png`, `admin-live-1280-dark-vist.png` — вкладка «Live».

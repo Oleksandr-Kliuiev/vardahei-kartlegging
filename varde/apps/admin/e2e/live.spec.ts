@@ -126,6 +126,8 @@ test('admin opens a question → three phones answer → close → show → bars
     await expect(p.locator('h1')).toHaveText('Takk!');
     // «N har svart» with k = 3: below three only that there are fewer, no number.
     if (i < 2) await expect(screen.locator('.svart')).toHaveText('Færre enn tre har svart');
+    if (i === 0)
+      await screen.screenshot({ path: info.outputPath('storskjerm-1280-light-faerre.png') });
   }
   await opened[0]!.screenshot({
     path: info.outputPath('mobil-360-light-takk.png'),
