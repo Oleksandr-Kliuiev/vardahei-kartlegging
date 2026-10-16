@@ -35,18 +35,29 @@ const REGISTERED = { registered: true } as const;
 
 const DESCRIPTION: Record<WhenLang, { registered: string; invitation: string }> = {
   nn: {
-    registered: 'Seminar frå Vardahei IT. Etter seminaret finn du lysark og lenkjer på påmeldingssida:',
+    registered:
+      'Seminar frå Vardahei IT. Etter seminaret finn du lysark og lenkjer på påmeldingssida:',
     invitation: 'Seminar frå Vardahei IT. Meld deg på her:',
   },
   en: {
-    registered: 'Seminar from Vardahei IT. After the seminar, slides and links are on the registration page:',
+    registered:
+      'Seminar from Vardahei IT. After the seminar, slides and links are on the registration page:',
     invitation: 'Seminar from Vardahei IT. Register here:',
   },
 };
 
 /** Calendar file of a seminar: for a person who registered, or to hand out with the invitation. */
 export function seminarCalendar(
-  s: { id: string; code: string; sequence: number; topic_nn: string; topic_en: string | null; starts_at: Date; ends_at: Date; place: string },
+  s: {
+    id: string;
+    code: string;
+    sequence: number;
+    topic_nn: string;
+    topic_en: string | null;
+    starts_at: Date;
+    ends_at: Date;
+    place: string;
+  },
   lang: WhenLang,
   kind: 'registered' | 'invitation',
   now = new Date(),
@@ -60,7 +71,9 @@ export function seminarCalendar(
     end: s.ends_at,
     summary: topicOf(s, lang),
     location: s.place,
-    description: link ? `${DESCRIPTION[lang][kind]} ${link}` : DESCRIPTION[lang][kind].replace(/:$/, '.'),
+    description: link
+      ? `${DESCRIPTION[lang][kind]} ${link}`
+      : DESCRIPTION[lang][kind].replace(/:$/, '.'),
     url: link,
   });
 }
@@ -76,7 +89,10 @@ export class PublicSeminarService {
   ) {}
 
   /** Unknown, malformed and missing codes are the same 403; a replaced code says so (ADR-009). */
-  async resolve(code: string, db: Prisma.TransactionClient = this.prisma): Promise<PublicSeminarRow> {
+  async resolve(
+    code: string,
+    db: Prisma.TransactionClient = this.prisma,
+  ): Promise<PublicSeminarRow> {
     if (!/^[A-Za-z0-9_-]{22}$/.test(code)) throw new ForbiddenException('Lenkja er ikkje gyldig.');
     const hash = codeHash(code);
     const s = await db.seminar.findUnique({ where: { code_hash: hash }, include });
@@ -105,7 +121,8 @@ export class PublicSeminarService {
     const s = await this.resolve(code);
     const held = now >= s.ends_at;
     const langs = s.required_languages as WhenLang[];
-    const by = <T>(f: (l: WhenLang) => T) => Object.fromEntries(langs.map((l) => [l, f(l)])) as Record<WhenLang, T>;
+    const by = <T>(f: (l: WhenLang) => T) =>
+      Object.fromEntries(langs.map((l) => [l, f(l)])) as Record<WhenLang, T>;
     return {
       languages: langs,
       topic: by((l) => topicOf(s, l)),
@@ -119,9 +136,15 @@ export class PublicSeminarService {
       phase: held ? ('held' as const) : ('open' as const),
       consent: held
         ? null
-        : { version: CONSENT.version, invite_version: CONSENT.invite_version, ...by((l) => CONSENT[l]) },
+        : {
+            version: CONSENT.version,
+            invite_version: CONSENT.invite_version,
+            ...by((l) => CONSENT[l]),
+          },
       // 3.3: the material is for everyone with the link, once the seminar is over.
-      materials: held ? (await materialsOf(this.prisma, s.id)).map(({ title, url }) => ({ title, url })) : [],
+      materials: held
+        ? (await materialsOf(this.prisma, s.id)).map(({ title, url }) => ({ title, url }))
+        : [],
     };
   }
 
@@ -142,14 +165,18 @@ export class PublicSeminarService {
           input.consent !== CONSENT.version ||
           (input.invite !== undefined && input.invite !== CONSENT.invite_version)
         )
-          throw new ConflictException('Teksten om personvern er endra. Last sida på nytt og prøv igjen.');
+          throw new ConflictException(
+            'Teksten om personvern er endra. Last sida på nytt og prøv igjen.',
+          );
         const chosen =
           'client' in input.company
             ? s.clients.find((c) => c.client.slug === (input.company as { client: string }).client)
             : undefined;
         if ('client' in input.company && !chosen)
           throw new BadRequestException('Vel bedrift, eller skriv namnet på bedrifta.');
-        if ((await this.privacy.participants.count(tx, s.id)) >= this.limits.seminar_registrations_max)
+        if (
+          (await this.privacy.participants.count(tx, s.id)) >= this.limits.seminar_registrations_max
+        )
           throw new HttpException(REGISTRATION_QUOTA, 429);
         inserted = await this.privacy.participants.register(
           tx,

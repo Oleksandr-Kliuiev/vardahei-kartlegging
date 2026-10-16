@@ -63,6 +63,9 @@ export type { RowsDb } from './rows.js';
 export type { ViewCell } from './view-cells.js';
 export type { ClientGroup } from './cohort.js';
 export { ReleaseRejected } from './release.js';
+// Pure decisions over margins (release rule 7), exported for their tests; they hold no data.
+export { cellToHide, smallCut } from './cross.js';
+export type { Cut, Structure, View } from './cross.js';
 export { ArchiveRejected, ArchivedSnapshot } from './archive.js';
 export type { ArchiveRefs } from './archive.js';
 export type { DeleteScope, DeleteCounts, ResponsePart } from './response-store.js';
@@ -162,6 +165,10 @@ export class PrivacyService {
     if (population !== 'round_client' && client)
       throw new PrivacyViolation('population cannot have client');
     if (!releasedOnly && r.status !== 'closed' && r.status !== 'archived') {
+      if (population === 'all_clients') {
+        const { cells, cross } = await this.allClientsCells(round, defs);
+        return liveCells(cells, this.config.k, cross);
+      }
       return liveCells(await this.computeCells(round, population, defs, client), this.config.k);
     }
     const c = client ? await this.prisma.client.findUnique({ where: { slug: client } }) : null;
@@ -281,14 +288,17 @@ export class PrivacyService {
     return cohortCells(this.prisma, this.read, round, clients, defs, role);
   }
 
-  /** Some clients of a round (3.9: the clients of a seminar), from its all_clients view only:
-   * their total and their own cells, a hidden client hides the total (privacy/cohort.ts). */
+  /** Some clients of a round (3.9: the clients of a seminar), from its all_clients view: their
+   * total and their own cells, a hidden client hides the total; the round's total is checked
+   * against the own report of each hidden client, which never leaves (privacy/cohort.ts). */
   clientGroup(
     round: string,
     defs: readonly MetricDefinition[],
     clients: readonly string[],
   ): Promise<ClientGroup> {
-    return clientGroup(this.read, round, defs, clients);
+    // The report a client gets is its released cells (ownCells); live ones reach admins only.
+    const report = (client: string) => this.cells(round, 'round_client', defs, client, true);
+    return clientGroup(this.read, round, defs, clients, report, this.config.k);
   }
 
   private readonly read = (
@@ -338,6 +348,34 @@ export class PrivacyService {
     return defs.flatMap((d) =>
       metricCells(d, rows, population, population === 'round_client' ? client : undefined),
     );
+  }
+
+  /** all_clients cells and the client × role structure of release rule 7 (privacy/cross.ts)
+   * from ONE read of the rows, so both describe the same table. `cross`: the cells of each client
+   * alone (`all`, `role:<id>`, with `client`) — input of the joint check only, never a view and
+   * never released (lint varde/round-client-exits). */
+  async allClientsCells(
+    round: string,
+    defs: readonly MetricDefinition[],
+  ): Promise<{ cells: ComputedCell[]; cross: ComputedCell[] }> {
+    const rows = (await this.source.read({ round })).map((r) => ({
+      client: r.client,
+      role: r.role,
+      part: r.part,
+      answers: r.answers,
+    }));
+    const byClient = new Map<string, typeof rows>();
+    for (const r of rows) byClient.set(r.client, [...(byClient.get(r.client) ?? []), r]);
+    return {
+      cells: defs.flatMap((d) => metricCells(d, rows, 'all_clients')),
+      cross: [...byClient].flatMap(([client, own]) =>
+        defs.flatMap((d) =>
+          metricCells(d, own, 'all_clients').flatMap((c) =>
+            c.group === 'all' || c.group.startsWith('role:') ? [{ ...c, client }] : [],
+          ),
+        ),
+      ),
+    };
   }
 
   /** Released and superseded snapshots of one round for its archive (5.2); suppressed cells

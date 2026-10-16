@@ -7,7 +7,12 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { codeHash } from '../rounds/codes.js';
 import { invitationText, readme, seminarPoster, type InvitationSeminar } from './invitation.js';
 import { seminarCalendar } from './public-seminar.service.js';
-import { publicOrigin, registrationLink, SeminarsService, type SeminarRow } from './seminars.service.js';
+import {
+  publicOrigin,
+  registrationLink,
+  SeminarsService,
+  type SeminarRow,
+} from './seminars.service.js';
 import type { WhenLang } from './when.js';
 
 @Injectable()
@@ -21,9 +26,11 @@ export class InvitationService {
     const s = await this.seminars.row(id);
     const link = registrationLink(s.code),
       origin = publicOrigin();
-    if (!link || !origin) throw new ServiceUnavailableException('Adressa til Varde (PUBLIC_URL) er ikkje sett opp.');
+    if (!link || !origin)
+      throw new ServiceUnavailableException('Adressa til Varde (PUBLIC_URL) er ikkje sett opp.');
     const l = (lang ?? 'nn') as WhenLang;
-    if (!s.required_languages.includes(l)) throw new BadRequestException('Språket er ikkje tilgjengeleg.');
+    if (!s.required_languages.includes(l))
+      throw new BadRequestException('Språket er ikkje tilgjengeleg.');
     return { s, link, host: origin.host, lang: l };
   }
 

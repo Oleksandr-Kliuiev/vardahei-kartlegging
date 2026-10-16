@@ -75,7 +75,10 @@ export class SeminarsService {
   }
 
   async list(now = new Date()) {
-    const seminars = await this.prisma.seminar.findMany({ include, orderBy: { starts_at: 'desc' } });
+    const seminars = await this.prisma.seminar.findMany({
+      include,
+      orderBy: { starts_at: 'desc' },
+    });
     const counts = await this.privacy.participants.counts(
       this.prisma,
       seminars.map((s) => s.id),
@@ -101,7 +104,12 @@ export class SeminarsService {
     const findings = await this.prisma.findingStatus.findMany({
       where: { seminar_id: id },
       orderBy: { changed_at: 'asc' },
-      select: { finding_id: true, status: true, changed_at: true, finding: { select: { rule_key: true, round_id: true, client_id: true } } },
+      select: {
+        finding_id: true,
+        status: true,
+        changed_at: true,
+        finding: { select: { rule_key: true, round_id: true, client_id: true } },
+      },
     });
     return {
       ...this.view(s, counts[id], now),
@@ -124,8 +132,19 @@ export class SeminarsService {
   }
 
   /** «Fjern påmelding» (AuditLog); the contact stays. */
-  async removeRegistration(seminar: string, registration: string, session: PrivacySession | undefined) {
-    if (!(await this.privacy.participants.removeRegistration(this.prisma, seminar, registration, session)))
+  async removeRegistration(
+    seminar: string,
+    registration: string,
+    session: PrivacySession | undefined,
+  ) {
+    if (
+      !(await this.privacy.participants.removeRegistration(
+        this.prisma,
+        seminar,
+        registration,
+        session,
+      ))
+    )
       throw new NotFoundException('Påmeldinga finst ikkje.');
     return { ok: true };
   }

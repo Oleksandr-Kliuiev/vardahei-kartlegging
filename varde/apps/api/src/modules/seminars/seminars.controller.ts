@@ -81,7 +81,11 @@ export class SeminarsController {
   }
   @Put('findings/:id/status')
   status(@Param('id', ParseUUIDPipe) id: string, @Body() body: unknown, @Req() req: AdminRequest) {
-    return this.findings.set(id, parseWith(FindingStatusInput, body), auditWho(req.adminSession, true));
+    return this.findings.set(
+      id,
+      parseWith(FindingStatusInput, body),
+      auditWho(req.adminSession, true),
+    );
   }
   @Get('contacts/review')
   review(@Req() req: AdminRequest) {
@@ -105,7 +109,10 @@ export class SeminarsController {
   }
   @Post('actions')
   createAction(@Body() body: unknown, @Req() req: AdminRequest) {
-    return this.findings.createAction(parseWith(ActionInput, body), auditWho(req.adminSession, true));
+    return this.findings.createAction(
+      parseWith(ActionInput, body),
+      auditWho(req.adminSession, true),
+    );
   }
   @Put('finding-rules/:key/action')
   link(@Param('key') key: string, @Body() body: unknown, @Req() req: AdminRequest) {

@@ -10,7 +10,12 @@
 //      a metric outside the set → ReleaseRejected for every population;
 //  (5) manual and automatic release are this function with an actor and an AuditLog entry;
 //  (6) progress cells follow the same rules; exact counts (`responses_total`) are the named
-//      exception and are released as they are.
+//      exception and are released as they are;
+//  (7) all_clients: the client and the role partitions are checked together on the client × role
+//      structure (privacy/cross.ts, BACKLOG «до этапа 4» 16.10) — the values released now and
+//      their differences to every earlier all_clients release. A small cut of the values hides a
+//      role cell, never a client or the total (decision of Oleksandr 16.10); a small cut of the
+//      differences carries a cell of the cut as rule 2 does, a role first.
 // computed → released happens only in `markReleased`, which is not exported.
 import { randomUUID } from 'node:crypto';
 import {
@@ -21,6 +26,7 @@ import {
 } from '@varde/schema/metrics/aggregate-snapshot';
 import type { Population } from '@varde/schema/metrics/populations';
 import { suppressedGroups, TOTAL } from './aggregate.js';
+import { cellToHide, smallCut, type Structure, structures, type View } from './cross.js';
 import { PrivacyViolation } from './types.js';
 
 /** One computed cell offered for release. */
@@ -45,12 +51,15 @@ export interface HistoricCell {
   group: string;
   n: number;
   suppressed: boolean;
+  /** Carried from an earlier release: its value is an equation of that release (rule 7). */
+  stale?: boolean;
 }
 
 export interface SnapshotStore {
   /** Current released snapshots (not superseded) of one (round, population). */
   listReleased(round: string, population: Population): Promise<ReleasedSnapshot[]>;
-  /** Every earlier release of one (round, population), superseded ones included (1.4c). */
+  /** Every earlier release of one (round, population), superseded ones included (1.4c), oldest
+   * first. */
   listHistory(round: string, population: Population): Promise<readonly (readonly HistoricCell[])[]>;
   /** Equivalent client totals issued through the other common population (1.32). */
   listLinkedReleased?(round: string, population: Population): Promise<ReleasedSnapshot[]>;
@@ -68,6 +77,9 @@ export interface SnapshotStore {
 export interface ReleaseOptions {
   /** Full metric set of the round, fixed by its first release (default: the offered cells). */
   metric_set?: readonly string[];
+  /** all_clients: per-client cells (`all`, `role:<id>`, with `client`) that give the client ×
+   * role structure of rule 7; read only for that check, never released. */
+  cross?: readonly ComputedCell[];
 }
 
 export interface ReleaseAudit {
@@ -151,6 +163,55 @@ function partitions(parts: readonly ComputedCell[]): ComputedCell[][] {
   return [...out.values()];
 }
 
+/** Rule 7, one step: the role cell to hide because of the values released now (`now`), or the
+ * cell to carry because of the differences to one earlier release. Only values of the current table
+ * count (`current`): a carried older value is an equation of the release it comes from, which
+ * is in the history itself. */
+function jointStep(
+  block: readonly ComputedCell[],
+  structure: Structure,
+  history: readonly Map<string, HistoricCell>[],
+  k: number,
+  current: (c: ComputedCell) => ComputedCell | undefined,
+): { group: string; now: boolean } | undefined {
+  const view = (value: (c: ComputedCell) => number | undefined): View => {
+    const of = (prefix: string) =>
+      new Map(
+        block.flatMap((c) => {
+          const v = c.group.startsWith(prefix) ? value(c) : undefined;
+          return v === undefined ? [] : [[c.group.slice(prefix.length), v] as const];
+        }),
+      );
+    const total = block.find((c) => c.group === TOTAL);
+    return {
+      total: total === undefined ? undefined : value(total),
+      clients: of('client:'),
+      roles: of('role:'),
+    };
+  };
+  const now = view((c) => current(c)?.n);
+  // With no role cell left the client partition alone is safe by rule 1 (privacy/cross.ts).
+  const cut = now.roles.size === 0 ? null : smallCut(structure, [now], k);
+  if (cut !== null) return { group: cellToHide(cut, now)!, now: true };
+  for (const [j, earlier] of history.entries()) {
+    if (!block.some((c) => earlier.has(unitOf(c)))) continue;
+    // A group missing from an earlier release of the block had no answers then (rule 2). A value
+    // carried from the release before belongs to that release (also in the history); one with no
+    // earlier value of its own came from the round_client release of the same releaseRound.
+    const before = history[j - 1];
+    const then = view((c) => {
+      const old = earlier.get(unitOf(c));
+      const prev = before?.get(unitOf(c));
+      const older = old?.stale === true && prev !== undefined && !prev.suppressed;
+      return old?.suppressed || older ? undefined : (old?.n ?? 0);
+    });
+    const d = smallCut(structure, [then, now], k);
+    const group = d === null ? undefined : cellToHide(d, now, true);
+    if (group !== undefined) return { group, now: false };
+  }
+  return undefined;
+}
+
 const day = (): string => new Date().toISOString().slice(0, 10);
 
 /** Rule 4 (1.4c): the set is per round; returns the set to fix now, or null if already fixed. */
@@ -202,10 +263,16 @@ export async function release(
   const previous = await store.listReleased(round, population);
   const linked = (await store.listLinkedReleased?.(round, population)) ?? [];
   const prevByUnit = new Map([...linked, ...previous].map((s) => [unitOf(s), s]));
+  const ownHistory = (await store.listHistory(round, population)).map(
+    (h) => new Map(h.map((c) => [unitOf(c), c])),
+  );
   const history = [
-    ...(await store.listHistory(round, population)),
-    ...((await store.listLinkedHistory?.(round, population)) ?? []),
-  ].map((h) => new Map(h.map((c) => [unitOf(c), c])));
+    ...ownHistory,
+    ...((await store.listLinkedHistory?.(round, population)) ?? []).map(
+      (h) => new Map(h.map((c) => [unitOf(c), c])),
+    ),
+  ];
+  const shapes = opts.cross === undefined ? undefined : structures(opts.cross);
 
   // A group can disappear after deletion. Its retained snapshot still belongs to the
   // published partition and must participate in the checks rather than be appended later.
@@ -238,6 +305,16 @@ export async function release(
     const total = byGroup.get(TOTAL);
     const parts = block.filter((c) => c.group !== TOTAL);
     const splits = partitions(parts);
+    const joint =
+      population === 'all_clients' &&
+      total !== undefined &&
+      parts.some((c) => c.group.startsWith('role:')) &&
+      parts.some((c) => c.group.startsWith('client:'));
+    const structure: Structure | undefined = joint ? shapes?.get(metricOf(total)) : undefined;
+    if (joint && structure === undefined)
+      throw new ReleaseRejected(
+        `all_clients ${metricOf(total)}: the client × role check needs opts.cross (rule 7)`,
+      );
     // Rule 1 and complementary suppression inside the new release; a block without a total
     // (e.g. drop-out per question) has no subtraction relation between its groups.
     const suppressed =
@@ -312,6 +389,18 @@ export async function release(
           if (carry.has(g)) suppressed.add(g);
           else carry.add(g);
         }
+      }
+      // Rule 7 runs once rules 1–3 are stable, so it never answers what they fix themselves.
+      if (structure !== undefined && size === suppressed.size + carry.size) {
+        // A carried value equal to the current one is an equation of the current table too
+        // (e.g. carried from the round_client release of the same releaseRound).
+        // A retained group (gone after deletion) shows an old value: never the current table.
+        const step = jointStep(block, structure, ownHistory, k, (c) => {
+          const value = published(c);
+          return offered.has(unitOf(c)) && value !== undefined && value.n === c.n ? c : undefined;
+        });
+        if (step !== undefined && (step.now || carry.has(step.group))) suppressed.add(step.group);
+        else if (step !== undefined) carry.add(step.group);
       }
       if (size === suppressed.size + carry.size) break;
     }

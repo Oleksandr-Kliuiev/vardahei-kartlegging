@@ -20,7 +20,9 @@ export function pathOnly(url: string): string {
 }
 
 export function isRunnerPath(path: string): boolean {
-  return path === '/r' || path === '/s' || RUNNER_PREFIXES.some((prefix) => path.startsWith(prefix));
+  return (
+    path === '/r' || path === '/s' || RUNNER_PREFIXES.some((prefix) => path.startsWith(prefix))
+  );
 }
 
 /** One JSON line per response, written from Fastify's onResponse hook. */

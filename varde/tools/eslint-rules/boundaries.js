@@ -37,18 +37,16 @@ const PRIVATE_STORAGE = [
   'ResponseStore',
   'ParticipantStore',
   'PrivacyService',
-].flatMap(
-  (name) => [
-    {
-      selector: `NewExpression[callee.name='${name}']`,
-      message: `Only modules/privacy may construct ${name}; use PrivacyService (ADR-021).`,
-    },
-    {
-      selector: `NewExpression[callee.type='MemberExpression'][callee.property.name='${name}']`,
-      message: `Only modules/privacy may construct ${name}; use PrivacyService (ADR-021).`,
-    },
-  ],
-);
+].flatMap((name) => [
+  {
+    selector: `NewExpression[callee.name='${name}']`,
+    message: `Only modules/privacy may construct ${name}; use PrivacyService (ADR-021).`,
+  },
+  {
+    selector: `NewExpression[callee.type='MemberExpression'][callee.property.name='${name}']`,
+    message: `Only modules/privacy may construct ${name}; use PrivacyService (ADR-021).`,
+  },
+]);
 
 /** Allowed entry into the privacy module from outside it (0.15b). */
 const PRIVACY_INTERNAL = {

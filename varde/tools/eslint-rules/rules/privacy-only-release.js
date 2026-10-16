@@ -171,12 +171,7 @@ export const privacyOnlyRelease = {
     return {
       MemberExpression(node) {
         const name = propName(node.property);
-        if (
-          name &&
-          models.has(name) &&
-          node.object.type !== 'Super' &&
-          isPrisma(node.object)
-        ) {
+        if (name && models.has(name) && node.object.type !== 'Super' && isPrisma(node.object)) {
           context.report({ node, messageId: 'model', data: { name } });
         }
       },

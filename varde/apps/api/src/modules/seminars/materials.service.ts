@@ -19,14 +19,19 @@ export const MaterialInput = z.strictObject({
     .string()
     .trim()
     .max(2000)
-    .refine((s) => {
-      try {
-        const u = new URL(s);
-        return ['https:', 'http:'].includes(u.protocol) && !u.username && !u.password && !/\s/.test(s);
-      } catch {
-        return false;
-      }
-    }, { message: 'Lenkja må byrje med https:// (eller http://).' }),
+    .refine(
+      (s) => {
+        try {
+          const u = new URL(s);
+          return (
+            ['https:', 'http:'].includes(u.protocol) && !u.username && !u.password && !/\s/.test(s)
+          );
+        } catch {
+          return false;
+        }
+      },
+      { message: 'Lenkja må byrje med https:// (eller http://).' },
+    ),
 });
 export type MaterialInput = z.infer<typeof MaterialInput>;
 
@@ -37,7 +42,10 @@ export interface MaterialView {
 }
 
 /** The material of a seminar in the order it was added. */
-export async function materialsOf(db: Prisma.TransactionClient, seminar: string): Promise<MaterialView[]> {
+export async function materialsOf(
+  db: Prisma.TransactionClient,
+  seminar: string,
+): Promise<MaterialView[]> {
   const rows = await db.seminarMaterial.findMany({
     where: { seminar_id: seminar },
     orderBy: [{ created_at: 'asc' }, { id: 'asc' }],
@@ -60,7 +68,12 @@ export class MaterialsService {
         data: { seminar_id: seminar, title: input.title, url: input.url, created_by: who },
       });
       await tx.auditLog.create({
-        data: { who, what: 'seminars.material.add', target: `seminar:${seminar}`, details: { material: m.id } },
+        data: {
+          who,
+          what: 'seminars.material.add',
+          target: `seminar:${seminar}`,
+          details: { material: m.id },
+        },
       });
       return m.id;
     });
@@ -70,10 +83,17 @@ export class MaterialsService {
 
   async remove(seminar: string, material: string, who: string) {
     await this.prisma.$transaction(async (tx) => {
-      const r = await tx.seminarMaterial.deleteMany({ where: { id: material, seminar_id: seminar } });
+      const r = await tx.seminarMaterial.deleteMany({
+        where: { id: material, seminar_id: seminar },
+      });
       if (!r.count) throw new NotFoundException('Materiellet finst ikkje.');
       await tx.auditLog.create({
-        data: { who, what: 'seminars.material.remove', target: `seminar:${seminar}`, details: { material } },
+        data: {
+          who,
+          what: 'seminars.material.remove',
+          target: `seminar:${seminar}`,
+          details: { material },
+        },
       });
     });
     this.events.changed('seminars');

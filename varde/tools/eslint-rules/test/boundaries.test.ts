@@ -243,6 +243,7 @@ export const read = (privacy: PrivacyService, defs: MetricDefinition[]) => ${cal
     ["privacy.ownCells('r', 'c', defs)", ['varde/round-client-exits']],
     ["privacy.adminClientCells('r', 'c', defs)", ['varde/round-client-exits']],
     ["privacy.computeCells('r', 'all_clients', defs)", ['varde/round-client-exits']],
+    ["privacy.allClientsCells('r', defs)", ['varde/round-client-exits']],
     ["privacy.viewCells('r', 'all_clients', defs)", []],
     ["privacy.clientGroup('r', defs, ['c'])", []],
   ])('a seminar module: %s → %j', async (call, expected) => {

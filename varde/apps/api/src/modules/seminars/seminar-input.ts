@@ -32,7 +32,10 @@ export const SeminarInput = z
     end: clock,
     place: text(200).pipe(z.string().min(1)),
     format: z.enum(['onsite', 'digital']),
-    languages: z.array(z.enum(['nn', 'en'])).max(2).default(['nn']),
+    languages: z
+      .array(z.enum(['nn', 'en']))
+      .max(2)
+      .default(['nn']),
     clients: z.array(z.uuid()).max(30).default([]),
   })
   .transform((s) => ({
@@ -111,6 +114,8 @@ const REGISTRATION_MESSAGES: Record<string, string> = {
 export function parseRegistration(input: unknown): RegistrationInput {
   const result = RegistrationInput.safeParse(input);
   if (result.success) return result.data;
-  const field = result.error.issues.map((i) => String(i.path[0] ?? '')).find((f) => f in REGISTRATION_MESSAGES);
+  const field = result.error.issues
+    .map((i) => String(i.path[0] ?? ''))
+    .find((f) => f in REGISTRATION_MESSAGES);
   throw new BadRequestException(REGISTRATION_MESSAGES[field ?? ''] ?? 'Kontroller opplysningane.');
 }

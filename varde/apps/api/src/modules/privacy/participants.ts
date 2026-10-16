@@ -165,7 +165,12 @@ export class ParticipantStore {
         },
       });
       await tx.auditLog.create({
-        data: { who, what: 'seminars.contact.update', target: `contact:${contact}`, details: { fields } },
+        data: {
+          who,
+          what: 'seminars.contact.update',
+          target: `contact:${contact}`,
+          details: { fields },
+        },
       });
       return true;
     });
@@ -304,7 +309,9 @@ export class ParticipantStore {
   ): Promise<boolean> {
     const who = auditWho(requireSession(session), true);
     return db.$transaction(async (tx) => {
-      const r = await tx.registration.deleteMany({ where: { id: registration, seminar_id: seminar } });
+      const r = await tx.registration.deleteMany({
+        where: { id: registration, seminar_id: seminar },
+      });
       if (r.count)
         await tx.auditLog.create({
           data: {

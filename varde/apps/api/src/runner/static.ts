@@ -9,7 +9,10 @@ export const RUNNER_CSP =
 /** The admin previews may be framed by Varde itself: the phone frame in the editor (`/r?preview=<version>`,
  * admin session only, 1.46) and the big screen in the seminar's «Live» tab (`/p?preview`, data from the
  * admin page by postMessage, 3.5). */
-export const RUNNER_PREVIEW_CSP = RUNNER_CSP.replace("frame-ancestors 'none'", "frame-ancestors 'self'");
+export const RUNNER_PREVIEW_CSP = RUNNER_CSP.replace(
+  "frame-ancestors 'none'",
+  "frame-ancestors 'self'",
+);
 const isPreview = (url: string) => new URLSearchParams(url.split('?')[1] ?? '').has('preview');
 
 /** Register on Fastify so assets do not involve Nest or database access. */

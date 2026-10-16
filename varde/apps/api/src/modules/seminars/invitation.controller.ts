@@ -34,13 +34,20 @@ export class InvitationController {
   ) {
     const file = await this.invitations.calendar(id, lang);
     void reply
-      .header('Content-Disposition', `attachment; filename="seminar${lang === 'en' ? '-en' : ''}.ics"`)
+      .header(
+        'Content-Disposition',
+        `attachment; filename="seminar${lang === 'en' ? '-en' : ''}.ics"`,
+      )
       .type('text/calendar; charset=utf-8');
     return file;
   }
 
   @Get('/api/admin/seminars/:id/invitation.zip')
-  async zip(@Param('id', ParseUUIDPipe) id: string, @Req() req: AdminRequest, @Res() reply: FastifyReply) {
+  async zip(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AdminRequest,
+    @Res() reply: FastifyReply,
+  ) {
     const bytes = await this.invitations.zip(id, auditWho(req.adminSession, true));
     return reply
       .header('Cache-Control', 'no-store')
