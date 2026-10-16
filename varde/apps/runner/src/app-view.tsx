@@ -6,7 +6,8 @@ import { direct } from './scene.js';
 import { StateScreen, type StateKind } from './screens.js';
 import { Shell } from './shell.js';
 import { Survey } from './survey.js';
-import { loadRound, RunnerError, type RunnerRound } from './round.js';
+import { LivePoll } from './live/live.js';
+import { isLive, loadRound, RunnerError, type LiveRound, type RunnerRound } from './round.js';
 
 export function App() {
   const preview = new URLSearchParams(location.search).get('preview');
@@ -23,7 +24,7 @@ function stateOf(err: RunnerError): StateKind {
 const EMPTY = { sections: [], marks: [], at: 0, lastCommon: 0, no: 0, total: 0, leaderCount: 0 };
 
 function LiveApp() {
-  const [round, setRound] = useState<RunnerRound | null>(null);
+  const [round, setRound] = useState<RunnerRound | LiveRound | null>(null);
   const [error, setError] = useState<RunnerError | null>(null);
   const [land, setLand] = useState<Landscape | null>(null);
   useEffect(() => {
@@ -46,7 +47,12 @@ function LiveApp() {
   useEffect(() => {
     if (land && kind) direct(land, kind, EMPTY, { of: '', top: '' }, kind === 'loading');
   }, [land, kind]);
-  if (round && !error) return <Survey round={round} />;
+  if (round && !error)
+    return isLive(round) ? (
+      <LivePoll code={new URLSearchParams(location.search).get('c') ?? ''} />
+    ) : (
+      <Survey round={round} />
+    );
   return (
     <Shell lang="nn" onLand={setLand}>
       <main id="main" class="app">

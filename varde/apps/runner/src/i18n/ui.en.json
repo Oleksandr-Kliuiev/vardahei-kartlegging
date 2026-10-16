@@ -69,5 +69,20 @@
   "sprak": "Language",
   "nettTittel": "Couldn't connect",
   "nettTekst": "Check your connection and try again.",
-  "navigasjon": "Navigation"
+  "navigasjon": "Navigation",
+  "liveEyebrow": "Live questions",
+  "liveVentTittel": "Wait a moment",
+  "liveVentTekst": "The first question is coming up. Keep this page open and it will show up here by itself.",
+  "liveSend": "Send answer",
+  "liveSender": "Sending …",
+  "liveTakkTittel": "Thank you!",
+  "liveTakkTekst": "Your answer is in. The result comes up on the screen.",
+  "liveNesteTekst": "The next question will show up here by itself.",
+  "liveStengtTittel": "The question is closed",
+  "liveStengtTekst": "You did not make it in time for this one. The next question will show up here by itself.",
+  "liveFerdigTittel": "Thank you for taking part!",
+  "liveFerdigTekst": "All the questions have been asked. You can close this page.",
+  "liveSendFeil": "Your answer did not get through. Check your connection and try again.",
+  "liveNett": "No connection. Trying again …",
+  "liveAnonym": "Your answer is anonymous and is not linked to you. The screen only shows how many chose each answer."
 }
