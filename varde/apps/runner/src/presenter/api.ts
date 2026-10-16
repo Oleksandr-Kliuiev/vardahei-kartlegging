@@ -8,6 +8,9 @@ export interface LocalText {
   nn: string;
   en?: string;
 }
+/** «N har svart»: the number from three answers, below three only that there are fewer. */
+export type LiveCount =
+  { class: 'aggregate'; suppressed: true } | { class: 'aggregate'; suppressed: false; n: number };
 export type LiveResult =
   | { class: 'aggregate'; suppressed: true }
   | {
@@ -31,7 +34,7 @@ export interface LiveSnapshot {
     text: LocalText;
     multi: boolean;
     options: { id: string; text: LocalText }[];
-    answered: number | null;
+    answered: LiveCount | null;
     result: LiveResult | null;
   };
   at: string;

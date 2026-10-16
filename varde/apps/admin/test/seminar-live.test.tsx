@@ -36,7 +36,7 @@ const poll = (over: Partial<LiveSnapshot> = {}): LiveSnapshot => ({
       { id: 'ja', text: { nn: 'Ja' } },
       { id: 'nei', text: { nn: 'Nei' } },
     ],
-    answered: 7,
+    answered: { class: 'aggregate', suppressed: false, n: 7 },
     result: null,
   },
   at: '2026-11-05T09:00:00.000Z',
@@ -136,6 +136,23 @@ describe('Live tab', () => {
     await settle();
     expect(posts()).toEqual([`POST /api/admin/seminars/${ID}/live/questions/L1/close`]);
     expect(view.div.querySelector('.tilstand-stig .no')?.textContent).toBe('Stengt');
+  });
+
+  it('below three answers: «Færre enn tre har svart», no number', async () => {
+    const few = poll();
+    panel = {
+      poll: {
+        ...few,
+        current: { ...few.current!, answered: { class: 'aggregate', suppressed: true } },
+      },
+      presenter: presenter(),
+      versions: [],
+    };
+    view = mount(<Live seminar={seminar} />, true);
+    await settle();
+    expect(view.div.querySelector('[data-testid="har-svart"]')?.textContent).toBe(
+      'Færre enn tre har svart · 18 påmelde',
+    );
   });
 
   it('a shown result: bars with shares; below k «For få svar til å vise tal»', async () => {

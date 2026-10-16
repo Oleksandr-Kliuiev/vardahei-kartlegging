@@ -22,7 +22,7 @@ const snapshot = (state: 'closed' | 'released') => ({
     state,
     multi: false,
     options: ['ja', 'nei', 'veit'].map((id) => ({ id, text: { nn: id } })),
-    answered: 20,
+    answered: state === 'released' ? null : { class: 'aggregate', suppressed: false, n: 20 },
     result:
       state === 'released'
         ? {

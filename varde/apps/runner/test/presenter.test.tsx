@@ -39,10 +39,12 @@ function snapshot(over: Partial<LiveSnapshot> = {}): LiveSnapshot {
     ...over,
   };
 }
+const count = (n: number): NonNullable<LiveSnapshot['current']>['answered'] =>
+  n < 3 ? { class: 'aggregate', suppressed: true } : { class: 'aggregate', suppressed: false, n };
 const current = (
   state: LiveSnapshot['questions'][number]['state'],
   result: NonNullable<LiveSnapshot['current']>['result'] = null,
-  answered = 7,
+  answered: NonNullable<LiveSnapshot['current']>['answered'] = count(7),
 ) => ({
   ...q(2, state),
   multi: false,
@@ -125,6 +127,26 @@ describe('the big screen', () => {
     expect(root.querySelector('.tilstand')?.textContent).toBe('Ope');
   });
 
+  it('below three answers: «Færre enn tre har svart», open or closed, without a number', async () => {
+    for (const state of ['open', 'closed'] as const) {
+      await act(() =>
+        render(
+          <BigScreen snapshot={snapshot({ current: current(state, null, count(2)) })} lang="nn" />,
+          root,
+        ),
+      );
+      expect(root.querySelector('.svart')?.textContent).toBe('Færre enn tre har svart');
+      expect(root.querySelector('.svart')?.textContent).not.toMatch(/\d/);
+    }
+    await act(() =>
+      render(
+        <BigScreen snapshot={snapshot({ current: current('open', null, count(2)) })} lang="en" />,
+        root,
+      ),
+    );
+    expect(root.querySelector('.svart')?.textContent).toBe('Fewer than three have answered');
+  });
+
   it('a shown result: bars and shares; below k: «For få svar til å vise tal» without any number', async () => {
     const result = {
       class: 'aggregate' as const,
@@ -150,7 +172,7 @@ describe('the big screen', () => {
       render(
         <BigScreen
           snapshot={snapshot({
-            current: current('released', { class: 'aggregate', suppressed: true }, 2),
+            current: current('released', { class: 'aggregate', suppressed: true }, null),
           })}
           lang="nn"
         />,
@@ -206,6 +228,7 @@ describe('the presenter controls', () => {
 
   it('the texts are nynorsk', () => {
     for (const key of [
+      'faerre',
       'svarPaMobilen',
       'stengtTekst',
       'forFa',

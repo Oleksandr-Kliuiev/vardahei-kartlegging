@@ -40,8 +40,12 @@ export class QuotaService {
   ): Promise<() => void> {
     await tx.$queryRaw`SELECT id FROM round_client WHERE id = ${roundClient.id}::uuid FOR UPDATE`;
     if (
-      (await this.privacy.live.answered(tx, roundClient.round_id, question)) >=
-      this.limits.live_participants_max
+      await this.privacy.live.full(
+        tx,
+        roundClient.round_id,
+        question,
+        this.limits.live_participants_max,
+      )
     )
       throw new HttpException(QUOTA_MESSAGE, 429);
     return this.window.reserve([

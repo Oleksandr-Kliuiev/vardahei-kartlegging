@@ -136,6 +136,11 @@ body {
   font-weight: 650;
   color: var(--ink);
 }
+.storskjerm .svart .faerre {
+  font-size: clamp(22px, min(2.6vw, 4.6vh), 44px);
+  font-weight: 700;
+  color: var(--ink-strong);
+}
 .storskjerm .svart .tal {
   font-size: clamp(48px, min(7.4vw, 13vh), 128px);
   line-height: 1;

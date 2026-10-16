@@ -40,7 +40,7 @@ interface Snapshot {
   current: null | {
     id: string;
     state: string;
-    answered: number | null;
+    answered: { class: string; suppressed: boolean; n?: number } | null;
     result:
       | null
       | { suppressed: true }
@@ -71,13 +71,18 @@ describe('seminar day without Entra', () => {
     expect(opened.json<Snapshot>().current).toMatchObject({
       id: 'L2',
       state: 'open',
-      answered: 0,
+      answered: { class: 'aggregate', suppressed: true },
       result: null,
     });
-    for (const [i, value] of ['ja', 'ja', 'nei'].entries())
+    for (const [i, value] of ['ja', 'ja', 'nei'].entries()) {
       expect((await answer(t, p.code, 'L2', value, {}, `192.0.2.${i + 20}`)).statusCode).toBe(201);
-    const counting = (await presenter(t, key, 'GET', '/api/presenter/poll')).json<Snapshot>();
-    expect(counting.current).toMatchObject({ state: 'open', answered: 3, result: null });
+      const now = (await presenter(t, key, 'GET', '/api/presenter/poll')).json<Snapshot>();
+      // «N har svart» with k = 3: below three only that there are fewer, never the number.
+      if (i < 2) {
+        expect(now.current!.answered).toEqual({ class: 'aggregate', suppressed: true });
+        expect(JSON.stringify(now.current!.answered)).not.toMatch(/\d/);
+      } else expect(now.current!.answered).toEqual({ class: 'aggregate', suppressed: false, n: 3 });
+    }
 
     expect((await presenter(t, key, 'POST', '/api/presenter/questions/L2/close')).statusCode).toBe(
       200,
@@ -86,7 +91,11 @@ describe('seminar day without Entra', () => {
     expect(late.statusCode).toBe(409);
     expect(late.json<{ message: string }>().message).toBe('Spørsmålet er stengt.');
     const closed = (await presenter(t, key, 'GET', '/api/presenter/poll')).json<Snapshot>();
-    expect(closed.current).toMatchObject({ state: 'closed', answered: 3, result: null });
+    expect(closed.current).toMatchObject({
+      state: 'closed',
+      answered: { suppressed: false, n: 3 },
+      result: null,
+    });
 
     const shown = await presenter(t, key, 'POST', '/api/presenter/questions/L2/release');
     expect(shown.statusCode).toBe(200);
@@ -116,13 +125,25 @@ describe('seminar day without Entra', () => {
     ]);
   });
 
-  it('k = 3: two answers are shown as «too few», with no number at all', async () => {
+  it('k = 3: with two answers no number leaves, open, closed or shown', async () => {
     const p = await livePoll(t);
     const key = await presenterKey(t, p.seminar);
     await presenter(t, key, 'POST', '/api/presenter/questions/L1/open');
     for (const value of ['kontor', 'sal'])
       expect((await answer(t, p.code, 'L1', value)).statusCode).toBe(201);
-    await presenter(t, key, 'POST', '/api/presenter/questions/L1/close');
+    const open = (await presenter(t, key, 'GET', '/api/presenter/poll')).json<Snapshot>();
+    expect(open.current).toMatchObject({
+      state: 'open',
+      answered: { class: 'aggregate', suppressed: true },
+    });
+    const closed = (
+      await presenter(t, key, 'POST', '/api/presenter/questions/L1/close')
+    ).json<Snapshot>();
+    expect(closed.current).toMatchObject({
+      state: 'closed',
+      answered: { class: 'aggregate', suppressed: true },
+    });
+    for (const s of [open, closed]) expect(JSON.stringify(s.current!.answered)).not.toMatch(/\d/);
     const shown = (
       await presenter(t, key, 'POST', '/api/presenter/questions/L1/release')
     ).json<Snapshot>();

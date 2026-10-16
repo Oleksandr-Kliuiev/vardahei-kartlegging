@@ -108,9 +108,9 @@ function QuestionCard({ seminar, poll }: { seminar: SeminarDetail; poll: LiveSna
               Spørsmål {q.no} av {poll.total}
             </span>
             <b className="live-sporsmal">{q.text.nn}</b>
-            {c && (c.state === 'open' || c.state === 'closed') && (
+            {c?.answered && (c.state === 'open' || c.state === 'closed') && (
               <p className="muted live-svart" role="status" data-testid="har-svart">
-                {answeredText(c.answered ?? 0)}
+                {answeredText(c.answered)}
                 {seminar.registrations.total > 0 && ` · ${seminar.registrations.total} påmelde`}
               </p>
             )}

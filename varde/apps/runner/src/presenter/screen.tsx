@@ -122,9 +122,15 @@ export function BigScreen({ snapshot, lang }: { snapshot: LiveSnapshot; lang: Sc
               </span>
             </div>
             <h1 class="sporsmal-tekst">{pick(c.text, lang)}</h1>
-            {(state === 'open' || state === 'closed') && (
+            {(state === 'open' || state === 'closed') && c.answered && (
               <p class="svart" role="status" aria-live="polite">
-                <Count n={c.answered ?? 0} /> <span>{st(lang, 'harSvart')}</span>
+                {c.answered.suppressed ? (
+                  <span class="faerre">{st(lang, 'faerre')}</span>
+                ) : (
+                  <>
+                    <Count n={c.answered.n} /> <span>{st(lang, 'harSvart')}</span>
+                  </>
+                )}
               </p>
             )}
             {state === 'closed' && <p class="forklaring">{st(lang, 'stengtTekst')}</p>}

@@ -2,7 +2,7 @@
 // and its SSE stream. It holds texts, states, the count «N har svart» and, for a shown question,
 // the result that privacy let through (k = 3) — never an answer, a free text or a row.
 import type { LocalizedText } from '@varde/schema/template/texts';
-import type { LiveResult } from '../privacy/privacy.service.js';
+import type { LiveCount, LiveResult } from '../privacy/privacy.service.js';
 
 export type LiveState = 'waiting' | 'open' | 'closed' | 'released';
 export type LiveAction = 'open' | 'close' | 'release';
@@ -19,9 +19,9 @@ export interface LiveQuestionSummary {
 export interface LiveCurrent extends LiveQuestionSummary {
   multi: boolean;
   options: { id: string; text: LocalizedText }[];
-  /** «N har svart» while open or closed: how many answered (ADR-021 rule 6), never what. Null
-   * once shown: the result speaks then, and below k nothing with a number leaves. */
-  answered: number | null;
+  /** «N har svart» while open or closed: how many answered, never what; with k (below k only
+   * «Færre enn tre har svart»). Null once shown: the result speaks then. */
+  answered: LiveCount | null;
   /** Only for a shown question: class aggregate, suppressed below k. */
   result: LiveResult | null;
 }

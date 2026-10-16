@@ -7,6 +7,9 @@ export interface LiveText {
   nn: string;
   en?: string;
 }
+/** «N har svart»: the number from three answers, below three only that there are fewer. */
+export type LiveCount =
+  { class: 'aggregate'; suppressed: true } | { class: 'aggregate'; suppressed: false; n: number };
 export type LiveResult =
   | { class: 'aggregate'; suppressed: true }
   | {
@@ -33,7 +36,7 @@ export interface LiveSnapshot {
     | (LiveQuestion & {
         multi: boolean;
         options: { id: string; text: LiveText }[];
-        answered: number | null;
+        answered: LiveCount | null;
         result: LiveResult | null;
       })
     | null;
@@ -74,7 +77,8 @@ export function leading(s: LiveSnapshot): LiveQuestion | undefined {
   );
 }
 
-/** «12 har svart» / «1 har svart». */
-export const answeredText = (n: number) => `${n} har svart`;
+/** «12 har svart», below three «Færre enn tre har svart» (no number, as on the big screen). */
+export const answeredText = (c: LiveCount) =>
+  c.suppressed ? 'Færre enn tre har svart' : `${c.n} har svart`;
 
 export const percent = (share: number) => `${Math.round(share * 100)} %`;

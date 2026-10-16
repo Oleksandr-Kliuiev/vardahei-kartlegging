@@ -22,7 +22,12 @@ afterAll(async () => {
 interface Event {
   event: string;
   data: {
-    current: null | { id: string; state: string; answered: number | null; result: unknown };
+    current: null | {
+      id: string;
+      state: string;
+      answered: { class: string; suppressed: boolean; n?: number } | null;
+      result: unknown;
+    };
   };
 }
 
@@ -79,12 +84,14 @@ describe('presenter stream', () => {
     await presenter(t, key, 'POST', '/api/presenter/questions/L2/open');
     expect((await s.until((e) => e.data.current?.state === 'open')).data.current).toMatchObject({
       id: 'L2',
-      answered: 0,
+      answered: { class: 'aggregate', suppressed: true },
       result: null,
     });
     for (const v of ['ja', 'nei', 'ja'])
       expect((await answer(t, p.code, 'L2', v)).statusCode).toBe(201);
-    expect((await s.until((e) => e.data.current?.answered === 3)).data.current!.result).toBeNull();
+    expect(
+      (await s.until((e) => e.data.current?.answered?.n === 3)).data.current!.result,
+    ).toBeNull();
     await presenter(t, key, 'POST', '/api/presenter/questions/L2/close');
     await s.until((e) => e.data.current?.state === 'closed');
     await presenter(t, key, 'POST', '/api/presenter/questions/L2/release');
@@ -126,6 +133,31 @@ describe('presenter stream', () => {
     await presenter(t, key, 'POST', '/api/presenter/questions/L1/release');
     const shown = await s.until((e) => e.data.current?.state === 'released');
     expect(shown.data.current!.result).toEqual({ class: 'aggregate', suppressed: true });
+    s.controller.abort();
+  });
+
+  it('«N har svart» with k = 3: below three answers no number, open or closed', async () => {
+    const p = await livePoll(t);
+    const key = await presenterKey(t, p.seminar);
+    const s = await open(key);
+    await s.next();
+    await presenter(t, key, 'POST', '/api/presenter/questions/L3/open');
+    for (const v of [['melder'], ['spor']])
+      expect((await answer(t, p.code, 'L3', v)).statusCode).toBe(201);
+    await presenter(t, key, 'POST', '/api/presenter/questions/L3/close');
+    await s.until((e) => e.data.current?.state === 'closed');
+    for (const block of s.raw.filter(
+      (b) => b.includes('"state":"open"') || b.includes('"state":"closed"'),
+    )) {
+      const data = JSON.parse(/^data: (.+)$/m.exec(block)![1]!) as Event['data'];
+      if (data.current?.state !== 'open' && data.current?.state !== 'closed') continue;
+      expect(data.current.answered).toEqual({ class: 'aggregate', suppressed: true });
+    }
+    // The third answer is refused (closed); reopened, it counts and the number appears.
+    await presenter(t, key, 'POST', '/api/presenter/questions/L3/open');
+    expect((await answer(t, p.code, 'L3', ['slettar'])).statusCode).toBe(201);
+    const three = await s.until((e) => e.data.current?.answered?.suppressed === false);
+    expect(three.data.current).toMatchObject({ state: 'open', answered: { n: 3 } });
     s.controller.abort();
   });
 

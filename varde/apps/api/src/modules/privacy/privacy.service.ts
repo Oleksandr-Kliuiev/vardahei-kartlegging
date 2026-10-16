@@ -65,7 +65,7 @@ export { ArchiveRejected, ArchivedSnapshot } from './archive.js';
 export type { ArchiveRefs } from './archive.js';
 export type { DeleteScope, DeleteCounts, ResponsePart } from './response-store.js';
 export type { ContactChange, ParticipantDeleteCounts, ParticipantInput } from './participants.js';
-export type { LiveOptionResult, LiveResult } from './live.js';
+export type { LiveCount, LiveOptionResult, LiveResult } from './live.js';
 export type {
   ComputedCell,
   HistoricCell,
