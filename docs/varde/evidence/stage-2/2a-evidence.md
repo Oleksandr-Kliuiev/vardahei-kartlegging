@@ -82,6 +82,24 @@
 - Проверка после (только чтение): backfill дал 7 строк `finding_set` для закрытого раунда 1 (6 клиентов и «alle»), во всех наборах только версии 1; триггеры `finding_rule_immutable`, `finding_immutable`, `finding_set_immutable` на месте; правил 39, все v1; ответов 57. `prod-check`: `/health` с версией, заголовки runner и предпросмотра, экран ошибки ссылки в light/dark на 390 и 1280, `finding-rules`, `report`, `archive.json` без входа → 401; ошибок в журнале нет.
 - Откат (не понадобился): `VARDE_SHA=c9dd3b37c85e`, `up -d`, затем `down.sql` миграции через unix socket `atlas-db-1` (runbook `varde/infra/README.md` «Откат деплоя»).
 
+## Клиентские тексты «Kva vi føreslår», версии @2 (16.10.2026)
+
+- Oleksandr утвердил черновик `docs/varde/texts/funn-forslag-klient.md` «как есть» и попросил применить до закрытия раунда 2.
+- **Способ.** Seed-файлы правил не менялись: parity-тест `test/findings/funn.test.ts` сверяет `action_text` со старым дашбордом построчно, и v1 остаётся паритетом. Версии созданы тем же путём, что сохранение в «Funn»: `RuleVersions.create` проверяет схему и неизменяемые поля, берёт advisory lock, сверяет `base_version: 1` и пишет AuditLog `findings.rule_version`. Это разовая команда оператора в контейнере приложения выкаченной версии `1cacba7fad04`, код приложения не менялся.
+  - Скрипт и тексты — `evidence/stage-2/kva-v2/kva-apply.cjs`, `kva-texts.json`. Тексты извлечены из утверждённого документа программно; колонка «сейчас» сверена с v1 в seed.
+  - Скрипт сначала проверяет все 25 черновиков и только потом пишет.
+- **Репетиция** на локальной базе с шаблонами, метриками и правилами v1 из seed: `--check` 25/25, применение 25 версий @2 и 25 записей AuditLog, повторный запуск пропускает все 25.
+- **Прод.**
+  - Копия базы `/root/deploy-20261016-0754/varde-pre.dump` (351 165 байт, `0600`; 57 ответов, 5429 снимков).
+  - `docker compose run --rm -T` с двумя файлами только для чтения: `--check` 25/25, затем созданы `tryggleik.f3…f19@2` (15) и `ki.k6…heaviest_task@2` (10).
+- **Проверка после.**
+  - Все 25 `action_text` версии 2 в базе равны утверждённым (сравнение JSON).
+  - Правил 64 (39 v1 + 25 v2), AuditLog — 25 записей `cli:orchestrator (godkjent av Oleksandr 16.10.2026)`.
+  - `finding_set` закрытого раунда 1 по-прежнему только v1: его отчёты и дашборд не меняются (так задумано, ADR-020).
+  - Ответов 57, ошибок в журнале нет.
+- **Что меняется.** Открытый раунд 2 сразу считает выводы версиями 2 (дашборд, «Kva vi gjer»). Отчёт клиенту по раунду 2 после закрытия покажет новые тексты.
+- **Откат.** Версии неизменяемы (триггер), поэтому откат — новая версия @3 с прежним текстом через «Funn».
+
 ## Новые строки на нюношке (на проверку Oleksandr)
 
 Меню и страница: «Funn», «Reglane bak funna i dashbordet. Ei endring blir lagra som ein ny versjon, og du ser med ein gong kva ho gjer med tala i ein runde.», «Tryggleik», «KI», «Felles del», «Leiar», «Reglar», «{n} i alt», «Hentar …», «Hentar reglane …», «Vel ein regel i lista.», «Middels frå 15 %, høg frå 30 %, minst 2», «Leiarsvar, nivå middels», «Rekna ut frå timar i veka», «Rekna ut frå timar, minst 1 t i veka», «Frå 60 % som veit, minst 3 svar», «Du har endringar som ikkje er lagra. Vil du gå vidare utan å lagre?».
