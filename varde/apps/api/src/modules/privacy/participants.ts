@@ -250,6 +250,30 @@ export class ParticipantStore {
     });
   }
 
+  /** «Fjern påmelding»: one registration of one seminar goes (AuditLog); the contact stays until
+   * the yearly check or «Sletting», also when it has no registration left. */
+  removeRegistration(
+    db: RowsDb,
+    seminar: string,
+    registration: string,
+    session: PrivacySession | null | undefined,
+  ): Promise<boolean> {
+    const who = auditWho(requireSession(session), true);
+    return db.$transaction(async (tx) => {
+      const r = await tx.registration.deleteMany({ where: { id: registration, seminar_id: seminar } });
+      if (r.count)
+        await tx.auditLog.create({
+          data: {
+            who,
+            what: 'seminars.registration.remove',
+            target: `seminar:${seminar}`,
+            details: { registration },
+          },
+        });
+      return r.count > 0;
+    });
+  }
+
   /** The admin has checked that relationship and consent still hold: a new year starts. */
   confirm(
     db: RowsDb,

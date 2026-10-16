@@ -5,5 +5,5 @@
   "per_ip_per_10min": 300,
   "seminar_registrations_max": 300,
   "seminar_global_per_10min": 300,
-  "seminar_per_ip_per_10min": 100
+  "seminar_per_ip_per_10min": 20
 }

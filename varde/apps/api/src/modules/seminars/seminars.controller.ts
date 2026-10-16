@@ -3,6 +3,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -64,6 +65,14 @@ export class SeminarsController {
   @Get('seminars/:id/registrations')
   registrations(@Param('id', ParseUUIDPipe) id: string, @Req() req: AdminRequest) {
     return this.seminars.participants(id, req.adminSession);
+  }
+  @Delete('seminars/:id/registrations/:registration')
+  removeRegistration(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('registration', ParseUUIDPipe) registration: string,
+    @Req() req: AdminRequest,
+  ) {
+    return this.seminars.removeRegistration(id, registration, req.adminSession);
   }
   @Post('seminars/:id/findings')
   attach(@Param('id', ParseUUIDPipe) id: string, @Body() body: unknown, @Req() req: AdminRequest) {

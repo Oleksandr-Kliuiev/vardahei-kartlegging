@@ -169,6 +169,27 @@ describe('one seminar', () => {
     expect(calls('/registrations')).toHaveLength(1);
     expect(view.div.querySelector('table')?.textContent).toContain('zz@example.test');
   });
+  it('«Fjern påmelding» takes two presses and removes only that registration', async () => {
+    view = mount(<SeminarPage id={ID} />, true);
+    await settle();
+    act(() => {
+      button(view!.div, 'Vis namnelista').click();
+    });
+    await settle();
+    act(() => {
+      button(view!.div, 'Fjern påmelding').click();
+    });
+    expect(fetcher.mock.calls.some(([, i]) => i?.method === 'DELETE')).toBe(false);
+    act(() => {
+      button(view!.div, 'Stadfest').click();
+    });
+    await settle();
+    expect(fetcher).toHaveBeenCalledWith(
+      `/api/admin/seminars/${ID}/registrations/r1`,
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+    expect(view.div.textContent).toContain('Ingen er påmelde no.');
+  });
   it('«Ny lenkje» takes two presses and says what stops working', async () => {
     view = mount(
       <Toasts>

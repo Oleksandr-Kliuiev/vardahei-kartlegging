@@ -204,6 +204,15 @@ describe('limits from config/quotas.json', () => {
     expect(await registrationsOf(s.id)).toHaveLength(2);
   });
 
+  it('the default is 20 registrations per IP in 10 minutes (one office behind NAT fits; one IP cannot fill a seminar fast)', async () => {
+    expect(limits.seminar_per_ip_per_10min).toBe(20);
+    const s = await createSeminar(t);
+    const office = '203.0.113.20';
+    for (let n = 1; n <= 20; n++)
+      expect((await pub('POST', '/api/public/seminar/registrations', s.code, body(`nat${n}`, { company: { name: 'X' } }), office)).statusCode).toBe(200);
+    expect((await pub('POST', '/api/public/seminar/registrations', s.code, body('nat21', { company: { name: 'X' } }), office)).statusCode).toBe(429);
+  });
+
   it('per IP in 10 minutes (an office behind one NAT has its own window), and in total', async () => {
     const s = await createSeminar(t);
     const svc = t.app.get(PublicSeminarService);

@@ -148,6 +148,27 @@ describe('participant list (class rows of seminars)', () => {
   });
 });
 
+describe('«Fjern påmelding» (admin)', () => {
+  it('removes one registration with AuditLog; the contact stays, also with no registration left', async () => {
+    const s = await createSeminar(t),
+      other = await createSeminar(t);
+    await register(t, s.id, email(t, 'remove'), { name: 'ZZ Fjernast' });
+    const [reg] = await registrationsOf(s.id);
+    const url = `/api/admin/seminars/${s.id}/registrations/${reg!.id}`;
+    expect((await t.call('DELETE', url, undefined, { cookie: '' })).statusCode).toBe(401);
+    // A registration of another seminar is not found through this seminar.
+    expect((await t.call('DELETE', `/api/admin/seminars/${other.id}/registrations/${reg!.id}`)).statusCode).toBe(404);
+    expect((await t.call('DELETE', url)).statusCode).toBe(200);
+    expect(await registrationsOf(s.id)).toHaveLength(0);
+    expect((await contactsOf(t)).some((c) => c.email === email(t, 'remove'))).toBe(true);
+    const audit = await t.prisma.auditLog.findFirstOrThrow({
+      where: { what: 'seminars.registration.remove', target: `seminar:${s.id}` },
+    });
+    expect(audit.details).toEqual({ registration: reg!.id });
+    expect((await t.call('DELETE', url)).statusCode).toBe(404);
+  });
+});
+
 describe('retention (1.31 job, classes registration and contact)', () => {
   it('dry-run counts registrations older than seminar + 90 days and deletes nothing', async () => {
     const old = await endedAgo(91),

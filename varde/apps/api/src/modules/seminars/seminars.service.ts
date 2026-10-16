@@ -122,6 +122,13 @@ export class SeminarsService {
     return { rows: await this.privacy.participants.list(this.prisma, id, session) };
   }
 
+  /** «Fjern påmelding» (AuditLog); the contact stays. */
+  async removeRegistration(seminar: string, registration: string, session: PrivacySession | undefined) {
+    if (!(await this.privacy.participants.removeRegistration(this.prisma, seminar, registration, session)))
+      throw new NotFoundException('Påmeldinga finst ikkje.');
+    return { ok: true };
+  }
+
   /** Contacts marked by the yearly check (AuditLog). */
   async contactsToReview(session: PrivacySession | undefined) {
     return { rows: await this.privacy.participants.reviewList(this.prisma, session) };

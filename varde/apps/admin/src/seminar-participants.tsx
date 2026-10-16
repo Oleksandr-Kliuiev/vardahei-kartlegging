@@ -1,6 +1,6 @@
 // «Namneliste» of a seminar (3a): names, companies and e-mail, read only on request (every read
 // is in the log). The admin corrects a contact here; the public form never changes a known one.
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, mutate } from './api.js';
 import { ErrorMessage, useClients } from './queries.js';
@@ -76,6 +76,51 @@ function EditContact({
   );
 }
 
+/** «Fjern påmelding» in two presses; the contact itself stays (yearly check or «Sletting»). */
+function RemoveRegistration({
+  seminar,
+  row,
+  onDone,
+}: {
+  seminar: string;
+  row: Participant;
+  onDone: () => void;
+}) {
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  useEffect(() => {
+    if (!confirm) return;
+    const timer = setTimeout(() => setConfirm(false), 5000);
+    return () => clearTimeout(timer);
+  }, [confirm]);
+  async function remove() {
+    setBusy(true);
+    try {
+      await mutate(`/api/admin/seminars/${seminar}/registrations/${row.registration}`, 'DELETE');
+      onDone();
+    } catch (e) {
+      setError(e instanceof Error ? e : new Error('Noko gjekk gale.'));
+      setBusy(false);
+      setConfirm(false);
+    }
+  }
+  return (
+    <>
+      <button
+        type="button"
+        className={confirm ? 'btn sm danger' : 'btn sm ghost'}
+        disabled={busy}
+        aria-label={confirm ? `Stadfest: fjern påmeldinga til ${row.name}` : `Fjern påmeldinga til ${row.name}`}
+        onClick={() => (confirm ? void remove() : setConfirm(true))}
+      >
+        {confirm ? 'Stadfest' : 'Fjern påmelding'}
+      </button>
+      <ErrorMessage error={error} />
+    </>
+  );
+}
+
 export function NameList({ seminar }: { seminar: SeminarDetail }) {
   const queries = useQueryClient();
   const [rows, setRows] = useState<Participant[] | null>(null);
@@ -88,6 +133,10 @@ export function NameList({ seminar }: { seminar: SeminarDetail }) {
     } catch (e) {
       setError(e instanceof Error ? e : new Error('Noko gjekk gale.'));
     }
+  };
+  const removed = (registration: string) => {
+    setRows((old) => old?.filter((r) => r.registration !== registration) ?? null);
+    void queries.invalidateQueries({ queryKey: ['seminars'] });
   };
   const replace = (row: Participant) => {
     setRows((old) => old?.map((r) => (r.contact === row.contact ? { ...r, ...row, registration: r.registration } : r)) ?? null);
@@ -109,7 +158,7 @@ export function NameList({ seminar }: { seminar: SeminarDetail }) {
         {rows === null ? (
           <p className="forklaring">Lista har namn og e-post. Kvar gong nokon opnar ho, blir det skrive i loggen.</p>
         ) : rows.length === 0 ? (
-          <p className="tom">Ingen har meldt seg på enno.</p>
+          <p className="tom">Ingen er påmelde no.</p>
         ) : (
           <div className="tabell-wrap">
             <table className="sem-pamelde">
@@ -145,6 +194,7 @@ export function NameList({ seminar }: { seminar: SeminarDetail }) {
                         <button type="button" className="btn sm ghost" aria-label={`Endre ${p.name}`} onClick={() => setEditing(p.registration)}>
                           Endre
                         </button>
+                        <RemoveRegistration seminar={seminar.id} row={p} onDone={() => removed(p.registration)} />
                       </td>
                     </tr>
                   ),
