@@ -31,6 +31,8 @@ describe('smallCut', () => {
     expect(smallCut(s, [view(5, { a: 4 }, {})], 3)).toMatchObject({ n: 1 });
     // Without it the hidden clients stay with the hidden roles: nothing is determined.
     expect(smallCut(s, [view(undefined, { a: 4 }, {})], 3)).toBeNull();
+    // Only the tie stops a small remainder from looking like a group (a below k on purpose).
+    expect(smallCut(s, [view(undefined, { a: 2 }, {})], 3)).toBeNull();
     // A role that covers everyone is a total too.
     expect(smallCut(s, [view(undefined, { a: 4 }, { x: 5 })], 3)).toMatchObject({ n: 1 });
   });

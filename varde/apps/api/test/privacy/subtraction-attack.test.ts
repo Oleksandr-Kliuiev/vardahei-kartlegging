@@ -503,6 +503,20 @@ describe('«alle» released twice on a client × role structure in pieces (accep
     expect(model).toEqual([]);
   });
 
+  it('a value carried into the second release belongs to the first: r0 and r1 stale next to fresh clients', async () => {
+    // Acceptance 16.10 (no role-less answers): release 2 carries r0 7 and r1 5 from release 1.
+    const spec =
+      'k0/r0@2 k0/r0@3 k0/r1@1 k1/r0@1 k1/r1@1 k1/r1@2 k1/r1@3 k1/r1@3 k1/r1@3 k2/r0@1 k2/r0@1 ' +
+      'k2/r0@2 k3/r0@1 k3/r1@1 k3/r1@1 k3/r1@1 k3/r1@3 k4/r0@1 k4/r0@2 k4/r0@3 k5/r0@1 k5/r0@1 ' +
+      'k5/r0@2 k5/r0@2 k5/r0@2 k5/r0@2';
+    const rows = spec.split(' ').map((x, i) => {
+      const [client, role, epoch] = x.split(/[/@]/);
+      return at(client!, role!, i % 2 === 0, Number(epoch));
+    });
+    const { model } = await releasedInSteps(rows);
+    expect(model).toEqual([]);
+  });
+
   it('random rounds with home roles, released 2–3 times: no set or difference below k', async () => {
     const rand = rng(99);
     for (let t = 0; t < 1500; t += 1) {
