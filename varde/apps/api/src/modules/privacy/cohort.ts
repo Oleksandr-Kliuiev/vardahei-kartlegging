@@ -114,8 +114,8 @@ export interface ClientGroup {
   cells: ViewCell[];
 }
 
-/** The own report of one client (its round_client cells, released and current); used only to
- * decide whether the round's total may be shown, never returned. */
+/** The own report of one client (its released round_client cells); used only to decide
+ * whether the round's total may be shown, never returned. */
 type Own = (client: string) => Promise<ViewCell[]>;
 
 /** The round's total per metric, hidden where `total − own report of a hidden client` is the sum

@@ -296,10 +296,8 @@ export class PrivacyService {
     defs: readonly MetricDefinition[],
     clients: readonly string[],
   ): Promise<ClientGroup> {
-    const report = async (client: string) => [
-      ...(await this.cells(round, 'round_client', defs, client, true)),
-      ...(await this.cells(round, 'round_client', defs, client)),
-    ];
+    // The report a client gets is its released cells (ownCells); live ones reach admins only.
+    const report = (client: string) => this.cells(round, 'round_client', defs, client, true);
     return clientGroup(this.read, round, defs, clients, report, this.config.k);
   }
 

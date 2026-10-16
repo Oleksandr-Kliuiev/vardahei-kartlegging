@@ -35,6 +35,15 @@ describe('smallCut', () => {
     expect(smallCut(s, [view(undefined, { a: 4 }, { x: 5 })], 3)).toMatchObject({ n: 1 });
   });
 
+  it('differences: without a total now, the new answers of a hidden client stay unknown', () => {
+    // k0 gets 2 answers without a role; k1 keeps 2 in r0. Then: total 2, k1 2, r0 2, r1 0.
+    const s = structure({ k0: [''], k1: ['r0'] });
+    const then = view(2, { k1: 2 }, { r0: 2, r1: 0 });
+    expect(smallCut(s, [then, view(undefined, { k1: 2 }, { r1: 0 })], 3)).toBeNull();
+    // With the total now, k0 = 4 − 2 and before 2 − 2: two new answers, determined.
+    expect(smallCut(s, [then, view(4, { k1: 2 }, { r1: 0 })], 3)).toMatchObject({ n: 2 });
+  });
+
   it('a difference may be negative: an answer deleted between two releases', () => {
     const s = structure({ a: ['x'], b: ['y'] });
     const then = view(10, { a: 5, b: 5 }, { x: 5, y: 5 });

@@ -253,6 +253,8 @@ describe('privacy.release (0.15b)', () => {
     );
     expect(find(second, 'client:b')).toMatchObject({ n: 10, numerator: 10, stale: true });
     // Rule 7 adds nothing here: rules 1–3 settle first and leave no small cut.
+    expect(find(second, 'all')).toMatchObject({ n: 24, suppressed: false });
+    expect(find(second, 'client:a')).toMatchObject({ n: 10, stale: true });
     expect(find(second, 'role:x')).toMatchObject({ n: 10, suppressed: false });
     expect(find(second, 'role:y')).toMatchObject({ n: 14, suppressed: false });
     assertReleaseSafety(second.released);
