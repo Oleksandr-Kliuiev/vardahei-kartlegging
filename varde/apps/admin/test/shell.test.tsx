@@ -82,7 +82,7 @@ describe('admin shell', () => {
     await settle();
     expect(count()).toBe(before + 1);
   });
-  it('loads the member name with same-origin credentials and navigates seven sections using history', async () => {
+  it('loads the member name with same-origin credentials and navigates eight sections using history', async () => {
     view = mount(<App />);
     await settle();
     expect(view.div.textContent).toContain('Syntetisk admin');
@@ -97,6 +97,7 @@ describe('admin shell', () => {
       'Dashbord',
       'Skjema',
       'Funn',
+      'Rapportar',
       'Eksport',
       'Sletting',
     ]);
@@ -105,7 +106,11 @@ describe('admin shell', () => {
         (link as HTMLAnchorElement).click();
       });
       expect(window.location.pathname).toBe(link.getAttribute('href'));
-      expect(view.div.querySelector('h1')?.textContent).toBe(link.textContent);
+      // «Rapportar» opens the page «Rapport til kunden» (Vardestien).
+      expect(view.div.querySelector('h1')?.textContent).toBe(
+        link.textContent === 'Rapportar' ? 'Rapport til kunden' : link.textContent,
+      );
+      expect(link.getAttribute('aria-current')).toBe('page');
     }
     act(() => {
       window.history.replaceState(null, '', '/admin/rounds');

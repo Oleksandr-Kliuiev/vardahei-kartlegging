@@ -1,0 +1,13 @@
+{
+  "thresholds": "simplified",
+  "runs_per_brief": 1,
+  "prices_checked": "2026-10-16, https://platform.claude.com/docs/en/about-claude/pricing",
+  "models": [
+    {
+      "id": "claude-opus-5-5",
+      "effort": "high",
+      "max_tokens": 32000,
+      "price_usd_per_mtok": { "input": 4, "output": 20, "cache_write_5m": 5, "cache_read": 0.2 }
+    }
+  ]
+}

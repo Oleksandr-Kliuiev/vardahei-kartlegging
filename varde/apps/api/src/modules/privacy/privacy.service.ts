@@ -12,6 +12,7 @@ import {
 import { zone, cells as metricCells } from '@varde/rules/findings';
 import type { MetricDefinition } from '@varde/schema/metrics/metric-definition';
 import type { Population } from '@varde/schema/metrics/populations';
+import type { Prisma } from '@prisma/client';
 import { type PrivacyConfig, readPrivacyConfig } from '../../config/privacy-config.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { suppressedGroups, aggregate, assertAggregateQuery } from './aggregate.js';
@@ -20,6 +21,13 @@ import { PrivacyViolation } from './types.js';
 import { PrismaSnapshotStore } from './prisma-snapshot-store.js';
 import { PrismaResponseSource, progressView } from './prisma-source.js';
 import { handover } from './handover.js';
+import {
+  type ArchiveRefs,
+  ArchivedSnapshot,
+  assertRestorable,
+  fromArchived,
+  toArchived,
+} from './archive.js';
 import { ResponseStore } from './response-store.js';
 import {
   type ComputedCell,
@@ -52,6 +60,8 @@ export type { ResponseSource, SourceQuery } from './source.js';
 export type { RowsDb } from './rows.js';
 export type { ViewCell } from './view-cells.js';
 export { ReleaseRejected } from './release.js';
+export { ArchiveRejected, ArchivedSnapshot } from './archive.js';
+export type { ArchiveRefs } from './archive.js';
 export type { DeleteScope, DeleteCounts, ResponsePart } from './response-store.js';
 export type {
   ComputedCell,
@@ -148,6 +158,18 @@ export class PrivacyService {
               release_id: s.release_id,
             };
       });
+  }
+
+  /** Round clients that have released `round_client` snapshots (5.1: a client report can be
+   * made). Existence only: no cell leaves this method. */
+  async releasedRoundClients(rounds: readonly string[]): Promise<Set<string>> {
+    if (rounds.length === 0) return new Set();
+    const found = await this.prisma.aggregateSnapshot.findMany({
+      where: { round_id: { in: [...rounds] }, population: 'round_client', status: 'released' },
+      distinct: ['round_client_id'],
+      select: { round_client_id: true },
+    });
+    return new Set(found.flatMap((s) => (s.round_client_id ? [s.round_client_id] : [])));
   }
 
   /** Role × client intersections also form a partition of the round's role total.
@@ -332,6 +354,29 @@ export class PrivacyService {
     }));
     return defs.flatMap((d) =>
       metricCells(d, rows, population, population === 'round_client' ? client : undefined),
+    );
+  }
+
+  /** Released and superseded snapshots of one round for its archive (5.2); suppressed cells
+   * leave without numbers. */
+  async archiveSnapshots(round: string): Promise<ArchivedSnapshot[]> {
+    return (await new PrismaSnapshotStore(this.prisma).archived(round)).map(toArchived);
+  }
+
+  /** The only snapshot write besides release(): a round archive restored into a database that
+   * has no snapshot of the round (5.2), in the caller's transaction. Status, values and release
+   * ids stay as archived; checked against k, populations and the archive's own definitions. */
+  async restoreSnapshots(
+    tx: Prisma.TransactionClient,
+    round: string,
+    snapshots: readonly unknown[],
+    refs: ArchiveRefs,
+  ): Promise<number> {
+    const parsed = snapshots.map((s) => ArchivedSnapshot.parse(s));
+    assertRestorable(parsed, this.config, refs);
+    return new PrismaSnapshotStore(tx).restore(
+      round,
+      parsed.map((s) => fromArchived(round, s)),
     );
   }
 

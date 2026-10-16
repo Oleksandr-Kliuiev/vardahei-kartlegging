@@ -148,6 +148,24 @@ export class PrismaSnapshotStore implements SnapshotStore {
     }));
   }
 
+  /** Every released and superseded row of one round, as stored (round archive, 5.2). */
+  archived(round: string): Promise<Row[]> {
+    return this.tx.aggregateSnapshot.findMany({
+      where: { round_id: round, status: { in: ['released', 'superseded'] } },
+      orderBy: { id: 'asc' },
+    });
+  }
+
+  /** Rows of an archive restored "as snapshots" (5.2): INSERT only, into a round without any
+   * snapshot; released rows stay under the trigger aggregate_snapshot_released afterwards. */
+  async restore(round: string, rows: readonly Prisma.AggregateSnapshotCreateManyInput[]) {
+    if ((await this.tx.aggregateSnapshot.count({ where: { round_id: round } })) > 0)
+      throw new Error('snapshot store: the round already has snapshots');
+    if (rows.some((r) => r.round_id !== round))
+      throw new Error('snapshot store: restored rows belong to one round');
+    return (await this.tx.aggregateSnapshot.createMany({ data: [...rows] })).count;
+  }
+
   async metricSet(round: string): Promise<readonly string[] | null> {
     const set = await this.tx.roundMetricSet.findUnique({ where: { round_id: round } });
     return set === null ? null : set.metric_keys;

@@ -8,6 +8,9 @@ export function ExportPage() {
   const [round, setRound] = useState(''),
     [client, setClient] = useState('');
   const q = new URLSearchParams({ round, ...(client ? { client } : {}) }).toString();
+  const closed = ['closed', 'archived'].includes(
+    rounds.data?.find((r) => r.id === round)?.status ?? '',
+  );
   return (
     <section className="del">
       <p>Samla tal til kunden, svarrader til Vardahei IT.</p>
@@ -41,6 +44,17 @@ export function ExportPage() {
           <a href={'/api/admin/exports/analyse-personar.csv?round=' + round}>
             Svar per tilsett (CSV)
           </a>
+        </div>
+      )}
+      {round && closed && (
+        <div className="arkiv">
+          <a className="knapp" href={'/api/admin/exports/archive.json?round=' + round} download>
+            Last ned arkiv
+          </a>
+          <p className="under">
+            Arkivet har dei publiserte samla tala for heile runden, med definisjonane bak dei. Ingen
+            svar, initialar eller fritekst. Det kan lesast inn att i ein tom database.
+          </p>
         </div>
       )}
       {client && <HandoverForm key={client} client={client} />}

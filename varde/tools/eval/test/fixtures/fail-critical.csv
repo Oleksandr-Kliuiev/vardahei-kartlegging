@@ -1,0 +1,6 @@
+brief,variant,meaning_1_5,naturalness_1_5,edit_minutes,critical_errors,output_sha
+brief-a,claude-opus-5-5#1,5,5,1,,0000000000a1
+brief-b,claude-opus-5-5#1,4,4,3,,0000000000a2
+brief-c,claude-opus-5-5#1,4,5,2,,0000000000a3
+brief-d,claude-opus-5-5#1,4,4,4,mixed_nn_nb,0000000000a4
+brief-e,claude-opus-5-5#1,5,4,3,product_name invented_fact,0000000000a5

@@ -94,6 +94,50 @@ require(require.resolve('reflect-metadata', { paths: [resolve(__dirname, '../../
       await db.$transaction((tx) => app.get(PrivacyService).store.insertParts(tx, parts));
     }
     await app.get(MetricsService).releaseRound(baseline.id, { type: 'auto', who: 'system' });
+    // 5.1: a closed, released round for the client report. Synthetic initials (ZZRAP…), two
+    // leader parts with a free text, and a role group below k (two in «sal»).
+    const reportRound = await rounds.create(
+      { name: `${mark}-report`, template_version_id: version.id },
+      'test:admin-e2e',
+    );
+    const reportRc = await rounds.addClient(
+      reportRound.id,
+      { client_id: client.id, deadline: '2099-06-01' },
+      'test:admin-e2e',
+    );
+    await rounds.openClient(reportRc.id, 'test:admin-e2e');
+    const part = (i, kind, answers) => ({
+      round_client_id: reportRc.id,
+      part: kind,
+      role: kind === 'common' ? (i < 4 ? 'kontor' : 'sal') : null,
+      lang: 'nn',
+      respondent_key: `ZZRAP${String.fromCharCode(65 + i)}`,
+      answers,
+      free: {},
+      submission_id: randomUUID(),
+      content_hash: '0'.repeat(64),
+      source_id: null,
+      duration_s: null,
+      submitted_day: '2026-10-14',
+    });
+    const parts = [0, 1, 2, 3, 4, 5].map((i) =>
+      part(i, 'common', {
+        F2: i < 4 ? 'kontor' : 'sal',
+        F3: i < 3 ? 'ja' : 'delvis',
+        F5: i < 2 ? 'nei' : 'ja',
+        F8: 'nei',
+        F9: i < 4 ? 'nei' : 'ja',
+        F12: i < 2 ? 'usikker' : 'ja',
+        F14: i < 4 ? 'nei' : 'ja',
+        F16: 'delvis',
+        F19: 'ja',
+      }),
+    );
+    for (const i of [0, 1])
+      parts.push(part(i, 'leader', { B3: 'Syntetisk leiarsvar ZZLEIARTEKST', B12: 'nei', B13: 'nei' }));
+    await db.$transaction((tx) => app.get(PrivacyService).store.insertParts(tx, parts));
+    await rounds.close(reportRound.id, 'test:admin-e2e');
+    state.rounds.report = { id: reportRound.id, rc: reportRc.id, name: reportRound.name, code: '' };
     writeFileSync(stateFile, JSON.stringify(state));
   }
   const server = app.getHttpAdapter().getInstance();
