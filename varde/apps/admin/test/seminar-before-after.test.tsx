@@ -137,6 +137,17 @@ describe('«Før og etter»', () => {
     );
     expect(div.querySelector('.poll')).toBeNull();
     expect(div.querySelector('#rundar-tittel')?.textContent).toBe('Rundar');
+    view!.close();
+    body = {
+      class: 'aggregate',
+      caveats: CAVEATS,
+      ready: false,
+      missing: { before: false, after: true },
+    };
+    const again = await tab();
+    expect(again.querySelector('[data-testid="fe-ikkje-klar"]')?.textContent).toBe(
+      'Start eller vel ei undersøking etter seminaret under «Rundar», så kjem samanlikninga her.',
+    );
   });
 
   it('bars before and after with both shares; the legend has the answers and where they come from', async () => {
@@ -154,7 +165,7 @@ describe('«Før og etter»', () => {
     const div = await tab();
     expect(div.querySelectorAll('.sem-atterhald li')).toHaveLength(4);
     expect(div.querySelector('[data-testid="fe-tal"]')?.textContent).toBe(
-      'Før seminaret: 7 svar (låste tal). Etter: 5 svar (levande tal).',
+      'Før seminaret: 7 svar (publiserte tal). Etter: 5 svar (levande tal).',
     );
     const rows = [...div.querySelectorAll('[data-testid="fe-F12"] .poll-rad')];
     expect(rows.map((r) => r.getAttribute('aria-label'))).toEqual([

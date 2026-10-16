@@ -60,6 +60,35 @@ export function answered(step: RoundStep, progress: Progress[] | undefined) {
   };
 }
 
+// Browsers often lack nynorsk month names (Intl falls back to English): written out here.
+const MONTHS = [
+  'januar',
+  'februar',
+  'mars',
+  'april',
+  'mai',
+  'juni',
+  'juli',
+  'august',
+  'september',
+  'oktober',
+  'november',
+  'desember',
+];
+
+/** «Open til 1. juni» for an open round (Vardestien «Oppfølging»): the deadline of the seminar's
+ * clients, or the first and last when they differ. */
+export function openUntil(step: RoundStep): string | null {
+  const days = [
+    ...new Set(step.round_clients.flatMap((rc) => (rc.deadline ? [rc.deadline] : []))),
+  ].sort();
+  if (step.status !== 'open' || days.length === 0) return null;
+  const day = (d: string) => `${Number(d.slice(8, 10))}. ${MONTHS[Number(d.slice(5, 7)) - 1]}`;
+  return days.length === 1
+    ? `Open til ${day(days[0]!)}`
+    : `Open til ${day(days[0]!)}–${day(days.at(-1)!)}`;
+}
+
 /** The state of the live poll in a few words: made, started, open now or done. */
 export function liveState(questions: { state: string }[] | null): [string, string] {
   if (questions === null) return ['Ikkje laga', 'chip'];

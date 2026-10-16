@@ -4,7 +4,7 @@
 // a hidden group shows «–». A question or metric that cannot be compared says why, with no
 // numbers. The caveats are always on the screen: who answered, self-selection, comparability, and
 // no claim that the seminar caused the change.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from './api.js';
 import { numberText, percent } from './dashboard-models.js';
@@ -216,6 +216,10 @@ export function BeforeAfterTab({
       ),
   });
   const data = result.data;
+  // A client that is no longer in both rounds (a link changed): back to all clients.
+  useEffect(() => {
+    if (result.error && client !== 'alle') setClient('alle');
+  }, [result.error, client]);
   return (
     <div className="flate">
       <section className="kort s7 sem-for-etter" aria-labelledby="for-etter-tittel">
@@ -232,8 +236,12 @@ export function BeforeAfterTab({
           {data && <Caveats caveats={data.caveats} />}
           {data && !data.ready && (
             <p className="forklaring" data-testid="fe-ikkje-klar">
-              Vel ei undersøking før {data.missing.after ? 'og ei etter ' : ''}seminaret under
-              «Rundar», så kjem samanlikninga her.
+              {data.missing.before && data.missing.after
+                ? 'Vel ei undersøking før og ei etter seminaret'
+                : data.missing.before
+                  ? 'Vel ei undersøking før seminaret'
+                  : 'Start eller vel ei undersøking etter seminaret'}{' '}
+              under «Rundar», så kjem samanlikninga her.
             </p>
           )}
           {data?.ready && <Comparison data={data} client={client} onClient={setClient} />}
@@ -254,7 +262,7 @@ function Comparison({
   client: string;
   onClient: (c: string) => void;
 }) {
-  const source = (s: 'released' | 'live') => (s === 'released' ? 'låste tal' : 'levande tal');
+  const source = (s: 'released' | 'live') => (s === 'released' ? 'publiserte tal' : 'levande tal');
   return (
     <>
       {data.cohort.length > 1 && (

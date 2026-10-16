@@ -29,14 +29,21 @@ const step = (id: string, name: string, status: string): NonNullable<SeminarRoun
   opened_at: '2026-10-01T08:00:00.000Z',
   closed_at: null,
   round_clients: [
-    { id: `${id}-daco`, client_id: 'c-daco', name: 'Daco', status, population: 20, deadline: null },
+    {
+      id: `${id}-daco`,
+      client_id: 'c-daco',
+      name: 'Daco',
+      status,
+      population: 20,
+      deadline: '2026-11-26',
+    },
     {
       id: `${id}-gasta`,
       client_id: 'c-gasta',
       name: 'Gasta',
       status,
       population: 21,
-      deadline: null,
+      deadline: '2026-11-26',
     },
   ],
   others: 1,
@@ -109,7 +116,7 @@ describe('the card «Rundar»', () => {
     view = mount(<RoundsCard seminar={seminar} onLive={() => {}} />, true);
     await settle();
     expect(text('steg-for')).toContain('Før seminaret');
-    expect(text('steg-for')).toContain('Inga undersøking valt');
+    expect(text('steg-for')).toContain('Inga undersøking er kopla til');
     expect(text('steg-live')).toContain('1 av 2 spørsmål viste');
     expect(text('steg-live')).toContain('I gang');
     expect(text('steg-etter')).toContain('Inga undersøking enno');
@@ -124,6 +131,8 @@ describe('the card «Rundar»', () => {
     expect(text('steg-for')).toContain('Runde 2 IT-tryggleik');
     expect(text('steg-for')).toContain('Open');
     expect(text('svar-before')).toBe('23 svar av 41 · Daco 12 av 20 · Gasta 11 av 21');
+    expect(text('steg-for')).toContain('Open til 26. november');
+    expect(text('steg-for')).toContain('Open til 26. november');
     expect(text('steg-for')).toContain('Runden har òg éin kunde som ikkje er på seminaret.');
     const links = [...view.div.querySelectorAll('[data-testid="steg-for"] a')].map((a) =>
       a.getAttribute('href'),

@@ -14,6 +14,7 @@ import { go, type SeminarDetail } from './seminar-models.js';
 import {
   answered,
   liveState,
+  openUntil,
   ROUND_STATE,
   type RoundChoice,
   type RoundStep,
@@ -28,10 +29,10 @@ function Links({ round }: { round: string }) {
   return (
     <span className="sem-steg-lenkjer">
       <a className="linkbtn" href={insight} onClick={(e) => go(e, insight)}>
-        Sjå i Innsikt
+        Sjå i dashbordet
       </a>
       <a className="linkbtn" href="/admin/rounds" onClick={(e) => go(e, '/admin/rounds')}>
-        Sjå under Rundar
+        Sjå under «Kundar og rundar»
       </a>
     </span>
   );
@@ -161,8 +162,10 @@ function RoundLine({ step, slot }: { step: RoundStep; slot: Slot }) {
     enabled: step.status !== 'draft',
   });
   const counts = answered(step, progress.data?.clients);
+  const until = openUntil(step);
   return (
     <>
+      {until && <small className="muted">{until}</small>}
       {counts && (
         <small className="muted" data-testid={`svar-${slot}`}>
           {counts.total}
@@ -253,7 +256,7 @@ export function RoundsCard({ seminar, onLive }: { seminar: SeminarDetail; onLive
   const [launching, setLaunching] = useState(false);
   const data = card.data;
   const state = (step: RoundStep | null): [string, string] =>
-    step ? (ROUND_STATE[step.status] ?? ['Avslutta', 'chip']) : ['Ikkje valt', 'chip'];
+    step ? (ROUND_STATE[step.status] ?? ['Avslutta', 'chip']) : ['Ikkje kopla', 'chip'];
   return (
     <>
       <section className="kort s5 sem-rundar" aria-labelledby="rundar-tittel">
@@ -268,7 +271,7 @@ export function RoundsCard({ seminar, onLive }: { seminar: SeminarDetail; onLive
                 testid="steg-for"
                 icon="flagg"
                 eyebrow="Før seminaret"
-                title={data.before?.name ?? 'Inga undersøking valt'}
+                title={data.before?.name ?? 'Inga undersøking er kopla til'}
                 lines={[data.before?.template]}
                 state={state(data.before)}
               >
