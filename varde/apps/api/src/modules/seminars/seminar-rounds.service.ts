@@ -158,12 +158,16 @@ export class SeminarRoundsService {
     };
   }
 
-  /** Prisma errors may carry arguments; none of them reaches the logger. */
+  /** Prisma errors may carry arguments; none of them reaches the logger. The only unique index a
+   * link can hit is «one seminar per Etter» (seminar_round_after_once): two seminars linking the
+   * same survey at once both pass the check, and the second insert into the index fails — 409. */
   private async guarded<T>(work: () => Promise<T>): Promise<T> {
     try {
       return await work();
     } catch (error) {
       if (error instanceof HttpException) throw error;
+      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002')
+        throw new ConflictException(REFUSAL.taken);
       throw new ServiceUnavailableException('Koplinga kunne ikkje lagrast. Prøv igjen.');
     }
   }

@@ -4,8 +4,10 @@
 // database trigger), one seminar per «Etter», clear refusals without a change, AuditLog of every
 // change of a link; the live round and the technical client are never offered.
 import 'reflect-metadata';
+import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { REFUSAL } from '../../src/modules/seminars/seminar-rounds.service.js';
+import { databaseUrl } from '../support/prisma-cli.js';
 import { cleanupLive, liveVersion } from '../support/live.js';
 import { cleanupRounds, survey, surveyVersion } from '../support/seminar-rounds.js';
 import { createSeminar, makeClients, seminarApp, type SeminarApp } from '../support/seminars.js';
@@ -184,6 +186,36 @@ describe('the card «Rundar» (3.8)', () => {
       t.prisma.seminar.update({ where: { id: two.id }, data: { round_after_id: post } }),
     ).rejects.toThrow();
     expect((await audits(two.id)).length).toBe(0);
+  });
+
+  it('two seminars linking the same «Etter» at once: the second gets 409, not 503 (unique index)', async () => {
+    const one = await createSeminar(t, { clients: [b.id] });
+    const two = await createSeminar(t, { clients: [b.id] });
+    const post = await survey(t, {
+      type: 'post_seminar',
+      status: 'open',
+      clients: [b.id],
+      version,
+    });
+    // The first link is written but not committed yet: the second passes the check in the API and
+    // then waits on the unique index until the first commits.
+    const db = new pg.Client({ connectionString: databaseUrl() });
+    await db.connect();
+    try {
+      await db.query('BEGIN');
+      await db.query('UPDATE seminar SET round_after_id = $1 WHERE id = $2', [post, one.id]);
+      const second = link(two.id, 'after', post);
+      await new Promise((r) => setTimeout(r, 300));
+      await db.query('COMMIT');
+      const res = await second;
+      expect(res.statusCode).toBe(409);
+      expect(res.json<{ message: string }>().message).toBe(REFUSAL.taken);
+    } finally {
+      await db.end();
+    }
+    expect((await card(two.id)).after).toBeNull();
+    expect(await audits(two.id)).toEqual([]);
+    expect((await card(one.id)).after?.id).toBe(post);
   });
 
   it('the database refuses wrong types without the API (trigger seminar_round_before_after_type)', async () => {

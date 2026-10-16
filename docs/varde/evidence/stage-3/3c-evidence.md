@@ -10,7 +10,8 @@
 | 3.9 | `7a3172b` | `privacy/cohort.ts` (`clientGroup`; туда же без изменений перенесён `cohortCells`), `dashboard/before-after-view.ts`, `dashboard/round-pair.ts` (общие помощники со сравнением с раундом 1), `GET /api/admin/seminars/:id/before-after`; вкладка «Før og etter» по эталону; тесты |
 | закрытие | `e6a8638` | `run-3c.sh` и `invariants:3c`; e2e «весь семинар» (`apps/admin/e2e/seminar-day.spec.ts`, фикстура «Før» в `e2e/server.cjs`); правки формулировок карточки по скриншотам; строки REVIEW-CHECKLIST и AI_CONTEXT_MAP; этот evidence, скриншоты |
 | CI (оркестратор) | `8ea2f03` | `pnpm invariants:3c` в job `integration` |
-| решение 16.10 | этот коммит | «Предыдущий раунд» шаблона — только `regular` или `external_import` (`PREVIOUS_TYPES`): `DashboardContext.previous()` и `ReportService.previous()`; тест `reports/previous-round.test.ts`, блок в `run-3c.sh` (решение 13) |
+| решение 16.10 | `6f318b5` | «Предыдущий раунд» шаблона — только `regular` или `external_import` (`PREVIOUS_TYPES`): `DashboardContext.previous()` и `ReportService.previous()`; тест `reports/previous-round.test.ts`, блок в `run-3c.sh` (решение 13) |
+| приёмка, minor | этот коммит | Два семинара одновременно привязывают один «Etter»: оба проходят проверку, вторая запись упирается в уникальный индекс `seminar_round_after_once` — теперь 409 «Undersøkinga høyrer alt til eit anna seminar.» (P2002), а не 503; тест держит первую привязку незакоммиченной, пока идёт вторая; без перевода P2002 тест падает (503) |
 
 ## Что сделано
 
