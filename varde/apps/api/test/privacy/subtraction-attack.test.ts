@@ -26,6 +26,7 @@ import {
   type Group,
   groupsOf,
   historyLeaks,
+  homeRoleRows,
   K,
   leaks,
   METRIC,
@@ -78,10 +79,8 @@ async function releasedRound(input: readonly ResponseRow[], status = 'closed') {
     clients.map((c) => privacy.computeCells(round, 'round_client', DEFS, c)),
   );
   await privacy.release(round, 'round_client', perClient.flat(), store, ACTOR);
-  const all = await privacy.computeCells(round, 'all_clients', DEFS);
-  await privacy.release(round, 'all_clients', all, store, ACTOR, {
-    cross: await privacy.crossCells(round, DEFS),
-  });
+  const { cells, cross } = await privacy.allClientsCells(round, DEFS);
+  await privacy.release(round, 'all_clients', cells, store, ACTOR, { cross });
   return { round, privacy, clients, rows, groups: groupsOf(rows), store };
 }
 const closedRound = (rows: readonly ResponseRow[]) => releasedRound(rows);
@@ -254,7 +253,10 @@ interface Atom extends Group {
 /** A round released several times while open, then closed: rows of epoch e arrive before
  * release e. Every all_clients release is kept as the attacker would: visible cells, each with
  * the release its value comes from (a carried value is the one of an earlier release). */
-async function releasedInSteps(input: readonly (ResponseRow & { epoch: number })[]) {
+async function releasedInSteps(
+  input: readonly (ResponseRow & { epoch: number })[],
+  withRoundClient = true,
+) {
   const epochs = Math.max(...input.map((r) => r.epoch));
   const r = await releasedRound(
     input.filter((x) => x.epoch === 1),
@@ -280,15 +282,10 @@ async function releasedInSteps(input: readonly (ResponseRow & { epoch: number })
         .sort()
         .map((c) => r.privacy.computeCells(r.round, 'round_client', DEFS, c)),
     );
-    await r.privacy.release(r.round, 'round_client', perClient.flat(), r.store, ACTOR);
-    await r.privacy.release(
-      r.round,
-      'all_clients',
-      await r.privacy.computeCells(r.round, 'all_clients', DEFS),
-      r.store,
-      ACTOR,
-      { cross: await r.privacy.crossCells(r.round, DEFS) },
-    );
+    if (withRoundClient)
+      await r.privacy.release(r.round, 'round_client', perClient.flat(), r.store, ACTOR);
+    const { cells, cross } = await r.privacy.allClientsCells(r.round, DEFS);
+    await r.privacy.release(r.round, 'all_clients', cells, r.store, ACTOR, { cross });
     read(e);
   }
   const atoms = new Map<string, Atom>();
@@ -467,6 +464,58 @@ describe('«alle» by itself gives away no client × role group below k (release
     // Rule 7 waits for rules 1–3 and answers only what they leave: hiding more is a regression
     // (16.10: 14 128 cells hidden or carried; 14 519 when rule 7 ran before rules 1–3 settled).
     expect(lost).toBeLessThanOrEqual(14_128);
+  });
+});
+
+describe('«alle» released twice on a client × role structure in pieces (acceptance 16.10)', () => {
+  const at = (client: string, role: string, ja: boolean, epoch: number) => ({
+    ...row('r-attack', client, role, ja ? 0.1 : 0.9),
+    epoch,
+  });
+
+  it.each([true, false])(
+    'k1 only in r1, k0 and k2 only in r0: the hidden total = r0 + k1 gives the two new answers away (round_client between: %s)',
+    async (withRoundClient) => {
+      const rows = [
+        at('k1', 'r1', true, 1),
+        at('k1', 'r1', false, 1),
+        at('k1', 'r1', false, 1),
+        at('k2', 'r0', true, 1),
+        at('k2', 'r0', false, 1),
+        at('k0', 'r0', true, 2),
+        at('k0', 'r0', true, 2),
+      ];
+      const { model } = await releasedInSteps(rows, withRoundClient);
+      expect(model).toEqual([]);
+    },
+  );
+
+  it('answers without a role: the hidden total = client:k0 + role:r0 gives the new answer away', async () => {
+    const rows = [
+      at('k0', '', true, 1),
+      at('k0', '', false, 1),
+      at('k1', 'r0', false, 1),
+      at('k1', 'r0', false, 1),
+      at('k2', 'r0', true, 1),
+      at('k0', '', true, 2),
+    ];
+    const { model } = await releasedInSteps(rows);
+    expect(model).toEqual([]);
+  });
+
+  it('random rounds with home roles, released 2–3 times: no set or difference below k', async () => {
+    const rand = rng(99);
+    for (let t = 0; t < 1500; t += 1) {
+      const epochs = 2 + Math.floor(rand() * 2);
+      const rows = homeRoleRows(rand, 'r-attack').map((x) => ({
+        ...x,
+        epoch: 1 + Math.floor(rand() * epochs),
+      }));
+      if (!rows.some((x) => x.epoch === 1)) rows[0]!.epoch = 1;
+      const { eqs, model } = await releasedInSteps(rows);
+      expect(wrong(eqs)).toEqual([]);
+      expect(model).toEqual([]);
+    }
   });
 });
 

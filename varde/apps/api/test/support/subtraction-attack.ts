@@ -52,6 +52,23 @@ export function randomRows(rand: () => number, round: string): ResponseRow[] {
   return rows;
 }
 
+/** A round where most clients stay in one home role (or none): client × role structures that
+ * fall apart into components (acceptance 16.10: the case two releases got wrong). */
+export function homeRoleRows(rand: () => number, round: string): ResponseRow[] {
+  const clients = 3 + Math.floor(rand() * 5);
+  const roles = 2 + Math.floor(rand() * 3);
+  const rows: ResponseRow[] = [];
+  for (let c = 0; c < clients; c += 1) {
+    const size = 1 + Math.floor(rand() * 7);
+    const home = rand() < 0.25 ? '' : `r${Math.floor(rand() * roles)}`;
+    for (let i = 0; i < size; i += 1) {
+      const role = rand() < 0.8 ? home : rand() < 0.3 ? '' : `r${Math.floor(rand() * roles)}`;
+      rows.push(row(round, `k${c}`, role, rand()));
+    }
+  }
+  return rows;
+}
+
 /** One answer of `client` in `role`; `yes` below 0.5 answers «ja». */
 export function row(round: string, client: string, role: string, yes: number): ResponseRow {
   return {

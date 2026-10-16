@@ -72,123 +72,249 @@ export function structures(cross: readonly ComputedCell[]): Map<string, Structur
   return out;
 }
 
-interface Graph {
-  clients: Map<string, number>;
-  roles: Map<string, number>;
-  edges: Map<string, Set<string>>;
-  /** (client node, role node) that must lie on the same side of every cut. */
-  ties: [string, string][];
-}
+/** More role nodes than this are not searched (2^n subsets): the caller hides role cells until
+ * the graph is small enough (fail closed). Real templates have one role question of a few options. */
+const MAX_ROLE_NODES = 12;
 
 const sum = (x: Iterable<number>) => [...x].reduce((s, v) => s + v, 0);
+const HIDDEN_CLIENTS = '#clients';
+const HIDDEN_ROLES = '#roles';
 
-/** Nodes of one side: members visible in every view keep their own node; members hidden in a
- * view join that view's hidden class, and classes sharing a member are one node. */
-function classes(universe: readonly string[], views: readonly ReadonlyMap<string, number>[]) {
-  const parent = new Map(universe.map((u) => [u, u]));
-  const find = (u: string): string => (parent.get(u) === u ? u : find(parent.get(u)!));
-  const hidden = views.map((v) => universe.filter((u) => !v.has(u)));
-  for (const h of hidden) for (const u of h.slice(1)) parent.set(find(u), find(h[0]!));
-  const roots = [...new Set(hidden.flat().map(find))].sort();
-  const node = (u: string) =>
-    hidden.some((h) => h.includes(u)) ? `#${roots.indexOf(find(u))}` : u;
-  return { node, hidden };
-}
-
-function graph(structure: Structure, views: readonly View[]): Graph {
-  const clientIds = [
+function universe(structure: Structure, views: readonly View[]) {
+  const clients = [
     ...new Set([...structure.keys(), ...views.flatMap((v) => [...v.clients.keys()])]),
   ].sort();
   // '' (answers without a role) is hidden in every view: never a margin of its own.
-  const roleIds = [
+  const roles = [
     ...new Set([
       ...[...structure.values()].flatMap((s) => [...s]),
       ...views.flatMap((v) => [...v.roles.keys()]),
     ]),
   ].sort();
-  const cs = classes(
-    clientIds,
-    views.map((v) => v.clients),
-  );
-  const rs = classes(
-    roleIds,
-    views.map((v) => v.roles),
-  );
-  const clientNode = (c: string) => cs.node(c).replace(/^#/, '#clients:');
-  const roleNode = (r: string) => rs.node(r).replace(/^#/, '#roles:');
-  const clients = new Map<string, number>();
-  const roles = new Map<string, number>();
-  const ties: [string, string][] = [];
-  // Value of a node in one view: its visible members plus, when it holds the view's hidden
-  // class, that class's remainder. An unknown total enters as 0 and cancels through the tie.
-  views.forEach((v, i) => {
-    const sign = views.length === 2 && i === 0 ? -1 : 1;
-    const hc = cs.hidden[i]!;
-    const hr = rs.hidden[i]!;
-    const total =
-      v.total ??
-      (hc.length === 0 ? sum(v.clients.values()) : hr.length === 0 ? sum(v.roles.values()) : 0);
-    if (v.total === undefined && hc.length > 0 && hr.length > 0)
-      ties.push([clientNode(hc[0]!), roleNode(hr[0]!)]);
-    const add = (m: Map<string, number>, node: string, x: number) =>
-      m.set(node, (m.get(node) ?? 0) + sign * x);
-    for (const c of clientIds) add(clients, clientNode(c), v.clients.get(c) ?? 0);
-    for (const r of roleIds) add(roles, roleNode(r), v.roles.get(r) ?? 0);
-    if (hc.length > 0) add(clients, clientNode(hc[0]!), total - sum(v.clients.values()));
-    if (hr.length > 0) add(roles, roleNode(hr[0]!), total - sum(v.roles.values()));
-  });
-  const edges = new Map<string, Set<string>>();
-  for (const [c, set] of structure)
+  return { clients, roles };
+}
+
+/** Too many role nodes: a «cut» that asks for one of `roles` to be hidden. */
+const exhausted = (roles: readonly string[]): Cut => ({ clients: [], roles: [...roles], n: 0 });
+
+/** One release: the graph with one hidden node per side (see above). */
+function oneView(structure: Structure, v: View, k: number): Cut | null {
+  const ids = universe(structure, [v]);
+  const hc = ids.clients.filter((c) => !v.clients.has(c));
+  const hr = ids.roles.filter((r) => !v.roles.has(r));
+  const total =
+    v.total ??
+    (hc.length === 0 ? sum(v.clients.values()) : hr.length === 0 ? sum(v.roles.values()) : 0);
+  const clients = new Map(v.clients);
+  const roles = new Map(v.roles);
+  if (hc.length > 0) clients.set(HIDDEN_CLIENTS, total - sum(v.clients.values()));
+  if (hr.length > 0) roles.set(HIDDEN_ROLES, total - sum(v.roles.values()));
+  const roleNodes = [...roles.keys()];
+  if (roleNodes.length > MAX_ROLE_NODES) return exhausted([...v.roles.keys()]);
+  const bit = new Map(roleNodes.map((r, i) => [r, 1 << i]));
+  const adjacency = new Map<string, number>();
+  for (const [c, set] of structure) {
+    const node = v.clients.has(c) ? c : HIDDEN_CLIENTS;
     for (const r of set) {
-      const a = clientNode(c);
-      edges.set(a, (edges.get(a) ?? new Set()).add(roleNode(r)));
+      const b = bit.get(r !== '' && v.roles.has(r) ? r : HIDDEN_ROLES)!;
+      adjacency.set(node, (adjacency.get(node) ?? 0) | b);
     }
-  return { clients, roles, edges, ties };
+  }
+  const clientNodes = [...clients.keys()];
+  // Without a total the two hidden nodes keep coefficient 0 together.
+  const tie = v.total === undefined && hc.length > 0 && hr.length > 0;
+  for (let mask = 0; mask < 1 << roleNodes.length; mask += 1) {
+    const forced = new Set(clientNodes.filter((c) => ((adjacency.get(c) ?? 0) & mask) !== 0));
+    const extras = clientNodes.filter((c) => !forced.has(c));
+    if (tie) {
+      const inside = (mask & bit.get(HIDDEN_ROLES)!) !== 0;
+      if (!inside && forced.has(HIDDEN_CLIENTS)) continue;
+      extras.splice(extras.indexOf(HIDDEN_CLIENTS), extras.includes(HIDDEN_CLIENTS) ? 1 : 0);
+      if (inside) forced.add(HIDDEN_CLIENTS);
+    }
+    const R = roleNodes.filter((r) => (mask & bit.get(r)!) !== 0);
+    const base = sum([...forced].map((c) => clients.get(c)!)) - sum(R.map((r) => roles.get(r)!));
+    const found = subsetSums(
+      base,
+      [...forced],
+      extras.map((c) => [c, clients.get(c)!] as const),
+      k,
+    );
+    for (const [n, set] of found)
+      if (n !== 0 && Math.abs(n) < k) return { clients: set, roles: R, n };
+  }
+  return null;
+}
+
+/** Sums of `base` and any subset of `extras`, one witness each. Once every extra has one sign,
+ * sums past k on that side never return, so they are dropped. */
+function subsetSums(
+  base: number,
+  start: readonly string[],
+  extras: readonly (readonly [string, number])[],
+  k: number,
+): Map<number, string[]> {
+  const up = extras.every(([, v]) => v >= 0);
+  const down = extras.every(([, v]) => v <= 0);
+  let reach = new Map<number, string[]>([[base, [...start]]]);
+  for (const [c, v] of extras) {
+    if (v === 0) continue;
+    const step = new Map(reach);
+    for (const [s, set] of reach) {
+      const t = s + v;
+      if ((up && t >= k) || (down && t <= -k) || step.has(t)) continue;
+      step.set(t, [...set, c]);
+    }
+    reach = step;
+  }
+  return reach;
+}
+
+function unionFind(items: readonly string[]) {
+  const parent = new Map(items.map((u) => [u, u]));
+  const find = (u: string): string => {
+    const p = parent.get(u)!;
+    if (p === u) return u;
+    const r = find(p);
+    parent.set(u, r);
+    return r;
+  };
+  const union = (a: string, b: string) => parent.set(find(a), find(b));
+  return { find, union };
+}
+
+interface Witness {
+  clients: string[];
+  roles: string[];
+}
+
+/**
+ * Two releases (then, now): a cut X of the full client × role graph whose 0/1 labels lie in the
+ * span of each release, and n_now(S) − n_then(S). Release v writes every label as
+ * a_v + α_c + β_r with α = 0 on its hidden clients, β = 0 on its hidden roles and a_v = 0 without
+ * a total. On a connected component K the potentials of X are fixed up to a shift t_K, so in
+ * release v: the hidden roles of K lie on one side (t_K = −side), its hidden clients on one side,
+ * and where K has both, side(clients) − side(roles) = a_v — one value for every such component of
+ * the release (enumerated: −1, 0, 1 with a total, else 0). Components are searched one by one and
+ * their sums combined; the hidden clients of release v together add a_v × their remainder.
+ */
+function twoViews(structure: Structure, then: View, now: View, k: number): Cut | null {
+  const views = [then, now];
+  const sign = [-1, 1];
+  const ids = universe(structure, views);
+  const uf = unionFind([...ids.clients.map((c) => `c:${c}`), ...ids.roles.map((r) => `r:${r}`)]);
+  for (const [c, set] of structure) for (const r of set) uf.union(`c:${c}`, `r:${r}`);
+  const comps = new Map<string, { clients: string[]; roles: string[] }>();
+  const comp = (key: string) => {
+    const root = uf.find(key);
+    const k0 = comps.get(root) ?? { clients: [], roles: [] };
+    comps.set(root, k0);
+    return k0;
+  };
+  for (const c of ids.clients) comp(`c:${c}`).clients.push(c);
+  for (const r of ids.roles) comp(`r:${r}`).roles.push(r);
+  const adjacent = (c: string, R: ReadonlySet<string>) =>
+    [...(structure.get(c) ?? [])].some((r) => R.has(r));
+  const hiddenC = views.map((v) => (c: string) => !v.clients.has(c));
+  const hiddenR = views.map((v) => (r: string) => !v.roles.has(r));
+  const remainder = views.map((v) => {
+    if (v.total === undefined) return 0;
+    return v.total - sum(v.clients.values());
+  });
+  const options = views.map((v, i) =>
+    v.total !== undefined &&
+    [...comps.values()].some((K) => K.clients.some(hiddenC[i]!) && K.roles.some(hiddenR[i]!))
+      ? [-1, 0, 1]
+      : [0],
+  );
+
+  /** Reachable n_now − n_then of one component for given a_then, a_now. */
+  const component = (K: { clients: string[]; roles: string[] }, a: readonly number[]) => {
+    const ru = unionFind(K.roles);
+    const cu = unionFind(K.clients);
+    views.forEach((_, i) => {
+      const hr = K.roles.filter(hiddenR[i]!);
+      for (const r of hr.slice(1)) ru.union(r, hr[0]!);
+      const hc = K.clients.filter(hiddenC[i]!);
+      for (const c of hc.slice(1)) cu.union(c, hc[0]!);
+    });
+    const roleUnits = [...new Set(K.roles.map(ru.find))];
+    if (roleUnits.length > MAX_ROLE_NODES) return null;
+    const hiddenUnits = [
+      ...new Set(K.clients.filter((c) => views.some((_, i) => hiddenC[i]!(c))).map(cu.find)),
+    ];
+    const out = new Map<number, Witness>();
+    for (let mask = 0; mask < 1 << roleUnits.length; mask += 1) {
+      const R = new Set(K.roles.filter((r) => (mask & (1 << roleUnits.indexOf(ru.find(r)))) !== 0));
+      const forced = new Set(K.clients.filter((c) => adjacent(c, R)));
+      for (let pick = 0; pick < 1 << hiddenUnits.length; pick += 1) {
+        const X = new Set(forced);
+        let ok = true;
+        hiddenUnits.forEach((u, j) => {
+          const members = K.clients.filter((c) => cu.find(c) === u);
+          const inside = (pick & (1 << j)) !== 0;
+          if (!inside && members.some((c) => forced.has(c))) ok = false;
+          if (inside) for (const c of members) X.add(c);
+        });
+        if (!ok) continue;
+        let base = 0;
+        for (let i = 0; i < 2 && ok; i += 1) {
+          const v = views[i]!;
+          const hr = K.roles.find(hiddenR[i]!);
+          const hc = K.clients.find(hiddenC[i]!);
+          const sr = hr === undefined ? undefined : Number(R.has(hr));
+          const sc = hc === undefined ? undefined : Number(X.has(hc));
+          if (sr !== undefined && sc !== undefined && sc - sr !== a[i]) ok = false;
+          const t = sr !== undefined ? -sr : sc !== undefined ? a[i]! - sc : 0;
+          for (const c of K.clients)
+            if (v.clients.has(c)) base += sign[i]! * (Number(X.has(c)) + t) * v.clients.get(c)!;
+          for (const r of K.roles)
+            if (v.roles.has(r)) base += sign[i]! * (-Number(R.has(r)) - t) * v.roles.get(r)!;
+        }
+        if (!ok) continue;
+        // Free clients (visible in both) join X at will; their margins then enter as is.
+        const extras = K.clients
+          .filter((c) => !X.has(c) && views.every((_, i) => !hiddenC[i]!(c)))
+          .map((c) => [c, now.clients.get(c)! - then.clients.get(c)!] as const);
+        const sums = subsetSums(base, [...X], extras, Number.POSITIVE_INFINITY);
+        for (const [n, clients] of sums) if (!out.has(n)) out.set(n, { clients, roles: [...R] });
+      }
+    }
+    return out;
+  };
+
+  for (const at of options[0]!)
+    for (const an of options[1]!) {
+      const a = [at, an];
+      let total = new Map<number, Witness>([[0, { clients: [], roles: [] }]]);
+      for (const K of comps.values()) {
+        const part = component(K, a);
+        if (part === null) return exhausted(K.roles.filter((r) => now.roles.has(r)));
+        const next = new Map<number, Witness>();
+        for (const [s, w] of total)
+          for (const [p, x] of part)
+            if (!next.has(s + p))
+              next.set(s + p, {
+                clients: [...w.clients, ...x.clients],
+                roles: [...w.roles, ...x.roles],
+              });
+        total = next;
+      }
+      const shift = sign[0]! * at * remainder[0]! + sign[1]! * an * remainder[1]!;
+      for (const [s, w] of total) {
+        const n = s + shift;
+        if (n !== 0 && Math.abs(n) < k) return { ...w, n };
+      }
+    }
+  return null;
 }
 
 /** A cut whose groups the views determine (one view: values; two: then → now differences) with
  * 0 < |n| < k, or null (see above). */
 export function smallCut(structure: Structure, views: readonly View[], k: number): Cut | null {
-  const g = graph(structure, views);
-  const roleNodes = [...g.roles.keys()];
-  const clientNodes = [...g.clients.keys()];
-  next: for (let mask = 0; mask < 1 << roleNodes.length; mask += 1) {
-    const R = roleNodes.filter((_, i) => mask & (1 << i));
-    const inR = new Set(R);
-    const forced = clientNodes.filter((c) => [...(g.edges.get(c) ?? [])].some((r) => inR.has(r)));
-    const want = new Map<string, boolean>();
-    for (const [c, r] of g.ties) {
-      if (want.get(c) === !inR.has(r)) continue next;
-      want.set(c, inR.has(r));
-    }
-    const start = [...forced];
-    for (const [c, inside] of want) {
-      if (!inside && forced.includes(c)) continue next;
-      if (inside && !forced.includes(c)) start.push(c);
-    }
-    const extras = clientNodes.filter((c) => !start.includes(c) && !want.has(c));
-    const base = sum(start.map((c) => g.clients.get(c)!)) - sum(R.map((r) => g.roles.get(r)!));
-    // Reachable sums with one witness each. Same-signed extras only move away from zero once
-    // past k, so those sums are dropped.
-    const values = extras.map((c) => g.clients.get(c)!);
-    const up = values.every((v) => v >= 0);
-    const down = values.every((v) => v <= 0);
-    let reach = new Map<number, string[]>([[base, start]]);
-    for (const c of extras) {
-      const v = g.clients.get(c)!;
-      if (v === 0) continue;
-      const step = new Map(reach);
-      for (const [s, set] of reach) {
-        const t = s + v;
-        if ((up && t >= k) || (down && t <= -k) || step.has(t)) continue;
-        step.set(t, [...set, c]);
-      }
-      reach = step;
-    }
-    for (const [s, set] of reach)
-      if (s !== 0 && Math.abs(s) < k) return { clients: set, roles: R, n: s };
-  }
-  return null;
+  return views.length === 1
+    ? oneView(structure, views[0]!, k)
+    : twoViews(structure, views[0]!, views[1]!, k);
 }
 
 /** The cell to hide or carry for a small cut (decision 16.10: a role, never a client or the

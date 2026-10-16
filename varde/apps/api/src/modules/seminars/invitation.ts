@@ -7,7 +7,11 @@ import { topicOf } from './seminars.service.js';
 import { whenText, type WhenLang } from './when.js';
 
 /** The contact of Vardahei IT, as on the finish and error screens (test: equals the seed templates). */
-export const VARDAHEI_CONTACT = { name: 'Vardahei IT', phone: '+47 930 94 567', email: 'post@vardahei.no' };
+export const VARDAHEI_CONTACT = {
+  name: 'Vardahei IT',
+  phone: '+47 930 94 567',
+  email: 'post@vardahei.no',
+};
 
 export interface InvitationSeminar {
   topic_nn: string;
@@ -27,7 +31,9 @@ const LETTER: Record<WhenLang, (v: Record<string, string>) => string> = {
     [
       'Hei!',
       `Vardahei IT inviterer til seminaret «${v.topic}».`,
-      [`Når: ${v.when}`, `Kvar: ${v.place}`, ...(v.clients ? [`For: ${v.clients}`] : [])].join('\n'),
+      [`Når: ${v.when}`, `Kvar: ${v.place}`, ...(v.clients ? [`For: ${v.clients}`] : [])].join(
+        '\n',
+      ),
       `Meld deg på her, det tek eitt minutt:\n${v.link}`,
       `Lenkja går til ${v.host}, så du kan trygt opne ho. Når du har meldt deg på, kan du leggje seminaret inn i kalenderen. Etter seminaret finn du lysark og lenkjer på same sida.`,
       'Velkomen!',
@@ -36,7 +42,9 @@ const LETTER: Record<WhenLang, (v: Record<string, string>) => string> = {
     [
       'Hi,',
       `Vardahei IT invites you to the seminar “${v.topic}”.`,
-      [`When: ${v.when}`, `Where: ${v.place}`, ...(v.clients ? [`For: ${v.clients}`] : [])].join('\n'),
+      [`When: ${v.when}`, `Where: ${v.place}`, ...(v.clients ? [`For: ${v.clients}`] : [])].join(
+        '\n',
+      ),
       `Register here, it takes a minute:\n${v.link}`,
       `The link goes to ${v.host}, so it is safe to open. Once you have registered, you can add the seminar to your calendar. After the seminar, you will find slides and links on the same page.`,
       'Welcome!',
@@ -47,7 +55,12 @@ const placeText = (s: InvitationSeminar, lang: WhenLang) =>
   s.format === 'digital' ? `${lang === 'en' ? 'Online' : 'Digitalt'}, ${s.place}` : s.place;
 
 /** The letter to copy or send from one's own e-mail. */
-export function invitationText(s: InvitationSeminar, lang: WhenLang, link: string, host: string): string {
+export function invitationText(
+  s: InvitationSeminar,
+  lang: WhenLang,
+  link: string,
+  host: string,
+): string {
   return LETTER[lang]({
     topic: topicOf(s, lang),
     when: whenText(s.starts_at, s.ends_at, lang),

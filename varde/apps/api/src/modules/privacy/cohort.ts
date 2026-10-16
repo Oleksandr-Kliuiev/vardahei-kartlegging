@@ -134,16 +134,20 @@ async function roundTotal(
       if (total.suppressed) return total;
       const same = (x: ViewCell) =>
         x.metric_key === total.metric_key && x.metric_version === total.metric_version;
+      const ownTotal = (x: ViewCell): x is Extract<ViewCell, { suppressed: false }> =>
+        same(x) && x.group === 'all' && !x.suppressed;
+      const hiddenHere = (c: string) =>
+        all.some((x) => same(x) && x.group === `client:${c}` && x.suppressed);
       const rest =
         total.n -
         all.reduce(
           (s, x) => s + (same(x) && x.group.startsWith('client:') && !x.suppressed ? x.n : 0),
           0,
         );
-      const leaks = reports.some((cells) =>
-        cells.some(
-          (x) => same(x) && x.group === 'all' && !x.suppressed && rest - x.n > 0 && rest - x.n < k,
-        ),
+      // Only a client hidden in this metric: a visible one subtracts nothing new.
+      const leaks = reports.some(
+        (cells, i) =>
+          hiddenHere(hidden[i]!) && cells.some((x) => ownTotal(x) && x.n < rest && rest - x.n < k),
       );
       return leaks
         ? {

@@ -99,7 +99,8 @@ export class JobsService implements OnApplicationBootstrap, OnModuleDestroy {
       }
     }
     for (const name of this.handlers.keys()) await this.work(name);
-    for (const [name, schedule] of this.schedules) await boss.schedule(name, schedule.cron, schedule.payload, queueLimits(this.type(name)));
+    for (const [name, schedule] of this.schedules)
+      await boss.schedule(name, schedule.cron, schedule.payload, queueLimits(this.type(name)));
     this.ready = true;
   }
 

@@ -37,7 +37,7 @@ export const ROUND_CLIENT_EXITS = Object.freeze({
   /** Cells before suppression: only the release of a round. */
   computeCells: Object.freeze(['apps/api/src/modules/metrics/metrics.service.ts']),
   /** Per-client cells before suppression (client × role structure of release rule 7). */
-  crossCells: Object.freeze(['apps/api/src/modules/metrics/metrics.service.ts']),
+  allClientsCells: Object.freeze(['apps/api/src/modules/metrics/metrics.service.ts']),
   /** The live class `aggregate` query: no reader outside privacy. */
   aggregate: Object.freeze([]),
   /** Round archive (5.2): every population of a round, an admin export. */

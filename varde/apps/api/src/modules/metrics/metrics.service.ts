@@ -109,17 +109,18 @@ export class MetricsService {
     const ids: Partial<Record<string, string>> = {};
     for (const population of POPULATIONS) {
       let cells: ComputedCell[] = [];
+      let cross: ComputedCell[] | undefined;
       if (population === 'round_client') {
         for (const rc of clients)
           cells = cells.concat(
             await this.privacy.computeCells(round, population, defs, rc.client.slug),
           );
-      } else cells = await this.privacy.computeCells(round, population, defs);
+      } else if (population === 'all_clients')
+        ({ cells, cross } = await this.privacy.allClientsCells(round, defs));
+      else cells = await this.privacy.computeCells(round, population, defs);
       const r = await this.privacy.release(round, population, cells, 'db', actor, {
         metric_set: metricSet,
-        ...(population === 'all_clients'
-          ? { cross: await this.privacy.crossCells(round, defs) }
-          : {}),
+        ...(cross === undefined ? {} : { cross }),
       });
       out.populations[population] = { cells: r.released.length, carried: r.carried };
       ids[population] = r.release_id;

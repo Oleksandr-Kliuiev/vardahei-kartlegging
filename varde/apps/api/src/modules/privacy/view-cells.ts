@@ -25,6 +25,7 @@ export function liveCells(
   cross?: readonly ComputedCell[],
 ): ViewCell[] {
   const shapes = cross === undefined ? undefined : structures(cross);
+  const joint = new Map<string, string[]>();
   const blocks = new Map<string, ComputedCell[]>();
   for (const c of cells) {
     const key = `${c.metric_key}@${c.metric_version}`;
@@ -38,8 +39,25 @@ export function liveCells(
         const parts = block.filter((c) => c.group.startsWith(prefix));
         for (const g of suppressedGroups(total, parts, k)) hidden.add(g);
       }
+      // Sub-metrics of one definition mostly share n and structure: one search for them all.
       const parts = block.filter((c) => c !== total);
-      hideJointRoles(total, parts, hidden, shapes?.get(key), k);
+      const structure = shapes?.get(key);
+      const memo = [
+        structure === undefined
+          ? '-'
+          : [...structure].map(([c, rs]) => `${c}:${[...rs]}`).join(';'),
+        ...block.map((c) => `${c.group}=${c.n}${hidden.has(c.group) ? 'x' : ''}`),
+      ].join('|');
+      const known = joint.get(memo);
+      if (known) for (const g of known) hidden.add(g);
+      else {
+        const before = new Set(hidden);
+        hideJointRoles(total, parts, hidden, structure, k);
+        joint.set(
+          memo,
+          [...hidden].filter((g) => !before.has(g)),
+        );
+      }
     }
     return block.map((c): ViewCell => {
       const base = { metric_key: c.metric_key, metric_version: c.metric_version, group: c.group };

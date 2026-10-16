@@ -2,7 +2,12 @@
 // (2.5), so its status lives in FindingStatus: attaching a finding to a seminar makes it
 // `in_seminar`, detaching makes it `open` again, and `closed` ends it. Actions are linked to a rule
 // by key (FindingRuleAction), beside the immutable rule versions. Every change is in AuditLog.
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { PrismaService } from '../../prisma/prisma.service.js';
@@ -12,13 +17,23 @@ import type { ActionInput, FindingStatusInput } from './seminar-input.js';
 export class FindingStatusService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async setIn(tx: Prisma.TransactionClient, finding: string, input: FindingStatusInput, who: string) {
+  private async setIn(
+    tx: Prisma.TransactionClient,
+    finding: string,
+    input: FindingStatusInput,
+    who: string,
+  ) {
     if (!(await tx.finding.count({ where: { id: finding } })))
       throw new NotFoundException('Funnet finst ikkje.');
     const seminar = input.status === 'open' ? null : (input.seminar ?? null);
     if (seminar && !(await tx.seminar.count({ where: { id: seminar } })))
       throw new NotFoundException('Seminaret finst ikkje.');
-    const data = { status: input.status, seminar_id: seminar, changed_by: who, changed_at: new Date() };
+    const data = {
+      status: input.status,
+      seminar_id: seminar,
+      changed_by: who,
+      changed_at: new Date(),
+    };
     const row = await tx.findingStatus.upsert({
       where: { finding_id: finding },
       create: { finding_id: finding, ...data },

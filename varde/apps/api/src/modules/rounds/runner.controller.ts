@@ -18,8 +18,11 @@ export class RunnerController {
       round_client_id: rc.id,
       client: { name: rc.client.name, default_lang: rc.client.default_lang },
       version: {
-        id: version.id, label: version.label, identification: version.identification,
-        required_languages: version.required_languages, content: languageContent(version.content, version.required_languages),
+        id: version.id,
+        label: version.label,
+        identification: version.identification,
+        required_languages: version.required_languages,
+        content: languageContent(version.content, version.required_languages),
       },
       status: rc.status,
       deadline: rc.deadline?.toISOString().slice(0, 10) ?? null,

@@ -103,7 +103,9 @@ typedRuleTester().run('privacy-only-release', rule, {
     {
       name: 'privacy/prisma-snapshot-store.ts (1.4c) may write snapshots',
       filename: snapshotStore,
-      code: code(`void prisma.$transaction((tx: TransactionClient) => tx.aggregateSnapshot.findMany());`),
+      code: code(
+        `void prisma.$transaction((tx: TransactionClient) => tx.aggregateSnapshot.findMany());`,
+      ),
     },
     {
       name: 'privacy/response-store.ts (1.8) may write responses',

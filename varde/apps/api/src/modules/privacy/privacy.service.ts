@@ -165,11 +165,11 @@ export class PrivacyService {
     if (population !== 'round_client' && client)
       throw new PrivacyViolation('population cannot have client');
     if (!releasedOnly && r.status !== 'closed' && r.status !== 'archived') {
-      return liveCells(
-        await this.computeCells(round, population, defs, client),
-        this.config.k,
-        population === 'all_clients' ? await this.crossCells(round, defs) : undefined,
-      );
+      if (population === 'all_clients') {
+        const { cells, cross } = await this.allClientsCells(round, defs);
+        return liveCells(cells, this.config.k, cross);
+      }
+      return liveCells(await this.computeCells(round, population, defs, client), this.config.k);
     }
     const c = client ? await this.prisma.client.findUnique({ where: { slug: client } }) : null;
     if (client && !c) throw new NotFoundException('Kunden finst ikkje.');
@@ -350,28 +350,32 @@ export class PrivacyService {
     );
   }
 
-  /** Client × role structure of all_clients (release rule 7, privacy/cross.ts): the cells of each
-   * client alone (`all`, `role:<id>`, with `client`). Input of the joint check only — never a view
-   * and never released. */
-  async crossCells(round: string, defs: readonly MetricDefinition[]): Promise<ComputedCell[]> {
-    const read = await this.source.read({ round });
-    const rows = read.map((r) => ({
+  /** all_clients cells and the client × role structure of release rule 7 (privacy/cross.ts)
+   * from ONE read of the rows, so both describe the same table. `cross`: the cells of each client
+   * alone (`all`, `role:<id>`, with `client`) — input of the joint check only, never a view and
+   * never released (lint varde/round-client-exits). */
+  async allClientsCells(
+    round: string,
+    defs: readonly MetricDefinition[],
+  ): Promise<{ cells: ComputedCell[]; cross: ComputedCell[] }> {
+    const rows = (await this.source.read({ round })).map((r) => ({
       client: r.client,
       role: r.role,
       part: r.part,
       answers: r.answers,
     }));
-    return [...new Set(rows.map((r) => r.client))].flatMap((client) =>
-      defs.flatMap((d) =>
-        metricCells(
-          d,
-          rows.filter((r) => r.client === client),
-          'all_clients',
-        ).flatMap((c) =>
-          c.group === 'all' || c.group.startsWith('role:') ? [{ ...c, client }] : [],
+    const byClient = new Map<string, typeof rows>();
+    for (const r of rows) byClient.set(r.client, [...(byClient.get(r.client) ?? []), r]);
+    return {
+      cells: defs.flatMap((d) => metricCells(d, rows, 'all_clients')),
+      cross: [...byClient].flatMap(([client, own]) =>
+        defs.flatMap((d) =>
+          metricCells(d, own, 'all_clients').flatMap((c) =>
+            c.group === 'all' || c.group.startsWith('role:') ? [{ ...c, client }] : [],
+          ),
         ),
       ),
-    );
+    };
   }
 
   /** Released and superseded snapshots of one round for its archive (5.2); suppressed cells

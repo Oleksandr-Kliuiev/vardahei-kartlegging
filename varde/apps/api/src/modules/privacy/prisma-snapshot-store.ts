@@ -80,6 +80,10 @@ export class PrismaSnapshotStore implements SnapshotStore {
     });
     const slugs = await this.slugs(rows);
     const byRelease = new Map<string, HistoricCell[]>();
+    // Oldest first: a release is superseded by the next one, the current one never (rule 7 reads
+    // a carried value against the release before it).
+    const at = (r: (typeof rows)[number]) => r.superseded_at?.getTime() ?? Number.POSITIVE_INFINITY;
+    rows.sort((a, b) => at(a) - at(b));
     for (const r of rows) {
       const cell: HistoricCell = {
         ...(r.client_id === null ? {} : { client: slugs.get(r.client_id) ?? r.client_id }),
@@ -88,6 +92,7 @@ export class PrismaSnapshotStore implements SnapshotStore {
         group: r.group,
         n: r.n,
         suppressed: r.suppressed,
+        ...(r.stale ? { stale: true } : {}),
       };
       byRelease.set(r.release_id, [...(byRelease.get(r.release_id) ?? []), cell]);
     }

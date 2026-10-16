@@ -49,16 +49,23 @@ try {
   const kinds = new Set(
     hits.map((m) => (m.message.includes('include/select') ? 'relation' : 'model')),
   );
-  const castRun = spawnSync(process.execPath, [eslint, '--format', 'json', cast], { cwd: root, encoding: 'utf8' });
+  const castRun = spawnSync(process.execPath, [eslint, '--format', 'json', cast], {
+    cwd: root,
+    encoding: 'utf8',
+  });
   let castMessages = [];
   try {
     castMessages = JSON.parse(castRun.stdout).flatMap((r) => r.messages);
   } catch {
-    console.error(`selfcheck: FAILED (cast: eslint exit ${castRun.status}, no JSON)\n${castRun.stderr}`);
+    console.error(
+      `selfcheck: FAILED (cast: eslint exit ${castRun.status}, no JSON)\n${castRun.stderr}`,
+    );
   }
   const castOk =
     castMessages.length > 0 &&
-    castMessages.every((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('ReleasedSnapshot'));
+    castMessages.every(
+      (m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('ReleasedSnapshot'),
+    );
   if (!castOk) console.error(`selfcheck: FAILED (cast): ${JSON.stringify(castMessages, null, 2)}`);
   // 3.1: the participant bypass (registration) is reported as well.
   const participants = hits.some((m) => m.message.includes('`registration`'));
@@ -71,7 +78,9 @@ try {
   try {
     rcMessages = JSON.parse(rcRun.stdout).flatMap((r) => r.messages);
   } catch {
-    console.error(`selfcheck: FAILED (round-client: eslint exit ${rcRun.status}, no JSON)\n${rcRun.stderr}`);
+    console.error(
+      `selfcheck: FAILED (round-client: eslint exit ${rcRun.status}, no JSON)\n${rcRun.stderr}`,
+    );
   }
   const rcOk =
     rcMessages.length === 3 &&
@@ -79,7 +88,8 @@ try {
     ['`ownCells`', '`adminClientCells`', 'Saved findings'].every((s) =>
       rcMessages.some((m) => m.message.includes(s)),
     );
-  if (!rcOk) console.error(`selfcheck: FAILED (round-client): ${JSON.stringify(rcMessages, null, 2)}`);
+  if (!rcOk)
+    console.error(`selfcheck: FAILED (round-client): ${JSON.stringify(rcMessages, null, 2)}`);
   if (
     kinds.has('model') &&
     kinds.has('relation') &&

@@ -51,12 +51,15 @@ export interface HistoricCell {
   group: string;
   n: number;
   suppressed: boolean;
+  /** Carried from an earlier release: its value is an equation of that release (rule 7). */
+  stale?: boolean;
 }
 
 export interface SnapshotStore {
   /** Current released snapshots (not superseded) of one (round, population). */
   listReleased(round: string, population: Population): Promise<ReleasedSnapshot[]>;
-  /** Every earlier release of one (round, population), superseded ones included (1.4c). */
+  /** Every earlier release of one (round, population), superseded ones included (1.4c), oldest
+   * first. */
   listHistory(round: string, population: Population): Promise<readonly (readonly HistoricCell[])[]>;
   /** Equivalent client totals issued through the other common population (1.32). */
   listLinkedReleased?(round: string, population: Population): Promise<ReleasedSnapshot[]>;
@@ -190,12 +193,17 @@ function jointStep(
   // With no role cell left the client partition alone is safe by rule 1 (privacy/cross.ts).
   const cut = now.roles.size === 0 ? null : smallCut(structure, [now], k);
   if (cut !== null) return { group: cellToHide(cut, now)!, now: true };
-  for (const earlier of history) {
+  for (const [j, earlier] of history.entries()) {
     if (!block.some((c) => earlier.has(unitOf(c)))) continue;
-    // A group missing from an earlier release of the block had no answers then (rule 2).
+    // A group missing from an earlier release of the block had no answers then (rule 2). A value
+    // carried from the release before belongs to that release (also in the history); one with no
+    // earlier value of its own came from the round_client release of the same releaseRound.
+    const before = history[j - 1];
     const then = view((c) => {
       const old = earlier.get(unitOf(c));
-      return old?.suppressed ? undefined : (old?.n ?? 0);
+      const prev = before?.get(unitOf(c));
+      const older = old?.stale === true && prev !== undefined && !prev.suppressed;
+      return old?.suppressed || older ? undefined : (old?.n ?? 0);
     });
     const d = smallCut(structure, [then, now], k);
     const group = d === null ? undefined : cellToHide(d, now, true);
@@ -386,9 +394,10 @@ export async function release(
       if (structure !== undefined && size === suppressed.size + carry.size) {
         // A carried value equal to the current one is an equation of the current table too
         // (e.g. carried from the round_client release of the same releaseRound).
+        // A retained group (gone after deletion) shows an old value: never the current table.
         const step = jointStep(block, structure, ownHistory, k, (c) => {
           const value = published(c);
-          return value !== undefined && value.n === c.n ? c : undefined;
+          return offered.has(unitOf(c)) && value !== undefined && value.n === c.n ? c : undefined;
         });
         if (step !== undefined && (step.now || carry.has(step.group))) suppressed.add(step.group);
         else if (step !== undefined) carry.add(step.group);

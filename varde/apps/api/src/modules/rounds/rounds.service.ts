@@ -95,7 +95,9 @@ export class RoundsService {
     });
     if (s === null) throw new NotFoundException('Seminaret finst ikkje.');
     if (s.round_after_id !== null)
-      throw new ConflictException('Seminaret har alt ei undersøking etter. Ta bort koplinga først.');
+      throw new ConflictException(
+        'Seminaret har alt ei undersøking etter. Ta bort koplinga først.',
+      );
     const own = new Set(s.clients.map((c) => c.client_id));
     if (clients.some((c) => !own.has(c.client_id)))
       throw new BadRequestException('Vel berre kundar som er med på seminaret.');

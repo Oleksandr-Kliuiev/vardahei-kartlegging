@@ -44,6 +44,24 @@ describe('smallCut', () => {
     expect(smallCut(s, [then, view(4, { k1: 2 }, { r1: 0 })], 3)).toMatchObject({ n: 2 });
   });
 
+  it('differences on a structure in two pieces: each piece has its own total', () => {
+    // k1 only in r1; k0, k2 only in r0. Then only the total (5); now r0 (4) and k1 (3) without
+    // the total — together they are the total again: 7 − 5 = the two new answers of k0.
+    const s = structure({ k0: ['r0'], k1: ['r1'], k2: ['r0'] });
+    const then = view(5, {}, {});
+    expect(smallCut(s, [then, view(undefined, { k1: 3 }, { r0: 4 })], 3)).toMatchObject({ n: 2 });
+    // One piece alone is not the total: r0 without k1 tells nothing about the whole.
+    expect(smallCut(s, [then, view(undefined, {}, { r0: 4 })], 3)).toBeNull();
+  });
+
+  it('too many role nodes to search: a role cell is asked for (fail closed)', () => {
+    const roles = Array.from({ length: 14 }, (_, i) => `r${i}`);
+    const s = structure({ a: roles, b: roles });
+    const now = view(40, { a: 20, b: 20 }, Object.fromEntries(roles.map((r) => [r, 3])));
+    expect(smallCut(s, [now], 3)?.roles.length).toBe(14);
+    expect(cellToHide(smallCut(s, [now], 3)!, now)).toMatch(/^role:/);
+  });
+
   it('a difference may be negative: an answer deleted between two releases', () => {
     const s = structure({ a: ['x'], b: ['y'] });
     const then = view(10, { a: 5, b: 5 }, { x: 5, y: 5 });

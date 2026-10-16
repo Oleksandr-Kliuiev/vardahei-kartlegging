@@ -48,7 +48,11 @@ export class ForgetService {
     const preview = async (tx: Prisma.TransactionClient, counts: object) => {
       if (dryRun)
         await tx.auditLog.create({
-          data: { who, what: 'retention.forget.preview', details: { scope: scope.scope, ...counts } },
+          data: {
+            who,
+            what: 'retention.forget.preview',
+            details: { scope: scope.scope, ...counts },
+          },
         });
     };
     if (scope.scope === 'participant') {
