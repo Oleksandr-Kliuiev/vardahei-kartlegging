@@ -8,7 +8,9 @@
 | --- | --- | --- |
 | 3.8 | `f03ba64` | Миграция `20261016160000_seminar_rounds` (down.sql): триггер `seminar_round_before_after_type` («Før» — `regular`, «Etter» — `post_seminar`), частичный уникальный индекс `seminar_round_after_once`; `seminars/seminar-rounds.service.ts` и `.controller.ts` (карточка, привязки, AuditLog); мастер запуска (`POST /api/admin/rounds/launch` с `seminar`) создаёт `post_seminar` и привязывает его в той же транзакции; карточка «Rundar» в админке, мастер с клиентами семинара; ссылка в дашборд `?round=`; метка «Etter seminar» на «Kundar og rundar»; тесты |
 | 3.9 | `7a3172b` | `privacy/cohort.ts` (`clientGroup`; туда же без изменений перенесён `cohortCells`), `dashboard/before-after-view.ts`, `dashboard/round-pair.ts` (общие помощники со сравнением с раундом 1), `GET /api/admin/seminars/:id/before-after`; вкладка «Før og etter» по эталону; тесты |
-| закрытие | этот коммит | `run-3c.sh` и `invariants:3c`; e2e «весь семинар» (`apps/admin/e2e/seminar-day.spec.ts`, фикстура «Før» в `e2e/server.cjs`); правки формулировок карточки по скриншотам; строки REVIEW-CHECKLIST и AI_CONTEXT_MAP; этот evidence, скриншоты |
+| закрытие | `e6a8638` | `run-3c.sh` и `invariants:3c`; e2e «весь семинар» (`apps/admin/e2e/seminar-day.spec.ts`, фикстура «Før» в `e2e/server.cjs`); правки формулировок карточки по скриншотам; строки REVIEW-CHECKLIST и AI_CONTEXT_MAP; этот evidence, скриншоты |
+| CI (оркестратор) | `8ea2f03` | `pnpm invariants:3c` в job `integration` |
+| решение 16.10 | этот коммит | «Предыдущий раунд» шаблона — только `regular` или `external_import` (`PREVIOUS_TYPES`): `DashboardContext.previous()` и `ReportService.previous()`; тест `reports/previous-round.test.ts`, блок в `run-3c.sh` (решение 13) |
 
 ## Что сделано
 
@@ -62,12 +64,12 @@
 10. **Рефакторинг без изменения поведения:** `cohortCells` перенесён из `privacy.service.ts` в `privacy/cohort.ts` (файл сервиса 500 → 445 строк); `change()` и расчёт snittscore/kritisk andel сравнения с раундом 1 — в `dashboard/round-pair.ts` (отчёт 5.1 импортирует `change` оттуда). Тесты 1.29 (`comparison.test.ts`) и 5.1 зелёные.
 11. **`schema.prisma`** — 569 строк, как было: изменён только комментарий модели Seminar (предупреждение `pnpm budget` то же, что в 3b).
 12. **AuditLog `who`:** привязки в карточке пишут `entra:<oid>`, как остальные записи семинаров; запуск «Etter» мастером пишет `seminars.rounds.after` с `who` модуля раундов (`<oid>` без префикса), как его `rounds.launch`.
+13. **«Предыдущий раунд» шаблона — только `regular` или `external_import`** (решение Oleksandr 16.10 по риску приёмки): опрос после семинара (`post_seminar`) и живой опрос (`live`) им не бывают. Фильтр `PREVIOUS_TYPES` (`dashboard/dashboard-context.ts`) — в `DashboardContext.previous()` («Svar per tilsett», его экспорт Master_Analyse «Sone førre runde», цепочка сравнения с раундом 1) и в `ReportService.previous()` («Samanlikna med …» в отчёте клиенту 5.1); импортированный раунд 1 остаётся кандидатом. Других мест, где ищется прошлый раунд того же шаблона, нет (grep: архив, дашборд, экспорт, отчёт). «Før og etter» по-прежнему сравнивает с `post_seminar`. Тест `test/reports/previous-round.test.ts` (обычный раунд → закрытый `post_seminar` того же шаблона → live-раунд той же версии, записанный прямо в БД → следующий обычный раунд): отчёт и «Svar per tilsett» берут первый обычный раунд, «Før og etter» — `post_seminar`; мутанты «без фильтра» в каждом из двух мест роняют тест.
 
 ## Приватность и риски
 
 - Новый эндпоинт `GET /api/admin/seminars/:id/before-after` — только админ-сессия, класс `aggregate`, числа только из `PrivacyService.viewCells` через `clientGroup`; в ответе нет `answers`, `respondent_key`, `submission_id`, инициалов (тест), live-раунд и технический клиент не участвуют (ответы телефонов ничего не меняют — тест).
 - Живой вид открытого раунда — без истории выдач, как живой дашборд (принятый остаточный риск ADR-021: differencing самими админами). Фильтр «один клиент» и смена клиентов семинара дают только суммы видимых ячеек `all_clients` — новых чисел не раскрывают.
-- Риск (поведение не менялось): раунд `post_seminar` того же шаблона станет «предыдущим» для «Samanlikna med …» в отчёте клиенту (5.1) и для «Svar per tilsett» (1.27) следующего обычного раунда — `previous()` выбирает по шаблону и дате, не по типу. Если это нежелательно — отдельная правка (исключить `post_seminar` из `previous()`), нужно решение.
 - `post_seminar`-раунды видны везде, где обычные (дашборд, отчёт клиенту, экспорт, архив), с меткой «Etter seminar» на «Kundar og rundar».
 - CI не запускался: GitHub Actions заблокирован лимитом расходов (BESLUTNINGER 16.10), push не делался.
 
@@ -106,8 +108,7 @@
 ## Открытые вопросы для Oleksandr
 
 1. Строки на нюношке выше, особенно четыре оговорки и пометки сравнимости.
-2. Исключать ли `post_seminar` из «предыдущего раунда» в отчёте клиенту и «Svar per tilsett» (риск выше).
-3. Нужно ли объявлять сравнимость для шаблонов из редактора (короткая анкета «Etter seminar» против tryggleik) — сейчас такие вопросы честно несравнимы.
+2. Нужно ли объявлять сравнимость для шаблонов из редактора (короткая анкета «Etter seminar» против tryggleik) — сейчас такие вопросы честно несравнимы.
 
 ## Скриншоты
 

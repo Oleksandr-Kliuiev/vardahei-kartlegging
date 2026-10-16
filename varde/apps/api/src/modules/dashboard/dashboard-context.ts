@@ -3,6 +3,11 @@ import type { TemplateContent } from '@varde/schema/template/template';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { MetricsService } from '../metrics/metrics.service.js';
 
+/** Types of round that can be «the previous round» of a template (decision of Oleksandr 16.10):
+ * ordinary rounds and the imported round 1 — never a survey after a seminar or a live poll. Used by
+ * «Svar per tilsett» and its export, the comparison with round 1 and the client report (5.1). */
+export const PREVIOUS_TYPES: readonly string[] = ['regular', 'external_import'];
+
 @Injectable()
 export class DashboardContext {
   constructor(
@@ -13,6 +18,7 @@ export class DashboardContext {
     const candidates = await this.prisma.round.findMany({
       where: {
         id: { not: scope.round.id },
+        type: { in: [...PREVIOUS_TYPES] },
         identification: 'initials',
         created_at: { lt: scope.round.created_at },
         template_version: { template: { key: scope.content.key } },

@@ -51,12 +51,15 @@ export async function survey(
     version: string;
     name?: string;
     identification?: 'initials' | 'none';
+    /** Order of rounds of one template («the previous round»). */
+    created_at?: Date;
   },
 ): Promise<string> {
   const r = await t.prisma.round.create({
     data: {
       name: `${t.mark} ${opts.name ?? opts.type}`,
       type: opts.type,
+      ...(opts.created_at ? { created_at: opts.created_at } : {}),
       status: opts.status,
       template_version_id: opts.version,
       identification: opts.status === 'draft' ? null : (opts.identification ?? 'none'),

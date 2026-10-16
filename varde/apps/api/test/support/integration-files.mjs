@@ -68,4 +68,5 @@ export const INTEGRATION_FILES = [
   'test/live/migration-rollback.test.ts',
   'test/seminars/seminar-rounds.test.ts',
   'test/seminars/before-after.test.ts',
+  'test/reports/previous-round.test.ts',
 ];

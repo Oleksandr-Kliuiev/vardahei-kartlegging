@@ -13,6 +13,7 @@ import type { MetricDefinition } from '@varde/schema/metrics/metric-definition';
 import type { TemplateContent } from '@varde/schema/template/template';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { auditWho } from '../auth/audit-who.js';
+import { PREVIOUS_TYPES } from '../dashboard/dashboard-context.js';
 import { change } from '../dashboard/round-pair.js';
 import { FindingRule } from '../findings/finding-rule.js';
 import { MetricsService } from '../metrics/metrics.service.js';
@@ -60,11 +61,13 @@ export class ReportService {
     return { round, defs, cells };
   }
 
-  /** The latest earlier closed round of the same template family with this client released. */
+  /** The latest earlier closed round of the same template family with this client released; an
+   * ordinary round or the imported round 1, never a survey after a seminar or a live poll. */
   private async previous(round: Round, family: string, client: { id: string; slug: string }) {
     const candidates = await this.prisma.round.findMany({
       where: {
         id: { not: round.id },
+        type: { in: [...PREVIOUS_TYPES] },
         status: { in: CLOSED },
         created_at: { lt: round.created_at },
         template_version: { template: { key: family } },
