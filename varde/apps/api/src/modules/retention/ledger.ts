@@ -16,8 +16,11 @@ export class DeletionLedger {
       orderBy: [{ source_id: 'asc' }, { part: 'asc' }],
     });
   }
-  applyToDatabase(tx: Prisma.TransactionClient) {
-    return this.privacy.store.applyLedger(tx);
+  /** Responses and (3.1) seminar contacts deleted on request; returns how many rows went. */
+  async applyToDatabase(tx: Prisma.TransactionClient) {
+    return (
+      (await this.privacy.store.applyLedger(tx)) + (await this.privacy.participants.applyLedger(tx))
+    );
   }
   apply() {
     return this.prisma.$transaction((tx) => this.applyToDatabase(tx), { timeout: 120_000 });

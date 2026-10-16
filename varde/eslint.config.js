@@ -6,7 +6,10 @@ import importPlugin from 'eslint-plugin-import';
 import globals from 'globals';
 import varde from './tools/eslint-rules/plugin.js';
 import { boundaries } from './tools/eslint-rules/boundaries.js';
-import { DEFAULT_ALLOW } from './tools/eslint-rules/rules/privacy-only-release.js';
+import {
+  DEFAULT_ALLOW,
+  PARTICIPANT_ALLOW,
+} from './tools/eslint-rules/rules/privacy-only-release.js';
 
 const root = import.meta.dirname;
 
@@ -57,7 +60,12 @@ export default tseslint.config(
   },
   {
     files: prismaPackages().map((dir) => `${dir}/**/*.{ts,tsx}`),
-    rules: { 'varde/privacy-only-release': ['error', { allow: [...DEFAULT_ALLOW] }] },
+    rules: {
+      'varde/privacy-only-release': [
+        'error',
+        { allow: [...DEFAULT_ALLOW], participants: [...PARTICIPANT_ALLOW] },
+      ],
+    },
   },
   ...boundaries,
   {

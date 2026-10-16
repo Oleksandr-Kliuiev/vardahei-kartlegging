@@ -29,6 +29,7 @@ import {
   toArchived,
 } from './archive.js';
 import { ResponseStore } from './response-store.js';
+import { ParticipantStore } from './participants.js';
 import {
   type ComputedCell,
   release,
@@ -63,6 +64,7 @@ export { ReleaseRejected } from './release.js';
 export { ArchiveRejected, ArchivedSnapshot } from './archive.js';
 export type { ArchiveRefs } from './archive.js';
 export type { DeleteScope, DeleteCounts, ResponsePart } from './response-store.js';
+export type { ParticipantDeleteCounts, ParticipantInput } from './participants.js';
 export type {
   ComputedCell,
   HistoricCell,
@@ -97,6 +99,8 @@ export class PrivacyService {
 
   /** The only write path of Response (import 1.8, Submission API 1.16). */
   readonly store = new ResponseStore();
+  /** The only read and write path of seminar Contact and Registration (3.1). */
+  readonly participants = new ParticipantStore();
 
   /** Live progress is always aggregate; session IDs and duration rows never leave privacy. */
   progress(round: string, now = new Date()) {

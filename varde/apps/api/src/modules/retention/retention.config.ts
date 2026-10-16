@@ -36,7 +36,8 @@ export const RetentionClasses = z.strictObject({
   }),
   /** Findings live as long as the released snapshots they are computed from. */
   finding: z.strictObject({ min_years: z.number().int().min(3), review: z.literal('yearly') }),
-  contact: z.strictObject({ kind: z.literal('relationship') }),
+  /** No timer: kept while relationship and consent hold; the daily job marks a yearly check. */
+  contact: z.strictObject({ kind: z.literal('relationship'), review: z.literal('yearly') }),
   registration: z.strictObject({ after_seminar_days: days }),
   proposal: z.strictObject({ ttl_months: days }),
   audit_log: z.strictObject({ ttl_months: days }),

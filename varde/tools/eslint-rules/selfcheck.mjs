@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // `pnpm lint:privacy:selfcheck`: copies the bypass fixture into apps/api/src/modules/dashboard,
 // lints it with the real config and requires `varde/privacy-only-release` errors for both
-// bypasses (tx.response.findMany and include: { responses: true }, 0.19b); anything else fails.
+// bypasses (tx.response.findMany and include: { responses: true }, 0.19b) and the participant one
+// (prisma.registration.findMany, 3.1); anything else fails.
 // Since 1.10b also fixtures/cast.ts: `as ReleasedSnapshot` outside privacy → no-restricted-syntax.
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
@@ -51,7 +52,10 @@ try {
     castMessages.length > 0 &&
     castMessages.every((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('ReleasedSnapshot'));
   if (!castOk) console.error(`selfcheck: FAILED (cast): ${JSON.stringify(castMessages, null, 2)}`);
-  if (kinds.has('model') && kinds.has('relation') && others.length === 0 && castOk) ok = true;
+  // 3.1: the participant bypass (registration) is reported as well.
+  const participants = hits.some((m) => m.message.includes('`registration`'));
+  if (kinds.has('model') && kinds.has('relation') && participants && others.length === 0 && castOk)
+    ok = true;
   else if (results.length > 0) {
     console.error(`selfcheck: FAILED (exit ${run.status}): ${JSON.stringify(messages, null, 2)}`);
   }
@@ -61,5 +65,5 @@ try {
     rmSync(parent, { recursive: true });
   }
 }
-if (ok) console.log('selfcheck: bypass rejected (tx.response, include responses, as ReleasedSnapshot)');
+if (ok) console.log('selfcheck: bypass rejected (tx.response, include responses, registration, as ReleasedSnapshot)');
 process.exit(ok ? 0 : 1);

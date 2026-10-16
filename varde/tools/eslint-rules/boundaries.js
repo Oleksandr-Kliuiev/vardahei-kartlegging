@@ -32,7 +32,12 @@ const RELEASED_CAST_ALLOWED = [
 ];
 
 /** Storage constructors are private to privacy; test fixtures may instantiate them. */
-const PRIVATE_STORAGE = ['PrismaResponseSource', 'ResponseStore', 'PrivacyService'].flatMap(
+const PRIVATE_STORAGE = [
+  'PrismaResponseSource',
+  'ResponseStore',
+  'ParticipantStore',
+  'PrivacyService',
+].flatMap(
   (name) => [
     {
       selector: `NewExpression[callee.name='${name}']`,

@@ -21,6 +21,8 @@ export async function resetImports(prisma: PrismaService): Promise<void> {
       [IMPORT_ROUND_NAMES],
     );
     await c.query('DELETE FROM deletion_tombstone');
+    // Participant deletions (3.1) hang on the same requests.
+    await c.query('DELETE FROM participant_tombstone');
     await c.query('DELETE FROM deletion_request');
   });
   await prisma.importManifest.deleteMany({});

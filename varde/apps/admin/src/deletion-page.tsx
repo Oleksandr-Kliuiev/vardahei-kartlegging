@@ -4,7 +4,16 @@ import { mutate } from './api.js';
 import { ErrorMessage, useClients, useRounds } from './queries.js';
 import { HoldButton } from './widgets.js';
 
-type Counts = { common: number; leader: number; total: number; dry_run: boolean };
+type Counts = { total: number; dry_run: boolean } & (
+  | { common: number; leader: number }
+  | { contacts: number; registrations: number }
+);
+
+/** What a participant deletion removes (3.1). */
+export function participantText(contacts: number, registrations: number) {
+  if (!contacts) return 'Fann ingen deltakar med den e-postadressa.';
+  return `Kontakten og ${registrations} ${registrations === 1 ? 'påmelding' : 'påmeldingar'} blir sletta.`;
+}
 
 export function DeletionPage() {
   const clients = useClients(),
@@ -15,6 +24,7 @@ export function DeletionPage() {
     [key, setKey] = useState(''),
     [round, setRound] = useState('');
   const [ids, setIds] = useState(''),
+    [mail, setMail] = useState(''),
     [reason, setReason] = useState(''),
     [preview, setPreview] = useState<Counts | null>(null);
   const [error, setError] = useState<Error | null>(null),
@@ -25,7 +35,9 @@ export function DeletionPage() {
     scope:
       scope === 'submissions'
         ? { scope, submission_ids: ids.split(/[\s,]+/).filter(Boolean) }
-        : scope === 'client'
+        : scope === 'participant'
+          ? { scope, email: mail.trim() }
+          : scope === 'client'
           ? { scope, client }
           : {
               scope,
@@ -50,7 +62,9 @@ export function DeletionPage() {
       else {
         setPreview(null);
         setDone(true);
-        await queries.invalidateQueries({ queryKey: ['responses'] });
+        await queries.invalidateQueries({
+          queryKey: [scope === 'participant' ? 'seminars' : 'responses'],
+        });
       }
     } catch (e) {
       setError(e instanceof Error ? e : new Error('Noko gjekk gale.'));
@@ -68,9 +82,27 @@ export function DeletionPage() {
             <option value="submissions">Valde innsendingar</option>
             <option value="client">Alle svar frå kunden</option>
             <option value="respondent">Ein person (initialar)</option>
+            <option value="participant">Deltakar på seminar (e-post)</option>
           </select>
         </label>
-        {scope === 'submissions' ? (
+        {scope === 'participant' ? (
+          <>
+            <label>
+              E-post{' '}
+              <input
+                aria-label="E-post"
+                type="email"
+                autoComplete="off"
+                value={mail}
+                onChange={(e) => setMail(e.target.value)}
+              />
+            </label>
+            <p className="forklaring">
+              Kontakten og alle påmeldingane til personen blir sletta. Skriv ikkje namn eller
+              e-post i grunngjevinga.
+            </p>
+          </>
+        ) : scope === 'submissions' ? (
           <label>
             Innsendings-ID-ar{' '}
             <textarea
@@ -131,8 +163,9 @@ export function DeletionPage() {
       {preview && (
         <div role="status">
           <p>
-            {preview.common} vanlege svar og {preview.leader} leiarsvar. Til saman {preview.total}{' '}
-            innsendingar.
+            {'contacts' in preview
+              ? participantText(preview.contacts, preview.registrations)
+              : `${preview.common} vanlege svar og ${preview.leader} leiarsvar. Til saman ${preview.total} innsendingar.`}
           </p>
           <HoldButton
             className="fare"
@@ -145,7 +178,9 @@ export function DeletionPage() {
           />
         </div>
       )}
-      {done && <p role="status">Svara er sletta.</p>}
+      {done && (
+        <p role="status">{scope === 'participant' ? 'Deltakaren er sletta.' : 'Svara er sletta.'}</p>
+      )}
       <ErrorMessage error={error} />
     </section>
   );
