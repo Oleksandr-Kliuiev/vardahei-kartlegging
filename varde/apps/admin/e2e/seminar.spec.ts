@@ -112,7 +112,8 @@ test('create → link → register on /s → visible in the list → invitation,
   const edit = page.getByRole('form', { name: 'Endre kontakten' });
   await edit.getByLabel('Namn').fill('ZZ E2E Retta');
   await edit.getByLabel('Ta bort samtykket til invitasjonar').check();
-  await page.screenshot({ path: info.outputPath('admin-seminar-endre-kontakt.png'), fullPage: true });
+  // The viewport only: a full-page shot of a scrolled page draws the sticky bars in the middle.
+  await page.screenshot({ path: info.outputPath('admin-seminar-endre-kontakt.png') });
   await edit.getByRole('button', { name: 'Lagre kontakten' }).click();
   await expect(page.locator('table.sem-pamelde')).toContainText('ZZ E2E Retta');
   await expect(page.locator('table.sem-pamelde').getByRole('cell', { name: 'nei', exact: true })).toBeVisible();
