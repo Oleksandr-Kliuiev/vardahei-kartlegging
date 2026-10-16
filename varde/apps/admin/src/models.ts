@@ -17,6 +17,8 @@ export interface RoundClient {
 export interface Round {
   id: string;
   name: string;
+  /** regular, post_seminar (3.8: the survey after a seminar) or external_import. */
+  type?: string;
   status: string;
   template_version_id: string | null;
   round_clients: RoundClient[];

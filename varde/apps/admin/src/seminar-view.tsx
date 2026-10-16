@@ -1,6 +1,7 @@
 // One seminar (Vardestien «Seminar»): what, when and where, then the tabs «Påmelding»,
-// «Materiell», «Invitasjon», «Live» (3b) and «Før og etter». The participant list is personal data:
-// it is shown only on request, and every read is written to the log.
+// «Materiell», «Invitasjon», «Live» (3b) and «Før og etter» (3c: the rounds before, during and
+// after, and the comparison). The participant list is personal data: it is shown only on request,
+// and every read is written to the log.
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, mutate } from './api.js';
@@ -11,6 +12,7 @@ import { Invitation } from './seminar-invitation.js';
 import { Live } from './seminar-live.js';
 import { Materials } from './seminar-materials.js';
 import { NameList } from './seminar-participants.js';
+import { RoundsCard } from './seminar-rounds.js';
 import {
   copy,
   draftOf,
@@ -118,20 +120,6 @@ function Registrations({ seminar }: { seminar: SeminarDetail }) {
   );
 }
 
-function Later({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="flate">
-      <section className="kort planlagt s12">
-        <div className="kort-innhald">
-          <div className="eyebrow">Kjem i neste steg</div>
-          <h2 className="sem-later">{title}</h2>
-          <p className="forklaring">{text}</p>
-        </div>
-      </section>
-    </div>
-  );
-}
-
 export function SeminarView({ id }: { id: string }) {
   const seminar = useQuery({
     queryKey: ['seminars', 'one', id],
@@ -182,7 +170,9 @@ export function SeminarView({ id }: { id: string }) {
           {tab === 'invitasjon' && <Invitation seminar={s} />}
           {tab === 'live' && <Live seminar={s} />}
           {tab === 'etter' && (
-            <Later title="Før og etter" text="Undersøkinga før og etter seminaret, med atterhald om kven som svarte." />
+            <div className="flate">
+              <RoundsCard seminar={s} onLive={() => setTab('live')} />
+            </div>
           )}
         </>
       )}

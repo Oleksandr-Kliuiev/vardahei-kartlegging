@@ -111,8 +111,11 @@ export function thresholdText(t: Dashboard['finding_thresholds']): string {
   return `Funn rekna ut frå svara: minst ${t.min_count} personar, middels frå ${percentText(t.medium)}, høg frå ${percentText(t.high)}.`;
 }
 export function DashboardPage() {
+  // A link from a seminar's «Rundar» (3.8) opens one round: /admin/dashboard?round=<id>.
   const rounds = useRounds(),
-    [selected, setSelected] = useState('');
+    [selected, setSelected] = useState(
+      () => new URLSearchParams(window.location.search).get('round') ?? '',
+    );
   const round =
     rounds.data?.find((r) => r.id === selected) ??
     rounds.data?.find((r) => r.status === 'open') ??

@@ -41,6 +41,8 @@ export class RoundsController {
       RoundInput.extend({
         clients: z.array(ClientInput).min(1).max(500),
         open: z.boolean(),
+        // 3.8: a survey after this seminar (type post_seminar), linked as its «Etter».
+        seminar: z.uuid().optional(),
       }),
       input,
     );

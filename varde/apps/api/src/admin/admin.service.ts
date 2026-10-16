@@ -41,6 +41,8 @@ export class AdminService {
       select: {
         id: true,
         name: true,
+        // regular, post_seminar (3.8: «Etter» of a seminar) or external_import.
+        type: true,
         status: true,
         template_version_id: true,
         round_clients: {

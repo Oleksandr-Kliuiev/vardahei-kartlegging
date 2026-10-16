@@ -70,6 +70,8 @@ const P = {
   ],
   pluss: [<path key="a" d="M12 5v14M5 12h14" />],
   tilbake: [<path key="a" d="M19 12H5M11 6l-6 6 6 6" />],
+  // Seminar rounds (3.8): the survey after the seminar
+  send: [<path key="a" d="M22 2L11 13" />, <path key="b" d="M22 2l-7 20-4-9-9-4z" />],
 } satisfies Record<string, ReactElement[]>;
 export type IconName = keyof typeof P;
 

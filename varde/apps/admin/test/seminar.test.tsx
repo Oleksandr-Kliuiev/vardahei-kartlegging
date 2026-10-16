@@ -66,7 +66,9 @@ const fetcher = vi.fn((path: string, init?: RequestInit) => {
                 ? [{ id: 'c1', name: 'Syntetisk A' }]
                 : path.endsWith('/live')
                   ? { poll: null, versions: [], presenter: { valid_from: '', valid_to: '', valid_text: '', valid_now: false, active: null } }
-                  : { ok: true };
+                  : path.endsWith('/rounds')
+                    ? { before: null, live: null, after: null, choices: { before: [], after: [] }, versions: [] }
+                    : { ok: true };
   return Promise.resolve(new Response(JSON.stringify(body)));
 });
 beforeEach(() => {
@@ -345,7 +347,7 @@ describe('one seminar', () => {
     // Nothing is posted from this tab: no request leaves except reading the letter.
     expect(fetcher.mock.calls.filter(([, i]) => i?.method && i.method !== 'GET')).toEqual([]);
   });
-  it('«Live» has the live questions (3b); «Før og etter» says it comes in the next step', async () => {
+  it('«Live» has the live questions (3b); «Før og etter» has the rounds before, during and after (3c)', async () => {
     view = mount(<SeminarPage id={ID} />, true);
     await settle();
     act(() => {
@@ -354,11 +356,15 @@ describe('one seminar', () => {
     await settle();
     expect(calls('/live')).toHaveLength(1);
     expect(view.div.textContent).toContain('Spørsmål på mobilen under seminaret, med resultat på storskjermen.');
-    expect(view.div.textContent).not.toContain('Kjem i neste steg');
     act(() => {
       button(view!.div, 'Før og etter').click();
     });
-    expect(view.div.textContent).toContain('Kjem i neste steg');
+    await settle();
+    expect(calls('/rounds')).toHaveLength(1);
+    expect(view.div.querySelector('#rundar-tittel')?.textContent).toBe('Rundar');
+    expect(view.div.textContent).toContain('Før seminaret');
+    expect(view.div.textContent).toContain('Etter seminaret');
+    expect(view.div.textContent).not.toContain('Kjem i neste steg');
   });
 });
 
