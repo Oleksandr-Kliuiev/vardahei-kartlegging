@@ -518,8 +518,8 @@ describe('«alle» released twice on a client × role structure in pieces (accep
   });
 
   it('random rounds with home roles, released 2–3 times: no set or difference below k', async () => {
-    const rand = rng(99);
-    for (let t = 0; t < 1500; t += 1) {
+    const rand = rng(5);
+    for (let t = 0; t < 3000; t += 1) {
       const epochs = 2 + Math.floor(rand() * 2);
       const rows = homeRoleRows(rand, 'r-attack').map((x) => ({
         ...x,
