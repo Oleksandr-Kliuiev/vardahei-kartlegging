@@ -14,7 +14,7 @@ import { list, st, type SemKey, type SemLang } from './texts.js';
 const NAMES: Record<SemLang, string> = { nn: 'Nynorsk', en: 'English' };
 type View =
   | { kind: 'loading' }
-  | { kind: 'error'; status: number }
+  | { kind: 'error'; status: number; replaced: boolean }
   | { kind: 'ready'; seminar: PublicSeminar };
 type Props = { seminar: PublicSeminar; lang: SemLang };
 
@@ -151,18 +151,23 @@ function Held({ seminar, lang }: Props) {
   );
 }
 
-function Problem({ status, lang }: { status: number; lang: SemLang }) {
+function Problem({ status, replaced, lang }: { status: number; replaced: boolean; lang: SemLang }) {
   const t = (k: SemKey) => st(lang, k);
   const offline = status === 0 || status >= 500;
+  const [title, text]: [SemKey, SemKey] = offline
+    ? ['nettTittel', 'nettTekst']
+    : replaced
+      ? ['byttTittel', 'byttTekst']
+      : ['ugyldigTittel', 'ugyldigTekst'];
   return (
-    <div class="skjerm tilstand" data-state={offline ? 'offline' : 'invalid'}>
+    <div class="skjerm tilstand" data-state={offline ? 'offline' : replaced ? 'revoked' : 'invalid'}>
       <div class="ikon anim">
         <Icon name={offline ? 'varsel' : 'lenke'} />
       </div>
       <h1 class="anim" tabIndex={-1}>
-        {t(offline ? 'nettTittel' : 'ugyldigTittel')}
+        {t(title)}
       </h1>
-      <p class="anim">{t(offline ? 'nettTekst' : 'ugyldigTekst')}</p>
+      <p class="anim">{t(text)}</p>
       <ContactCard contact={VARDAHEI_CONTACT} lang={lang} />
     </div>
   );
@@ -180,7 +185,11 @@ export function SeminarPage() {
       (seminar) => setView({ kind: 'ready', seminar }),
       (error: unknown) => {
         if (!controller.signal.aborted)
-          setView({ kind: 'error', status: error instanceof SeminarError ? error.status : 0 });
+          setView({
+            kind: 'error',
+            status: error instanceof SeminarError ? error.status : 0,
+            replaced: error instanceof SeminarError && error.replaced,
+          });
       },
     );
     return () => controller.abort();
@@ -223,7 +232,7 @@ export function SeminarPage() {
             </p>
           </div>
         )}
-        {view.kind === 'error' && <Problem status={view.status} lang={lang} />}
+        {view.kind === 'error' && <Problem status={view.status} replaced={view.replaced} lang={lang} />}
         {seminar && done && <Registered seminar={seminar} lang={lang} code={code} />}
         {seminar && !done && seminar.phase === 'open' && (
           <div class="skjerm sem-open" data-step="open">

@@ -57,6 +57,10 @@ export class SeminarsController {
     const input = parseWith(SeminarInput, body);
     return { id: await this.seminars.update(id, input, auditWho(req.adminSession, true)) };
   }
+  @Post('seminars/:id/reissue')
+  reissue(@Param('id', ParseUUIDPipe) id: string, @Req() req: AdminRequest) {
+    return this.seminars.reissue(id, auditWho(req.adminSession, true));
+  }
   @Get('seminars/:id/registrations')
   registrations(@Param('id', ParseUUIDPipe) id: string, @Req() req: AdminRequest) {
     return this.seminars.participants(id, req.adminSession);

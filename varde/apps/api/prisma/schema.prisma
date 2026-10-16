@@ -344,35 +344,49 @@ model DeletionTombstone {
 /// Seminar (3.1, ARCHITECTURE §4 and §7): topic in nynorsk (and English when `required_languages`
 /// has en), start and end as instants (shown in Europe/Oslo), place, `format` ∈ {onsite, digital},
 /// the clients it is for and the registration link: `code` is a 128-bit bearer looked up by
-/// `code_hash` (ADR-009). `sequence` grows when time, place or topic change (ICS updates). Rounds
+/// `code_hash` (ADR-009), replaced by «Ny lenkje» (old hashes in RevokedSeminarCode).
+/// `sequence` grows when time, place or topic change (ICS updates). Rounds
 /// before/live/after are linked in 3c. No personal data: participants are Contact and Registration.
 model Seminar {
-  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   topic_nn           String
   topic_en           String?
-  starts_at          DateTime          @db.Timestamptz(6)
-  ends_at            DateTime          @db.Timestamptz(6)
+  starts_at          DateTime             @db.Timestamptz(6)
+  ends_at            DateTime             @db.Timestamptz(6)
   place              String
   format             String
   required_languages String[]
   code               String
-  code_hash          String            @unique
-  sequence           Int               @default(0)
-  round_before_id    String?           @db.Uuid
-  round_before       Round?            @relation("seminar_round_before", fields: [round_before_id], references: [id], onDelete: SetNull)
-  round_live_id      String?           @db.Uuid
-  round_live         Round?            @relation("seminar_round_live", fields: [round_live_id], references: [id], onDelete: SetNull)
-  round_after_id     String?           @db.Uuid
-  round_after        Round?            @relation("seminar_round_after", fields: [round_after_id], references: [id], onDelete: SetNull)
-  created_at         DateTime          @default(now()) @db.Timestamptz(6)
+  code_hash          String               @unique
+  sequence           Int                  @default(0)
+  round_before_id    String?              @db.Uuid
+  round_before       Round?               @relation("seminar_round_before", fields: [round_before_id], references: [id], onDelete: SetNull)
+  round_live_id      String?              @db.Uuid
+  round_live         Round?               @relation("seminar_round_live", fields: [round_live_id], references: [id], onDelete: SetNull)
+  round_after_id     String?              @db.Uuid
+  round_after        Round?               @relation("seminar_round_after", fields: [round_after_id], references: [id], onDelete: SetNull)
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
   created_by         String
   clients            SeminarClient[]
   registrations      Registration[]
   finding_statuses   FindingStatus[]
   materials          SeminarMaterial[]
+  revoked_codes      RevokedSeminarCode[]
 
   @@index([ends_at])
   @@map("seminar")
+}
+
+/// Hash-only history of replaced seminar links (3a, ADR-009): an old link, an invitation already
+/// sent or a printed poster gets «Lenkja er bytt ut» instead of a plain 403.
+model RevokedSeminarCode {
+  code_hash  String   @id
+  seminar_id String   @db.Uuid
+  seminar    Seminar  @relation(fields: [seminar_id], references: [id], onDelete: Cascade)
+  revoked_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([seminar_id])
+  @@map("revoked_seminar_code")
 }
 
 /// Material of a seminar (3.3): a title and an http(s) link, no uploaded files (CHECKs). The

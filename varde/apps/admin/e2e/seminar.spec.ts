@@ -1,6 +1,6 @@
 // Seminar (3a) end to end: create a seminar → its link → registration on the public page → the
 // registration is in the admin list (read on request) → «Last ned invitasjon», the calendar file
-// and the poster → deletion of the participant by e-mail on «Sletting».
+// and the poster → «Ny lenkje» → the admin corrects the contact → deletion by e-mail on «Sletting».
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { login } from './support.js';
@@ -89,6 +89,24 @@ test('create → link → register on /s → visible in the list → invitation,
   await poster.screenshot({ path: info.outputPath('admin-seminar-plakat.png'), fullPage: true });
   await poster.close();
   await page.screenshot({ path: info.outputPath('admin-seminar-invitasjon.png'), fullPage: true });
+
+  // «Ny lenkje» in two presses: the old link and the old posters say the link was replaced.
+  await page.getByRole('group', { name: 'Del' }).getByRole('button', { name: 'Påmelding' }).click();
+  await page.getByRole('button', { name: 'Ny lenkje', exact: true }).click();
+  await page.getByRole('button', { name: 'Stadfest ny lenkje' }).click();
+  await expect(page.getByRole('link', { name: 'Opne påmeldingssida' })).not.toHaveAttribute('href', link!);
+  const old = await context.newPage();
+  await old.goto(link!);
+  await expect(old.locator('h1')).toHaveText('Lenkja er bytt ut');
+  await old.close();
+
+  // The admin corrects the contact; the public form never could.
+  await page.getByRole('button', { name: 'Vis namnelista' }).click();
+  await page.getByRole('button', { name: 'Endre ZZ E2E Deltakar' }).click();
+  const edit = page.getByRole('form', { name: 'Endre kontakten' });
+  await edit.getByLabel('Namn').fill('ZZ E2E Retta');
+  await edit.getByRole('button', { name: 'Lagre kontakten' }).click();
+  await expect(page.locator('table.sem-pamelde')).toContainText('ZZ E2E Retta');
 
   // «Sletting», area «Deltakar»: the contact and the registration go, by e-mail.
   await page.getByRole('link', { name: 'Sletting', exact: true }).click();

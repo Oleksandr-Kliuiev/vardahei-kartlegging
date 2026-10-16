@@ -44,6 +44,9 @@ const nn = {
   ugyldigTittel: 'Denne lenkja verkar ikkje',
   ugyldigTekst:
     'Sjekk at du har heile lenkja frå invitasjonen, med alle teikna på slutten. Spør den som sende deg ho, eller ta kontakt med oss.',
+  byttTittel: 'Lenkja er bytt ut',
+  byttTekst:
+    'Det er laga ei ny lenkje til dette seminaret. Spør den som sende deg invitasjonen om den nye, eller ta kontakt med oss.',
   nettTittel: 'Ingen kontakt med Varde',
   nettTekst: 'Sjekk nettet og last sida på nytt.',
   hentar: 'Hentar seminaret …',
@@ -91,6 +94,9 @@ const en: Record<SemKey, string> = {
   ugyldigTittel: 'This link does not work',
   ugyldigTekst:
     'Check that you have the whole link from the invitation, with all the characters at the end. Ask the person who sent it to you, or get in touch with us.',
+  byttTittel: 'This link has been replaced',
+  byttTekst:
+    'A new link has been made for this seminar. Ask the person who sent you the invitation for the new one, or get in touch with us.',
   nettTittel: 'No connection to Varde',
   nettTekst: 'Check your connection and reload the page.',
   hentar: 'Loading the seminar …',

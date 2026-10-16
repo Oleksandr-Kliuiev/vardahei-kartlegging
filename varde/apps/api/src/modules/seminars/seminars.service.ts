@@ -201,6 +201,32 @@ export class SeminarsService {
     );
   }
 
+  /** «Ny lenkje» (ADR-009): a new code; the old one stops at once and gets «Lenkja er bytt ut»
+   * (hash history). Invitations already sent, printed posters and the links in the calendars of
+   * those registered stop working too — the admin is warned before. AuditLog has hash prefixes. */
+  reissue(id: string, who: string) {
+    const code = issueCode();
+    return this.guarded(() =>
+      this.prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM seminar WHERE id = ${id}::uuid FOR UPDATE`;
+        const old = await tx.seminar.findUnique({ where: { id } });
+        if (!old) throw new NotFoundException('Seminaret finst ikkje.');
+        await tx.revokedSeminarCode.create({ data: { code_hash: old.code_hash, seminar_id: id } });
+        const hash = codeHash(code);
+        await tx.seminar.update({ where: { id }, data: { code, code_hash: hash } });
+        await tx.auditLog.create({
+          data: {
+            who,
+            what: 'seminars.code.reissue',
+            target: `seminar:${id}`,
+            details: { hash: hash.slice(0, 12), old: old.code_hash.slice(0, 12) },
+          },
+        });
+        return { id, link: registrationLink(code) };
+      }),
+    );
+  }
+
   update(id: string, input: SeminarInput, who: string): Promise<string> {
     return this.guarded(() =>
       this.prisma.$transaction(async (tx) => {

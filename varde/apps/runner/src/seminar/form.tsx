@@ -8,7 +8,8 @@ import { register, SeminarError, type PublicSeminar } from './api.js';
 import { st, type SemKey, type SemLang } from './texts.js';
 
 type Field = 'name' | 'company' | 'email' | 'consent';
-const OTHER = 'anna';
+/** «Anna bedrift»: not a slug, so it never meets a client. */
+const OTHER = '*';
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const FAILURE: Record<number, SemKey> = {
   400: 'feilSjekk',
@@ -114,16 +115,16 @@ export function RegistrationForm({
       {seminar.clients.length > 0 ? (
         <fieldset class="sem-felt sem-val" {...described('company')}>
           <legend>{t('bedrift')}</legend>
-          {[...seminar.clients, { id: OTHER, name: t('annaBedrift') }].map((c, i) => (
-            <label class="sem-rad" key={c.id}>
+          {[...seminar.clients, { key: OTHER, name: t('annaBedrift') }].map((c, i) => (
+            <label class="sem-rad" key={c.key}>
               <input
                 type="radio"
                 name="company"
-                value={c.id}
-                checked={company === c.id}
+                value={c.key}
+                checked={company === c.key}
                 {...(i === 0 ? { 'data-field': 'company' } : {})}
                 onChange={() => {
-                  setCompany(c.id);
+                  setCompany(c.key);
                   clear('company');
                 }}
               />

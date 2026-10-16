@@ -1,5 +1,6 @@
 -- 3.1: seminars, their clients, contacts and registrations (personal data, ADR-017), actions,
--- the FindingRule → Action link by rule key and the working status of findings.
+-- the FindingRule → Action link by rule key, the working status of findings and the hash
+-- history of replaced seminar links.
 
 -- CreateTable
 CREATE TABLE "seminar" (
@@ -21,6 +22,15 @@ CREATE TABLE "seminar" (
     "created_by" TEXT NOT NULL,
 
     CONSTRAINT "seminar_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "revoked_seminar_code" (
+    "code_hash" TEXT NOT NULL,
+    "seminar_id" UUID NOT NULL,
+    "revoked_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "revoked_seminar_code_pkey" PRIMARY KEY ("code_hash")
 );
 
 -- CreateTable
@@ -111,6 +121,9 @@ CREATE UNIQUE INDEX "seminar_code_hash_key" ON "seminar"("code_hash");
 CREATE INDEX "seminar_ends_at_idx" ON "seminar"("ends_at");
 
 -- CreateIndex
+CREATE INDEX "revoked_seminar_code_seminar_id_idx" ON "revoked_seminar_code"("seminar_id");
+
+-- CreateIndex
 CREATE INDEX "seminar_client_client_id_idx" ON "seminar_client"("client_id");
 
 -- CreateIndex
@@ -145,6 +158,9 @@ ALTER TABLE "seminar" ADD CONSTRAINT "seminar_round_live_id_fkey" FOREIGN KEY ("
 
 -- AddForeignKey
 ALTER TABLE "seminar" ADD CONSTRAINT "seminar_round_after_id_fkey" FOREIGN KEY ("round_after_id") REFERENCES "round"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "revoked_seminar_code" ADD CONSTRAINT "revoked_seminar_code_seminar_id_fkey" FOREIGN KEY ("seminar_id") REFERENCES "seminar"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "seminar_client" ADD CONSTRAINT "seminar_client_seminar_id_fkey" FOREIGN KEY ("seminar_id") REFERENCES "seminar"("id") ON DELETE CASCADE ON UPDATE CASCADE;

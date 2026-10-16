@@ -1,9 +1,9 @@
 // One seminar (Vardestien «Seminar»): what, when and where, then the tabs «Påmelding»,
 // «Materiell», «Invitasjon», «Live» and «Før og etter». The participant list is personal data:
 // it is shown only on request, and every read is written to the log.
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { api } from './api.js';
+import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { api, mutate } from './api.js';
 import { Icon } from './icons.js';
 import { ErrorMessage } from './queries.js';
 import { SeminarForm } from './seminar-form.js';
@@ -30,6 +30,52 @@ const TABS: readonly (readonly [Tab, string])[] = [
   ['live', 'Live'],
   ['etter', 'Før og etter'],
 ];
+
+/** «Ny lenkje» (ADR-009) in two presses: the first says what stops working. */
+function NewLink({ seminar }: { seminar: SeminarDetail }) {
+  const toast = useToast();
+  const queries = useQueryClient();
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  useEffect(() => {
+    if (!confirm) return;
+    const timer = setTimeout(() => setConfirm(false), 6000);
+    return () => clearTimeout(timer);
+  }, [confirm]);
+  async function reissue() {
+    setBusy(true);
+    setError(null);
+    try {
+      await mutate(`/api/admin/seminars/${seminar.id}/reissue`);
+      await queries.invalidateQueries({ queryKey: ['seminars'] });
+      toast('Ny lenkje er laga');
+    } catch (e) {
+      setError(e instanceof Error ? e : new Error('Noko gjekk gale.'));
+    } finally {
+      setBusy(false);
+      setConfirm(false);
+    }
+  }
+  return (
+    <div className="sem-ny-lenkje">
+      <button
+        type="button"
+        className={confirm ? 'btn sm danger' : 'btn sm ghost'}
+        disabled={busy}
+        aria-describedby="ny-lenkje-varsel"
+        onClick={() => (confirm ? void reissue() : setConfirm(true))}
+      >
+        {confirm ? 'Stadfest ny lenkje' : 'Ny lenkje'}
+      </button>
+      <p id="ny-lenkje-varsel" className={confirm ? 'forklaring sem-varsel' : 'forklaring'}>
+        Den gamle lenkja sluttar å verke med ein gong: invitasjonar som er sende, plakatar som er
+        skrivne ut og lenkja i kalenderen til dei påmelde. Del den nye lenkja etterpå.
+      </p>
+      <ErrorMessage error={error} />
+    </div>
+  );
+}
 
 function Registrations({ seminar }: { seminar: SeminarDetail }) {
   const toast = useToast();
@@ -63,6 +109,7 @@ function Registrations({ seminar }: { seminar: SeminarDetail }) {
           ) : (
             <p className="forklaring">Adressa til Varde (PUBLIC_URL) er ikkje sett opp, så det finst inga lenkje enno.</p>
           )}
+          {seminar.link && <NewLink seminar={seminar} />}
         </div>
       </section>
       <NameList seminar={seminar} />

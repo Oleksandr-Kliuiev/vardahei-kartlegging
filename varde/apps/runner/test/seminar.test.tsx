@@ -20,8 +20,8 @@ const seminar = (over: Partial<PublicSeminar> = {}): PublicSeminar => ({
   place: 'Vardahei IT, Sogndal',
   format: 'onsite',
   clients: [
-    { id: '00000000-0000-4000-8000-0000000000a1', name: 'Syntetisk A' },
-    { id: '00000000-0000-4000-8000-0000000000b2', name: 'Syntetisk B' },
+    { key: 'syntetisk-a', name: 'Syntetisk A' },
+    { key: 'syntetisk-b', name: 'Syntetisk B' },
   ],
   phase: 'open',
   consent: {
@@ -102,7 +102,7 @@ describe('seminar page (3.2)', () => {
   it('registers with a client, the consent version and the honeypot when filled; then «Du er påmeld» and the calendar', async () => {
     await open(seminar());
     await input('#sem-namn', 'ZZ Deltakar');
-    await click('input[value="00000000-0000-4000-8000-0000000000b2"]');
+    await click('input[value="syntetisk-b"]');
     await input('#sem-epost', 'zz@example.test');
     await click('.sem-kryss input');
     await input('input[name="website"]', 'bot');
@@ -113,7 +113,7 @@ describe('seminar page (3.2)', () => {
     expect(JSON.parse(init.body as string)).toEqual({
       name: 'ZZ Deltakar',
       email: 'zz@example.test',
-      company: { client: '00000000-0000-4000-8000-0000000000b2' },
+      company: { client: 'syntetisk-b' },
       consent: 'samtykke-v1',
       lang: 'nn',
       website: 'bot',
@@ -137,7 +137,7 @@ describe('seminar page (3.2)', () => {
     expect(document.documentElement.lang).toBe('en');
     expect(root.textContent).toContain('I agree.');
     await input('#sem-namn', 'ZZ Person');
-    await click('input[value="anna"]');
+    await click('input[value="*"]');
     await input('#sem-anna', 'Eige firma');
     await input('#sem-epost', 'zz@example.test');
     await click('.sem-kryss input');
@@ -156,6 +156,18 @@ describe('seminar page (3.2)', () => {
     await click('.sem-samtykke .linkbtn');
     expect(more.getAttribute('data-open')).toBe('true');
     expect(root.textContent).toContain('Heile teksten.');
+  });
+
+  it('a replaced link says so (ADR-009), with the contact of Vardahei IT', async () => {
+    fetcher = vi.fn(() =>
+      Promise.resolve(json(403, { message: 'Lenkja er bytt ut. Spør den som sende deg ho om den nye.' })),
+    );
+    vi.stubGlobal('fetch', fetcher);
+    history.replaceState(null, '', `/s?c=${CODE}`);
+    await act(() => render(<SeminarPage />, root));
+    await vi.waitFor(() => expect(root.querySelector('h1')?.textContent).toBe('Lenkja er bytt ut'));
+    expect(root.querySelector('[data-state="revoked"]')).not.toBeNull();
+    expect(root.textContent).toContain('post@vardahei.no');
   });
 
   it('a broken link shows its own screen with the contact of Vardahei IT', async () => {

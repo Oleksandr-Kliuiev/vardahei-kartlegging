@@ -84,8 +84,9 @@ export function parseWith<T>(schema: z.ZodType<T>, input: unknown): T {
 export const RegistrationInput = z.strictObject({
   name: text(120).pipe(z.string().min(1)),
   email: Email,
+  // A client of the seminar by its slug, or the person's own text.
   company: z.union([
-    z.strictObject({ client: z.uuid() }),
+    z.strictObject({ client: z.string().min(1).max(100) }),
     z.strictObject({ name: text(120).pipe(z.string().min(1)) }),
   ]),
   consent: z.string().min(1).max(40),

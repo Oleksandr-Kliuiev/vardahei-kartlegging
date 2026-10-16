@@ -11,5 +11,6 @@ DROP TABLE IF EXISTS "action";
 DROP TABLE IF EXISTS "registration";
 DROP TABLE IF EXISTS "contact";
 DROP TABLE IF EXISTS "seminar_client";
+DROP TABLE IF EXISTS "revoked_seminar_code";
 DROP TABLE IF EXISTS "seminar";
 DELETE FROM "_prisma_migrations" WHERE migration_name = '20261016120000_seminars';

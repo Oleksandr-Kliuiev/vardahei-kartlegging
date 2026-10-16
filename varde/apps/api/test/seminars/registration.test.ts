@@ -4,6 +4,7 @@
 // calendar file parses.
 import 'reflect-metadata';
 import ICAL from 'ical.js';
+import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventsService } from '../../src/modules/events/events.service.js';
 import { PrivacyService } from '../../src/modules/privacy/privacy.service.js';
@@ -23,7 +24,7 @@ import {
 } from '../support/seminars.js';
 
 let t: SeminarApp;
-let clients: { id: string; name: string }[];
+let clients: { id: string; slug: string; name: string }[];
 let limits: PublicSeminarService['limits'];
 
 beforeAll(async () => {
@@ -45,7 +46,7 @@ const pub = (method: 'GET' | 'POST', url: string, code: string, payload?: unknow
 const body = (n: number | string, over: Record<string, unknown> = {}) => ({
   name: `ZZ Deltakar ${n}`,
   email: email(t, n),
-  company: { client: clients[0]!.id },
+  company: { client: clients[0]!.slug },
   consent: CONSENT.version,
   lang: 'nn',
   ...over,
@@ -74,7 +75,11 @@ describe('public seminar view', () => {
       phase: 'open',
       consent: { version: CONSENT.version, nn: CONSENT.nn, en: CONSENT.en },
     });
-    expect(res.json<{ clients: { name: string }[] }>().clients.map((c) => c.name)).toEqual(clients.map((c) => c.name).sort());
+    expect(res.json<{ clients: { key: string; name: string }[] }>().clients).toEqual(
+      [...clients].sort((a, b) => a.name.localeCompare(b.name, 'nb')).map((c) => ({ key: c.slug, name: c.name })),
+    );
+    // No database ids leave the public page (the company is picked by the client's slug).
+    for (const c of clients) expect(res.body).not.toContain(c.id);
     expect(res.body).not.toMatch(/registrations|code|ZZ Deltakar/);
   });
 
@@ -133,7 +138,8 @@ describe('registration', () => {
     };
     expect(await bad({ name: ' ' })).toEqual([400, 'Skriv namnet ditt.']);
     expect(await bad({ email: 'ikkje-ei-adresse' })).toEqual([400, 'Skriv ei gyldig e-postadresse.']);
-    expect(await bad({ company: { client: clients[1]!.id } })).toEqual([400, 'Vel bedrift, eller skriv namnet på bedrifta.']);
+    expect(await bad({ company: { client: clients[1]!.slug } })).toEqual([400, 'Vel bedrift, eller skriv namnet på bedrifta.']);
+    expect(await bad({ company: { client: clients[0]!.id } })).toEqual([400, 'Vel bedrift, eller skriv namnet på bedrifta.']);
     expect(await bad({ company: {} })).toEqual([400, 'Vel bedrift, eller skriv namnet på bedrifta.']);
     expect(await bad({ consent: undefined })).toEqual([400, 'Kryss av for samtykket, så kan du melde deg på.']);
     expect((await bad({ consent: 'samtykke-v0' }))[0]).toBe(409);
@@ -157,6 +163,30 @@ describe('registration', () => {
     expect(res.statusCode).toBe(410);
     expect(res.json<{ message: string }>().message).toBe('Påmeldinga er stengd.');
     expect((await pub('GET', '/api/public/seminar', s.code)).json()).toMatchObject({ phase: 'held', consent: null });
+  });
+});
+
+describe('«Ny lenkje» (ADR-009)', () => {
+  it('the old code stops at once and says it was replaced; the new one works; AuditLog has hash prefixes', async () => {
+    const s = await createSeminar(t);
+    expect((await t.call('POST', `/api/admin/seminars/${s.id}/reissue`, undefined, { cookie: '' })).statusCode).toBe(401);
+    const res = await t.call('POST', `/api/admin/seminars/${s.id}/reissue`);
+    expect(res.statusCode).toBe(201);
+    const fresh = (await t.prisma.seminar.findUniqueOrThrow({ where: { id: s.id } })).code;
+    expect(fresh).not.toBe(s.code);
+    expect(res.json()).toEqual({ id: s.id, link: `${PUBLIC_URL}/s?c=${fresh}` });
+    const old = await pub('GET', '/api/public/seminar', s.code);
+    expect(old.statusCode).toBe(403);
+    expect(old.json<{ message: string }>().message).toBe('Lenkja er bytt ut. Spør den som sende deg ho om den nye.');
+    expect((await pub('POST', '/api/public/seminar/registrations', s.code, body('old-code', { company: { name: 'X' } }))).statusCode).toBe(403);
+    expect((await pub('GET', '/api/public/seminar/calendar', s.code)).statusCode).toBe(403);
+    expect((await pub('GET', '/api/public/seminar', fresh)).statusCode).toBe(200);
+    expect((await t.call('GET', `/api/admin/seminars/${s.id}`)).json<{ link: string }>().link).toBe(`${PUBLIC_URL}/s?c=${fresh}`);
+    const audit = await t.prisma.auditLog.findFirstOrThrow({ where: { what: 'seminars.code.reissue', target: `seminar:${s.id}` } });
+    expect(Object.keys(audit.details as object).sort()).toEqual(['hash', 'old']);
+    expect(JSON.stringify(audit)).not.toContain(s.code);
+    expect(JSON.stringify(audit)).not.toContain(fresh);
+    expect((await t.call('POST', `/api/admin/seminars/${randomUUID()}/reissue`)).statusCode).toBe(404);
   });
 });
 

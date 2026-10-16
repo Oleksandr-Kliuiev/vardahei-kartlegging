@@ -12,7 +12,8 @@ export interface PublicSeminar {
   when: Partial<Record<SemLang, string>>;
   place: string;
   format: 'onsite' | 'digital';
-  clients: { id: string; name: string }[];
+  /** Clients of the seminar to pick as company: `key` is the client's slug, never a database id. */
+  clients: { key: string; name: string }[];
   phase: 'open' | 'held';
   consent: ({ version: string } & Partial<Record<SemLang, ConsentText>>) | null;
   materials?: { title: string; url: string }[];
@@ -27,7 +28,11 @@ export interface Registration {
 }
 
 export class SeminarError extends Error {
-  constructor(readonly status: number) {
+  constructor(
+    readonly status: number,
+    /** A replaced link (ADR-009) is a 403 that says so. */
+    readonly replaced = false,
+  ) {
     super(`seminar ${status}`);
   }
 }
@@ -45,7 +50,11 @@ async function call(path: string, code: string, init: RequestInit = {}): Promise
   } catch {
     throw new SeminarError(0);
   }
-  if (!res.ok) throw new SeminarError(res.status);
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as { message?: unknown } | null;
+    const message = typeof body?.message === 'string' ? body.message : '';
+    throw new SeminarError(res.status, res.status === 403 && message.startsWith('Lenkja er bytt ut'));
+  }
   return res;
 }
 

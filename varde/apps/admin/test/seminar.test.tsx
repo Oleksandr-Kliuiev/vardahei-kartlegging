@@ -169,6 +169,25 @@ describe('one seminar', () => {
     expect(calls('/registrations')).toHaveLength(1);
     expect(view.div.querySelector('table')?.textContent).toContain('zz@example.test');
   });
+  it('«Ny lenkje» takes two presses and says what stops working', async () => {
+    view = mount(
+      <Toasts>
+        <SeminarPage id={ID} />
+      </Toasts>,
+      true,
+    );
+    await settle();
+    expect(view.div.textContent).toContain('plakatar som er skrivne ut');
+    act(() => {
+      button(view!.div, 'Ny lenkje').click();
+    });
+    expect(fetcher.mock.calls.some(([p]) => p.endsWith('/reissue'))).toBe(false);
+    act(() => {
+      button(view!.div, 'Stadfest ny lenkje').click();
+    });
+    await settle();
+    expect(fetcher).toHaveBeenCalledWith(`/api/admin/seminars/${ID}/reissue`, expect.objectContaining({ method: 'POST' }));
+  });
   it('the admin corrects a contact in the name list: name and own company text', async () => {
     view = mount(
       <Toasts>

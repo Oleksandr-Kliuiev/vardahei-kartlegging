@@ -75,13 +75,15 @@ export class PublicSeminarService {
     private readonly events: EventsService,
   ) {}
 
-  /** Unknown, malformed and missing codes are the same 403. */
+  /** Unknown, malformed and missing codes are the same 403; a replaced code says so (ADR-009). */
   async resolve(code: string, db: Prisma.TransactionClient = this.prisma): Promise<PublicSeminarRow> {
-    const s = /^[A-Za-z0-9_-]{22}$/.test(code)
-      ? await db.seminar.findUnique({ where: { code_hash: codeHash(code) }, include })
-      : null;
-    if (!s) throw new ForbiddenException('Lenkja er ikkje gyldig.');
-    return s;
+    if (!/^[A-Za-z0-9_-]{22}$/.test(code)) throw new ForbiddenException('Lenkja er ikkje gyldig.');
+    const hash = codeHash(code);
+    const s = await db.seminar.findUnique({ where: { code_hash: hash }, include });
+    if (s) return s;
+    if (await db.revokedSeminarCode.findUnique({ where: { code_hash: hash } }))
+      throw new ForbiddenException('Lenkja er bytt ut. Spør den som sende deg ho om den nye.');
+    throw new ForbiddenException('Lenkja er ikkje gyldig.');
   }
 
   /** Windows of 10 minutes per IP and in total; the IP lives only in process memory. */
@@ -110,8 +112,9 @@ export class PublicSeminarService {
       when: by((l) => whenText(s.starts_at, s.ends_at, l)),
       place: s.place,
       format: s.format,
+      // The page picks a company by the client's slug: no ids of the database leave here.
       clients: s.clients
-        .map((c) => ({ id: c.client.id, name: c.client.name }))
+        .map((c) => ({ key: c.client.slug, name: c.client.name }))
         .sort((a, b) => a.name.localeCompare(b.name, 'nb')),
       phase: held ? ('held' as const) : ('open' as const),
       consent: held ? null : { version: CONSENT.version, ...by((l) => CONSENT[l]) },
@@ -137,7 +140,7 @@ export class PublicSeminarService {
           throw new ConflictException('Teksten om personvern er endra. Last sida på nytt og prøv igjen.');
         const chosen =
           'client' in input.company
-            ? s.clients.find((c) => c.client_id === (input.company as { client: string }).client)
+            ? s.clients.find((c) => c.client.slug === (input.company as { client: string }).client)
             : undefined;
         if ('client' in input.company && !chosen)
           throw new BadRequestException('Vel bedrift, eller skriv namnet på bedrifta.');

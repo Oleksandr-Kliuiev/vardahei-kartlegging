@@ -36,6 +36,8 @@ async function textOf(res: LightMyRequestResponse): Promise<{ text: string; zip:
     await zip.close();
   }
 }
+const currentCode = async () =>
+  (await f.prisma.seminar.findUniqueOrThrow({ where: { id: seminar.id } })).code;
 const PARTICIPANT_CHANNELS = new Set([
   'GET /api/admin/seminars/:id/registrations',
   'GET /api/admin/contacts/review',
@@ -106,6 +108,8 @@ it('walks every API route: participant data only in the two named channels, each
         if (url.includes('client.csv')) url += '&client=' + client.id;
       }
       const before = await f.prisma.auditLog.count({ where: { what: 'privacy.participants' } });
+      // «Ny lenkje» is one of the routes: the public routes always use the current code.
+      const code = await currentCode();
       const res = await f.app
         .getHttpAdapter()
         .getInstance()
@@ -116,7 +120,7 @@ it('walks every API route: participant data only in the two named channels, each
           headers: {
             cookie: cookieHeader(f.cookie),
             // The public seminar routes take the code as a bearer.
-            ...(route.url.startsWith('/api/public/') ? { authorization: `Bearer ${seminar.code}` } : {}),
+            ...(route.url.startsWith('/api/public/') ? { authorization: `Bearer ${code}` } : {}),
           },
         });
       const key = `${method} ${route.url}`;
@@ -141,6 +145,7 @@ it('walks every API route: participant data only in the two named channels, each
     'GET /api/admin/exports/client.csv',
     'GET /api/admin/exports/archive.json',
     'POST /api/admin/retention/forget',
+    'POST /api/admin/seminars/:id/reissue',
   ])
     expect(seen, key).toContain(key);
   // The invitation package was really opened and read, file by file.
@@ -151,7 +156,7 @@ it('the public page of a held seminar shows its material, never a participant', 
   const res = await f.app
     .getHttpAdapter()
     .getInstance()
-    .inject({ method: 'GET', url: '/api/public/seminar', headers: { authorization: `Bearer ${seminar.code}` } });
+    .inject({ method: 'GET', url: '/api/public/seminar', headers: { authorization: `Bearer ${await currentCode()}` } });
   expect(res.json()).toMatchObject({ phase: 'held', materials: [{ title: 'ZZ lysark' }] });
   for (const secret of [NAME, EMAIL, COMPANY]) expect(res.body).not.toContain(secret);
 });
