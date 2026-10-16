@@ -26,14 +26,20 @@ beforeAll(async () => {
   t = await seminarApp();
   // The retention job prunes varde_audit.connection_log; a plain test database needs the function.
   await withPg(async (c) => {
-    if (!(await c.query<{ f: string | null }>("SELECT to_regprocedure('varde_audit.prune()') f")).rows[0]?.f) {
+    if (
+      !(await c.query<{ f: string | null }>("SELECT to_regprocedure('varde_audit.prune()') f"))
+        .rows[0]?.f
+    ) {
       await c.query('CREATE SCHEMA IF NOT EXISTS varde_audit');
       await c.query(
         'CREATE TABLE IF NOT EXISTS varde_audit.connection_log (at timestamptz NOT NULL DEFAULT now(), role_name text)',
       );
       const sql = readFileSync(resolve('../../infra/sql/varde-db.sql'), 'utf8');
       await c.query(
-        sql.slice(sql.indexOf('CREATE FUNCTION varde_audit.prune()'), sql.indexOf('ALTER FUNCTION varde_audit.prune()')),
+        sql.slice(
+          sql.indexOf('CREATE FUNCTION varde_audit.prune()'),
+          sql.indexOf('ALTER FUNCTION varde_audit.prune()'),
+        ),
       );
     }
   });
@@ -59,7 +65,8 @@ describe('participant list (class rows of seminars)', () => {
     await register(t, s.id, email(t, 'a'), { name: 'ZZ Ola Syntetisk' });
     await register(t, s.id, email(t, 'b'), { name: 'ZZ Kari Syntetisk', lang: 'en' });
     expect(
-      (await t.call('GET', `/api/admin/seminars/${s.id}/registrations`, undefined, { cookie: '' })).statusCode,
+      (await t.call('GET', `/api/admin/seminars/${s.id}/registrations`, undefined, { cookie: '' }))
+        .statusCode,
     ).toBe(401);
     const before = await t.prisma.auditLog.count({ where: { what: 'privacy.participants' } });
     const res = await t.call('GET', `/api/admin/seminars/${s.id}/registrations`);
@@ -71,21 +78,32 @@ describe('participant list (class rows of seminars)', () => {
     const audit = await t.prisma.auditLog.findMany({
       where: { what: 'privacy.participants', target: `seminar:${s.id}` },
     });
-    expect(await t.prisma.auditLog.count({ where: { what: 'privacy.participants' } })).toBe(before + 1);
+    expect(await t.prisma.auditLog.count({ where: { what: 'privacy.participants' } })).toBe(
+      before + 1,
+    );
     expect(audit[0]).toMatchObject({ who: 'entra:test:seminar-admin', details: { count: 2 } });
     expect(JSON.stringify(audit)).not.toMatch(/Syntetisk|example\.test/);
   });
 
-  it('a repeat for the same seminar changes nothing; a new seminar renews the contact', async () => {
+  it('a repeat for the same seminar changes nothing; a new seminar renews only the consent', async () => {
     const one = await createSeminar(t),
       two = await createSeminar(t);
     expect(await register(t, one.id, email(t, 'r'), { name: 'ZZ Fyrste' })).toBe(true);
     expect(await register(t, one.id, email(t, 'r'), { name: 'ZZ Andre' })).toBe(false);
     expect((await contactsOf(t)).find((c) => c.email === email(t, 'r'))?.name).toBe('ZZ Fyrste');
+    const before = (await contactsOf(t)).find((c) => c.email === email(t, 'r'))!;
+    // The public form cannot rewrite a known contact (no login, e-mail not verified).
     expect(await register(t, two.id, email(t, 'r'), { name: 'ZZ Andre' })).toBe(true);
     const contact = (await contactsOf(t)).filter((c) => c.email === email(t, 'r'));
     expect(contact).toHaveLength(1);
-    expect(contact[0]!.name).toBe('ZZ Andre');
+    expect(contact[0]!.name).toBe('ZZ Fyrste');
+    expect([contact[0]!.company, contact[0]!.client_id]).toEqual([
+      before.company,
+      before.client_id,
+    ]);
+    expect(contact[0]!.last_confirmed_at.getTime()).toBeGreaterThanOrEqual(
+      before.last_confirmed_at.getTime(),
+    );
     expect(await registrationsOf(one.id)).toHaveLength(1);
   });
 });
@@ -129,7 +147,9 @@ describe('retention (1.31 job, classes registration and contact)', () => {
     await register(t, s.id, email(t, 'yearly'), { name: 'ZZ Årleg' });
     const contact = (await contactsOf(t)).find((c) => c.email === email(t, 'yearly'))!;
     await withPg((c) =>
-      c.query(`UPDATE contact SET last_confirmed_at = now() - interval '366 days' WHERE id = $1`, [contact.id]),
+      c.query(`UPDATE contact SET last_confirmed_at = now() - interval '366 days' WHERE id = $1`, [
+        contact.id,
+      ]),
     );
     const dry = await t.app.get(RetentionRun).run(true);
     expect(dry.contact_review).toBeGreaterThanOrEqual(1);
@@ -138,16 +158,26 @@ describe('retention (1.31 job, classes registration and contact)', () => {
     const flagged = (await contactsOf(t)).find((c) => c.id === contact.id)!.review_flagged_at;
     expect(flagged).not.toBeNull();
     await t.app.get(RetentionRun).run();
-    expect((await contactsOf(t)).find((c) => c.id === contact.id)!.review_flagged_at).toEqual(flagged);
+    expect((await contactsOf(t)).find((c) => c.id === contact.id)!.review_flagged_at).toEqual(
+      flagged,
+    );
 
-    const list = (await t.call('GET', '/api/admin/seminars')).json<{ contacts_to_review: number }>();
+    const list = (await t.call('GET', '/api/admin/seminars')).json<{
+      contacts_to_review: number;
+    }>();
     expect(list.contacts_to_review).toBeGreaterThanOrEqual(1);
     const review = await t.call('GET', '/api/admin/contacts/review');
     expect(review.json<{ rows: { id: string; name: string }[] }>().rows).toContainEqual(
       expect.objectContaining({ id: contact.id, name: 'ZZ Årleg', registrations: 1 }),
     );
-    expect(await t.prisma.auditLog.count({ where: { what: 'privacy.participants', target: 'contacts:review' } })).toBeGreaterThan(0);
-    expect((await t.call('POST', `/api/admin/contacts/${contact.id}/confirm`)).statusCode).toBe(201);
+    expect(
+      await t.prisma.auditLog.count({
+        where: { what: 'privacy.participants', target: 'contacts:review' },
+      }),
+    ).toBeGreaterThan(0);
+    expect((await t.call('POST', `/api/admin/contacts/${contact.id}/confirm`)).statusCode).toBe(
+      201,
+    );
     const after = (await contactsOf(t)).find((c) => c.id === contact.id)!;
     expect(after.review_flagged_at).toBeNull();
     expect(Date.now() - after.last_confirmed_at.getTime()).toBeLessThan(60_000);
@@ -167,7 +197,9 @@ describe('deletion on request, scope «Deltakar» (by e-mail)', () => {
       reason: 'Syntetisk førespurnad',
       dry_run,
     });
-    expect((await t.call('POST', '/api/admin/retention/forget', body(true), { cookie: '' })).statusCode).toBe(401);
+    expect(
+      (await t.call('POST', '/api/admin/retention/forget', body(true), { cookie: '' })).statusCode,
+    ).toBe(401);
     const requests = await t.prisma.deletionRequest.count();
     const preview = await t.call('POST', '/api/admin/retention/forget', body(true));
     expect(preview.json()).toEqual({ dry_run: true, contacts: 1, registrations: 2, total: 3 });
@@ -194,10 +226,21 @@ describe('deletion on request, scope «Deltakar» (by e-mail)', () => {
     expect(JSON.stringify([request, audit])).not.toMatch(/example\.test|Gløym/);
 
     // Unknown address: nothing to do, no ledger entry; the answer does not say more than counts.
-    const none = await t.call('POST', '/api/admin/retention/forget', body(false, email(t, 'never')));
+    const none = await t.call(
+      'POST',
+      '/api/admin/retention/forget',
+      body(false, email(t, 'never')),
+    );
     expect(none.json()).toEqual({ dry_run: false, contacts: 0, registrations: 0, total: 0 });
     expect(await t.prisma.deletionRequest.count()).toBe(requests + 1);
-    expect((await t.call('POST', '/api/admin/retention/forget', { ...body(false), scope: { scope: 'participant', email: 'ikkje-ei-adresse' } })).statusCode).toBe(400);
+    expect(
+      (
+        await t.call('POST', '/api/admin/retention/forget', {
+          ...body(false),
+          scope: { scope: 'participant', email: 'ikkje-ei-adresse' },
+        })
+      ).statusCode,
+    ).toBe(400);
   });
 
   it('after a restore from an older copy the ledger removes the contact again', async () => {
@@ -215,7 +258,10 @@ describe('deletion on request, scope «Deltakar» (by e-mail)', () => {
         `INSERT INTO contact (id, name, email, company, consent_version, consent_at) VALUES ($1, 'ZZ', $2, 'x', 'samtykke-v1', now())`,
         [old.id, address],
       );
-      await c.query(`INSERT INTO registration (seminar_id, contact_id, lang) VALUES ($1, $2, 'nn')`, [s.id, old.id]);
+      await c.query(
+        `INSERT INTO registration (seminar_id, contact_id, lang) VALUES ($1, $2, 'nn')`,
+        [s.id, old.id],
+      );
     });
     expect(await t.app.get(DeletionLedger).apply()).toBeGreaterThanOrEqual(1);
     expect((await contactsOf(t)).some((c) => c.email === address)).toBe(false);

@@ -62,8 +62,10 @@ const lockEmail = (tx: Prisma.TransactionClient, email: string) =>
 
 export class ParticipantStore {
   /** Idempotent per seminar and e-mail: a repeat changes nothing and returns false. A new
-   * registration of a known contact renews its consent and details. The caller holds the seminar
-   * row lock and has checked the seminar, the company and the consent version. */
+   * registration of a known contact renews only its consent: the public form has no login and
+   * the e-mail is not verified, so it never rewrites the name, company or client someone gave
+   * before (an admin can). The caller holds the seminar row lock and has checked the seminar,
+   * the company and the consent version. */
   async register(tx: Prisma.TransactionClient, p: ParticipantInput, now: Date): Promise<boolean> {
     await lockEmail(tx, p.email);
     const details = {
@@ -82,7 +84,15 @@ export class ParticipantStore {
         select: { id: true },
       });
       if (again) return false;
-      await tx.contact.update({ where: { id: known.id }, data: details });
+      await tx.contact.update({
+        where: { id: known.id },
+        data: {
+          consent_version: details.consent_version,
+          consent_at: details.consent_at,
+          last_confirmed_at: details.last_confirmed_at,
+          review_flagged_at: null,
+        },
+      });
     }
     const contact =
       known ??
@@ -146,7 +156,10 @@ export class ParticipantStore {
           contact: { select: { name: true, company: true, email: true } },
         },
       });
-      await tx.auditLog.update({ where: { id: entry.id }, data: { details: { count: rows.length } } });
+      await tx.auditLog.update({
+        where: { id: entry.id },
+        data: { details: { count: rows.length } },
+      });
       return rows.map((r) => ({
         name: r.contact.name,
         company: r.contact.company,
@@ -182,7 +195,10 @@ export class ParticipantStore {
           _count: { select: { registrations: true } },
         },
       });
-      await tx.auditLog.update({ where: { id: entry.id }, data: { details: { count: rows.length } } });
+      await tx.auditLog.update({
+        where: { id: entry.id },
+        data: { details: { count: rows.length } },
+      });
       return rows.map((c) => ({
         id: c.id,
         name: c.name,
@@ -196,7 +212,12 @@ export class ParticipantStore {
   }
 
   /** The admin has checked that relationship and consent still hold: a new year starts. */
-  confirm(db: RowsDb, contact: string, session: PrivacySession | null | undefined, now = new Date()) {
+  confirm(
+    db: RowsDb,
+    contact: string,
+    session: PrivacySession | null | undefined,
+    now = new Date(),
+  ) {
     const who = auditWho(requireSession(session), true);
     return db.$transaction(async (tx) => {
       const r = await tx.contact.updateMany({
@@ -242,7 +263,11 @@ export class ParticipantStore {
       select: { id: true, _count: { select: { registrations: true } } },
     });
     const registrations = contact?._count.registrations ?? 0;
-    const counts = { contacts: contact ? 1 : 0, registrations, total: (contact ? 1 : 0) + registrations };
+    const counts = {
+      contacts: contact ? 1 : 0,
+      registrations,
+      total: (contact ? 1 : 0) + registrations,
+    };
     if (dryRun || !contact) return counts;
     const request = await tx.deletionRequest.create({
       data: { requested_by: who, reason, scope: 'participant', scope_ref: { contact: contact.id } },
