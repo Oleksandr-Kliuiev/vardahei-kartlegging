@@ -37,31 +37,35 @@ function DashboardRound({
   return (
     <>
       <div className="dashboard-filter">
-        <label htmlFor="dashboard-client">Kunde</label>
-        <select
-          id="dashboard-client"
-          value={client}
-          onChange={(e) => {
-            setClient(e.target.value);
-            setRole('');
-          }}
-        >
-          <option value="">Alle</option>
-          {clients.map((c) => (
-            <option key={c.client_id} value={c.client_id}>
-              {c.client.name}
-            </option>
-          ))}
-        </select>
-        <label htmlFor="dashboard-role">Rolle</label>
-        <select id="dashboard-role" value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="">Alle</option>
-          {options.data?.roles.map((r) => (
-            <option value={r.id} key={r.id}>
-              {r.label}
-            </option>
-          ))}
-        </select>
+        <span className="filterpar">
+          <label htmlFor="dashboard-client">Kunde</label>
+          <select
+            id="dashboard-client"
+            value={client}
+            onChange={(e) => {
+              setClient(e.target.value);
+              setRole('');
+            }}
+          >
+            <option value="">Alle</option>
+            {clients.map((c) => (
+              <option key={c.client_id} value={c.client_id}>
+                {c.client.name}
+              </option>
+            ))}
+          </select>
+        </span>
+        <span className="filterpar">
+          <label htmlFor="dashboard-role">Rolle</label>
+          <select id="dashboard-role" value={role} onChange={(e) => setRole(e.target.value)}>
+            <option value="">Alle</option>
+            {options.data?.roles.map((r) => (
+              <option value={r.id} key={r.id}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+        </span>
       </div>
       <ErrorMessage error={result.error} />
       {data && (
@@ -109,18 +113,20 @@ export function DashboardPage() {
     <>
       <ErrorMessage error={rounds.error} />
       <div className="dashboard-filter">
-        <label htmlFor="dashboard-round">Runde</label>
-        <select
-          id="dashboard-round"
-          value={round?.id ?? ''}
-          onChange={(e) => setSelected(e.target.value)}
-        >
-          {rounds.data?.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name}
-            </option>
-          ))}
-        </select>
+        <span className="filterpar">
+          <label htmlFor="dashboard-round">Runde</label>
+          <select
+            id="dashboard-round"
+            value={round?.id ?? ''}
+            onChange={(e) => setSelected(e.target.value)}
+          >
+            {rounds.data?.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        </span>
       </div>
       {round ? (
         <DashboardRound key={round.id} round={round.id} clients={round.round_clients} />
