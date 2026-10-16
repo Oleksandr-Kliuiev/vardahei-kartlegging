@@ -1,13 +1,14 @@
 // 3.1 (integration): personal data of seminars. Two consents (decision 16.10): the required one
 // on the registration, the optional one to invitations on the contact. The participant list is
-// read under AuditLog; the daily job deletes registrations 90 days after the seminar (dry-run,
-// idempotent, journal in AuditLog) and marks contacts for the yearly check without deleting them;
-// deletion on request by e-mail removes the contact and its registrations with a ledger entry that
-// has no e-mail.
+// read under AuditLog; the daily job deletes registrations 90 days after the seminar and, in the
+// same run, a contact with neither a registration nor consent to invitations (dry-run, idempotent,
+// journal in AuditLog), and marks the others for the yearly check; deletion on request by e-mail
+// removes the contact and its registrations with a ledger entry that has no e-mail.
 import 'reflect-metadata';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { PrivacyService } from '../../src/modules/privacy/privacy.service.js';
 import { DeletionLedger } from '../../src/modules/retention/ledger.js';
 import { RetentionRun } from '../../src/modules/retention/run.service.js';
 import { withPg } from '../support/rounds.js';
@@ -183,7 +184,7 @@ describe('participant list (class rows of seminars)', () => {
 });
 
 describe('«Fjern påmelding» (admin)', () => {
-  it('removes one registration with AuditLog; the contact stays, also with no registration left', async () => {
+  it('removes one registration with AuditLog; the contact without consent to invitations goes in the next daily run', async () => {
     const s = await createSeminar(t),
       other = await createSeminar(t);
     await register(t, s.id, email(t, 'remove'), { name: 'ZZ Fjernast' });
@@ -200,28 +201,48 @@ describe('«Fjern påmelding» (admin)', () => {
     });
     expect(audit.details).toEqual({ registration: reg!.id });
     expect((await t.call('DELETE', url)).statusCode).toBe(404);
+    // The same for a contact that wants invitations: it stays after the run, the other goes.
+    await register(t, s.id, email(t, 'remove-invite'), { invite: true });
+    const [kept] = await registrationsOf(s.id);
+    expect((await t.call('DELETE', `/api/admin/seminars/${s.id}/registrations/${kept!.id}`)).statusCode).toBe(200);
+    await t.app.get(RetentionRun).run();
+    const left = (await contactsOf(t)).map((c) => c.email);
+    expect(left).not.toContain(email(t, 'remove'));
+    expect(left).toContain(email(t, 'remove-invite'));
   });
 });
 
 describe('retention (1.31 job, classes registration and contact)', () => {
-  it('dry-run counts registrations older than seminar + 90 days and deletes nothing', async () => {
+  it('registrations go 90 days after the seminar; a contact without consent to invitations goes with its last one (dry-run writes nothing)', async () => {
     const old = await endedAgo(91),
-      recent = await endedAgo(89);
+      recent = await endedAgo(89),
+      coming = await createSeminar(t);
     await register(t, old.id, email(t, 'old'));
+    await register(t, old.id, email(t, 'old-invite'), { invite: true });
+    await register(t, old.id, email(t, 'old-other'));
+    await register(t, coming.id, email(t, 'old-other'));
     await register(t, recent.id, email(t, 'recent'));
+    const has = async (n: string) => (await contactsOf(t)).some((c) => c.email === email(t, n));
     const dry = await t.app.get(RetentionRun).run(true);
     expect(dry.dry_run).toBe(true);
-    expect(dry.registration).toBeGreaterThanOrEqual(1);
+    expect(dry.registration).toBeGreaterThanOrEqual(3);
+    expect(dry.contact).toBeGreaterThanOrEqual(1);
     expect(dry.skipped).toEqual(['Proposal']);
-    expect(await registrationsOf(old.id)).toHaveLength(1);
+    // The dry run counts and writes nothing.
+    expect(await registrationsOf(old.id)).toHaveLength(3);
+    expect(await has('old')).toBe(true);
 
     const audit = await t.prisma.auditLog.count({ where: { what: 'retention.run' } });
     const real = await t.app.get(RetentionRun).run();
-    expect(real.registration).toBe(dry.registration);
+    expect([real.registration, real.contact]).toEqual([dry.registration, dry.contact]);
     expect(await registrationsOf(old.id)).toHaveLength(0);
     expect(await registrationsOf(recent.id)).toHaveLength(1);
-    // The contact itself is not deleted by a timer.
-    expect((await contactsOf(t)).some((c) => c.email === email(t, 'old'))).toBe(true);
+    // Without consent to invitations and without registrations: gone with the last registration.
+    expect(await has('old')).toBe(false);
+    // With consent to invitations, or registered for another seminar: stays.
+    expect(await has('old-invite')).toBe(true);
+    expect(await has('old-other')).toBe(true);
+    expect(await has('recent')).toBe(true);
     // The journal of the timed deletion: counts only.
     const journal = await t.prisma.auditLog.findMany({
       where: { what: 'retention.run' },
@@ -230,11 +251,51 @@ describe('retention (1.31 job, classes registration and contact)', () => {
     });
     expect(await t.prisma.auditLog.count({ where: { what: 'retention.run' } })).toBe(audit + 1);
     expect(journal[0]?.who).toBe('system:retention');
-    expect((journal[0]?.details as { registration?: number }).registration).toBe(real.registration);
+    expect(journal[0]?.details).toMatchObject({ registration: real.registration, contact: real.contact });
     expect(JSON.stringify(journal)).not.toMatch(/example\.test|ZZ Deltakar/);
 
     const again = await t.app.get(RetentionRun).run();
-    expect(again.registration).toBe(0);
+    expect([again.registration, again.contact]).toEqual([0, 0]);
+  });
+
+  it('a registration made while the job runs keeps its contact', async () => {
+    const old = await endedAgo(91),
+      open = await createSeminar(t);
+    await register(t, old.id, email(t, 'race'));
+    // The form registers the same person for a new seminar and has not committed yet.
+    let inside!: () => void, release!: () => void;
+    const registered = new Promise<void>((r) => (inside = r));
+    const done = new Promise<void>((r) => (release = r));
+    const form = t.prisma.$transaction(
+      async (tx) => {
+        const input = {
+          seminar: open.id,
+          name: 'ZZ Deltakar',
+          email: email(t, 'race'),
+          company: 'Syntetisk firma',
+          client: null,
+          lang: 'nn' as const,
+          consent_version: 'pamelding-v1',
+          invite_version: null,
+        };
+        const ok = await t.app.get(PrivacyService).participants.register(tx, input, new Date());
+        inside();
+        await done;
+        return ok;
+      },
+      { timeout: 20_000 },
+    );
+    await registered;
+    // The job sees the contact without a registration (the old one expires, the new one is not
+    // committed): it waits for the lock of the e-mail, then sees the new registration.
+    const job = t.app.get(RetentionRun).run();
+    await new Promise((r) => setTimeout(r, 300));
+    release();
+    expect(await form).toBe(true);
+    await job;
+    expect(await registrationsOf(old.id)).toHaveLength(0);
+    expect(await registrationsOf(open.id)).toHaveLength(1);
+    expect((await contactsOf(t)).some((c) => c.email === email(t, 'race'))).toBe(true);
   });
 
   it('marks a contact confirmed more than a year ago, once; the admin sees it and confirms it', async () => {

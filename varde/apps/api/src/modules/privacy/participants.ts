@@ -293,8 +293,9 @@ export class ParticipantStore {
     });
   }
 
-  /** «Fjern påmelding»: one registration of one seminar goes (AuditLog); the contact stays until
-   * the yearly check or «Sletting», also when it has no registration left. */
+  /** «Fjern påmelding»: one registration of one seminar goes (AuditLog). A contact left with no
+   * registration and no consent to invitations goes in the next daily run (`removeUnused`); with
+   * that consent it stays until the yearly check or «Sletting». */
   removeRegistration(
     db: RowsDb,
     seminar: string,
@@ -342,6 +343,21 @@ export class ParticipantStore {
   async expire(tx: Prisma.TransactionClient, cutoff: Date): Promise<number> {
     return (await tx.registration.deleteMany({ where: { seminar: { ends_at: { lt: cutoff } } } }))
       .count;
+  }
+
+  /** Retention (daily job, decision 16.10): a contact with no registration left and no consent to
+   * invitations goes — after its last registration expired, or was removed by the admin. Each one
+   * under the lock of its e-mail, checked again after the lock: a registration made at the same
+   * moment either waits for the job or keeps its contact (the delete would cascade to it). */
+  async removeUnused(tx: Prisma.TransactionClient): Promise<number> {
+    const unused = { invite_consent_version: null, registrations: { none: {} } };
+    const found = await tx.contact.findMany({ where: unused, select: { id: true, email: true } });
+    let removed = 0;
+    for (const c of found) {
+      await lockEmail(tx, c.email);
+      removed += (await tx.contact.deleteMany({ where: { id: c.id, ...unused } })).count;
+    }
+    return removed;
   }
 
   /** Retention (daily job): marks contacts confirmed before `cutoff` for the yearly check. */

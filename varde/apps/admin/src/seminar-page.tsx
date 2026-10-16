@@ -44,8 +44,9 @@ function Contacts({ count }: { count: number }) {
             : `${count} ${count === 1 ? 'kontakt ventar' : 'kontaktar ventar'} på den årlege sjekken.`}
         </p>
         <p className="forklaring">
-          Kontaktar blir ikkje sletta av seg sjølv. Ein gong i året sjekkar de at samarbeidet og
-          samtykket framleis gjeld. Slett ein kontakt under «Sletting».
+          Ein kontakt utan påmelding og utan samtykke til invitasjonar blir sletta av seg sjølv. Ein
+          gong i året sjekkar de at samarbeidet og samtykket framleis gjeld. Slett ein kontakt under
+          «Sletting».
         </p>
         {count > 0 && rows === null && (
           <div className="handlingar">

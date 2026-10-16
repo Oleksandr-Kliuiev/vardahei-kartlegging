@@ -1,9 +1,9 @@
 // Daily retention job (1.31, ADR-017): every class with a deadline, in one transaction. A dry run
-// counts and rolls back. Since 3.1: registrations go 90 days after their seminar ended, and
-// contacts confirmed more than a year ago are marked for the yearly check (never deleted by a
-// timer). What a real run removed or marked is written to AuditLog (`retention.run`, counts only):
-// the deletion journal of the timed classes. No tombstones: after a restore the job removes the
-// same rows again.
+// counts and rolls back. Since 3.1: registrations go 90 days after their seminar ended; a contact
+// with no registration left and no consent to invitations goes in the same run (decision 16.10);
+// contacts confirmed more than a year ago are marked for the yearly check. What a real run removed
+// or marked is written to AuditLog (`retention.run`, counts only): the deletion journal of the
+// timed classes. No tombstones: after a restore the job removes the same rows again.
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { PrivacyService } from '../privacy/privacy.service.js';
@@ -21,6 +21,7 @@ export interface RetentionResult {
   admin_session: number;
   connection_log: number;
   registration: number;
+  contact: number;
   contact_review: number;
   skipped: string[];
 }
@@ -56,6 +57,7 @@ export class RetentionRun {
         });
         const pruned = await tx.$queryRaw<{ count: bigint }[]>`SELECT varde_audit.prune() AS count`;
         const registration = await this.privacy.participants.expire(tx, seminarsEnded);
+        const contact = await this.privacy.participants.removeUnused(tx);
         const review = await this.privacy.participants.flagReviews(tx, yearAgo, now);
         const counts = {
           progress_event: progress.count,
@@ -63,6 +65,7 @@ export class RetentionRun {
           admin_session: sessions.count,
           connection_log: Number(pruned[0]?.count ?? 0),
           registration,
+          contact,
           contact_review: review,
         };
         const result = { dry_run: dryRun, ...counts, skipped: ['Proposal'] };
