@@ -224,7 +224,7 @@
 
 ## Этап 3. Семинары — L (после ворот G1)
 
-Ворота G1 для этапа 3 сняты решением Oleksandr 16.10. Checkpoint 3a (3.1, 3.2, 3.3, 3.10) сделан и выкачен 16.10 (merge `varde/3a`, `99db63a`); evidence — `evidence/stage-3/3a-evidence.md`. Checkpoint 3b (3.4–3.7) сделан и выкачен 16.10 (merge `varde/3b`, `8d9dddd`); evidence — `evidence/stage-3/3b-evidence.md`. Дальше 3c (3.8, 3.9).
+Ворота G1 для этапа 3 сняты решением Oleksandr 16.10. Checkpoint 3a (3.1, 3.2, 3.3, 3.10) сделан и выкачен 16.10 (merge `varde/3a`, `99db63a`); evidence — `evidence/stage-3/3a-evidence.md`. Checkpoint 3b (3.4–3.7) сделан и выкачен 16.10 (merge `varde/3b`, `8d9dddd`); evidence — `evidence/stage-3/3b-evidence.md`. Checkpoint 3c (3.8, 3.9) сделан и выкачен 16.10 (merge `varde/3c`, `f56f36d`); evidence — `evidence/stage-3/3c-evidence.md`. Код этапа 3 готов. Открыта приёмка этапа: тестовый семинар с командой — инструкция в 3c-evidence.
 
 | ID | Задача | Критерий приёмки | ч |
 | --- | --- | --- | --- |
