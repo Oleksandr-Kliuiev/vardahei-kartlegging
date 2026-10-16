@@ -114,7 +114,7 @@ function SeminarListPage() {
       )}
       <section className="kort s8">
         <div className="kort-hovud">
-          <h2>Seminar</h2>
+          <h2>Alle seminar</h2>
           {!creating && (
             <button type="button" className="btn primary sm" onClick={() => setCreating(true)}>
               <Icon name="pluss" small />

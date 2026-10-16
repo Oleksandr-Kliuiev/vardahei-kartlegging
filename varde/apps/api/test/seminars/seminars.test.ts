@@ -97,7 +97,7 @@ describe('admin API (3.1)', () => {
       status: 'planned',
       languages: ['nn', 'en'],
       link: `${PUBLIC_URL}/s?c=${s.code}`,
-      registrations: { total: 0, companies: [] },
+      registrations: { total: 0, companies: [], other: 0 },
     });
     expect((view.clients as { name: string }[]).map((c) => c.name)).toEqual(
       clients.map((c) => c.name).sort(),
@@ -162,13 +162,13 @@ describe('admin API (3.1)', () => {
     }>();
     const mine = body.seminars.filter((s) => [past.id, next.id].includes(s.id));
     expect(mine.map((s) => s.id)).toEqual([next.id, past.id]);
+    // A company typed by a participant is counted as «other»: only the audited list shows it.
     expect(mine[0]!.registrations).toEqual({
       total: 3,
-      companies: [
-        { company: clients[0]!.name, n: 2 },
-        { company: 'Eige firma', n: 1 },
-      ],
+      companies: [{ company: clients[0]!.name, n: 2 }],
+      other: 1,
     });
+    expect(res.body).not.toContain('Eige firma');
     expect(mine[1]!.status).toBe('held');
     expect(res.body).not.toContain('ZZ Deltakar');
     expect(res.body).not.toContain(email(t, 'list-1'));

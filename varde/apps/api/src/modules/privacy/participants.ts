@@ -38,9 +38,12 @@ export interface ContactReviewRow {
   flagged_at: string;
   registrations: number;
 }
+/** Registrations of a seminar: per client of Varde (names of clients only), the rest as `other`
+ * — a company typed by a participant is shown only in the audited list. */
 export interface ParticipantCounts {
   total: number;
   companies: { company: string; n: number }[];
+  other: number;
 }
 export interface ParticipantDeleteCounts {
   contacts: number;
@@ -94,24 +97,29 @@ export class ParticipantStore {
     return db.registration.count({ where: { seminar_id: seminar } });
   }
 
-  /** Registrations per seminar and per company: numbers only, for the admin's seminar cards. */
+  /** Registrations per seminar and per client: numbers only, for the admin's seminar cards. */
   async counts(
     db: Prisma.TransactionClient,
     seminars: readonly string[],
   ): Promise<Record<string, ParticipantCounts>> {
     const out: Record<string, ParticipantCounts> = {};
-    for (const id of seminars) out[id] = { total: 0, companies: [] };
+    for (const id of seminars) out[id] = { total: 0, companies: [], other: 0 };
     if (seminars.length === 0) return out;
     const rows = await db.registration.findMany({
       where: { seminar_id: { in: [...seminars] } },
-      select: { seminar_id: true, contact: { select: { company: true } } },
+      select: { seminar_id: true, contact: { select: { client: { select: { name: true } } } } },
     });
     for (const r of rows) {
       const c = out[r.seminar_id]!;
       c.total += 1;
-      const known = c.companies.find((x) => x.company === r.contact.company);
+      const name = r.contact.client?.name;
+      if (name === undefined) {
+        c.other += 1;
+        continue;
+      }
+      const known = c.companies.find((x) => x.company === name);
       if (known) known.n += 1;
-      else c.companies.push({ company: r.contact.company, n: 1 });
+      else c.companies.push({ company: name, n: 1 });
     }
     for (const c of Object.values(out))
       c.companies.sort((a, b) => b.n - a.n || a.company.localeCompare(b.company, 'nb'));

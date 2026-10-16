@@ -47,7 +47,7 @@ function Registrations({ seminar }: { seminar: SeminarDetail }) {
   const r = seminar.registrations;
   return (
     <div className="flate">
-      <section className="kort s5">
+      <section className="kort s4 sem-tal-kort">
         <div className="talkort">
           <span className="etikett">
             <Icon name="folk" small />
@@ -56,9 +56,7 @@ function Registrations({ seminar }: { seminar: SeminarDetail }) {
           <span className="stort" data-testid="pamelde">
             {r.total}
           </span>
-          {r.companies.length > 0 && <span className="under">{perCompany(r)}</span>}
-        </div>
-        <div className="kort-innhald">
+          {r.total > 0 && <span className="under">{perCompany(r)}</span>}
           <p className="forklaring">
             Namn og e-post ligg berre i påmeldinga, og påmeldinga blir sletta 90 dagar etter seminaret.
           </p>
@@ -77,7 +75,7 @@ function Registrations({ seminar }: { seminar: SeminarDetail }) {
           )}
         </div>
       </section>
-      <section className="kort s7">
+      <section className="kort s8">
         <div className="kort-hovud">
           <h2>Namneliste</h2>
           {rows === null && (
@@ -96,7 +94,7 @@ function Registrations({ seminar }: { seminar: SeminarDetail }) {
             <p className="tom">Ingen har meldt seg på enno.</p>
           ) : (
             <div className="tabell-wrap">
-              <table className="kompakt sem-pamelde">
+              <table className="sem-pamelde">
                 <thead>
                   <tr>
                     <th scope="col">Namn</th>

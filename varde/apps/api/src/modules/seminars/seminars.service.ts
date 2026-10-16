@@ -44,7 +44,11 @@ export class SeminarsService {
     private readonly privacy: PrivacyService,
   ) {}
 
-  view(s: SeminarRow, counts = { total: 0, companies: [] as { company: string; n: number }[] }, now = new Date()) {
+  view(
+    s: SeminarRow,
+    counts = { total: 0, companies: [] as { company: string; n: number }[], other: 0 },
+    now = new Date(),
+  ) {
     const start = osloParts(s.starts_at),
       end = osloParts(s.ends_at);
     return {

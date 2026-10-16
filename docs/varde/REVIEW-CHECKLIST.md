@@ -152,3 +152,20 @@
 | Все зарегистрированные маршруты, отчёт и архив включены, не отдают идентификаторы и ответы | `varde/apps/api/test/invariants/1c-no-leak-routes.test.ts` |
 
 Полный прогон: `pnpm invariants:5` (job `integration`); браузерные проверки — `varde/apps/admin/e2e/report.spec.ts`, `archive.spec.ts` в job `e2e`.
+
+## Дополнение checkpoint 3a (семинары: 3.1, 3.2, 3.3, 3.10)
+
+| Инвариант / путь утечки | Проверка |
+| --- | --- |
+| Response не ссылается на Contact, Registration и Seminar: единственный FK `round_client`, нет таких колонок и триггеров; Contact и Registration не ссылаются на Response | `varde/apps/api/test/seminars/seminars.test.ts`, `varde/apps/api/test/invariants/3a-participants.test.ts` |
+| Contact и Registration читает и пишет только `modules/privacy/participants.ts` (`PrivacyService.participants`): lint `varde/privacy-only-release` со своим allow-list отклоняет модели, `include`/`select` и raw SQL `contact`/`registration` в остальных файлах | `varde/tools/eslint-rules/test/privacy-only-release.test.ts`, `pnpm lint:privacy:selfcheck` |
+| Имена, компании (введённые участником) и e-post выходят только через список семинара и список «на ежегодную проверку»: админ-сессия, AuditLog `privacy.participants` в той же транзакции; обход всех маршрутов (отчёты, экспорт, архив, дашборд, публичная страница) их не находит; в счётчиках по семинару — только клиенты Varde и «andre» | `varde/apps/api/test/invariants/3a-participants.test.ts`, `varde/apps/api/test/seminars/participants.test.ts` |
+| Регистрация: повтор с тем же e-post и honeypot дают тот же ответ без записи; лимит на семинар проверяется до проверки повтора; ошибки не говорят, зарегистрирован ли человек; в логах нет имён, e-post и кода; успешные запросы `/s` и `/api/public/*` не пишутся в лог | `varde/apps/api/test/seminars/registration.test.ts`, `varde/apps/api/test/runner/static.test.ts` |
+| Код ссылки семинара — 128 бит, ищется по hash, только в Authorization; в AuditLog только префикс hash | `seminars.test.ts`, `invitation.test.ts` |
+| Retention: регистрации удаляются через 90 дней после конца семинара (dry-run, идемпотентно, журнал `retention.run` со счётчиками); контакты по таймеру не удаляются, раз в год получают отметку; удаление по запросу (область `participant`, по e-post) — запись в журнале удалений и tombstone только с id контакта, AuditLog, `ledger apply-db` удаляет восстановленного контакта | `participants.test.ts`, `varde/apps/api/test/retention/jobs.test.ts` |
+| Статус Finding меняется при привязке к семинару (`in_seminar`), строки Finding и версии правил не меняются; связь правила с Action — по ключу, без новой версии | `seminars.test.ts` |
+| Материал — только http(s)-ссылки (CHECK), на странице — только после конца семинара | `varde/apps/api/test/seminars/materials.test.ts` |
+| Приглашение отдаётся только скачиванием (zip, ICS, плакат с QR из qrcode-generator), ничего не отправляется; ICS по RFC 5545 читается ical.js | `invitation.test.ts`, `invitation-texts.test.ts`, `ics.test.ts` |
+| Страница `/s`: та же CSP, что `/r`, без внешних запросов; 360 и 1280 px, светлая и тёмная тема, nn и en без горизонтальной прокрутки | `varde/apps/runner/e2e/seminar.spec.ts`, `varde/apps/admin/e2e/seminar.spec.ts` |
+
+Полный прогон без браузера: `pnpm invariants:3a` (job `integration`); браузерные проверки — `apps/admin/e2e/seminar.spec.ts`, `apps/runner/e2e/seminar.spec.ts` в job `e2e`.

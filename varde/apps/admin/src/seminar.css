@@ -43,8 +43,14 @@
 .sem-topp .sem-form { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
 .sem-faner { margin-bottom: 16px; max-width: 100%; }
 .sem-later { font-size: 17px; margin-top: 6px; }
+.sem-tal-kort .under { margin: 0; }
+.sem-tal-kort .forklaring { margin-top: 10px; }
+.sem-tal-kort .handlingar { margin-top: 12px; }
+.sem-pamelde { min-width: 0; }
 .sem-pamelde th[scope="row"] { font-weight: 650; color: var(--ink-strong); }
-.sem-pamelde td, .sem-pamelde th { overflow-wrap: anywhere; }
+.sem-pamelde td, .sem-pamelde th { overflow-wrap: break-word; }
+.sem-pamelde td:nth-child(3) { word-break: break-all; min-width: 14ch; }
+.sem-pamelde td:last-child { white-space: nowrap; }
 .sem-materiell-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .sem-materiell-liste li { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface-2); }
 .sem-materiell-liste .icon { color: var(--accent); }

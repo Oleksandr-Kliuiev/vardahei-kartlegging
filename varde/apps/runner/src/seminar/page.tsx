@@ -1,7 +1,7 @@
 // The seminar page `/s?c=<code>` (3.2, 3.3, Vardestien): before the seminar the topic, time,
 // place and the registration form; after registering «Du er påmeld» with a calendar file; after
-// the seminar its material. Languages are those of the seminar, nynorsk first. A screen change
-// lets its content rise in (useEnter); the first view is shown at rest.
+// the seminar its material. Languages are those of the seminar, nynorsk first. The first view is
+// shown at rest; «Du er påmeld» rises in (useEnter).
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ContactCard, VARDAHEI_CONTACT } from '../contact.js';
 import { CairnMark, Icon } from '../icons.js';
@@ -189,11 +189,12 @@ export function SeminarPage() {
     document.documentElement.lang = lang;
   }, [lang]);
   const seminar = view.kind === 'ready' ? view.seminar : null;
-  const screen = seminar ? (done ? 'done' : seminar.phase) : view.kind;
-  useEnter(main, screen, 1);
+  // As in the survey, the first content after loading is shown at rest; only «Du er påmeld»
+  // rises in, as the next step of the same page.
+  useEnter(main, done ? 'done' : 'first', 1);
   useEffect(() => {
-    if (screen === 'done') main.current?.querySelector<HTMLElement>('h1')?.focus();
-  }, [screen]);
+    if (done) main.current?.querySelector<HTMLElement>('h1')?.focus();
+  }, [done]);
   return (
     <>
       <header class="topbar">

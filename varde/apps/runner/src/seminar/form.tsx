@@ -237,7 +237,7 @@ export function RegistrationForm({
           <span>{t(failure)}</span>
         </div>
       )}
-      <button type="submit" class="btn primary sem-send" disabled={sending} aria-busy={sending}>
+      <button type="submit" class="btn primary sem-send" aria-disabled={sending} aria-busy={sending}>
         {sending ? <span class="spinn" aria-hidden="true" /> : null}
         {t(sending ? 'sender' : 'meldMegPa')}
       </button>

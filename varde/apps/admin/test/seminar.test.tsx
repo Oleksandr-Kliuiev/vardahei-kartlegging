@@ -29,7 +29,7 @@ const seminar = {
   ],
   link: 'https://varde.test/s?c=Abcdefghijklmnopqrstuv',
   status: 'planned',
-  registrations: { total: 3, companies: [{ company: 'Syntetisk A', n: 2 }, { company: 'Eige firma', n: 1 }] },
+  registrations: { total: 3, companies: [{ company: 'Syntetisk A', n: 2 }], other: 1 },
   findings: [],
 };
 const rows = [{ name: 'ZZ Deltakar', company: 'Syntetisk A', email: 'zz@example.test', lang: 'nn', registered_at: '2026-10-16T08:00:00Z' }];
@@ -144,7 +144,7 @@ describe('one seminar', () => {
     );
     await settle();
     expect(view.div.querySelector('[data-testid="pamelde"]')?.textContent).toBe('3');
-    expect(view.div.textContent).toContain('Syntetisk A 2 · Eige firma 1');
+    expect(view.div.textContent).toContain('Syntetisk A 2 · andre 1');
     expect(calls('/registrations')).toHaveLength(0);
     expect(view.div.textContent).not.toContain('zz@example.test');
     act(() => {
@@ -217,7 +217,7 @@ describe('one seminar', () => {
 describe('helpers', () => {
   it('names, counts and the body of the form', () => {
     expect(names(['A', 'B', 'C'])).toBe('A, B og C');
-    expect(perCompany({ total: 3, companies: [{ company: 'A', n: 2 }, { company: 'B', n: 1 }] })).toBe('A 2 · B 1');
+    expect(perCompany({ total: 3, companies: [{ company: 'A', n: 2 }], other: 1 })).toBe('A 2 · andre 1');
     expect(bodyOf({ ...emptyDraft(), topic_en: 'x' }).topic_en).toBeUndefined();
     expect(bodyOf({ ...emptyDraft(), topic_en: 'x', languages: ['nn', 'en'] }).topic_en).toBe('x');
   });

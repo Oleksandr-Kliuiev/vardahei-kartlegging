@@ -5,6 +5,8 @@ export type SeminarLang = 'nn' | 'en';
 export interface SeminarCounts {
   total: number;
   companies: { company: string; n: number }[];
+  /** Companies typed by the participants (shown only in the name list). */
+  other?: number;
 }
 export interface Seminar {
   id: string;
@@ -100,8 +102,9 @@ export function names(list: readonly string[]): string {
   return `${list.slice(0, -1).join(', ')} og ${list.at(-1)}`;
 }
 
-/** «Gasta 11 · Daco 7» */
-export const perCompany = (c: SeminarCounts) => c.companies.map((x) => `${x.company} ${x.n}`).join(' · ');
+/** «Gasta 11 · Daco 7 · andre 2» */
+export const perCompany = (c: SeminarCounts) =>
+  [...c.companies.map((x) => `${x.company} ${x.n}`), ...(c.other ? [`andre ${c.other}`] : [])].join(' · ');
 
 export const registered = (n: number) => `${n} påmeld${n === 1 ? '' : 'e'}`;
 
