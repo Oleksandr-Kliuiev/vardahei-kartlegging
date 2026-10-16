@@ -80,17 +80,47 @@ export class RoundsService {
     );
   }
 
-  launch(input: NewRound & { clients: NewRoundClient[]; open: boolean }, who: string) {
-    return this.changed(
+  /** 3.8: a survey after a seminar is for clients of the seminar, from a version made for
+   * clients, and the seminar has no «Etter» yet (the seminar row stays locked until commit). */
+  private async afterSeminar(
+    tx: Prisma.TransactionClient,
+    seminar: string,
+    template: string,
+    clients: readonly NewRoundClient[],
+  ) {
+    await tx.$queryRaw`SELECT id FROM seminar WHERE id = ${seminar}::uuid FOR UPDATE`;
+    const s = await tx.seminar.findUnique({
+      where: { id: seminar },
+      include: { clients: { select: { client_id: true } } },
+    });
+    if (s === null) throw new NotFoundException('Seminaret finst ikkje.');
+    if (s.round_after_id !== null)
+      throw new ConflictException('Seminaret har alt ei undersøking etter. Ta bort koplinga først.');
+    const own = new Set(s.clients.map((c) => c.client_id));
+    if (clients.some((c) => !own.has(c.client_id)))
+      throw new BadRequestException('Vel berre kundar som er med på seminaret.');
+    const t = await tx.surveyTemplate.findUnique({ where: { id: template } });
+    if (t?.audience === 'seminar_live')
+      throw new BadRequestException('Vel eit skjema for kundane, ikkje eit for live-spørsmål.');
+  }
+
+  async launch(
+    input: NewRound & { clients: NewRoundClient[]; open: boolean; seminar?: string | undefined },
+    who: string,
+  ) {
+    const seminar = input.seminar;
+    const result = await this.changed(
       this.prisma.$transaction(async (tx) => {
         const version = await this.published(tx, input.template_version_id);
         if (new Set(input.clients.map((c) => c.client_id)).size !== input.clients.length)
           throw new BadRequestException('Vel kvar kunde berre éin gong.');
+        if (seminar !== undefined)
+          await this.afterSeminar(tx, seminar, version.template_id, input.clients);
         const round = await tx.round.create({
           data: {
             name: input.name,
             template_version_id: version.id,
-            type: 'regular',
+            type: seminar === undefined ? 'regular' : 'post_seminar',
           },
         });
         const ids: string[] = [];
@@ -131,10 +161,26 @@ export class RoundsService {
           }
         }
         await this.audit(tx, who, 'launch', `round:${round.id}`);
+        if (seminar !== undefined) {
+          await tx.seminar.update({ where: { id: seminar }, data: { round_after_id: round.id } });
+          await tx.auditLog.create({
+            data: {
+              who,
+              what: 'seminars.rounds.after',
+              target: `seminar:${seminar}`,
+              details: { round: round.id, previous: null, launched: true },
+            },
+          });
+        }
         // Invitation endpoint is the only surface the wizard uses to retrieve bearer links.
         return { id: round.id, round_client_ids: ids, status: input.open ? 'open' : 'draft' };
       }),
     );
+    if (seminar !== undefined) {
+      this.events.changed('seminars');
+      this.events.changed('responses');
+    }
+    return result;
   }
 
   setVersion(id: string, version: string, who: string) {

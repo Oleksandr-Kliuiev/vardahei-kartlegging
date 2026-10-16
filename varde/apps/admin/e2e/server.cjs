@@ -138,6 +138,42 @@ require(require.resolve('reflect-metadata', { paths: [resolve(__dirname, '../../
     await db.$transaction((tx) => app.get(PrivacyService).store.insertParts(tx, parts));
     await rounds.close(reportRound.id, 'test:admin-e2e');
     state.rounds.report = { id: reportRound.id, rc: reportRc.id, name: reportRound.name, code: '' };
+    // 3c: «Før» of a seminar — an ordinary round of both clients, closed and released (synthetic
+    // answers ZZFOR…: four for the one, three for the other).
+    const before = await rounds.create(
+      { name: `${mark}-for`, template_version_id: version.id },
+      'test:admin-e2e',
+    );
+    const beforeParts = [];
+    for (const [c, answers] of [
+      [client, [['ja', 'ja'], ['ja', 'nei'], ['nei', 'ja'], ['usikker', 'ja']]],
+      [other, [['nei', 'nei'], ['delvis', 'ja'], ['nei', 'ja']]],
+    ]) {
+      const rc = await rounds.addClient(
+        before.id,
+        { client_id: c.id, deadline: '2099-06-01' },
+        'test:admin-e2e',
+      );
+      await rounds.openClient(rc.id, 'test:admin-e2e');
+      for (const [i, [F12, F14]] of answers.entries())
+        beforeParts.push({
+          round_client_id: rc.id,
+          part: 'common',
+          role: 'kontor',
+          lang: 'nn',
+          respondent_key: `ZZFOR${String.fromCharCode(65 + beforeParts.length)}${i}`,
+          answers: { F2: 'kontor', F12, F14 },
+          free: {},
+          submission_id: randomUUID(),
+          content_hash: '0'.repeat(64),
+          source_id: null,
+          duration_s: null,
+          submitted_day: '2026-10-10',
+        });
+    }
+    await db.$transaction((tx) => app.get(PrivacyService).store.insertParts(tx, beforeParts));
+    await rounds.close(before.id, 'test:admin-e2e');
+    state.rounds.before = { id: before.id, rc: '', name: before.name, code: '' };
     // 3b: a published version made for live questions (synthetic, apps/api/test/support/live-template.json).
     const liveContent = JSON.parse(
       readFileSync(resolve(__dirname, '../../api/test/support/live-template.json'), 'utf8'),

@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { ComparisonView, change } from '../../src/modules/dashboard/comparison-view.js';
+import { ComparisonView } from '../../src/modules/dashboard/comparison-view.js';
+import { change } from '../../src/modules/dashboard/round-pair.js';
 import { golden, section, num } from '../support/golden.js';
 import { dashboardFixture, type DashboardFixture } from './fixture.js';
 import { withPg, insertResponse } from '../support/rounds.js';

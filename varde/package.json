@@ -30,7 +30,8 @@
     "invariants:2a": "bash tools/invariants/run-2a.sh",
     "invariants:5": "bash tools/invariants/run-5.sh",
     "invariants:3a": "bash tools/invariants/run-3a.sh",
-    "invariants:3b": "bash tools/invariants/run-3b.sh"
+    "invariants:3b": "bash tools/invariants/run-3b.sh",
+    "invariants:3c": "bash tools/invariants/run-3c.sh"
   },
   "devDependencies": {
     "@types/node": "22.20.5",

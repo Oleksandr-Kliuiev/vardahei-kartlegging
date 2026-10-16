@@ -350,10 +350,10 @@ model DeletionTombstone {
 /// Seminar (3.1, ARCHITECTURE §4 and §7): topic in nynorsk (and English when `required_languages`
 /// has en), start and end as instants (shown in Europe/Oslo), place, `format` ∈ {onsite, digital},
 /// the clients it is for and the registration link: `code` is a 128-bit bearer looked up by
-/// `code_hash` (ADR-009), replaced by «Ny lenkje» (old hashes in RevokedSeminarCode).
-/// `sequence` grows when time, place or topic change (ICS updates). The live round (3.4) is linked
-/// when the admin makes the live poll (one seminar per live round: partial unique index); before and
-/// after come in 3c. No personal data: participants are Contact and Registration.
+/// `code_hash` (ADR-009), replaced by «Ny lenkje» (old hashes in RevokedSeminarCode). `sequence`
+/// grows when time, place or topic change (ICS updates). Rounds (3.4, 3.8; triggers and partial unique
+/// indexes): live (made with the live poll), before (type regular) and after (type post_seminar), one
+/// seminar per live or after round. No personal data: participants are Contact and Registration.
 model Seminar {
   id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   topic_nn           String

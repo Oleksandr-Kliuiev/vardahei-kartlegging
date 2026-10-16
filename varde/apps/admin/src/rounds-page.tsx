@@ -134,7 +134,10 @@ function RoundSection({ round, clients }: { round: Round; clients: Client[] }) {
     <section className="del runde" aria-label={round.name}>
       <div className="runde-topp">
         <h2>{round.name}</h2>
-        <span className={chip}>{text}</span>
+        <span className="handlingar">
+          {round.type === 'post_seminar' && <span className="chip accent">Etter seminar</span>}
+          <span className={chip}>{text}</span>
+        </span>
       </div>
       <div className="kundekort-grid">
         {round.round_clients.map((rc) => (

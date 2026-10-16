@@ -8,12 +8,20 @@ import { LeaderController } from './leader.controller.js';
 import { MetricsModule } from '../metrics/metrics.module.js';
 import { DashboardContext } from './dashboard-context.js';
 import { AggregateView } from './aggregate-view.js';
+import { BeforeAfterView } from './before-after-view.js';
 import { DashboardController } from './dashboard.controller.js';
 
 @Module({
   imports: [MetricsModule, FindingsModule],
   controllers: [DashboardController, LeaderController, RowsController],
-  providers: [DashboardContext, AggregateView, LeaderView, RowsView, ComparisonView],
-  exports: [DashboardContext, AggregateView, RowsView, LeaderView],
+  providers: [
+    DashboardContext,
+    AggregateView,
+    LeaderView,
+    RowsView,
+    ComparisonView,
+    BeforeAfterView,
+  ],
+  exports: [DashboardContext, AggregateView, RowsView, LeaderView, BeforeAfterView],
 })
 export class DashboardModule {}

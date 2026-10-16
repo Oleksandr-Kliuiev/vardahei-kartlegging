@@ -3,32 +3,11 @@ import { ComparabilityNote } from '@varde/schema/metrics/metric-definition';
 import { Injectable } from '@nestjs/common';
 import { PrivacyService, type ViewCell } from '../privacy/privacy.service.js';
 import { DashboardContext, type DashboardScope } from './dashboard-context.js';
-import { cellAt, labelOf, valueOf } from './aggregate-view.js';
+import { labelOf } from './aggregate-view.js';
+import { pairRow, scoreStats } from './round-pair.js';
 
-export function change(before: number | null, now: number | null, percent = false) {
-  if (before === null || now === null) return null;
-  const delta = now - before,
-    points = Math.round(delta * 100);
-  return {
-    delta: percent ? points : delta,
-    kind: (percent ? points === 0 : Math.abs(delta) < 0.05)
-      ? 'likt'
-      : delta < 0
-        ? 'betre'
-        : 'verre',
-  };
-}
-function stats(cells: readonly ViewCell[], suffix = 'all', group = 'all') {
-  const mean = valueOf(cellAt(cells, `tryggleik.mean_score.${suffix}`, group));
-  const critical = valueOf(cellAt(cells, `tryggleik.critical_share.${suffix}`, group));
-  const c = cellAt(cells, `tryggleik.mean_score.${suffix}`, group);
-  return {
-    mean,
-    critical,
-    zone: valueOf(cellAt(cells, `tryggleik.zone.${suffix}`, group)),
-    n: c && !c.suppressed ? c.n : null,
-  };
-}
+const stats = (cells: readonly ViewCell[], suffix = 'all', group = 'all') =>
+  scoreStats(cells, 'tryggleik', suffix, group);
 @Injectable()
 export class ComparisonView {
   constructor(
@@ -85,19 +64,7 @@ export class ComparisonView {
     const oldParticipants = [
       ...new Set(oldAll.filter((c) => c.group.startsWith('client:')).map((c) => c.group.slice(7))),
     ];
-    const row = (
-      id: string,
-      label: string,
-      before: ReturnType<typeof stats>,
-      now: ReturnType<typeof stats>,
-    ) => ({
-      id,
-      label,
-      before,
-      now,
-      change: change(before.mean, now.mean),
-      critical_change: change(before.critical, now.critical, true),
-    });
+    const row = pairRow;
     const qs = scope.content.questions.filter(
       (q) => 'options' in q && q.options.some((o) => o.score !== undefined),
     );
