@@ -280,8 +280,15 @@ export class RoundArchiveService {
   /** Versioned definitions are immutable: the same key@version must have the same content.
    * A version is added only for a key the database does not know at all: the newest version of
    * a key is the one in force (FindingsService.rules), so a new version of a known key would
-   * change the results of other rounds. */
+   * change the results of other rounds. The same holds for a key that is new to a template
+   * family the database already has: definitionsFor() and FindingsService.rules() read every
+   * key of the family. Several rounds of one family are restored from the newest archive to the
+   * oldest: an older archive carries a subset of the newer one's definitions. */
   private async definitions(tx: Prisma.TransactionClient, a: ArchiveBody) {
+    const family = `${a.template.key}.`;
+    const inFamily = { key: { startsWith: family } };
+    const metricFamily = (await tx.metricDefinition.count({ where: inFamily })) > 0;
+    const ruleFamily = (await tx.findingRule.count({ where: inFamily })) > 0;
     const metricKeys = new Set(
       (
         await tx.metricDefinition.findMany({
@@ -299,6 +306,10 @@ export class RoundArchiveService {
       if (!found && metricKeys.has(d.key))
         throw new ArchiveConflict(
           `metric ${d.key} is in the database in other versions; adding version ${d.version} would change other rounds`,
+        );
+      if (!found && !metricKeys.has(d.key) && metricFamily && d.key.startsWith(family))
+        throw new ArchiveConflict(
+          `metric ${d.key} is new to the ${a.template.key} metrics in the database; adding it would change other rounds`,
         );
       if (!found) await tx.metricDefinition.create({ data: d });
     }
@@ -319,6 +330,10 @@ export class RoundArchiveService {
       if (!found && ruleKeys.has(x.key))
         throw new ArchiveConflict(
           `finding rule ${x.key} is in the database in other versions; adding version ${x.version} would change other rounds`,
+        );
+      if (!found && !ruleKeys.has(x.key) && ruleFamily && x.key.startsWith(family))
+        throw new ArchiveConflict(
+          `finding rule ${x.key} is new to the ${a.template.key} rules in the database; adding it would change other rounds`,
         );
       if (!found) await tx.findingRule.create({ data: x });
     }

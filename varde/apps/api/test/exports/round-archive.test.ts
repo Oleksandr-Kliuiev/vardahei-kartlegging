@@ -261,6 +261,13 @@ describe('5.2 round archive', () => {
           /do not follow from the archived cells/,
         ],
         [
+          'fractional-count',
+          finding((f) => {
+            f.numbers = { ...f.numbers, count: f.numbers.count + 5e-10 };
+          }),
+          /do not follow from the archived cells/,
+        ],
+        [
           'other-scope',
           finding((f) => {
             f.release_id = allRelease;
@@ -283,8 +290,21 @@ describe('5.2 round archive', () => {
       await prisma.metricDefinition.create({
         data: { key: metric.key, version: 99, definition: metric.definition },
       });
-      await expect(cli(file)).rejects.toThrow(/in the database in other versions/);
+      // The family is now known too, so a sibling key may be the first refusal.
+      await expect(cli(file)).rejects.toThrow(/would change other rounds/);
       await prisma.metricDefinition.deleteMany({ where: { version: 99 } });
+      // So would a key that is new to a family the database already has.
+      const newKey = `${archive.template.key}.zz_other`;
+      await prisma.findingRule.create({
+        data: {
+          key: newKey,
+          version: 1,
+          channel: 'aggregate',
+          definition: { ...rule.definition, key: newKey },
+        },
+      });
+      await expect(cli(file)).rejects.toThrow(/is new to the .* rules in the database/);
+      await prisma.findingRule.deleteMany({ where: { key: newKey } });
       expect(await prisma.round.count()).toBe(0);
       expect(await prisma.client.count()).toBe(0);
       expect(await prisma.finding.count()).toBe(0);

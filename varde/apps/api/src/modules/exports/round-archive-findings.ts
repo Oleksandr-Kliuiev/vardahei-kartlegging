@@ -64,11 +64,13 @@ export function assertArchivedFindings(a: ArchiveBody, k: number): void {
       (x) => x.key === f.rule_key && x.version === f.rule_version,
     );
     // jsonb keeps about 16 digits of a share (5/14 comes back as …4572): compare to 1e-9.
+    // A count of people is whole and compared exactly; only computed rules count hours.
     const near = (x: number, y: number) => Math.abs(x - y) < 1e-9;
+    const counted = rule.definition.computed === undefined;
     const same =
       again !== undefined &&
       again.n === f.numbers.n &&
-      near(again.count, f.numbers.count) &&
+      (counted ? again.count === f.numbers.count : near(again.count, f.numbers.count)) &&
       near(again.share, f.numbers.share) &&
       again.level === f.numbers.level &&
       again.release_id === f.release_id;
