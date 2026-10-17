@@ -76,7 +76,7 @@ test('create a survey, write it in the workshop, accept both languages, preview 
   await expect(page.getByText(/^v1 er publisert og låst/)).toBeVisible();
   await expect(page.getByLabel('Spørsmålet', { exact: true })).not.toBeEditable();
   await page.getByRole('button', { name: 'Lag utkast v2', exact: true }).click();
-  await expect(page.locator('.vk-tittel .chip')).toHaveText('Utkast v2');
+  await expect(page.locator('.vk-tittel .chip')).toHaveText(/^Utkast v2/);
   await expect(page.locator('.vk-base')).toContainText('Bygd på v1');
   await expect(page.getByLabel('Spørsmålet', { exact: true })).toHaveValue('Kva rolle har du?');
 });

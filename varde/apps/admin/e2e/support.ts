@@ -66,23 +66,25 @@ export async function selectProgress(page: Page, label: string) {
   return f;
 }
 
-/** A synthetic survey made on the Skjema page, filled through the API and opened in the workshop (2.15). */
+/** A synthetic survey made with «Nytt skjema», filled through the API and opened in the workshop (2.15). */
 export async function newSurvey(page: Page, questions?: TemplateContent['questions']) {
   await login(page);
   await page.getByRole('link', { name: 'Skjema', exact: true }).click();
-  const key = `e2e_${randomUUID().replaceAll('-', '')}`;
-  await page.getByLabel('Nøkkel', { exact: true }).fill(key);
-  await page.getByLabel('Identifikasjon', { exact: true }).selectOption('none');
+  await page.getByRole('button', { name: 'Nytt skjema', exact: true }).click();
+  await page.getByLabel('Utan namn', { exact: true }).check();
+  await page.getByLabel('Namn på skjemaet', { exact: true }).fill(`E2E ${randomUUID()}`);
   const created = page.waitForResponse(
     (r) => r.url().endsWith('/api/admin/surveys') && r.request().method() === 'POST',
   );
-  await page.getByRole('button', { name: 'Opprett skjema', exact: true }).click();
+  await page.getByRole('button', { name: 'Lag skjemaet', exact: true }).click();
   const v = (await (await created).json()) as {
     id: string;
     template_id: string;
     content_hash: string;
+    content: TemplateContent;
   };
   await expect(page).toHaveURL(new RegExp(`/admin/surveys/${v.id}$`));
+  const key = v.content.key;
   const content = editorFixture().content;
   content.key = key;
   if (questions) content.questions = questions;

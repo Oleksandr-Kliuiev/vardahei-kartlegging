@@ -79,6 +79,9 @@ export function Topp(p: {
   left: number;
   onNewDraft: () => void;
   onPanel: () => void;
+  view: 'verkstad' | 'omsetjing';
+  onView: (view: 'verkstad' | 'omsetjing') => void;
+  onVersions: () => void;
 }) {
   return (
     <header className="vk-topp">
@@ -96,9 +99,16 @@ export function Topp(p: {
         </a>
         <span aria-hidden="true">/</span>
         <h1>{p.title}</h1>
-        <span className={p.readOnly ? 'chip ok' : 'chip warn'}>
+        <button
+          type="button"
+          className={`${p.readOnly ? 'chip ok' : 'chip warn'} vk-chipknapp`}
+          title="Sjå versjonane"
+          onClick={p.onVersions}
+        >
           {p.readOnly ? `Publisert v${p.saved.version_no}` : `Utkast v${p.saved.version_no}`}
-        </span>
+          <Icon name="chev" small />
+          <span className="sr-only">: sjå versjonane</span>
+        </button>
         {p.base && !p.readOnly && (
           <span className="vk-dempa vk-base">
             Bygd på v{p.base.version_no}
@@ -152,6 +162,17 @@ export function Topp(p: {
               {LANG_NAME[l]}: {p.missing(l)} manglar
             </button>
           ))}
+        {p.languages.length > 1 && (
+          <button
+            type="button"
+            className="btn sm ghost"
+            aria-pressed={p.view === 'omsetjing'}
+            onClick={() => p.onView(p.view === 'omsetjing' ? 'verkstad' : 'omsetjing')}
+          >
+            <Icon name="sprak" small />
+            {p.view === 'omsetjing' ? 'Tilbake til skjemaet' : 'Omsetjing'}
+          </button>
+        )}
         <button
           type="button"
           className="btn sm ghost vk-telefonknapp"

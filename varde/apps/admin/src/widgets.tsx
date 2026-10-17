@@ -158,3 +158,21 @@ export function Seg<T extends string>({
     </div>
   );
 }
+
+/**
+ * A modal panel: while `open`, everything outside `keep` is inert (no focus, no clicks), and focus goes
+ * back to `opener` when it closes.
+ */
+export function useModal(open: boolean, opener: { current: HTMLElement | null }, keep: string) {
+  useEffect(() => {
+    if (!open) return;
+    const rest = [
+      ...document.querySelectorAll<HTMLElement>(`#sidemeny, .topplinje, .hopp, ${keep}`),
+    ];
+    for (const el of rest) el.inert = true;
+    return () => {
+      for (const el of rest) el.inert = false;
+      opener.current?.focus();
+    };
+  }, [open]);
+}

@@ -1,155 +1,28 @@
-import { act, useState } from 'react';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { act } from 'react';
+import { expect, it } from 'vitest';
 import type { Question } from '../../../packages/schema/src/template/question.js';
-import type { TemplateContent } from '../../../packages/schema/src/template/template.js';
-import { Toasts } from '../src/shell.js';
-import type { EditorVersion } from '../src/survey-models.js';
-import { VerkstadPage } from '../src/verkstad-page.js';
-import { editorFixture } from './editor-fixture.js';
-import { mount, settle } from './support.js';
+import {
+  t,
+  hash,
+  versions,
+  serve,
+  shown,
+  workshopTests,
+  wait,
+  open,
+  $,
+  byText,
+  type,
+  question,
+  choose,
+  status,
+  trail,
+  openAway,
+  pick,
+} from './verkstad-support.js';
+import { settle } from './support.js';
 
-const t = (nn: string) => ({ nn, en: nn });
-const options = [
-  { id: 'ja', texts: { text: t('Ja') } },
-  { id: 'nei', texts: { text: t('Nei') } },
-];
-const hash = (n: number) => 'abcdefghij'[n]!.repeat(64);
-
-/** A published v1 with a frozen F1, and the draft v2 made from it. */
-function versions(status = 'draft'): Record<string, EditorVersion> {
-  const base = editorFixture('published');
-  const role = base.content.questions[0]!;
-  base.id = 'base';
-  base.content.questions = [
-    {
-      id: 'F1',
-      type: 'single',
-      part: 'common',
-      frozen: true,
-      anchor_key: 'F1',
-      texts: { text: t('Brukar du MFA?'), section_title: t('Tilgang') },
-      options,
-    },
-    role,
-    { id: 'Q3', type: 'single', part: 'common', texts: { text: t('Tek de backup?') }, options },
-  ] as Question[];
-  const draft = { ...structuredClone(base), id: 'version', label: 'v2', version_no: 2, status };
-  return status === 'draft' ? { base, version: draft } : { base };
-}
-
-interface Call {
-  url: string;
-  method: string;
-  body: { content_hash?: string; content?: TemplateContent; label?: string; copy_from?: string };
-}
-/**
- * A small survey API: versions by id; a save with the current hash answers with a new one, a save with
- * another hash gets 409 like the real API, unless `put` answers first. `slow` delays every save.
- */
-function serve(
-  store: Record<string, EditorVersion>,
-  put?: (n: number) => Response | undefined,
-  issues: object[] = [],
-  slow = 0,
-) {
-  const calls: Call[] = [];
-  let puts = 0;
-  const json = (data: unknown, status = 200) =>
-    Promise.resolve(new Response(JSON.stringify(data), { status }));
-  vi.stubGlobal(
-    'fetch',
-    vi.fn((url: string, init?: RequestInit) => {
-      const method = init?.method ?? 'GET';
-      const body = (init?.body ? JSON.parse(init.body as string) : {}) as Call['body'];
-      calls.push({ url, method, body });
-      if (url === '/api/admin/surveys')
-        return json([
-          {
-            id: 'template',
-            key: 'syntetisk',
-            audience: 'client_survey',
-            versions: Object.values(store).map((v) => ({
-              id: v.id,
-              label: v.label,
-              version_no: v.version_no,
-              status: v.status,
-            })),
-          },
-        ]);
-      if (url === '/api/admin/surveys/validate') return json({ issues });
-      if (url === '/api/admin/surveys/template/drafts')
-        return json({ ...store['base'], id: 'ny', status: 'draft', version_no: 2 });
-      const id = /^\/api\/admin\/surveys\/versions\/([^/]+)$/.exec(url)?.[1];
-      if (id && method === 'GET') return json(store[id]);
-      if (id && method === 'PUT') {
-        const n = ++puts;
-        const answer = put?.(n);
-        if (answer) return Promise.resolve(answer);
-        return new Promise<Response>((done) =>
-          setTimeout(() => {
-            if (body.content_hash !== store[id]!.content_hash)
-              return done(new Response(JSON.stringify({ message: 'Endra.' }), { status: 409 }));
-            store[id] = { ...store[id]!, content: body.content!, content_hash: hash(n) };
-            done(new Response(JSON.stringify(store[id])));
-          }, slow),
-        );
-      }
-      return json({});
-    }),
-  );
-  return { calls, puts: () => calls.filter((c) => c.method === 'PUT') };
-}
-
-let view: ReturnType<typeof mount> | undefined;
-beforeEach(() => {
-  const data = new Map<string, string>();
-  vi.stubGlobal('localStorage', {
-    getItem: (k: string) => data.get(k) ?? null,
-    setItem: (k: string, v: string) => void data.set(k, v),
-    removeItem: (k: string) => void data.delete(k),
-    clear: () => data.clear(),
-  });
-  if (!('scrollTo' in Element.prototype))
-    Object.defineProperty(Element.prototype, 'scrollTo', { value: () => undefined });
-});
-afterEach(() => {
-  view?.close();
-  view = undefined;
-  vi.unstubAllGlobals();
-});
-const wait = (ms: number) => act(() => new Promise((r) => setTimeout(r, ms)));
-async function open(id = 'version') {
-  view = mount(
-    <Toasts>
-      <VerkstadPage id={id} />
-    </Toasts>,
-    true,
-  );
-  await settle();
-  await settle();
-  return view.div;
-}
-const $ = <T extends Element = HTMLElement>(div: HTMLElement, selector: string) =>
-  div.querySelector<T & HTMLElement>(selector)!;
-function byText(div: HTMLElement, text: string) {
-  const b = [...div.querySelectorAll('button')].find((x) => x.textContent?.trim() === text);
-  if (!b) throw new Error(`missing button ${text}`);
-  return b;
-}
-function type(element: HTMLTextAreaElement, value: string) {
-  act(() => {
-    Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(
-      element,
-      value,
-    );
-    element.dispatchEvent(new Event('input', { bubbles: true }));
-  });
-}
-const question = (div: HTMLElement) => $<HTMLTextAreaElement>(div, 'textarea.vk-stor');
-const choose = (div: HTMLElement, id: string) => act(() => $(div, `[data-sel="${id}"]`).click());
-const status = (div: HTMLElement) => $(div, '.vk-lagring').textContent;
-const trail = (div: HTMLElement) =>
-  [...div.querySelectorAll('[data-sel]')].map((x) => x.getAttribute('data-sel'));
+workshopTests();
 
 it('a published version is read-only and «Lag utkast» opens the next draft', async () => {
   const api = serve(versions('published'));
@@ -274,7 +147,7 @@ it('a frozen question is locked until «Rett ordlyden»; the choice holds for th
   act(() => $<HTMLInputElement>(div, 'input[name="merke-F1"]').click());
   await wait(800);
   expect(api.puts().at(-1)!.body.content!.questions[0]).toMatchObject({ anchor_key: 'F1' });
-  view!.close();
+  shown.view!.close();
   const again = await open();
   expect($(again, '.vk-klassifiser-tittel').textContent).toBe(
     'Endringa i F1 er merkt som rettskriving.',
@@ -322,36 +195,6 @@ it('a new survey starts with «Første spørsmål», and a blocked save leads to
   act(() => byText(div, 'Vis kva som manglar').click());
   expect($(div, '.vk-node-tittel').textContent).toBe('Velkomen');
 });
-
-/** The workshop that can be left and opened again inside the app (menu, «Skjema», back). */
-function Away({ id }: { id: string }) {
-  const [here, setHere] = useState(true);
-  return (
-    <>
-      <button type="button" onClick={() => setHere((h) => !h)}>
-        Bytt
-      </button>
-      {here && <VerkstadPage id={id} />}
-    </>
-  );
-}
-async function openAway() {
-  view = mount(
-    <Toasts>
-      <Away id="version" />
-    </Toasts>,
-    true,
-  );
-  await settle();
-  await settle();
-  return view.div;
-}
-function pick(select: HTMLSelectElement, value: string) {
-  act(() => {
-    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')!.set!.call(select, value);
-    select.dispatchEvent(new Event('change', { bubbles: true }));
-  });
-}
 
 it('opened again, the workshop starts from the saved draft, not from an earlier copy', async () => {
   const api = serve(versions());

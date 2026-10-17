@@ -1,4 +1,5 @@
 import { SurveysPage } from './surveys-page.js';
+import { SettingsPage } from './settings-page.js';
 import { FindingsPage } from './funn-page.js';
 import { ExportPage } from './export-page.js';
 import { DeletionPage } from './deletion-page.js';
@@ -155,6 +156,8 @@ function Shell({ name }: { name: string | null }) {
             <ExportPage />
           ) : path === '/admin/deletion' ? (
             <DeletionPage />
+          ) : path === '/admin/settings' ? (
+            <SettingsPage />
           ) : report ? (
             <ReportPage key={report[1] ?? 'ny'} initial={report[1]} />
           ) : seminar ? (

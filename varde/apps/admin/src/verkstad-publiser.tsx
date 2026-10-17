@@ -6,7 +6,16 @@ import type { TemplateContent } from '../../../packages/schema/src/template/temp
 import { Icon } from './icons.js';
 import { HoldButton } from './widgets.js';
 import { LANG_NAME, issueText, type Issue } from './verkstad-felt.js';
-import { issueNode, missingIn, whereOf, type FrozenChange, type Lang } from './verkstad-model.js';
+import type { RespondentText } from '../../../packages/schema/src/template/respondent-texts.js';
+import {
+  issueNode,
+  missingIn,
+  nodeOfOwner,
+  whereOf,
+  type FrozenChange,
+  type Lang,
+} from './verkstad-model.js';
+import { changedSince, type QuestionDiff } from './verkstad-tekst.js';
 import type { EditorVersion } from './survey-models.js';
 import { longDate } from './overview.js';
 
@@ -22,11 +31,17 @@ export interface PubliserProps {
   issues: readonly Issue[];
   frozen: readonly FrozenChange[];
   marks: Readonly<Record<string, 'orthographic'>>;
+  /** Texts a respondent would meet empty. */
+  empty: readonly RespondentText[];
+  /** Questions new, changed and removed since the published version. */
+  diff: QuestionDiff;
+  baseLabel: string;
   languages: readonly Lang[];
   busy: boolean;
   error: string;
   onGoto: (key: string) => void;
   onLang: (lang: Lang) => void;
+  onTranslations: () => void;
   onMark: (id: string, kind: 'orthographic' | 'semantic') => void;
   onAccept: (lang: Lang) => void;
   onPublish: () => void;
@@ -110,8 +125,24 @@ export function Publiser(p: PubliserProps) {
     p.dirty ? undefined : (p.saved.translation_acceptance[lang] as { at?: string } | undefined);
   const missing = (lang: Lang) => missingIn(p.content, lang).length;
   const languagesDone = p.languages.every((l) => acceptance(l) && !missing(l));
-  const ready = !p.issues.length && !pending.length && languagesDone && !p.dirty;
-  const shown = p.issues.slice(0, 8);
+  // Everything that keeps the survey from being whole: schema issues and empty texts, each with its place.
+  const gaps = [
+    ...p.issues.map((i) => ({
+      what: issueText(i),
+      where: whereOf(p.content, i.path),
+      node: issueNode(p.content, i.path),
+    })),
+    ...p.empty.map((t) => ({
+      what: 'Teksten er tom.',
+      where: t.where,
+      node: nodeOfOwner(t.owner),
+    })),
+  ];
+  const ready = !gaps.length && !pending.length && languagesDone && !p.dirty;
+  const shown = gaps.slice(0, 8);
+  const name = (who: string | undefined) =>
+    who ? (p.saved.people?.[who] ?? 'ein administrator') : '';
+  const changes = p.diff.added.length + p.diff.changed.length + p.diff.removed.length;
   return (
     <aside className="vk-skuff" role="dialog" aria-modal="true" aria-labelledby="vk-pub-tittel">
       <header className="vk-skuff-topp">
@@ -122,37 +153,67 @@ export function Publiser(p: PubliserProps) {
       </header>
       <div className="vk-skuff-innhald">
         <Punkt
-          ok={!p.issues.length}
-          title={
-            p.issues.length
-              ? `${p.issues.length} ${p.issues.length === 1 ? 'ting må fiksast' : 'ting må fiksast'}`
-              : 'Skjemaet er heilt'
-          }
+          ok={!gaps.length}
+          title={gaps.length ? `${gaps.length} ting må fiksast` : 'Skjemaet er heilt'}
         >
-          {p.issues.length ? (
+          {gaps.length ? (
             <ul className="vk-punktliste">
-              {shown.map((i, n) => (
+              {shown.map((g, n) => (
                 <li key={n}>
                   <span>
-                    {issueText(i)} <span className="vk-dempa">({whereOf(p.content, i.path)})</span>
+                    {g.what} <span className="vk-dempa">({g.where})</span>
                   </span>
-                  <button
-                    type="button"
-                    className="btn sm ghost"
-                    onClick={() => p.onGoto(issueNode(p.content, i.path))}
-                  >
+                  <button type="button" className="btn sm ghost" onClick={() => p.onGoto(g.node)}>
                     Gå til
                   </button>
                 </li>
               ))}
-              {p.issues.length > shown.length && (
-                <li className="vk-dempa">… og {p.issues.length - shown.length} til</li>
+              {gaps.length > shown.length && (
+                <li className="vk-dempa">… og {gaps.length - shown.length} til</li>
               )}
             </ul>
           ) : (
             <p>Alle spørsmål har tekst og svar, og vilkåra viser til spørsmål som finst.</p>
           )}
         </Punkt>
+        {p.saved.version_no > 1 && (
+          <Punkt ok="info" title={`Endringar sidan ${p.baseLabel}`}>
+            {changes ? (
+              <ul className="vk-punktliste">
+                {[
+                  ...p.diff.added.map((q) => ['Ny', q] as const),
+                  ...p.diff.changed.map(({ now }) => ['Endra', now] as const),
+                ]
+                  .slice(0, 8)
+                  .map(([kind, q]) => (
+                    <li key={`${kind}-${q.id}`}>
+                      <span>
+                        <span className={kind === 'Ny' ? 'chip accent' : 'chip warn'}>{kind}</span>{' '}
+                        <b>{q.id}</b> {q.texts.text.nn || 'utan tekst'}
+                      </span>
+                      <button type="button" className="btn sm ghost" onClick={() => p.onGoto(q.id)}>
+                        Gå til
+                      </button>
+                    </li>
+                  ))}
+                {p.diff.removed.map((q) => (
+                  <li key={`f-${q.id}`}>
+                    <span>
+                      <span className="chip">Fjerna</span> <b>{q.id}</b> {q.texts.text.nn}
+                    </span>
+                  </li>
+                ))}
+                {p.diff.added.length + p.diff.changed.length > 8 && (
+                  <li className="vk-dempa">
+                    … og {p.diff.added.length + p.diff.changed.length - 8} til
+                  </li>
+                )}
+              </ul>
+            ) : (
+              <p>Ingen spørsmål er nye, endra eller fjerna. Rekkjefølgja kan vere ny.</p>
+            )}
+          </Punkt>
+        )}
         <Punkt ok={!pending.length} title="Faste spørsmål">
           {p.frozen.length ? (
             <ul className="vk-punktliste">
@@ -193,7 +254,9 @@ export function Publiser(p: PubliserProps) {
         </Punkt>
         {p.languages.map((lang) => {
           const a = acceptance(lang),
-            m = missing(lang);
+            m = missing(lang),
+            basis = p.saved.acceptance_basis?.[lang],
+            after = a ? [] : changedSince(basis, p.content, lang);
           return (
             <Punkt
               key={lang}
@@ -208,9 +271,26 @@ export function Publiser(p: PubliserProps) {
                   </button>
                 </p>
               ) : a?.at ? (
-                <p>Godkjend {time(a.at)}. Ei ny endring tek bort godkjenninga.</p>
+                <p>
+                  Godkjend av {name((a as { accepted_by?: string }).accepted_by)} {time(a.at)}. Ei
+                  ny endring tek bort godkjenninga.
+                </p>
               ) : (
                 <>
+                  {basis && after.length > 0 && (
+                    <p>
+                      {after.length} {after.length === 1 ? 'tekst er endra' : 'tekstar er endra'}{' '}
+                      etter at {name(basis.by)} godkjende {time(basis.at)}:{' '}
+                      {after
+                        .slice(0, 3)
+                        .map((t) => t.where)
+                        .join(', ')}
+                      {after.length > 3 ? ' …' : ''}{' '}
+                      <button type="button" className="linkbtn" onClick={p.onTranslations}>
+                        Sjå dei i Omsetjing
+                      </button>
+                    </p>
+                  )}
                   <p>
                     {lang === 'nn'
                       ? 'Les gjennom teksten i telefonen eller her, og merk han som lesen.'
@@ -219,12 +299,12 @@ export function Publiser(p: PubliserProps) {
                   <button
                     type="button"
                     className="btn sm"
-                    disabled={p.busy || p.issues.length > 0}
+                    disabled={p.busy || gaps.length > 0}
                     onClick={() => p.onAccept(lang)}
                   >
                     {lang === 'nn' ? 'Eg har lese korrektur' : `Godkjenn ${LANG_NAME[lang]}`}
                   </button>
-                  {p.issues.length > 0 && <p className="vk-dempa">Fiks punkta over først.</p>}
+                  {gaps.length > 0 && <p className="vk-dempa">Fiks punkta over først.</p>}
                 </>
               )}
             </Punkt>

@@ -1,0 +1,42 @@
+/* Skjema (2.16): biblioteket med kort, «Nytt skjema» og «Innstillingar». */
+.bib-topp { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.bib-tal { margin: 0; color: var(--ink-muted); font-size: 14px; }
+.bib-rutenett { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; align-items: stretch; }
+.bib-rutenett > li { display: grid; }
+.bib-kort { display: grid; align-content: start; gap: 8px; padding: 18px 20px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1), var(--edge); color: var(--ink); text-decoration: none; transition: border-color var(--t-base), box-shadow var(--t-base); }
+.bib-kort:hover { border-color: var(--accent); box-shadow: var(--shadow-2), var(--edge); }
+.bib-kort:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bib-type { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent-text); }
+.bib-namn { font-size: 18px; font-weight: 760; color: var(--ink-strong); line-height: 1.3; overflow-wrap: anywhere; }
+.bib-meta { font-size: 13.5px; color: var(--ink-muted); }
+.bib-status { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13.5px; color: var(--ink); margin-top: 4px; }
+.bib-ny { margin-bottom: 16px; }
+.bib-ny form { display: grid; gap: 16px; }
+.bib-startar { border: 0; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 12px; align-items: stretch; }
+.bib-startar legend, .bib-val legend { font-size: 13px; font-weight: 700; color: var(--ink-strong); margin-bottom: 8px; padding: 0; }
+.bib-start { display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: start; align-content: start; height: 100%; box-sizing: border-box; gap: 10px; padding: 14px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
+.bib-start:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.bib-start:has(input:disabled) { opacity: 0.55; cursor: not-allowed; }
+.bib-start input { margin: 3px 0 0; accent-color: var(--accent); }
+.bib-start-ikon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft); color: var(--accent-text); }
+.bib-start-tekst { display: grid; gap: 4px; }
+.bib-start-tekst b { font-size: 14.5px; color: var(--ink-strong); }
+.bib-start-tekst small { font-size: 13px; color: var(--ink-muted); line-height: 1.4; }
+.bib-felt { display: grid; gap: 14px; max-width: 560px; }
+.bib-felt > label, .bib-namnfelt { display: grid; gap: 6px; font-size: 13px; font-weight: 700; color: var(--ink-strong); }
+.bib-namnfelt .input { font-weight: 400; font-size: 15px; min-height: 40px; }
+.bib-felt > label .input { font-weight: 400; font-size: 15px; min-height: 40px; }
+.bib-felt small { font-size: 12.5px; font-weight: 400; color: var(--ink-muted); }
+.bib-val { border: 0; margin: 0; padding: 0; display: flex; gap: 8px 20px; flex-wrap: wrap; }
+.bib-val legend { width: 100%; }
+.bib-val label, .bib-sjekk { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; font-size: 14px; font-weight: 500; color: var(--ink); }
+.bib-val input, .bib-sjekk input { accent-color: var(--accent); margin: 0; }
+/* Innstillingar */
+.inn-skjema { display: grid; gap: 16px; max-width: 880px; }
+.inn-skjema h2 { margin: 0; }
+.inn-hint { margin: 0; color: var(--ink-muted); font-size: 14px; }
+.inn-gruppe { border: 0; margin: 0; padding: 0; display: grid; gap: 12px; }
+.inn-gruppe legend { font-size: 13px; font-weight: 700; color: var(--ink-strong); margin-bottom: 8px; padding: 0; }
+.inn-rad { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px 16px; }
+.inn-felt { display: grid; gap: 6px; font-size: 13px; font-weight: 700; color: var(--ink-strong); }
+.inn-felt .input { font-weight: 400; font-size: 15px; min-height: 40px; width: 100%; }

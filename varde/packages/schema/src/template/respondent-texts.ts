@@ -1,4 +1,5 @@
-// Every text a respondent can see, with a stable key, its place in the workshop's words and whether it
+// Every text a respondent can see (not the short labels of the dashboard and reports), with a stable
+// key, its place in the workshop's words and whether it
 // must have Nynorsk words (2.16). The workshop's checklist and translation view and the survey list of
 // the API read the same list. Types only: no zod at run time, so the admin can import it.
 import type { TemplateContent } from './template.js';
@@ -54,7 +55,6 @@ export function respondentTexts(c: TemplateContent): RespondentText[] {
     add(`${k}.section`, q.id, `${q.id}: seksjonstittel`, q.texts.section_title);
     add(`${k}.help`, q.id, `${q.id}: hjelpetekst`, q.texts.help, false);
     add(`${k}.placeholder`, q.id, `${q.id}: plasshaldar`, q.texts.placeholder, false);
-    add(`${k}.short`, q.id, `${q.id}: kortnamn`, q.texts.short_label, false);
     if (q.type === 'single' || q.type === 'multi') {
       q.options.forEach((o, i) =>
         add(`${k}.option.${o.id}`, q.id, `${q.id}: svar ${i + 1}`, o.texts.text),

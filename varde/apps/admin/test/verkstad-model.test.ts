@@ -185,7 +185,7 @@ it('frozen changes: moving is no change; spelling keeps the anchor, a new meanin
 it('missing translations and where an issue belongs', () => {
   const c = content();
   delete c.questions[1]!.texts.text.en;
-  expect(missingIn(c, 'en').map((m) => m.where)).toEqual(['A2: spørsmål']);
+  expect(missingIn(c, 'en').map((m) => m.where)).toEqual(['A2: spørsmålet']);
   expect(missingIn(c, 'nn')).toEqual([]);
   expect(issueNode(c, ['questions', 2, 'texts', 'text'])).toBe('B1');
   expect(issueNode(c, ['intro', 'contact', 'name'])).toBe(NODE.intro);

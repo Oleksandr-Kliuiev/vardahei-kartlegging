@@ -37,17 +37,25 @@ import {
   sectionOfKey,
   sectionsOf,
   setSectionTitle,
-  withoutAnchor,
+  nodeOfOwner,
   type Lang,
   type Place,
 } from './verkstad-model.js';
 import { Invitasjon, Leiardel, OmSkjemaet, Seksjon, Slutt, Velkomen } from './verkstad-nodar.js';
 import { Publiser } from './verkstad-publiser.js';
+import { useSpelling } from './verkstad-merke.js';
+import { Omsetjing } from './verkstad-omsetjing.js';
+import { diffQuestions, withText } from './verkstad-tekst.js';
+import { Versjonar } from './verkstad-versjonar.js';
+import { useModal } from './widgets.js';
+import { emptyTexts } from '../../../packages/schema/src/template/respondent-texts.js';
 import { Meldingar, Topp } from './verkstad-topp.js';
 import { Sporsmal } from './verkstad-sporsmal.js';
 import { Sti } from './verkstad-sti.js';
 import { expressionWords } from './verkstad-vilkar.js';
 import './verkstad.css';
+
+const nodeOf = nodeOfOwner;
 
 export function VerkstadPage({ id }: { id: string }) {
   // The workshop starts from what the server has now (never a cached copy), after any save of this
@@ -75,18 +83,6 @@ export function VerkstadPage({ id }: { id: string }) {
   return <Verkstad key={version.data.id} initial={version.data} surveys={list.data} />;
 }
 
-// «Rettskriving» holds for the wording it was chosen for: a later edit asks again. The choice is kept
-// in this browser until the version is published (a new meaning lives in the draft as a new anchor).
-const MARKS = (id: string) => `varde:merke:${id}`;
-function readMarks(id: string): Record<string, string> {
-  try {
-    const raw = JSON.parse(localStorage.getItem(MARKS(id)) ?? '{}') as unknown;
-    return raw && typeof raw === 'object' ? (raw as Record<string, string>) : {};
-  } catch {
-    return {};
-  }
-}
-
 function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: SurveySummary[] }) {
   const queries = useQueryClient();
   const toast = useToast();
@@ -110,9 +106,10 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
   const [sel, setSel] = useState<string>(() => content.questions[0]?.id ?? NODE.intro);
   const [ask, setAsk] = useState(0);
   const [unlocked, setUnlocked] = useState<ReadonlySet<string>>(new Set());
-  const [marks, setMarks] = useState(() => readMarks(initial.id));
   const [issues, setIssues] = useState<Issue[]>([]);
-  const [panel, setPanel] = useState(false);
+  // One side panel at a time: publishing or the versions; «Omsetjing» replaces the three panes.
+  const [panel, setPanel] = useState<'publiser' | 'versjonar' | null>(null);
+  const [view, setView] = useState<'verkstad' | 'omsetjing'>('verkstad');
   const [phone, setPhone] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -134,30 +131,10 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
   const save = useAutosave(saved, content, onSaved, !readOnly);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(MARKS(initial.id), JSON.stringify(marks));
-    } catch {
-      /* The choice still holds for this visit. */
-    }
-  }, [marks]);
-  useEffect(() => {
     document.title = `${content.intro.title.nn || content.key} – Skjema – Varde`;
   }, [content.intro.title.nn]);
-  // The publish panel is modal: the rest of the page is inert while it is open, and focus goes back
-  // to where it came from when it closes.
-  useEffect(() => {
-    if (!panel) return;
-    const rest = [
-      ...document.querySelectorAll<HTMLElement>(
-        '#sidemeny, .topplinje, .hopp, .vk > :not(.vk-skuff, .vk-slor)',
-      ),
-    ];
-    for (const el of rest) el.inert = true;
-    return () => {
-      for (const el of rest) el.inert = false;
-      opener.current?.focus();
-    };
-  }, [panel]);
+  // The side panels are modal: the rest of the page is inert, and focus goes back when they close.
+  useModal(panel !== null, opener, '.vk > :not(.vk-skuff, .vk-slor)');
   // The shared validator; issues that block a save come back marked as blocking.
   useEffect(() => {
     const abort = new AbortController();
@@ -178,29 +155,22 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
 
   const baseContent = base.data?.content ?? null;
   const frozen = useMemo(() => frozenChanges(baseContent, content), [baseContent, content]);
-  const spelling = useMemo(
-    () =>
-      Object.fromEntries(
-        frozen
-          .filter((f) => !f.semantic && marks[f.id] === withoutAnchor(f.now))
-          .map((f) => [f.id, 'orthographic' as const]),
-      ),
-    [frozen, marks],
-  );
+  const { marks, spelling, mark, forget } = useSpelling(initial.id, frozen);
+  // Texts a respondent would meet empty (2.16): the shared validator lets them pass, publishing does not.
+  const empty = useMemo(() => emptyTexts(content), [content]);
   const problems = useMemo(() => {
     const m = new Map<string, number>();
-    for (const i of issues) {
-      const node = issueNode(content, i.path);
-      m.set(node, (m.get(node) ?? 0) + 1);
-    }
-    for (const f of frozen) if (!f.semantic && !spelling[f.id]) m.set(f.id, (m.get(f.id) ?? 0) + 1);
+    const add = (node: string) => m.set(node, (m.get(node) ?? 0) + 1);
+    for (const i of issues) add(issueNode(content, i.path));
+    for (const t of empty) add(nodeOf(t.owner));
+    for (const f of frozen) if (!f.semantic && !spelling[f.id]) add(f.id);
     return m;
-  }, [issues, frozen, spelling, content]);
+  }, [issues, empty, frozen, spelling, content]);
   const pendingFrozen = frozen.filter((f) => !f.semantic && !spelling[f.id]).length;
   const languagesLeft = languages.filter(
     (l) => missingIn(content, l).length || save.dirty() || !saved.translation_acceptance[l],
   ).length;
-  const left = issues.length + pendingFrozen + languagesLeft;
+  const left = issues.length + empty.length + pendingFrozen + languagesLeft;
   const blocking = issues.find((i) => i.blocking);
 
   // Every question id this visit has seen, with the published base: new ids never reuse them.
@@ -212,6 +182,19 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
   const change = (fn: (c: TemplateContent) => TemplateContent, key = '') => {
     if (!readOnly) history.change(fn, key);
   };
+  // Stable writers for the translation view, so typing in one row redraws only that row.
+  const changing = useRef(change);
+  changing.current = change;
+  const onText = useCallback(
+    (key: string, l: Lang, value: string) =>
+      changing.current((c) => withText(c, key, l, value), `tekst:${key}:${l}`),
+    [],
+  );
+  const onGotoText = useCallback((owner: string) => {
+    setView('verkstad');
+    setSel(nodeOf(owner));
+    setAsk((n) => n + 1);
+  }, []);
   const setQuestion = (q: Question, key = '') =>
     change((c) => ({ ...c, questions: c.questions.map((x) => (x.id === q.id ? q : x)) }), key);
   const select = (key: string) => {
@@ -343,7 +326,7 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
       history.reset(next.content);
       void queries.invalidateQueries({ queryKey: ['surveys'] });
       void queries.invalidateQueries({ queryKey: ['rounds'] });
-      localStorage.removeItem(MARKS(initial.id));
+      forget();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Kunne ikkje publisere.');
     } finally {
@@ -396,7 +379,7 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
         e.preventDefault();
         change((c) => moveBy(c, sel, e.key === 'ArrowUp' ? -1 : 1));
       } else if (e.key === 'Escape') {
-        if (panel) setPanel(false);
+        if (panel) setPanel(null);
         else if (phone) setPhone(false);
       }
     };
@@ -483,14 +466,16 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
   function markQuestion(id: string, kind: 'orthographic' | 'semantic') {
     if (!baseContent) return;
     change((c) => markFrozen(c, baseContent, id, kind, saved.version_no));
-    const now = content.questions.find((x) => x.id === id);
-    setMarks((m) => {
-      const next = { ...m };
-      if (kind === 'orthographic' && now) next[id] = withoutAnchor(now);
-      else delete next[id];
-      return next;
-    });
+    mark(
+      id,
+      kind,
+      content.questions.find((x) => x.id === id),
+    );
   }
+  const openPanel = (which: 'publiser' | 'versjonar') => {
+    opener.current = document.activeElement as HTMLElement | null;
+    setPanel(which);
+  };
 
   return (
     <div className={`vk${phone ? ' med-telefon' : ''}`}>
@@ -514,10 +499,10 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
         nextNo={Math.max(...versions.map((v) => v.version_no), saved.version_no) + 1}
         left={left}
         onNewDraft={() => void newDraft()}
-        onPanel={() => {
-          opener.current = document.activeElement as HTMLElement | null;
-          setPanel(true);
-        }}
+        onPanel={() => openPanel('publiser')}
+        view={view}
+        onView={setView}
+        onVersions={() => openPanel('versjonar')}
       />
       <Meldingar
         readOnly={readOnly}
@@ -548,76 +533,101 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
         }}
         onOverwrite={() => void save.overwrite()}
       />
-      <div className="vk-flate">
-        <div className="vk-rute vk-sti-rute">
-          <Sti
-            content={content}
-            base={baseContent}
-            selected={sel}
-            lang={lang}
-            readOnly={readOnly}
-            problems={problems}
-            changedFrozen={new Set(frozen.map((f) => f.id))}
-            onSelect={select}
-            onMove={move}
-            onAdd={add}
-            onAddSection={addSectionAfter}
-          />
+      {view === 'omsetjing' ? (
+        <Omsetjing
+          content={content}
+          saved={saved}
+          languages={languages}
+          readOnly={readOnly}
+          onText={onText}
+          onGoto={onGotoText}
+        />
+      ) : (
+        <div className="vk-flate">
+          <div className="vk-rute vk-sti-rute">
+            <Sti
+              content={content}
+              base={baseContent}
+              selected={sel}
+              lang={lang}
+              readOnly={readOnly}
+              problems={problems}
+              changedFrozen={new Set(frozen.map((f) => f.id))}
+              onSelect={select}
+              onMove={move}
+              onAdd={add}
+              onAddSection={addSectionAfter}
+            />
+          </div>
+          <section className="vk-rute vk-redigering-flate" aria-label="Redigering">
+            {editor}
+          </section>
+          <div className="vk-telefon">
+            {phone && (
+              <button
+                type="button"
+                className="iconbtn vk-telefon-lukk"
+                aria-label="Lukk telefonen"
+                onClick={() => setPhone(false)}
+              >
+                <Icon name="lukk" small />
+              </button>
+            )}
+            <PhonePreview
+              id={saved.id}
+              content={content}
+              at={spot}
+              ask={ask}
+              {...(q?.visible_if !== undefined
+                ? { note: expressionWords(content, q.visible_if) }
+                : {})}
+              onHere={onHere}
+            />
+          </div>
         </div>
-        <section className="vk-rute vk-redigering-flate" aria-label="Redigering">
-          {editor}
-        </section>
-        <div className="vk-telefon">
-          {phone && (
-            <button
-              type="button"
-              className="iconbtn vk-telefon-lukk"
-              aria-label="Lukk telefonen"
-              onClick={() => setPhone(false)}
-            >
-              <Icon name="lukk" small />
-            </button>
-          )}
-          <PhonePreview
-            id={saved.id}
-            content={content}
-            at={spot}
-            ask={ask}
-            {...(q?.visible_if !== undefined
-              ? { note: expressionWords(content, q.visible_if) }
-              : {})}
-            onHere={onHere}
-          />
-        </div>
-      </div>
-      {panel && (
-        <>
-          <div className="vk-slor" onClick={() => setPanel(false)} />
-          <Publiser
-            saved={saved}
-            content={content}
-            dirty={save.dirty()}
-            issues={issues}
-            frozen={frozen}
-            marks={spelling}
-            languages={languages}
-            busy={busy}
-            error={error}
-            onGoto={(key) => {
-              setPanel(false);
-              select(key);
-            }}
-            onLang={(l) => {
-              setPanel(false);
-              setLang(l);
-            }}
-            onMark={markQuestion}
-            onAccept={(l) => void accept(l)}
-            onPublish={() => void publish()}
-            onRound={() => goTo('/admin/rounds')}
-            onClose={() => setPanel(false)}
-          />
-        </>
+      )}
+      {panel && <div className="vk-slor" onClick={() => setPanel(null)} />}
+      {panel === 'publiser' && (
+        <Publiser
+          saved={saved}
+          content={content}
+          dirty={save.dirty()}
+          issues={issues}
+          empty={empty}
+          frozen={frozen}
+          marks={spelling}
+          diff={diffQuestions(baseContent, content)}
+          baseLabel={baseLabel}
+          languages={languages}
+          busy={busy}
+          error={error}
+          onGoto={(key) => {
+            setPanel(null);
+            setView('verkstad');
+            select(key);
+          }}
+          onLang={(l) => {
+            setPanel(null);
+            setLang(l);
+          }}
+          onTranslations={() => {
+            setPanel(null);
+            setView('omsetjing');
+          }}
+          onMark={markQuestion}
+          onAccept={(l) => void accept(l)}
+          onPublish={() => void publish()}
+          onRound={() => goTo('/admin/rounds')}
+          onClose={() => setPanel(null)}
+        />
+      )}
+      {panel === 'versjonar' && (
+        <Versjonar
+          versions={versions}
+          current={saved.id}
+          onOpen={(id) => goTo(`/admin/surveys/${id}`)}
+          onClose={() => setPanel(null)}
+        />
       )}
     </div>
   );

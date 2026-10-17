@@ -4,6 +4,7 @@
 import type { TemplateContent } from '../../../packages/schema/src/template/template.js';
 import type { Question } from '../../../packages/schema/src/template/question.js';
 import { initialsQuestion } from '../../../packages/schema/src/template/structure.js';
+import { respondentTexts } from '../../../packages/schema/src/template/respondent-texts.js';
 
 /** JSON with sorted keys and no undefined values, so equal content compares equal. */
 export function canonical(value: unknown): string {
@@ -30,6 +31,17 @@ export const NODE = {
   end: ':slutt',
 } as const;
 export const sectionKey = (n: number) => `:seksjon:${n}`;
+/** The trail node of a respondent text's owner (2.16): a question, or a part of the survey. */
+export const nodeOfOwner = (owner: string): string =>
+  owner === 'intro'
+    ? NODE.intro
+    : owner === 'invitation'
+      ? NODE.invitation
+      : owner === 'leader'
+        ? NODE.leader
+        : owner === 'end'
+          ? NODE.end
+          : owner;
 export const sectionOfKey = (key: string) =>
   key.startsWith(':seksjon:') ? Number(key.slice(9)) : null;
 
@@ -411,49 +423,13 @@ export interface TextRef {
   where: string;
   text: Text;
 }
-/** Every text a respondent can see, with the trail node it belongs to. */
+/** Every text a respondent can see, with the trail node it belongs to (one list with the API, 2.16). */
 export function textsOf(c: TemplateContent): TextRef[] {
-  const out: TextRef[] = [];
-  const add = (node: string, where: string, text: Text | undefined) => {
-    if (text) out.push({ node, where, text });
-  };
-  add(NODE.intro, 'Velkomen: tittel', c.intro.title);
-  add(NODE.intro, 'Velkomen: overskrift', c.intro.short);
-  c.intro.letter.forEach((t, i) => add(NODE.intro, `Velkomen: avsnitt ${i + 1}`, t));
-  c.intro.facts.forEach((t, i) => add(NODE.intro, `Velkomen: punkt ${i + 1}`, t));
-  add(NODE.intro, 'Velkomen: avsendar', c.intro.sender);
-  add(NODE.intro, 'Velkomen: opningstid', c.intro.contact.hours);
-  if (c.invitation) {
-    add(NODE.invitation, 'Invitasjon: brev', c.invitation.letter);
-    add(NODE.invitation, 'Plakat: tittel', c.invitation.poster.title);
-    add(NODE.invitation, 'Plakat: tekst', c.invitation.poster.text);
-    add(NODE.invitation, 'Plakat: botntekst', c.invitation.poster.footer);
-  }
-  add(NODE.leader, 'Leiardel: tittel', c.leader_intro.title);
-  add(NODE.leader, 'Leiardel: tekst', c.leader_intro.text);
-  for (const q of ordered(c)) {
-    add(q.id, `${q.id}: spørsmål`, q.texts.text);
-    if (q.texts.section_title) add(q.id, `${q.id}: seksjonstittel`, q.texts.section_title);
-    add(q.id, `${q.id}: hjelpetekst`, q.texts.help);
-    add(q.id, `${q.id}: plasshaldar`, q.texts.placeholder);
-    if (q.type === 'single' || q.type === 'multi') {
-      q.options.forEach((o, i) => add(q.id, `${q.id}: svar ${i + 1}`, o.texts.text));
-      add(q.id, `${q.id}: forklaring, tittel`, q.scenario?.explanation.title);
-      add(q.id, `${q.id}: forklaring`, q.scenario?.explanation.text);
-    }
-    if (q.type === 'scale')
-      q.rows.forEach((r, i) => add(q.id, `${q.id}: rad ${i + 1}`, r.texts.text));
-    if (q.type === 'scale' || q.type === 'nps') {
-      add(q.id, `${q.id}: lågaste`, q.scale.low);
-      add(q.id, `${q.id}: høgaste`, q.scale.high);
-    }
-    if (q.type !== 'text') add(q.id, `${q.id}: fritekst`, q.free_text?.texts.text);
-  }
-  c.tips.forEach((t, i) => {
-    add(NODE.end, `Råd ${i + 1}: tittel`, t.title);
-    add(NODE.end, `Råd ${i + 1}: tekst`, t.text);
-  });
-  return out;
+  return respondentTexts(c).map((t) => ({
+    node: nodeOfOwner(t.owner),
+    where: t.where,
+    text: t.text,
+  }));
 }
 /** Texts that have Nynorsk but not `lang` yet (an empty row label is allowed, B14). */
 export function missingIn(c: TemplateContent, lang: Lang): TextRef[] {

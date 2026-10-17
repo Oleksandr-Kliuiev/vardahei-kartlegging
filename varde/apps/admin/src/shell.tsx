@@ -53,6 +53,13 @@ export const SECTIONS: Section[] = [
   },
   { url: '/admin/export', label: 'Eksport', icon: 'ned', group: 'Personvern' },
   { url: '/admin/deletion', label: 'Sletting', icon: 'slett', group: 'Personvern' },
+  {
+    url: '/admin/settings',
+    label: 'Innstillingar',
+    icon: 'tannhjul',
+    group: 'Oppsett',
+    intro: 'Nye skjema byrjar med desse opplysningane. Skjema som finst, endrar seg ikkje.',
+  },
 ];
 
 /** The section of a path; a section may have sub-paths (`/admin/reports/<id>`). */

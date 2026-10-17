@@ -4,7 +4,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { Question } from '../../../packages/schema/src/template/question.js';
 import { editorFixture } from '../test/editor-fixture.js';
-import { newSurvey, publish } from './support.js';
+import { login, newSurvey, publish } from './support.js';
 
 const t = (nn: string, en = nn) => ({ nn, en });
 const yesNo = [
@@ -165,4 +165,28 @@ test('a changed frozen question publishes only with a choice, and the choice is 
       }),
     ]),
   );
+});
+
+test('a survey from a start is published without a line of JSON (2.16)', async ({ page }) => {
+  await login(page);
+  await page.getByRole('link', { name: 'Skjema', exact: true }).click();
+  await page.getByRole('button', { name: 'Nytt skjema', exact: true }).click();
+  await page.getByLabel(/^Etter seminaret/).check();
+  await page.getByLabel('Namn på skjemaet', { exact: true }).fill(`Etter seminaret ${Date.now()}`);
+  await page.getByRole('button', { name: 'Lag skjemaet', exact: true }).click();
+  await expect(page.locator('.vk-sti')).toBeVisible();
+  // Only the first question of its own is left: its text and two answers.
+  await expect(page.getByRole('button', { name: /Gjer klar til publisering/ })).toContainText('4');
+  await row(page, 'Q2').click();
+  await page.getByLabel('Spørsmålet', { exact: true }).fill('Kva tok du med deg frå seminaret?');
+  await page.getByLabel('Svar 1', { exact: true }).fill('Mykje');
+  await page.getByLabel('Svar 2', { exact: true }).fill('Lite');
+  await saved(page);
+  await page.getByRole('button', { name: /Gjer klar til publisering/ }).click();
+  const panel = page.locator('.vk-skuff');
+  await expect(panel).toContainText('Skjemaet er heilt');
+  await panel.getByRole('button', { name: 'Eg har lese korrektur', exact: true }).click();
+  await expect(panel.getByText(/^Godkjend av /)).toHaveCount(1);
+  await panel.getByRole('button', { name: 'Hald inne for å publisere v1' }).click({ delay: 1400 });
+  await expect(panel.getByText('v1 er publisert', { exact: true })).toBeVisible();
 });
