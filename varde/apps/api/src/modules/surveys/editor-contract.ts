@@ -10,17 +10,28 @@ import { initialsQuestion, roleQuestion } from '@varde/schema/template/structure
 import { Lang } from '@varde/schema/template/texts';
 import { TemplateVersionContent } from '@varde/schema/template/validate';
 
-export const TemplateInput = z.strictObject({
-  key: z
-    .string()
-    .regex(/^[a-z0-9_-]+$/)
-    .max(100),
-  audience: Audience,
-  identification: Identification,
-  required_languages: z.array(Lang).min(1).max(3),
-});
+/** A new survey (2.16): a title (the key is made from it), or a key as before; a copy takes the
+ * kind, languages and identification of the published version it copies. */
+export const TemplateInput = z
+  .strictObject({
+    key: z
+      .string()
+      .regex(/^[a-z0-9_-]+$/)
+      .max(100)
+      .optional(),
+    title: z.string().trim().min(1).max(120).optional(),
+    audience: Audience,
+    identification: Identification,
+    required_languages: z.array(Lang).min(1).max(3),
+    copy_from: z.uuid().optional(),
+  })
+  .refine((v) => v.key !== undefined || v.title !== undefined, {
+    message: 'Gi skjemaet eit namn.',
+    path: ['title'],
+  });
+/** A new draft; its name is optional (decision 3 of 17.10): «vN» when none is given. */
 export const DraftInput = z.strictObject({
-  label: z.string().trim().min(1).max(100),
+  label: z.string().trim().min(1).max(100).optional(),
   copy_from: z.uuid().optional(),
 });
 export const Hash = z.string().regex(/^[a-f0-9]{64}$/);
@@ -72,13 +83,21 @@ export function validatedDraft(content: unknown): TemplateContent {
 /** A new draft: the questions its structure needs (decision 5: the role question, and the initials
  * question with identification «initials») in a first section, everything else empty; the shared
  * validator guides the workshop from there. */
-export function emptyContent(input: z.infer<typeof TemplateInput>): TemplateContent {
+export function emptyContent(input: {
+  key: string;
+  audience: TemplateContent['audience'];
+  identification: TemplateContent['identification'];
+  required_languages: TemplateContent['required_languages'];
+}): TemplateContent {
   const langs = input.required_languages;
   const first = input.identification === 'initials' ? [initialsQuestion('Q1', langs)] : [];
   const [head, ...rest] = [...first, roleQuestion(`Q${first.length + 1}`, langs)];
   const section = { nn: 'Om deg', ...(langs.includes('en') ? { en: 'About you' } : {}) };
   return {
-    ...input,
+    key: input.key,
+    audience: input.audience,
+    identification: input.identification,
+    required_languages: langs,
     leader_roles: [],
     max_tips: 0,
     tips: [],

@@ -6,12 +6,18 @@ import {
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import type { z } from 'zod';
+import { emptyTexts } from '@varde/schema/template/respondent-texts';
+import { TemplateContentShape, type TemplateContent } from '@varde/schema/template/template';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { contentHash } from './hashes.js';
+import { namesOf } from '../auth/people.js';
+import { contentHash, sourceHash } from './hashes.js';
 import { PublishService } from './publish.service.js';
 import { createEditorMetrics } from './editor-metrics.js';
+import { SettingsService } from './settings.service.js';
+import { keyOf, starterContent } from './starters.js';
 import {
   emptyContent,
+  issues,
   validated,
   validatedDraft,
   type TemplateInput,
@@ -19,15 +25,28 @@ import {
   type SaveInput,
 } from './editor-contract.js';
 
+/** What is left before a draft can be published: issues, empty texts, languages not approved. */
+function leftOf(v: { content: unknown; translation_acceptance: unknown }): number {
+  const shape = TemplateContentShape.safeParse(v.content);
+  if (!shape.success) return Math.max(1, issues(v.content).length);
+  const c = shape.data,
+    hash = sourceHash(c);
+  const accepted = v.translation_acceptance as Record<string, { source_hash?: string } | undefined>;
+  const languages = c.required_languages.filter((l) => accepted[l]?.source_hash !== hash).length;
+  return issues(c).length + emptyTexts(c).length + languages;
+}
+
 @Injectable()
 export class EditorService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly publisher: PublishService,
+    private readonly settings: SettingsService,
   ) {}
 
-  list() {
-    return this.prisma.surveyTemplate.findMany({
+  /** The library (2.16): each survey by its title, with its versions, rounds and open draft. */
+  async list() {
+    const templates = await this.prisma.surveyTemplate.findMany({
       orderBy: { key: 'asc' },
       include: {
         versions: {
@@ -39,10 +58,57 @@ export class EditorService {
             status: true,
             identification: true,
             required_languages: true,
+            created_at: true,
+            published_at: true,
+            published_by: true,
+            content: true,
+            translation_acceptance: true,
+            _count: { select: { rounds: true } },
           },
         },
       },
     });
+    const names = await namesOf(
+      this.prisma,
+      templates.flatMap((t) => t.versions.map((v) => v.published_by)),
+    );
+    return templates.map((t) => {
+      const latest = t.versions[0]?.content as Partial<TemplateContent> | undefined;
+      const draft = t.versions.find((v) => v.status === 'draft');
+      return {
+        id: t.id,
+        key: t.key,
+        audience: t.audience,
+        title: latest?.intro?.title?.nn?.trim() || t.key,
+        question_count: latest?.questions?.length ?? 0,
+        languages: t.required_languages,
+        rounds: t.versions.reduce((n, v) => n + v._count.rounds, 0),
+        draft: draft ? { id: draft.id, version_no: draft.version_no, left: leftOf(draft) } : null,
+        versions: t.versions.map((v) => ({
+          id: v.id,
+          label: v.label,
+          version_no: v.version_no,
+          status: v.status,
+          identification: v.identification,
+          required_languages: v.required_languages,
+          created_at: v.created_at,
+          published_at: v.published_at,
+          published_by: v.published_by ? (names[v.published_by] ?? null) : null,
+          rounds: v._count.rounds,
+        })),
+      };
+    });
+  }
+  /** One version for the workshop, with the names of who approved and published it. */
+  async view(id: string) {
+    const v = await this.get(id);
+    const accepted = Object.values(
+      v.translation_acceptance as Record<string, { accepted_by?: string } | undefined>,
+    ).map((a) => a?.accepted_by);
+    const basis = Object.values(
+      v.acceptance_basis as Record<string, { by?: string } | undefined>,
+    ).map((a) => a?.by);
+    return { ...v, people: await namesOf(this.prisma, [v.published_by, ...accepted, ...basis]) };
   }
   async get(id: string) {
     const version = await this.prisma.templateVersion.findUnique({
@@ -57,32 +123,76 @@ export class EditorService {
       data: { who, what: `surveys.${what}`, target: `template_version:${id}` },
     });
   }
+  /** A free key for a title: the title's own, else with -2, -3 … */
+  private async freeKey(tx: Prisma.TransactionClient, wanted: string) {
+    const taken = new Set(
+      (
+        await tx.surveyTemplate.findMany({
+          where: { key: { startsWith: wanted } },
+          select: { key: true },
+        })
+      ).map((t) => t.key),
+    );
+    let key = wanted;
+    for (let n = 2; taken.has(key); n += 1) key = `${wanted}-${n}`;
+    return key;
+  }
+  /**
+   * A new survey (2.16): by its title from a start for its kind, with the structure questions and the
+   * defaults of «Innstillingar»; or a copy of a published version under a new title; or, as before,
+   * an empty draft under a given key.
+   */
   async create(input: z.infer<typeof TemplateInput>, who: string) {
-    if (
-      !input.required_languages.includes('nn') ||
-      (input.audience === 'client_survey' && !input.required_languages.includes('en'))
-    )
-      throw new BadRequestException('Nynorsk er obligatorisk; kundeskjema krev òg engelsk.');
-    if (new Set(input.required_languages).size !== input.required_languages.length)
-      throw new BadRequestException('Vel kvart språk éin gong.');
     try {
       return await this.prisma.$transaction(async (tx) => {
+        const base = input.copy_from
+          ? await tx.templateVersion.findUnique({
+              where: { id: input.copy_from },
+              include: { template: true },
+            })
+          : null;
+        if (input.copy_from && (!base || base.status !== 'published'))
+          throw new BadRequestException('Vel ein publisert versjon å kopiere.');
+        const audience = (base?.template.audience ?? input.audience) as TemplateContent['audience'];
+        const langs = (base?.required_languages ??
+          input.required_languages) as TemplateContent['required_languages'];
+        const identification = (base?.identification ??
+          input.identification) as TemplateContent['identification'];
+        if (!langs.includes('nn') || (audience === 'client_survey' && !langs.includes('en')))
+          throw new BadRequestException('Nynorsk er obligatorisk; kundeskjema krev òg engelsk.');
+        if (new Set(langs).size !== langs.length)
+          throw new BadRequestException('Vel kvart språk éin gong.');
+        const title = input.title?.trim() ?? input.key!;
+        const key = input.key ?? (await this.freeKey(tx, keyOf(title)));
+        let content: TemplateContent;
+        if (base) {
+          content = { ...validated(base.content), key };
+          content.intro = { ...content.intro, title: { ...content.intro.title, nn: title } };
+        } else if (input.title !== undefined) {
+          const { contact, sender } = await this.settings.defaults(tx);
+          content = {
+            ...starterContent({
+              title,
+              audience,
+              identification,
+              required_languages: langs,
+              contact,
+              sender,
+            }),
+            key,
+          };
+        } else content = emptyContent({ key, audience, identification, required_languages: langs });
         const template = await tx.surveyTemplate.create({
-          data: {
-            key: input.key,
-            audience: input.audience,
-            required_languages: input.required_languages,
-          },
+          data: { key, audience, required_languages: langs },
         });
-        const content = emptyContent(input);
         const version = await tx.templateVersion.create({
           data: {
             template_id: template.id,
             label: 'v1',
             version_no: 1,
             origin: 'authored',
-            identification: input.identification,
-            required_languages: input.required_languages,
+            identification,
+            required_languages: langs,
             content,
             content_hash: contentHash(content),
           },
@@ -105,6 +215,14 @@ export class EditorService {
         await tx.$queryRaw`SELECT id FROM survey_template WHERE id = ${templateId}::uuid FOR UPDATE`;
         const template = await tx.surveyTemplate.findUnique({ where: { id: templateId } });
         if (!template) throw new NotFoundException('Skjemaet finst ikkje.');
+        // One draft per survey (decision 3 of 17.10): the open one is where work goes on.
+        const open = await tx.templateVersion.findFirst({
+          where: { template_id: templateId, status: 'draft' },
+        });
+        if (open)
+          throw new ConflictException(
+            `Det finst alt eit utkast (v${open.version_no}). Opne det i staden.`,
+          );
         const previous = await tx.templateVersion.findFirst({
           where: { template_id: templateId },
           orderBy: { version_no: 'desc' },
@@ -127,17 +245,16 @@ export class EditorService {
               }
             : null) ??
           emptyContent({
-            ...template,
-            audience: template.audience as z.infer<typeof TemplateInput>['audience'],
+            key: template.key,
+            audience: template.audience as TemplateContent['audience'],
             identification: previous?.identification === 'none' ? 'none' : 'initials',
-            required_languages: template.required_languages as z.infer<
-              typeof TemplateInput
-            >['required_languages'],
+            required_languages:
+              template.required_languages as TemplateContent['required_languages'],
           });
         const version = await tx.templateVersion.create({
           data: {
             template_id: templateId,
-            label: input.label,
+            label: input.label ?? `v${(previous?.version_no ?? 0) + 1}`,
             version_no: (previous?.version_no ?? 0) + 1,
             origin: 'authored',
             identification: base?.identification ?? previous?.identification ?? 'initials',

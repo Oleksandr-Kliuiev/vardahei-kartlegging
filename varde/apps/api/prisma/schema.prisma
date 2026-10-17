@@ -77,10 +77,25 @@ model TemplateVersion {
   published_by           String?
   /// Marks of changed frozen questions at publication: [{id, kind: orthographic|semantic}] (ADR-005).
   frozen_changes         Json?          @db.JsonB
+  /// What each language was approved on (2.16): {lang: {at, by, texts: {key: words}}} — the texts of that
+  /// language (and their Nynorsk source) at the last approval, so the workshop can say what changed
+  /// since. Kept when the draft is saved (the approval itself is not, ADR-019); empty in a new draft.
+  acceptance_basis       Json           @default("{}") @db.JsonB
 
   @@unique([template_id, version_no])
   @@unique([template_id, label])
   @@map("template_version")
+}
+
+/// Settings of the admin (2.16, decision 6 of 17.10), by key: `defaults` holds the contact, sender
+/// and opening hours that new surveys take. Every change is written to AuditLog (`settings.update`).
+model AppSetting {
+  key        String   @id
+  value      Json     @db.JsonB
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_by String
+
+  @@map("app_setting")
 }
 
 /// Client (1.4b, ARCHITECTURE §4): mirror of Atlas; in stage 1 filled from kundar.json (1.7).

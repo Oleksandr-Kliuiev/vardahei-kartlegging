@@ -8,6 +8,7 @@ import { TemplateContentShape, type TemplateContent } from '@varde/schema/templa
 import type { Lang } from '@varde/schema/template/texts';
 import { TemplateVersionContent } from '@varde/schema/template/validate';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { respondentTexts } from '@varde/schema/template/respondent-texts';
 import { canonical, contentHash, sourceHash } from './hashes.js';
 
 export type FrozenChange = 'orthographic' | 'semantic';
@@ -136,8 +137,9 @@ export class PublishService {
     const v = await tx.templateVersion.findUniqueOrThrow({ where: { id: versionId } });
     if (v.status !== 'draft')
       throw new PublishRejected('only a draft takes translation acceptances');
+    const content = parseShape(v.content);
     const acceptance: Acceptance = {
-      source_hash: sourceHash(parseShape(v.content)),
+      source_hash: sourceHash(content),
       accepted_by: who,
       at: new Date().toISOString(),
     };
@@ -145,9 +147,24 @@ export class PublishService {
       ...(v.translation_acceptance as unknown as Record<string, Acceptance>),
       [lang]: acceptance,
     };
+    // What was approved (2.16): the texts of this language and their Nynorsk source, kept through
+    // later saves, so the workshop can name what changed after the approval.
+    const texts = Object.fromEntries(
+      respondentTexts(content).map((t) => [
+        t.key,
+        lang === 'nn' ? { nn: t.text.nn } : { nn: t.text.nn, [lang]: t.text[lang] ?? '' },
+      ]),
+    );
+    const basis = {
+      ...(v.acceptance_basis as Record<string, unknown>),
+      [lang]: { at: acceptance.at, by: who, texts },
+    };
     await tx.templateVersion.update({
       where: { id: versionId },
-      data: { translation_acceptance: all as unknown as Prisma.InputJsonValue },
+      data: {
+        translation_acceptance: all as unknown as Prisma.InputJsonValue,
+        acceptance_basis: basis as Prisma.InputJsonValue,
+      },
     });
     return acceptance;
   }

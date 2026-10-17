@@ -57,6 +57,11 @@
       "source": "./src/template/structure.ts",
       "default": "./dist/template/structure.js"
     },
+    "./template/respondent-texts": {
+      "types": "./src/template/respondent-texts.ts",
+      "source": "./src/template/respondent-texts.ts",
+      "default": "./dist/template/respondent-texts.js"
+    },
     "./template/template": {
       "types": "./src/template/template.ts",
       "source": "./src/template/template.ts",

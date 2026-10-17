@@ -43,7 +43,7 @@ const call = (method: 'GET' | 'POST' | 'PUT', url: string, payload?: object, aut
       headers: auth ? { cookie: `varde_session=${encodeURIComponent(cookie)}` } : {},
     });
 const path = (id: string) => `/api/admin/surveys/versions/${id}`;
-let version: Version;
+let version: Version, open: Version;
 beforeAll(async () => {
   t = await startApp({ PUBLIC_URL: 'https://example.invalid' });
   db = t.app.get(PrismaService);
@@ -324,7 +324,7 @@ describe('admin survey editor and launch (1d)', () => {
       }),
     ).toBe(1);
   });
-  it('concurrent copies get distinct version numbers; copied drafts carry no acceptance', async () => {
+  it('concurrent copies: one draft per survey wins, the other is told to open it', async () => {
     const responses = await Promise.all(
       ['copy-a', 'copy-b'].map((label) =>
         call('POST', `/api/admin/surveys/${version.template_id}/drafts`, {
@@ -333,30 +333,18 @@ describe('admin survey editor and launch (1d)', () => {
         }),
       ),
     );
-    expect(responses.map((r) => r.statusCode)).toEqual([201, 201]);
-    expect(responses.map((r) => r.json<Version>().version_no).sort()).toEqual([2, 3]);
-    expect(responses[0]!.json<Version>().content).toEqual(
-      (await call('GET', path(version.id))).json<Version>().content,
-    );
+    expect(responses.map((r) => r.statusCode).sort()).toEqual([201, 409]);
+    const made = responses.find((r) => r.statusCode === 201)!.json<Version>();
+    expect(made.version_no).toBe(2);
+    expect(made.content).toEqual((await call('GET', path(version.id))).json<Version>().content);
+    open = made;
     expect(
-      (
-        await call('POST', `/api/admin/surveys/${version.template_id}/drafts`, {
-          label: 'copy-c',
-          copy_from: responses[0]!.json<Version>().id,
-        })
-      ).statusCode,
-    ).toBe(400);
-    expect(
-      (await call('POST', `/api/admin/surveys/${version.template_id}/drafts`, { label: 'copy-a' }))
+      (await call('POST', `/api/admin/surveys/${version.template_id}/drafts`, { label: 'copy-c' }))
         .statusCode,
     ).toBe(409);
   });
   it('HTTP publication requires explicit frozen-change marks and audits the accepted mark', async () => {
-    const copied = await call('POST', `/api/admin/surveys/${version.template_id}/drafts`, {
-      label: 'frozen-copy',
-      copy_from: version.id,
-    });
-    const draft = copied.json<Version>();
+    const draft = open;
     draft.content.questions[0]!.texts.text.nn += '?';
     const saved = await call('PUT', path(draft.id), {
       content_hash: draft.content_hash,

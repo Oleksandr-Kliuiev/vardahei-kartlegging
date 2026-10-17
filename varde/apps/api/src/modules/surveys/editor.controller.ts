@@ -42,7 +42,7 @@ export class EditorController {
   }
   @Get('/versions/:id')
   get(@Param('id', ParseUUIDPipe) id: string) {
-    return this.editor.get(id);
+    return this.editor.view(id);
   }
   @Post('/validate')
   validate(@Body() body: unknown) {
