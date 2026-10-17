@@ -75,6 +75,10 @@ export class AdminService {
             status: true,
             deadline: true,
             population_snapshot: true,
+            // What went out by hand, and when (2.18).
+            invitation_sent_at: true,
+            reminder_sent_at: true,
+            report_sent_at: true,
             client: { select: { name: true } },
           },
         },

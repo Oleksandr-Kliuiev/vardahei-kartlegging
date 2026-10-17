@@ -6,6 +6,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -85,6 +86,15 @@ export class RoundsController {
       parse(z.strictObject({ deadline: Day }), input).deadline,
       auditWho(r.adminSession),
     );
+  }
+
+  @Put('/round-clients/:id/sent')
+  sent(@Param('id', ParseUUIDPipe) id: string, @Body() input: unknown, @Req() r: AdminRequest) {
+    const value = parse(
+      z.strictObject({ kind: z.enum(['invitation', 'reminder', 'report']), sent: z.boolean() }),
+      input,
+    );
+    return this.rounds.markSent(id, value.kind, value.sent, auditWho(r.adminSession));
   }
 
   @Post('/round-clients/:id/reissue')

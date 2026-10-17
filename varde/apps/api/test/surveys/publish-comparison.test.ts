@@ -294,6 +294,33 @@ describe('2.16 acceptance: workshop publication keeps the comparison with round 
     expect(keys).toContain('F6');
   });
 
+  it('the workshop sees which template numbers a draft keeps before it is published (2.18)', async () => {
+    const metrics = f.app.get(MetricsService);
+    const template = await f.prisma.surveyTemplate.findUniqueOrThrow({
+      where: { key: 'tryggleik' },
+    });
+    const seededVersion = await f.prisma.templateVersion.findFirstOrThrow({
+      where: { template_id: template.id, label: '2026-10-13' },
+    });
+    const draft = await editor.draft(template.id, { copy_from: seededVersion.id }, who);
+    versions.push(draft.id);
+    const holds = async () =>
+      Object.fromEntries((await metrics.templateUses(draft.id)).map((u) => [u.key, u.holds]));
+    const before = await holds();
+    expect(before['tryggleik.zone']).toBe(true);
+    expect(Object.values(before).every(Boolean)).toBe(true);
+    const content = structuredClone(draft.content) as unknown as TemplateContent;
+    const f6 = content.questions.find((q) => q.id === 'F6')!;
+    f6.anchor_key = 'F6-acc218';
+    await editor.save(draft.id, { content_hash: draft.content_hash, content }, who);
+    const after = await holds();
+    expect(after['tryggleik.zone']).toBe(false);
+    expect(after['tryggleik.f6.distribution']).toBe(false);
+    expect(after['tryggleik.f7.distribution']).toBe(true);
+    // One draft per survey: this one goes, so later tests can make theirs.
+    await f.prisma.templateVersion.delete({ where: { id: draft.id } });
+  });
+
   it('an empty text in a language of the survey stops the publication on the server too (L1)', async () => {
     const template = await f.prisma.surveyTemplate.findUniqueOrThrow({
       where: { key: 'tryggleik' },

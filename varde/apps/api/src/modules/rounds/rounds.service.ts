@@ -292,6 +292,41 @@ export class RoundsService {
     );
   }
 
+  /**
+   * What went out by hand (2.18): the invitation, the last reminder or the report, with when and by
+   * whom; `sent: false` takes a mark back. Varde sends nothing itself. Each change is in AuditLog.
+   */
+  markSent(id: string, kind: 'invitation' | 'reminder' | 'report', sent: boolean, who: string) {
+    return this.changed(
+      this.prisma.$transaction(async (tx) => {
+        await this.lockClient(tx, id);
+        const at = sent ? new Date() : null;
+        const by = sent ? who : null;
+        const data =
+          kind === 'invitation'
+            ? { invitation_sent_at: at, invitation_sent_by: by }
+            : kind === 'reminder'
+              ? { reminder_sent_at: at, reminder_sent_by: by }
+              : { report_sent_at: at, report_sent_by: by };
+        const rc = await tx.roundClient.update({ where: { id }, data });
+        await tx.auditLog.create({
+          data: {
+            who,
+            what: 'rounds.client.sent',
+            target: `round_client:${id}`,
+            details: { kind, sent },
+          },
+        });
+        return {
+          id,
+          invitation_sent_at: rc.invitation_sent_at,
+          reminder_sent_at: rc.reminder_sent_at,
+          report_sent_at: rc.report_sent_at,
+        };
+      }),
+    );
+  }
+
   reissue(id: string, who: string) {
     return this.changed(
       this.prisma.$transaction(async (tx) => {

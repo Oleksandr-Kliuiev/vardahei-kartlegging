@@ -50,6 +50,7 @@ model SurveyTemplate {
   required_languages String[]
   created_at         DateTime          @default(now()) @db.Timestamptz(6)
   versions           TemplateVersion[]
+  comments           QuestionComment[]
 
   @@map("survey_template")
 }
@@ -59,32 +60,53 @@ model SurveyTemplate {
 /// `status` ∈ {draft, published}, `identification` ∈ {initials, none},
 /// `origin` ∈ {authored, kartlegging, external_import} (CHECKs in the migration).
 model TemplateVersion {
-  id                     String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  template_id            String         @db.Uuid
-  template               SurveyTemplate @relation(fields: [template_id], references: [id], onDelete: Restrict)
+  id                     String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  template_id            String            @db.Uuid
+  template               SurveyTemplate    @relation(fields: [template_id], references: [id], onDelete: Restrict)
   rounds                 Round[]
   label                  String
   version_no             Int
-  status                 String         @default("draft")
-  identification         String         @default("initials")
+  status                 String            @default("draft")
+  identification         String            @default("initials")
   required_languages     String[]
-  content                Json           @db.JsonB
-  translation_acceptance Json           @default("{}") @db.JsonB
+  content                Json              @db.JsonB
+  translation_acceptance Json              @default("{}") @db.JsonB
   origin                 String
   content_hash           String
-  created_at             DateTime       @default(now()) @db.Timestamptz(6)
-  published_at           DateTime?      @db.Timestamptz(6)
+  created_at             DateTime          @default(now()) @db.Timestamptz(6)
+  published_at           DateTime?         @db.Timestamptz(6)
   published_by           String?
   /// Marks of changed frozen questions at publication: [{id, kind: orthographic|semantic}] (ADR-005).
-  frozen_changes         Json?          @db.JsonB
+  frozen_changes         Json?             @db.JsonB
   /// What each language was approved on (2.16): {lang: {at, by, texts: {key: words}}} — the texts of that
   /// language (and their Nynorsk source) at the last approval, so the workshop can say what changed
   /// since. Kept when the draft is saved (the approval itself is not, ADR-019); empty in a new draft.
-  acceptance_basis       Json           @default("{}") @db.JsonB
+  acceptance_basis       Json              @default("{}") @db.JsonB
+  comments               QuestionComment[]
 
   @@unique([template_id, version_no])
   @@unique([template_id, label])
   @@map("template_version")
+}
+
+/// A note on a question or a part of a survey (2.18), written and read by admins in the workshop.
+/// Kept per survey, so it follows the next draft; `template_version_id` is the version it was written
+/// on. `node` is a question id or a part (`:velkomen`, `:slutt` …). Never shown to respondents.
+model QuestionComment {
+  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  template_id         String          @db.Uuid
+  template            SurveyTemplate  @relation(fields: [template_id], references: [id], onDelete: Cascade)
+  template_version_id String          @db.Uuid
+  template_version    TemplateVersion @relation(fields: [template_version_id], references: [id], onDelete: Cascade)
+  node                String
+  text                String
+  created_by          String
+  created_at          DateTime        @default(now()) @db.Timestamptz(6)
+  resolved_at         DateTime?       @db.Timestamptz(6)
+  resolved_by         String?
+
+  @@index([template_id])
+  @@map("question_comment")
 }
 
 /// Settings of the admin (2.16, decision 6 of 17.10), by key: `defaults` holds the contact, sender
@@ -123,20 +145,20 @@ model Client {
 /// round leaves `draft` (CHECK round_mode_fixed, trigger round_freeze).
 /// `type` ∈ {regular, post_seminar, live, external_import}; `status` ∈ {draft, open, closed, archived}.
 model Round {
-  id                  String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                  String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name                String
   type                String
-  template_version_id String?          @db.Uuid
-  template_version    TemplateVersion? @relation(fields: [template_version_id], references: [id], onDelete: Restrict)
+  template_version_id String?            @db.Uuid
+  template_version    TemplateVersion?   @relation(fields: [template_version_id], references: [id], onDelete: Restrict)
   identification      String?
-  status              String           @default("draft")
-  created_at          DateTime         @default(now()) @db.Timestamptz(6)
-  opened_at           DateTime?        @db.Timestamptz(6)
-  closed_at           DateTime?        @db.Timestamptz(6)
+  status              String             @default("draft")
+  created_at          DateTime           @default(now()) @db.Timestamptz(6)
+  opened_at           DateTime?          @db.Timestamptz(6)
+  closed_at           DateTime?          @db.Timestamptz(6)
   round_clients       RoundClient[]
-  seminars_before     Seminar[]        @relation("seminar_round_before")
-  seminars_live       Seminar[]        @relation("seminar_round_live")
-  seminars_after      Seminar[]        @relation("seminar_round_after")
+  seminars_before     Seminar[]          @relation("seminar_round_before")
+  seminars_live       Seminar[]          @relation("seminar_round_live")
+  seminars_after      Seminar[]          @relation("seminar_round_after")
   live_questions      LivePollQuestion[]
 
   @@map("round")
@@ -158,6 +180,14 @@ model RoundClient {
   population_snapshot Int?
   deadline            DateTime?          @db.Date
   status              String             @default("draft")
+  /// Sent by hand (2.18): Varde sends nothing, so the admin marks what went out and when; the last
+  /// reminder counts. Each mark is in AuditLog (`rounds.client.sent`).
+  invitation_sent_at  DateTime?          @db.Timestamptz(6)
+  invitation_sent_by  String?
+  reminder_sent_at    DateTime?          @db.Timestamptz(6)
+  reminder_sent_by    String?
+  report_sent_at      DateTime?          @db.Timestamptz(6)
+  report_sent_by      String?
   responses           Response[]
   progress_events     ProgressEvent[]
   revoked_codes       RevokedRoundCode[]

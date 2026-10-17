@@ -24,6 +24,22 @@ import {
   type ReleaseActor,
 } from '../privacy/privacy.service.js';
 
+/** A definition holds for a version when every question it reads has the same id, part, anchor and
+ * structure there as in a version the template's definitions were made for (ADR-005, ADR-020). */
+function meaningKept(content: TemplateContent, reference: ReadonlyMap<string, Question[]>) {
+  return (def: MetricDefinition) =>
+    def.questions.every((ref) => {
+      const q = content.questions.find((x) => x.id === ref.key.split('.')[0]);
+      return (
+        q !== undefined &&
+        q.part === ref.part &&
+        (reference.get(q.id) ?? []).some(
+          (s) => s.anchor_key === q.anchor_key && structureOf(s) === structureOf(q),
+        )
+      );
+    });
+}
+
 export interface RoundRelease {
   round: string;
   populations: Record<string, { cells: number; carried: number }>;
@@ -102,21 +118,10 @@ export class MetricsService {
     const seeded = rows.map((x) => MetricSchema.parse(x.definition));
     if (!generated.length && !authoredSet) return seeded;
     const content = version.content as unknown as TemplateContent;
-    const reference = seeded.length
-      ? await this.referenceQuestions(version.template_id)
-      : new Map<string, Question[]>();
-    const kept = seeded.filter((def) =>
-      def.questions.every((ref) => {
-        const q = content.questions.find((x) => x.id === ref.key.split('.')[0]);
-        return (
-          q !== undefined &&
-          q.part === ref.part &&
-          (reference.get(q.id) ?? []).some(
-            (s) => s.anchor_key === q.anchor_key && structureOf(s) === structureOf(q),
-          )
-        );
-      }),
-    );
+    const holds = seeded.length
+      ? meaningKept(content, await this.referenceQuestions(version.template_id))
+      : () => false;
+    const kept = seeded.filter(holds);
     // One distribution per series: the template's own where it still holds, the version's elsewhere.
     const covered = new Set(
       kept.filter((d) => d.kind === 'distribution').map((d) => d.questions[0]?.key),
@@ -127,6 +132,37 @@ export class MetricsService {
         .map((x) => MetricSchema.parse(x.definition))
         .filter((d) => !covered.has(d.questions[0]?.key)),
     ];
+  }
+
+  /**
+   * The template's own definitions as a version reads them (2.18, «Brukt i» in the workshop): which
+   * questions each one reads, and whether it holds for the version as saved — the rule of
+   * definitionsFor, applied to a draft before it is published.
+   */
+  async templateUses(versionId: string) {
+    const v = await this.prisma.templateVersion.findUniqueOrThrow({
+      where: { id: versionId },
+      include: { template: true },
+    });
+    const rows = await this.prisma.metricDefinition.findMany({
+      where: { key: { startsWith: `${v.template.key}.` } },
+      orderBy: [{ key: 'asc' }, { version: 'asc' }],
+    });
+    if (!rows.length) return [];
+    const holds = meaningKept(
+      v.content as unknown as TemplateContent,
+      await this.referenceQuestions(v.template_id),
+    );
+    return rows.map((x) => {
+      const def = MetricSchema.parse(x.definition);
+      return {
+        key: def.key,
+        kind: def.kind,
+        part: def.part,
+        questions: [...new Set(def.questions.map((q) => q.key.split('.')[0]!))],
+        holds: holds(def),
+      };
+    });
   }
 
   /** Questions of the template's published versions made outside the workshop, by id. */
