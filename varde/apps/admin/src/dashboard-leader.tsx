@@ -94,7 +94,7 @@ function LeaderAll({ round }: { round: string }) {
 }
 export function LeaderSection({ round, client }: { round: string; client: string }) {
   return (
-    <Fold title="Leiarane">
+    <Fold title="Leiarane" closed lazy>
       {client ? <LeaderClient round={round} client={client} /> : <LeaderAll round={round} />}
     </Fold>
   );

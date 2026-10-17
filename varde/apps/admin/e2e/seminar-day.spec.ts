@@ -246,8 +246,10 @@ test('seminar with clients → /s → live with three phones → survey after �
     .screenshot({ path: info.outputPath('admin-rundar-360-light.png') });
   await page.setViewportSize({ width: 360, height: 780 });
 
-  // «Sjå i dashbordet» opens the dashboard on that round.
-  await page.getByTestId('steg-for').getByRole('link', { name: 'Sjå i dashbordet' }).click();
-  await expect(page).toHaveURL(new RegExp(`/admin/dashboard\\?round=${s.rounds.before!.id}$`));
-  await expect(page.locator('#dashboard-round')).toHaveValue(s.rounds.before!.id);
+  // «Sjå resultatet» opens the round page on «Resultat» (2.17).
+  await page.getByTestId('steg-for').getByRole('link', { name: 'Sjå resultatet' }).click();
+  await expect(page).toHaveURL(new RegExp(`/admin/rounds/${s.rounds.before!.id}/resultat$`));
+  await expect(
+    page.getByRole('navigation', { name: 'Runden' }).getByRole('link', { name: 'Resultat' }),
+  ).toHaveAttribute('aria-current', 'page');
 });

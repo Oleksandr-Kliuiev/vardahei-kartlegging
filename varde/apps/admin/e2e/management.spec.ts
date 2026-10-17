@@ -1,21 +1,24 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
-import { login, newSurvey, state } from './support.js';
+import { login, menu, newSurvey, state } from './support.js';
 
-test('wizard creates a client and launches an open round with an invitation; closed clients have no reopen action', async ({
+test('a new client gets its page; the wizard launches an open round whose page has the invitation; closed clients have no reopen action', async ({
   page,
 }) => {
   await login(page);
   const f = await state(page);
-  await page.getByRole('link', { name: 'Kundar og rundar', exact: true }).click();
   const name = `Syntetisk ${randomUUID()}`,
     roundName = `Runde ${randomUUID()}`;
-  const clients = page.locator('section.del').filter({
-    has: page.getByRole('heading', { name: 'Legg til eller endre kunde', exact: true }),
-  });
-  await clients.getByLabel('Kundenamn', { exact: true }).first().fill(name);
-  await clients.getByLabel('Tal tilsette', { exact: true }).first().fill('12');
-  await clients.getByRole('button', { name: 'Opprett kunde', exact: true }).click();
+  await menu(page, 'Kundar');
+  await page.getByRole('button', { name: 'Ny kunde', exact: true }).click();
+  const form = page.getByRole('region', { name: 'Ny kunde' });
+  await form.getByLabel('Kundenamn', { exact: true }).fill(name);
+  await form.getByLabel('Tal tilsette', { exact: true }).fill('12');
+  await form.getByRole('button', { name: 'Opprett kunde', exact: true }).click();
+  await expect(page.getByRole('heading', { name, level: 1 })).toBeVisible();
+  await expect(page.getByText('12 tilsette · 0 rundar', { exact: true })).toBeVisible();
+  await menu(page, 'Rundar');
+  await page.getByRole('button', { name: 'Start ein runde', exact: true }).click();
   const wizard = page
     .locator('section.del')
     .filter({ has: page.getByRole('heading', { name: 'Start ein runde', exact: true }) });
@@ -28,13 +31,24 @@ test('wizard creates a client and launches an open round with an invitation; clo
   await wizard.getByLabel(`Frist for ${name}`, { exact: true }).fill('2099-01-01');
   await wizard.getByLabel('Opne med ein gong', { exact: true }).check();
   await wizard.getByRole('button', { name: 'Start runden', exact: true }).click();
-  await expect(wizard.getByLabel('Lenkje til kartlegginga')).toHaveValue(/\/r\?c=/);
-  const round = page.getByRole('region', { name: roundName, exact: true });
-  await expect(round.getByText('12 tilsette i denne runden')).toBeVisible();
-  const customer = round.getByRole('article', { name, exact: true });
+  // The round page takes over on «Utsending»: the round is chosen once, by opening it (2.17).
+  await expect(page.getByRole('heading', { name: roundName, level: 1 })).toBeVisible();
+  await expect(page).toHaveURL(/\/utsending$/);
+  const customer = page.getByRole('article', { name, exact: true });
+  await expect(customer.getByText('12 tilsette i denne runden')).toBeVisible();
+  await customer.getByRole('button', { name: 'Hent invitasjon' }).click();
+  await expect(customer.getByLabel('Lenkje til kartlegginga')).toHaveValue(/\/r\?c=/);
   await customer.getByRole('button', { name: 'Steng for svar', exact: true }).click();
   await expect(customer.getByText('Stengd for svar', { exact: true })).toBeVisible();
   await expect(customer.getByRole('button', { name: 'Opne', exact: true })).toHaveCount(0);
+  // The client's own page lists the round on its timeline.
+  await menu(page, 'Kundar');
+  await page
+    .locator('a.rad-lenkje')
+    .filter({ has: page.locator('.rad-hovud b', { hasText: name }) })
+    .click();
+  await expect(page.getByRole('heading', { name, level: 1 })).toBeVisible();
+  await expect(page.locator('.tidslinje').getByRole('link', { name: roundName })).toBeVisible();
 });
 
 test('create a survey, write it in the workshop, accept both languages, preview without writes, publish and open the next draft', async ({
@@ -85,15 +99,15 @@ test('360 px admin forms and employee tables stay inside the viewport', async ({
   await page.setViewportSize({ width: 360, height: 780 });
   await login(page);
   // On narrow screens the menu is a drawer behind the menu button.
-  await expect(page.getByRole('link', { name: 'Kundar og rundar', exact: true })).toBeHidden();
+  await expect(page.getByRole('link', { name: 'Rundar', exact: true })).toBeHidden();
   await page.getByRole('button', { name: 'Opne menyen' }).click();
-  await page.getByRole('link', { name: 'Kundar og rundar', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Kundar og rundar', exact: true })).toBeVisible();
+  await menu(page, 'Rundar');
+  await expect(page.getByRole('heading', { name: 'Rundar', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
-  await page.getByRole('button', { name: 'Opne menyen' }).click();
-  await page.getByRole('link', { name: 'Dashbord', exact: true }).click();
   const f = await state(page);
-  await page.getByLabel('Runde', { exact: true }).selectOption(f.rounds.dashboard!.id);
+  await page.goto(`/admin/rounds/${f.rounds.dashboard!.id}/resultat`);
+  // The rows per employee are a detail: folded until opened (2.17).
+  await page.locator('summary').filter({ hasText: 'Svar per tilsett' }).click();
   await expect(page.getByRole('heading', { name: 'Svar per tilsett', exact: true })).toBeVisible();
   const wrap = page
     .locator('.del')

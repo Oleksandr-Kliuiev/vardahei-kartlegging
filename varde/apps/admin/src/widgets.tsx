@@ -1,7 +1,8 @@
-// Small shared pieces of the admin in the Vardestien style: a response ring, a hold-to-confirm button
-// and a segmented control.
+// Small shared pieces of the admin in the Vardestien style: a response ring, a hold-to-confirm button,
+// a segmented control and the same control as links between the views of one place (2.17).
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { countTo } from '@varde/ui/motion';
+import { follow } from './nav.js';
 
 /** Share of employees who answered; the arc and the number roll to new values. */
 export function Ring({ value, max, label }: { value: number; max: number | null; label: string }) {
@@ -112,26 +113,18 @@ export function HoldButton({
   );
 }
 
-/** Segmented control: the thumb glides to the chosen option (token durations, so reduced motion jumps). */
-export function Seg<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: T;
-  options: readonly (readonly [T, string])[];
-  onChange: (value: T) => void;
-}) {
+/** The thumb of a segmented control glides to the chosen item (token durations, so reduced motion jumps). */
+function useThumb(selector: string, chosen: string) {
   const box = useRef<HTMLDivElement>(null),
     thumb = useRef<HTMLSpanElement>(null),
     placed = useRef(false);
   useLayoutEffect(() => {
     const place = () => {
       const t = thumb.current,
-        on = box.current?.querySelector<HTMLElement>('button[aria-pressed="true"]');
-      if (!t || !on) return;
+        on = box.current?.querySelector<HTMLElement>(selector);
+      if (!t) return;
+      t.style.opacity = on ? '1' : '0';
+      if (!on) return;
       if (!placed.current) t.style.transition = 'none';
       t.style.width = `${on.offsetWidth}px`;
       t.style.transform = `translateX(${on.offsetLeft}px)`;
@@ -146,7 +139,23 @@ export function Seg<T extends string>({
     const watch = new ResizeObserver(place);
     watch.observe(box.current);
     return () => watch.disconnect();
-  }, [value]);
+  }, [chosen]);
+  return { box, thumb };
+}
+
+/** Segmented control: one choice among a few options. */
+export function Seg<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: readonly (readonly [T, string])[];
+  onChange: (value: T) => void;
+}) {
+  const { box, thumb } = useThumb('button[aria-pressed="true"]', value);
   return (
     <div className="seg" role="group" aria-label={label} ref={box}>
       <span className="seg-thumb" ref={thumb} aria-hidden="true" />
@@ -156,6 +165,37 @@ export function Seg<T extends string>({
         </button>
       ))}
     </div>
+  );
+}
+
+/**
+ * The views of one place (a round, «Personvern», «Skjema») as links in a segmented control: each view
+ * has its own address, so back, reload and a shared link land on the same view.
+ */
+export function Faner({
+  label,
+  items,
+  current,
+}: {
+  label: string;
+  items: readonly (readonly [href: string, text: string])[];
+  current: string;
+}) {
+  const { box, thumb } = useThumb('a[aria-current="page"]', current);
+  return (
+    <nav className="seg faner" aria-label={label} ref={box}>
+      <span className="seg-thumb" ref={thumb} aria-hidden="true" />
+      {items.map(([href, text]) => (
+        <a
+          key={href}
+          href={href}
+          aria-current={href === current ? 'page' : undefined}
+          onClick={(e) => follow(e, href)}
+        >
+          {text}
+        </a>
+      ))}
+    </nav>
   );
 }
 

@@ -1,0 +1,100 @@
+/* Stadene i admin (2.17): «I dag», sida til ei runde og ein kunde, «Personvern» med faner.
+   Same kort, avstandar og fargar som resten av Vardestien; lister er lenkjer med heile rada som mål. */
+
+/* Menyen: ein strek mellom arbeidet og «Personvern» / «Innstillingar» */
+.nav-skilje { display: block; height: 1px; margin: 12px 10px; background: var(--line); }
+
+/* Faner som lenkjer (runde, Personvern, Skjema): same uttrykk som Seg, kvar fane har si eiga adresse */
+.faner { margin-bottom: 16px; }
+.faner a { position: relative; z-index: 1; flex: none; display: inline-grid; place-items: center; min-height: 32px; padding: 5px 14px; border-radius: var(--r-full); white-space: nowrap; font-size: 13.5px; font-weight: 600; color: color-mix(in oklab, var(--ink-muted) 55%, var(--ink-strong)); text-decoration: none; transition: color var(--t-quick) var(--ease-sti); }
+.faner a[aria-current="page"] { color: var(--ink-strong); }
+.faner a:hover:not([aria-current="page"]) { background: color-mix(in oklab, var(--ink-strong) 7%, transparent); color: var(--ink-strong); }
+.faner a:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+
+/* Toppen på sida til ei runde eller ein kunde: tilbake, namn, fakta og status */
+.rom-topp { display: grid; gap: 4px; }
+.rom-topp .sidetittel { margin-top: 0; margin-bottom: 18px; }
+.rom-topp .sidetittel h1 { overflow-wrap: anywhere; }
+.rom-tilbake { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 10px 4px 6px; margin-left: -6px; border-radius: var(--r-full); color: var(--ink-muted); font-size: 13.5px; font-weight: 600; text-decoration: none; }
+.rom-tilbake:hover { color: var(--ink-strong); background: var(--surface-hover); }
+.rom-ny { display: grid; gap: 12px; justify-items: start; margin-bottom: 16px; }
+.rom-ny > .del { margin: 0; width: 100%; }
+.rom-ny > .start-runde { max-width: 760px; }
+.rom-side { display: grid; gap: 16px; align-content: start; }
+.rom-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.rom-liste li { display: grid; gap: 2px; }
+.rom-liste small { color: var(--ink-muted); font-size: 12.5px; }
+
+/* Lenkje med pil: «Opne runden», «Sjå heile resultatet» */
+.lenkje { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; margin-top: 8px; color: var(--accent-text); font-weight: 650; font-size: 14px; text-decoration: none; }
+.lenkje:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* I dag: det som ventar til venstre, «Hald fram» og opne rundar til høgre */
+.idag { align-items: start; }
+.idag-side { display: grid; gap: 16px; align-content: start; min-width: 0; }
+.idag-tal { font-size: 13px; color: var(--ink-muted); }
+.idag-ingen { margin: 0; color: var(--ink-muted); }
+.ting-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ting { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px 12px 12px 10px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; transition: border-color var(--t-quick), background-color var(--t-quick); }
+a.ting:hover { border-color: var(--accent); background: var(--surface-hover); }
+a.ting:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ting-ikon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; background: var(--bg-sunken); color: var(--ink-muted); }
+.ting-ikon.warn { background: var(--warning-bg); color: var(--warning-fg); }
+.ting-ikon.ok { background: var(--success-bg); color: var(--success-fg); }
+.ting-tekst { display: grid; gap: 2px; min-width: 0; }
+.ting-tekst b { color: var(--ink-strong); font-weight: 680; overflow-wrap: anywhere; }
+.ting-tekst small { color: var(--ink-muted); font-size: 13px; overflow-wrap: anywhere; }
+.ting-gaa { color: var(--ink-muted); display: grid; place-items: center; }
+.mini-stigar { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.mini-stigar li { display: grid; grid-template-columns: minmax(64px, 30%) minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 32px; }
+.mini-stigar b { color: var(--ink-strong); font-weight: 650; overflow-wrap: anywhere; }
+.mini-stigar li > span:last-child { font-size: 13px; color: var(--ink-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mini-stig { position: relative; display: block; height: 24px; }
+.mini-stig i { position: absolute; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: var(--surface); border: 1.2px solid var(--line-strong); }
+.mini-stig i.on { background: var(--accent); border-color: var(--accent); }
+
+/* Lister over rundar og kundar: heile rada er lenkja */
+.rad-liste > h2 { margin-bottom: 8px; }
+.rad-liste ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rad-lenkje { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px 16px; padding: 12px 14px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; transition: border-color var(--t-quick), background-color var(--t-quick); }
+.rad-lenkje:hover { border-color: var(--accent); background: var(--surface-hover); }
+.rad-lenkje:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.rad-hovud { display: grid; gap: 2px; min-width: 0; }
+.rad-hovud b { color: var(--ink-strong); font-weight: 700; overflow-wrap: anywhere; }
+.rad-hovud small { color: var(--ink-muted); font-size: 13px; overflow-wrap: anywhere; }
+.rad-tal { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.rad-tal small { color: var(--ink-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.rad-gaa { color: var(--ink-muted); display: grid; place-items: center; }
+@media (max-width: 560px) {
+  .rad-lenkje { grid-template-columns: minmax(0, 1fr) auto; }
+  .rad-tal { grid-column: 1; grid-row: 2; justify-content: flex-start; }
+  .rad-gaa { grid-column: 2; grid-row: 1 / span 2; }
+}
+
+/* Kunden over tid: éin stein per runde langs ei line */
+.tidslinje { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.tidslinje > li { position: relative; display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 12px; padding-bottom: 18px; }
+.tidslinje > li:last-child { padding-bottom: 0; }
+.tidslinje > li:not(:last-child)::before { content: ""; position: absolute; left: 8px; top: 18px; bottom: 0; width: 2px; background: var(--line); }
+.tid-prikk { width: 12px; height: 12px; margin: 5px 0 0 3px; border-radius: 50%; border: 2px solid var(--accent); background: var(--surface); }
+.tid-innhald { display: grid; gap: 4px; min-width: 0; }
+.tid-hovud { display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; }
+.tid-hovud a { color: var(--ink-strong); font-weight: 700; text-decoration: none; overflow-wrap: anywhere; }
+.tid-hovud a:hover { color: var(--accent-text); text-decoration: underline; text-underline-offset: 3px; }
+.tid-innhald > small { color: var(--ink-muted); font-size: 13px; }
+.tid-tal { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.tid-tal small { color: var(--ink-muted); font-size: 13px; }
+.tid-innhald .lenkje { margin-top: 0; }
+
+/* Loggen: overskrift og val av område på same line */
+.logg-topp { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; }
+.logg-topp h2 { margin: 0; }
+.logg-del .logg { margin-top: 12px; }
+.logg-del > .btn { margin-top: 12px; }
+.logg-del.heil .logg { max-height: min(70vh, 720px); }
+.faner + .ingress { margin-top: 0; }
+
+/* Utskrift av rapporten: berre arket, ikkje toppen på runden eller fanene */
+@media print {
+  .rom-topp, .faner { display: none !important; }
+}

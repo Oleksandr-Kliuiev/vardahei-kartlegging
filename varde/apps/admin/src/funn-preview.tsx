@@ -212,10 +212,10 @@ export function FindingPreview({
                 ? 'Publiserte tal frå den avslutta runden.'
                 : 'Levande tal frå den opne runden.'}{' '}
               {data.source === 'released' && data.fixed_version !== null
-                ? `Dashbordet for denne runden viser versjon ${data.fixed_version} og endrar seg ikkje når du lagrar. `
+                ? `Resultatet for denne runden viser versjon ${data.fixed_version} og endrar seg ikkje når du lagrar. `
                 : ''}
               {data.audited
-                ? 'Leiarsvar blir lesne og logga på same måte som i dashbordet. '
+                ? 'Leiarsvar blir lesne og logga på same måte som under «Resultat». '
                 : 'Grupper med færre enn 3 svar blir ikkje viste.'}
             </p>
           </>

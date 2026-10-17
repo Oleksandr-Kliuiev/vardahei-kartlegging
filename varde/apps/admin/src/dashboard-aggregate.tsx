@@ -43,7 +43,7 @@ export function Findings({ findings }: { findings: Finding[] }) {
           {f.version !== undefined && (f.latest_version ?? f.version) > f.version && (
             <a
               className="nyare-regel"
-              href={`/admin/findings?rule=${encodeURIComponent(f.key)}`}
+              href={`/admin/surveys/funn?rule=${encodeURIComponent(f.key)}`}
               onClick={openRule}
             >
               Regelen har ein nyare versjon
@@ -281,7 +281,7 @@ export function QuestionBlock({
 export function CommonQuestions({ data }: { data: Dashboard }) {
   const tasks = data.ki?.tasks ?? [];
   return (
-    <Fold title="Svar frå alle tilsette">
+    <Fold title="Svar frå alle tilsette" closed>
       <p className="under">Spørsmål for spørsmål, i same rekkjefølgje som i skjemaet.</p>
       {data.ki && (
         <>

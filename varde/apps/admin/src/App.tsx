@@ -1,22 +1,12 @@
-import { SurveysPage } from './surveys-page.js';
-import { SettingsPage } from './settings-page.js';
-import { FindingsPage } from './funn-page.js';
-import { ExportPage } from './export-page.js';
-import { DeletionPage } from './deletion-page.js';
-import { ReportPage } from './report-page.js';
-import { ArchiveReminder } from './archive-reminder.js';
-import { DashboardPage } from './dashboard-page.js';
-import { SeminarPage } from './seminar-page.js';
-import { VerkstadPage } from './verkstad-page.js';
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from 'react';
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ease, reduced, stagger } from '@varde/ui/motion';
 import { api } from './api.js';
 import { useEvents } from './events.js';
-import { RoundsPage } from './rounds-page.js';
-import { ProgressPage } from './progress-page.js';
 import { ErrorMessage } from './queries.js';
+import { resolve } from './routes.js';
 import { Palette, Sidebar, Toasts, Topbar, sectionOf } from './shell.js';
+import './rom.css';
 
 export function createQueryClient() {
   return new QueryClient({
@@ -27,13 +17,18 @@ export function createQueryClient() {
 function Shell({ name }: { name: string | null }) {
   const client = useQueryClient();
   const connected = useEvents(client);
-  const [path, setPath] = useState(window.location.pathname.replace(/\/$/, '') || '/admin');
+  const where = () => ({
+    path: window.location.pathname.replace(/\/$/, '') || '/admin',
+    search: window.location.search,
+  });
+  const [{ path, search }, setWhere] = useState(where);
   const [menu, setMenu] = useState(false);
   const [palette, setPalette] = useState(false);
-  const page = useRef<HTMLElement>(null);
-  useEffect(() => {
+  const main = useRef<HTMLElement>(null);
+  // A layout effect, so the listener is there before any page's effect moves an old address on.
+  useLayoutEffect(() => {
     const pop = () => {
-      setPath(window.location.pathname.replace(/\/$/, '') || '/admin');
+      setWhere(where());
     };
     window.addEventListener('popstate', pop);
     return () => {
@@ -53,14 +48,16 @@ function Shell({ name }: { name: string | null }) {
       window.removeEventListener('keydown', key);
     };
   }, []);
-  // A new section enters in reading order; the first view is shown as it is.
+  // A new place enters in reading order; the first view is shown as it is, and moving between the
+  // views of one round or of «Personvern» keeps the page still.
+  const place = path.replace(/^(\/admin\/(?:rounds\/[0-9a-f-]{36}|personvern))\/.*$/i, '$1');
   const first = useRef(true);
   useLayoutEffect(() => {
     if (first.current) {
       first.current = false;
       return;
     }
-    const el = page.current;
+    const el = main.current;
     if (!el || reduced()) return;
     void stagger(
       el.querySelectorAll(':scope > *'),
@@ -77,10 +74,10 @@ function Shell({ name }: { name: string | null }) {
       },
     );
     window.scrollTo({ top: 0, behavior: 'auto' });
-  }, [path]);
+  }, [place]);
   const goTo = (to: string) => {
     window.history.pushState(null, '', to);
-    setPath(to);
+    setWhere(where());
     setMenu(false);
   };
   function navigate(event: MouseEvent<HTMLAnchorElement>, to: string) {
@@ -94,17 +91,11 @@ function Shell({ name }: { name: string | null }) {
     window.location.assign('/');
   }
   const section = sectionOf(path);
-  // Client report (5.1): «Rapportar», optionally with a chosen round client from its card.
-  const report = /^\/admin\/reports(?:\/([0-9a-f-]{36}))?$/i.exec(path);
-  // Seminar (3a): the list, or one seminar by its id.
-  const seminar = /^\/admin\/seminars(?:\/([0-9a-f-]{36}))?$/i.exec(path);
-  // Survey workshop (2.15): one template version by its id, with its own header.
-  const workshop = /^\/admin\/surveys\/([0-9a-f-]{36})$/i.exec(path);
-  // One title per page for the tab, history and screen readers; the report page sets its own while open.
+  const page = resolve(path, search);
+  // One title per page for the tab, history and screen readers; pages with their own heading set it.
   useEffect(() => {
-    if (workshop) return;
-    document.title = `${section?.title ?? section?.label ?? 'Sida finst ikkje'} – Varde`;
-  }, [section, workshop?.[1]]);
+    if (page.heading) document.title = `${page.heading.doc ?? page.heading.title} – Varde`;
+  }, [path, page.heading?.title, page.heading?.doc]);
   return (
     <div className="skal">
       <a className="hopp" href="#innhald">
@@ -128,45 +119,16 @@ function Shell({ name }: { name: string | null }) {
           open={menu}
           onMenu={() => setMenu(!menu)}
         />
-        <main className={workshop ? 'side side-vid' : 'side'} id="innhald" ref={page}>
-          {!workshop && (
+        <main className={page.wide ? 'side side-vid' : 'side'} id="innhald" ref={main}>
+          {page.heading && (
             <div className="sidetittel">
               <div>
-                <h1>{section?.title ?? section?.label ?? 'Sida finst ikkje'}</h1>
-                {section?.intro && <p>{section.intro}</p>}
+                <h1>{page.heading.title}</h1>
+                {page.heading.intro && <p>{page.heading.intro}</p>}
               </div>
             </div>
           )}
-          {workshop ? (
-            <VerkstadPage key={workshop[1]} id={workshop[1]!} />
-          ) : path === '/admin' ? (
-            <>
-              <ArchiveReminder />
-              <ProgressPage />
-            </>
-          ) : path === '/admin/rounds' ? (
-            <RoundsPage />
-          ) : path === '/admin/surveys' ? (
-            <SurveysPage />
-          ) : path === '/admin/findings' ? (
-            <FindingsPage />
-          ) : path === '/admin/dashboard' ? (
-            <DashboardPage />
-          ) : path === '/admin/export' ? (
-            <ExportPage />
-          ) : path === '/admin/deletion' ? (
-            <DeletionPage />
-          ) : path === '/admin/settings' ? (
-            <SettingsPage />
-          ) : report ? (
-            <ReportPage key={report[1] ?? 'ny'} initial={report[1]} />
-          ) : seminar ? (
-            <SeminarPage id={seminar[1]} />
-          ) : (
-            <section className="del">
-              <p>{section ? 'Denne delen kjem snart.' : 'Vel ein del i menyen.'}</p>
-            </section>
-          )}
+          {page.element}
         </main>
       </div>
       <Palette open={palette} onClose={() => setPalette(false)} go={goTo} />

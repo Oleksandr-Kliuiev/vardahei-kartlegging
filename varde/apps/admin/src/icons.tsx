@@ -113,6 +113,15 @@ const P = {
       d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"
     />,
   ],
+  // «Kundar» and «Personvern» in the menu (2.17).
+  bygg: [
+    <path key="a" d="M4 21V5.5L12 3v18M12 9l8 2.5V21M2 21h20" />,
+    <path key="b" d="M7.5 8.5h1.5M7.5 12.5h1.5M7.5 16.5h1.5M15.5 14h1.5M15.5 17.5h1.5" />,
+  ],
+  skjold: [
+    <path key="a" d="M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5-4.3-1.3-7.5-4.9-7.5-9.5V6L12 3z" />,
+    <path key="b" d="M9 12l2.2 2.2L15.5 10" />,
+  ],
   t_single: [
     <circle key="a" cx="12" cy="12" r="8.5" />,
     <circle key="b" cx="12" cy="12" r="3.2" />,

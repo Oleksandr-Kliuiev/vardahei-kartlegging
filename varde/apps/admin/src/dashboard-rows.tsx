@@ -6,14 +6,22 @@ import { Zone } from './dashboard-aggregate.js';
 import { ErrorMessage } from './queries.js';
 import { Fold } from './fold.js';
 
+/** Rows per employee: read (and logged) only when the block is opened. */
 export function EmployeeSection({ query }: { query: string }) {
+  return (
+    <Fold title="Svar per tilsett" closed lazy>
+      <EmployeeRows query={query} />
+    </Fold>
+  );
+}
+function EmployeeRows({ query }: { query: string }) {
   const result = useQuery({
     queryKey: ['responses', 'employees', query],
     queryFn: () => api<Employees>(`/api/admin/rows/per-employee?${query}`),
   });
   const data = result.data;
   return (
-    <Fold title="Svar per tilsett">
+    <>
       <p className="under">
         Denne tabellen er berre for Vardahei IT; bedrifta får eit samla bilete utan initialar.
       </p>
@@ -110,10 +118,18 @@ export function EmployeeSection({ query }: { query: string }) {
           </div>
         </>
       )}
+    </>
+  );
+}
+/** Free-text answers: read (and logged) only when the block is opened. */
+export function QuotesSection({ query, showClient }: { query: string; showClient: boolean }) {
+  return (
+    <Fold title="Sitat frå tilsette" closed lazy>
+      <QuoteRows query={query} showClient={showClient} />
     </Fold>
   );
 }
-export function QuotesSection({ query, showClient }: { query: string; showClient: boolean }) {
+function QuoteRows({ query, showClient }: { query: string; showClient: boolean }) {
   const result = useQuery({
     queryKey: ['responses', 'quotes', query],
     queryFn: () => api<Quotes>(`/api/admin/rows/quotes?${query}`),
@@ -121,7 +137,7 @@ export function QuotesSection({ query, showClient }: { query: string; showClient
   const quotes = result.data?.quotes ?? [];
   const questions = [...new Set(quotes.map((q) => q.question))];
   return (
-    <Fold title="Sitat frå tilsette">
+    <>
       <ErrorMessage error={result.error} />
       {questions.length ? (
         questions.map((id) => (
@@ -146,8 +162,10 @@ export function QuotesSection({ query, showClient }: { query: string; showClient
           </div>
         ))
       ) : (
-        <p className="under">Ingen fritekstsvar i dette utvalet enno.</p>
+        <p className="under">
+          {result.data ? 'Ingen fritekstsvar i dette utvalet enno.' : 'Hentar sitata …'}
+        </p>
       )}
-    </Fold>
+    </>
   );
 }

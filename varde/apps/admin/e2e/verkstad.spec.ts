@@ -4,7 +4,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { Question } from '../../../packages/schema/src/template/question.js';
 import { editorFixture } from '../test/editor-fixture.js';
-import { login, newSurvey, publish } from './support.js';
+import { login, menu, newSurvey, publish } from './support.js';
 
 const t = (nn: string, en = nn) => ({ nn, en });
 const yesNo = [
@@ -169,7 +169,7 @@ test('a changed frozen question publishes only with a choice, and the choice is 
 
 test('a survey from a start is published without a line of JSON (2.16)', async ({ page }) => {
   await login(page);
-  await page.getByRole('link', { name: 'Skjema', exact: true }).click();
+  await menu(page, 'Skjema');
   await page.getByRole('button', { name: 'Nytt skjema', exact: true }).click();
   await page.getByLabel(/^Etter seminaret/).check();
   await page.getByLabel('Namn på skjemaet', { exact: true }).fill(`Etter seminaret ${Date.now()}`);
@@ -189,4 +189,9 @@ test('a survey from a start is published without a line of JSON (2.16)', async (
   await expect(panel.getByText(/^Godkjend av /)).toHaveCount(1);
   await panel.getByRole('button', { name: 'Hald inne for å publisere v1' }).click({ delay: 1400 });
   await expect(panel.getByText('v1 er publisert', { exact: true })).toBeVisible();
+  // The next step is one click away: the wizard opens with this version chosen (2.17).
+  await panel.getByRole('button', { name: 'Start ein runde med v1' }).click();
+  await expect(page).toHaveURL(/\/admin\/rounds\?ny=[0-9a-f-]{36}$/);
+  const version = new URL(page.url()).searchParams.get('ny')!;
+  await expect(page.getByLabel('Versjon for den nye runden')).toHaveValue(version);
 });

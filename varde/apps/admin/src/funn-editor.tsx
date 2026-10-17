@@ -148,7 +148,7 @@ function EditorForm({
         <div className="kort-innhald felt-grid" ref={fields}>
           <TextPair
             legend="Funnet"
-            hint={`Slik står det i dashbordet: «${example(draft)}».${detail.placeholders.length ? ` Plasshaldarar: ${detail.placeholders.map((p) => `{${p}}`).join(', ')}.` : ''}`}
+            hint={`Slik står det i resultatet: «${example(draft)}».${detail.placeholders.length ? ` Plasshaldarar: ${detail.placeholders.map((p) => `{${p}}`).join(', ')}.` : ''}`}
             value={draft.text}
             onChange={(text) => set({ text })}
           />

@@ -1,13 +1,21 @@
 // 2.5: the FindingRule editor through the real API. Rule versions stay in the database between local
 // runs, so the test reads the current version and the current answers before it changes them.
 import { expect, test, type Page } from '@playwright/test';
-import { login, state } from './support.js';
+import { login, menu, state } from './support.js';
 
+/** «Funn-reglar» is a view of «Skjema» (2.17): the rules belong to the surveys. */
+async function funnReglar(page: Page) {
+  await menu(page, 'Skjema');
+  await page
+    .getByRole('navigation', { name: 'Skjema' })
+    .getByRole('link', { name: 'Funn-reglar', exact: true })
+    .click();
+  await expect(page.getByRole('heading', { name: 'Funn-reglar', exact: true })).toBeVisible();
+}
 async function openF8(page: Page) {
   await login(page);
   const s = await state(page);
-  await page.getByRole('link', { name: 'Funn', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Funn', exact: true })).toBeVisible();
+  await funnReglar(page);
   await expect(page.locator('.regel-rad')).toHaveCount(15);
   const row = page
     .locator('.regel-rad')
@@ -122,7 +130,7 @@ test('Funn: KI groups K7 × K8 answers; leader rules keep their answers and set 
 }, info) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await login(page);
-  await page.getByRole('link', { name: 'Funn', exact: true }).click();
+  await funnReglar(page);
   const brick = (text: RegExp) =>
     page.locator('.regel-rad').filter({ has: page.locator('.kjeldebrikke', { hasText: text }) });
   await page.getByRole('group', { name: 'Skjema' }).getByRole('button', { name: 'KI' }).click();

@@ -1,37 +1,28 @@
 // «Seminar» (3a, Vardestien «Seminar»): the list of seminars with registrations per company, a new
-// seminar, the contacts that wait for the yearly check, and one seminar with its tabs.
+// seminar, how many contacts wait for the yearly check (under «Personvern»), and one seminar.
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, mutate } from './api.js';
+import { useQuery } from '@tanstack/react-query';
+import { api } from './api.js';
 import { Icon } from './icons.js';
+import { follow } from './nav.js';
 import { ErrorMessage } from './queries.js';
 import { SeminarForm } from './seminar-form.js';
 import {
-  type ContactReview,
   emptyDraft,
   go,
   names,
   perCompany,
   registered,
   type SeminarList,
-  shortDate,
 } from './seminar-models.js';
 import { SeminarView } from './seminar-view.js';
 import './seminar.css';
 
 const MONTHS = ['jan.', 'feb.', 'mars', 'apr.', 'mai', 'juni', 'juli', 'aug.', 'sep.', 'okt.', 'nov.', 'des.'];
 
+/** The yearly check of contacts lives under «Personvern» (2.17); the seminars show how many wait. */
 function Contacts({ count }: { count: number }) {
-  const queries = useQueryClient();
-  const [rows, setRows] = useState<ContactReview[] | null>(null);
-  const [error, setError] = useState<Error | null>(null);
-  const load = async () => {
-    try {
-      setRows((await api<{ rows: ContactReview[] }>('/api/admin/contacts/review')).rows);
-    } catch (e) {
-      setError(e instanceof Error ? e : new Error('Noko gjekk gale.'));
-    }
-  };
+  const to = '/admin/personvern/kontaktar';
   return (
     <section className="kort s4 sem-kontaktar">
       <div className="kort-hovud">
@@ -43,45 +34,10 @@ function Contacts({ count }: { count: number }) {
             ? 'Ingen kontaktar ventar på den årlege sjekken.'
             : `${count} ${count === 1 ? 'kontakt ventar' : 'kontaktar ventar'} på den årlege sjekken.`}
         </p>
-        <p className="forklaring">
-          Ein kontakt utan påmelding og utan samtykke til invitasjonar blir sletta av seg sjølv. Ein
-          gong i året sjekkar de at samarbeidet og samtykket framleis gjeld. Slett ein kontakt under
-          «Sletting».
-        </p>
-        {count > 0 && rows === null && (
-          <div className="handlingar">
-            <button type="button" className="btn sm" onClick={() => void load()}>
-              Vis kontaktane
-            </button>
-          </div>
-        )}
-        {rows && (
-          <ul className="sem-sjekk">
-            {rows.map((c) => (
-              <li key={c.id}>
-                <span>
-                  <b>{c.name}</b>
-                  <small>
-                    {c.company} · {c.email} · sist sjekka {shortDate(c.last_confirmed_at)}
-                  </small>
-                </span>
-                <button
-                  type="button"
-                  className="btn sm"
-                  onClick={() =>
-                    void mutate(`/api/admin/contacts/${c.id}/confirm`).then(async () => {
-                      setRows((old) => old?.filter((x) => x.id !== c.id) ?? null);
-                      await queries.invalidateQueries({ queryKey: ['seminars'] });
-                    }, setError)
-                  }
-                >
-                  Stadfest
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        <ErrorMessage error={error} />
+        <a className="lenkje" href={to} onClick={(e) => follow(e, to)}>
+          Personvern · Kontaktar
+          <Icon name="pil" small />
+        </a>
       </div>
     </section>
   );

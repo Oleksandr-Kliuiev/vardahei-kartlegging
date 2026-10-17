@@ -137,7 +137,7 @@ describe('the card «Rundar»', () => {
     const links = [...view.div.querySelectorAll('[data-testid="steg-for"] a')].map((a) =>
       a.getAttribute('href'),
     );
-    expect(links).toEqual(['/admin/dashboard?round=r-for', '/admin/rounds']);
+    expect(links).toEqual(['/admin/rounds/r-for/resultat', '/admin/rounds/r-for']);
     expect(view.div.textContent).toContain('Ta bort koplinga');
   });
 

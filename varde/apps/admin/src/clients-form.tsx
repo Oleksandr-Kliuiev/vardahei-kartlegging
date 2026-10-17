@@ -3,7 +3,14 @@ import { mutate } from './api.js';
 import type { Client } from './models.js';
 import { ErrorMessage, useAction } from './queries.js';
 
-export function ClientForm({ client }: { client?: Client }) {
+/** A new client, or the name and head count of one (2.17: on the client's own page). */
+export function ClientForm({
+  client,
+  onSaved,
+}: {
+  client?: Client;
+  onSaved?: (saved: Client) => void;
+}) {
   const action = useAction();
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -11,7 +18,7 @@ export function ClientForm({ client }: { client?: Client }) {
       data = new FormData(element);
     action.mutate(
       () =>
-        mutate(
+        mutate<Client>(
           client ? `/api/admin/clients/${client.id}` : '/api/admin/clients',
           client ? 'PUT' : 'POST',
           {
@@ -20,8 +27,9 @@ export function ClientForm({ client }: { client?: Client }) {
           },
         ),
       {
-        onSuccess: () => {
+        onSuccess: (saved) => {
           if (!client) element.reset();
+          onSaved?.(saved as Client);
         },
       },
     );

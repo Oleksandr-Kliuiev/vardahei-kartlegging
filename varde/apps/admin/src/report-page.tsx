@@ -1,11 +1,13 @@
-// «Rapportar» (5.1, ADR-025, Vardestien mockup): choose a closed round and a client, read the A4
-// preview, then save a PDF with the browser's print dialog and send it yourself. Varde sends
-// nothing. Only the A4 pages are printed (report.css).
+// «Rapportar» of a round (5.1, ADR-025; on the round page since 2.17): choose a client of the closed
+// round, read the A4 preview, then save a PDF with the browser's print dialog and send it yourself.
+// Varde sends nothing. Only the A4 pages are printed (report.css).
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from './api.js';
 import { Icon } from './icons.js';
-import { ErrorMessage, useRounds } from './queries.js';
+import type { Round } from './models.js';
+import { goTo } from './nav.js';
+import { ErrorMessage } from './queries.js';
 import { ReportSheet } from './report-sheet.js';
 import { type ClientReport, LANGUAGE_NAMES, type ReportLang } from './report-texts.js';
 import './report.css';
@@ -25,7 +27,7 @@ function contents(r: ClientReport): [boolean, string][] {
           ? 'Ingen sone: for få svar'
           : 'Sone for bedrifta og kritisk andel',
     ],
-    [n > 0, FOUND[n] ?? 'Ingen tydelege funn'],
+    [n > 0, (n > 0 && FOUND[n]) || 'Ingen tydelege funn'],
     [
       r.comparison !== null,
       r.comparison
@@ -52,20 +54,29 @@ function useFit() {
   return ref;
 }
 
-export function ReportPage({ initial }: { initial: string | undefined }) {
-  const rounds = useRounds();
-  const [selected, setSelected] = useState(initial ?? '');
-  const [roundId, setRoundId] = useState('');
+/** The reports of one round; `rc` is the client in the address (`…/rapportar/<round client>`). */
+export function RoundReports({ round, rc }: { round: Round; rc: string | undefined }) {
+  const ready = round.round_clients.filter((c) => c.released);
+  const closed = ['closed', 'archived'].includes(round.status);
+  if (!closed || !ready.length)
+    return (
+      <section className="del">
+        <h2>Rapportar</h2>
+        <p className="under">
+          {closed
+            ? 'Runden har ingen publiserte tal, så det finst ingen rapport å lage.'
+            : 'Rapportane kjem når runden er avslutta. Då blir tala publiserte, og du kan lese gjennom og lagre ein PDF for kvar kunde.'}
+        </p>
+      </section>
+    );
+  const selected = ready.some((c) => c.id === rc) ? rc! : '';
+  return <ReportView key={selected} round={round} selected={selected} />;
+}
+
+function ReportView({ round, selected }: { round: Round; selected: string }) {
   const [lang, setLang] = useState<ReportLang | undefined>();
   const [read, setRead] = useState(false);
   const fit = useFit();
-  const closed = (rounds.data ?? []).filter(
-    (r) => ['closed', 'archived'].includes(r.status) && r.round_clients.some((rc) => rc.released),
-  );
-  const round =
-    closed.find((r) => r.round_clients.some((rc) => rc.id === selected)) ??
-    closed.find((r) => r.id === roundId) ??
-    closed[0];
   const report = useQuery({
     queryKey: ['report', selected, lang ?? ''],
     queryFn: () =>
@@ -84,12 +95,8 @@ export function ReportPage({ initial }: { initial: string | undefined }) {
       document.title = before;
     };
   }, [data]);
-  const choose = (rc: string) => {
-    setSelected(rc);
-    setLang(undefined);
-    setRead(false);
-    window.history.replaceState(null, '', rc ? `/admin/reports/${rc}` : '/admin/reports');
-  };
+  const base = `/admin/rounds/${round.id}/rapportar`;
+  const choose = (rc: string) => goTo(rc ? `${base}/${rc}` : base);
   return (
     <div className="rapport">
       <div className="kort rapport-varsel" role="note">
@@ -107,27 +114,10 @@ export function ReportPage({ initial }: { initial: string | undefined }) {
           </div>
           <div className="kort-innhald">
             <label className="field">
-              <span>Runde</span>
-              <select
-                aria-label="Runde"
-                value={round?.id ?? ''}
-                onChange={(e) => {
-                  setRoundId(e.target.value);
-                  choose('');
-                }}
-              >
-                {closed.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="field">
               <span>Kunde</span>
               <select aria-label="Kunde" value={selected} onChange={(e) => choose(e.target.value)}>
                 <option value="">Vel kunde</option>
-                {round?.round_clients
+                {round.round_clients
                   .filter((rc) => rc.released)
                   .map((rc) => (
                     <option key={rc.id} value={rc.id}>
@@ -194,18 +184,12 @@ export function ReportPage({ initial }: { initial: string | undefined }) {
           </div>
         </section>
         <section className="s7 rapport-forhand" aria-label="Førehandsvising av rapporten" ref={fit}>
-          <ErrorMessage error={rounds.error ?? (selected ? report.error : null)} />
+          <ErrorMessage error={selected ? report.error : null} />
           {data ? (
             <ReportSheet report={data} />
           ) : (
             <div className="rapport-tom">
-              <p>
-                {rounds.data && closed.length === 0
-                  ? 'Ingen avslutta rundar har publiserte tal enno.'
-                  : selected
-                    ? 'Hentar rapporten …'
-                    : 'Vel ein kunde for å sjå rapporten.'}
-              </p>
+              <p>{selected ? 'Hentar rapporten …' : 'Vel ein kunde for å sjå rapporten.'}</p>
             </div>
           )}
         </section>

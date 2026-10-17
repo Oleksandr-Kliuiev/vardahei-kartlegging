@@ -23,12 +23,18 @@ export interface Round {
   template_version_id: string | null;
   /** At least one answer in the round. */
   has_data?: boolean;
+  /** When the round was made, opened and closed (2.17). */
+  created_at?: string;
+  opened_at?: string | null;
+  closed_at?: string | null;
   round_clients: RoundClient[];
 }
 export interface Version {
   id: string;
   label: string;
   template: { key: string };
+  /** The survey's title in Nynorsk (2.17). */
+  title?: string | null;
   published_at?: string | null;
   question_count?: number;
 }
@@ -36,11 +42,12 @@ export interface Version {
 /** «tryggleik · 2026-10-13 · 16 spørsmål, publisert 13.10.2026», so the choice shows what it is. */
 export function versionText(v: Version): string {
   const name =
-    v.template.key === 'tryggleik'
+    v.title ??
+    (v.template.key === 'tryggleik'
       ? 'IT-tryggleik'
       : v.template.key === 'ki'
         ? 'KI i kvardagen'
-        : v.template.key;
+        : v.template.key);
   const parts = [`${name} · ${v.label}`];
   const facts = [
     v.question_count ? `${v.question_count} spørsmål` : '',
@@ -53,6 +60,8 @@ export function versionText(v: Version): string {
 }
 export interface Audit {
   who: string;
+  /** The name the person signed in with; «Varde» for seeds and jobs (2.17). */
+  who_name?: string;
   what: string;
   at: string;
   target: string | null;

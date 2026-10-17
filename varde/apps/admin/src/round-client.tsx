@@ -1,7 +1,8 @@
-import { useEffect, useState, type MouseEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, mutate } from './api.js';
 import type { Invitation, Progress, RoundClient } from './models.js';
+import { follow } from './nav.js';
 import { ErrorMessage, useAction } from './queries.js';
 import { Ring } from './widgets.js';
 
@@ -18,8 +19,17 @@ export function reminderText(lang: string, link: string, deadline: string | null
   return `Hugs å svare på undersøkinga${date ? ` innan ${date}` : ''}. Det tek berre nokre minutt.\n\n${link}`;
 }
 
-export function SendOut({ id, deadline = null }: { id: string; deadline?: string | null }) {
-  const [kind, setKind] = useState<'invitation' | 'reminder'>('invitation');
+export function SendOut({
+  id,
+  deadline = null,
+  first = 'invitation',
+}: {
+  id: string;
+  deadline?: string | null;
+  /** The text shown first: a link from «I dag» about a deadline asks for the reminder. */
+  first?: 'invitation' | 'reminder';
+}) {
+  const [kind, setKind] = useState<'invitation' | 'reminder'>(first);
   const [lang, setLang] = useState('nn');
   const [message, setMessage] = useState('');
   const invitation = useQuery({
@@ -121,27 +131,30 @@ const statusChip: Record<string, string> = {
   archived: 'chip',
 };
 
-/** In-app navigation without a page load: the shell follows popstate (App.tsx). */
-function openReport(event: MouseEvent<HTMLAnchorElement>, href: string) {
-  if (event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-  event.preventDefault();
-  window.history.pushState(null, '', href);
-  window.dispatchEvent(new PopStateEvent('popstate'));
-}
-
 export function RoundClientCard({
   rc,
+  round,
   progress,
   reportReady = false,
+  asked = false,
 }: {
   rc: RoundClient;
+  /** The round the client card belongs to (its report lives on the round page). */
+  round: string;
   progress?: Progress | undefined;
   /** The round is closed and released snapshots exist for this client (5.1). */
   reportReady?: boolean;
+  /** Opened from a deadline on «I dag»: the reminder is ready and the card comes into view. */
+  asked?: boolean;
 }) {
   const action = useAction();
   const [confirm, setConfirm] = useState(false);
-  const [send, setSend] = useState(false);
+  const [send, setSend] = useState(asked && rc.status === 'open');
+  const card = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (asked) card.current?.scrollIntoView?.({ block: 'center' });
+  }, [asked]);
+  const report = `/admin/rounds/${round}/rapportar/${rc.id}`;
   useEffect(() => {
     if (!confirm) return;
     const timer = setTimeout(() => {
@@ -156,7 +169,7 @@ export function RoundClientCard({
     action.mutate(work);
   };
   return (
-    <article className="kort kundekort" aria-label={rc.client.name}>
+    <article className="kort kundekort" aria-label={rc.client.name} ref={card}>
       <div className="kundekort-topp">
         <div>
           <h3>{rc.client.name}</h3>
@@ -229,11 +242,7 @@ export function RoundClientCard({
           </button>
         )}
         {reportReady && (
-          <a
-            className="knapp"
-            href={`/admin/reports/${rc.id}`}
-            onClick={(e) => openReport(e, `/admin/reports/${rc.id}`)}
-          >
+          <a className="knapp" href={report} onClick={(e) => follow(e, report)}>
             Rapport til kunden
           </a>
         )}
@@ -250,7 +259,13 @@ export function RoundClientCard({
         )}
       </div>
       <ErrorMessage error={action.error} />
-      {send && rc.status === 'open' && <SendOut id={rc.id} deadline={rc.deadline ?? null} />}
+      {send && rc.status === 'open' && (
+        <SendOut
+          id={rc.id}
+          deadline={rc.deadline ?? null}
+          first={asked ? 'reminder' : 'invitation'}
+        />
+      )}
     </article>
   );
 }

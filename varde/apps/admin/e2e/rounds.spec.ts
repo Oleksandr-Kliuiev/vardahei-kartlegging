@@ -1,23 +1,25 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
-import { login, state } from './support.js';
+import { login, menu, openRound, state } from './support.js';
 
+/** A round without clients from the wizard (2.17), then one client added on its own page. */
 async function newRound(page: Page) {
   await login(page);
   const fixture = await state(page),
     name = `${fixture.mark}-${randomUUID()}`;
-  await page.getByRole('link', { name: 'Kundar og rundar', exact: true }).click();
-  await page.getByLabel('Namn på runden').fill(name);
-  await page.getByLabel('Publisert versjon', { exact: true }).selectOption(fixture.version);
-  await page.getByRole('button', { name: 'Opprett runde' }).click();
-  const round = page.getByRole('region', { name, exact: true });
-  await expect(round).toBeVisible();
+  await menu(page, 'Rundar');
+  await page.getByRole('button', { name: 'Start ein runde', exact: true }).click();
+  await page.getByLabel('Namn på den nye runden').fill(name);
+  await page.getByLabel('Versjon for den nye runden').selectOption(fixture.version);
+  await page.getByRole('button', { name: 'Opprett runden utan kundar' }).click();
+  await expect(page.getByRole('heading', { name, level: 1 })).toBeVisible();
+  const round = page.getByRole('region', { name: 'Kundar i runden', exact: true });
   await round.getByLabel('Kunde', { exact: true }).selectOption(fixture.client);
   await round.getByLabel('Frist', { exact: true }).fill('2099-06-01');
   await round.getByRole('button', { name: 'Legg til kunde' }).click();
   const client = round.getByRole('article', { name: 'Syntetisk admin kunde' });
   await expect(client.getByText('Ikkje opna', { exact: true })).toBeVisible();
-  return { fixture, round, client };
+  return { fixture, round, client, name };
 }
 test('create from published version, add client, open → journal entry', async ({ page }) => {
   const { client } = await newRound(page);
@@ -73,53 +75,62 @@ test('Ny lenkje requires confirmation → audit, old link replaced, new link wor
   await expect(runner.getByRole('button', { name: /Start/ }).first()).toBeVisible();
   await runner.close();
 });
-test('employee count is editable, new snapshots use it, deadline and invitation languages work', async ({
+test('employee count is edited on the client page, new snapshots use it, deadline and invitation languages work', async ({
   page,
   context,
 }) => {
-  const { client, round, fixture } = await newRound(page);
-  const existing = await client.textContent();
-  const count = page.getByLabel('Tal tilsette i Syntetisk admin kunde', { exact: true });
+  const { client, fixture, name } = await newRound(page);
+  // The head count of a round is a snapshot: editing the client later never changes it.
+  const existing = await client.locator('.kundekort-topp small').textContent();
+  await page.goto(`/admin/clients/${fixture.client}`);
+  await page.getByRole('button', { name: 'Endre namn og tal tilsette' }).click();
   const edited = page.waitForResponse(
     (r) =>
       r.url().endsWith(`/api/admin/clients/${fixture.client}`) &&
-      r.request().method() === 'PATCH' &&
+      r.request().method() === 'PUT' &&
       r.status() === 200,
   );
-  await count.fill('24');
+  await page.getByLabel('Tal tilsette', { exact: true }).fill('24');
+  await page.getByRole('button', { name: 'Lagre kunde', exact: true }).click();
   await edited;
-  await expect(count).toHaveValue('24');
-  expect(await client.textContent()).toBe(existing);
+  await expect(page.locator('.rom-topp')).toContainText('24 tilsette');
+  await openRound(page, name, 'Utsending');
+  const first = page.getByRole('article', { name: 'Syntetisk admin kunde' });
+  await expect(first.locator('.kundekort-topp small')).toHaveText(existing!);
   const other = `${fixture.mark}-${randomUUID()}`;
-  await page.getByLabel('Namn på runden').fill(other);
-  await page.getByLabel('Publisert versjon', { exact: true }).selectOption(fixture.version);
-  await page.getByRole('button', { name: 'Opprett runde' }).click();
-  const next = page.getByRole('region', { name: other, exact: true });
+  await menu(page, 'Rundar');
+  await page.getByRole('button', { name: 'Start ein runde', exact: true }).click();
+  await page.getByLabel('Namn på den nye runden').fill(other);
+  await page.getByLabel('Versjon for den nye runden').selectOption(fixture.version);
+  await page.getByRole('button', { name: 'Opprett runden utan kundar' }).click();
+  const next = page.getByRole('region', { name: 'Kundar i runden', exact: true });
+  await expect(page.getByRole('heading', { name: other, level: 1 })).toBeVisible();
   await next.getByLabel('Kunde', { exact: true }).selectOption(fixture.client);
   await next.getByLabel('Frist', { exact: true }).fill('2099-06-01');
   await next.getByRole('button', { name: 'Legg til kunde' }).click();
   await expect(next).toContainText('24 tilsette i denne runden');
-  await client.getByRole('button', { name: 'Opne', exact: true }).click();
-  await client.getByLabel('Frist for Syntetisk admin kunde').fill('2099-07-01');
+  await openRound(page, name, 'Utsending');
+  await first.getByRole('button', { name: 'Opne', exact: true }).click();
+  await first.getByLabel('Frist for Syntetisk admin kunde').fill('2099-07-01');
   await expect(page.locator('.logg')).toContainText('Frist endra');
-  await client.getByRole('button', { name: 'Hent invitasjon' }).click();
-  await client.getByRole('button', { name: 'English', exact: true }).click();
-  await expect(client.getByLabel('Tekst til tilsette')).toHaveValue(/Hi everyone,/);
+  await first.getByRole('button', { name: 'Hent invitasjon' }).click();
+  await first.getByRole('button', { name: 'English', exact: true }).click();
+  await expect(first.getByLabel('Tekst til tilsette')).toHaveValue(/Hi everyone,/);
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-  await client.getByRole('button', { name: 'Kopier tekst' }).click();
+  await first.getByRole('button', { name: 'Kopier tekst' }).click();
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
     .toMatch(/Hi everyone,/);
-  await client.getByRole('button', { name: 'Kopier lenkje' }).click();
+  await first.getByRole('button', { name: 'Kopier lenkje' }).click();
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
-    .toBe(await client.getByLabel('Lenkje til kartlegginga').inputValue());
+    .toBe(await first.getByLabel('Lenkje til kartlegginga').inputValue());
   const popup = context.waitForEvent('page');
-  await client.getByRole('link', { name: 'Plakat med QR-kode' }).click();
+  await first.getByRole('link', { name: 'Plakat med QR-kode' }).click();
   const poster = await popup;
   await expect(poster.locator('body')).toContainText('Syntetisk admin kunde');
   await poster.close();
-  await expect(round).toBeVisible();
+  await expect(first).toBeVisible();
 });
 test('closing a whole round needs a 1.2 s hold; a short press only explains', async ({ page }) => {
   const { round, client } = await newRound(page);
@@ -129,7 +140,7 @@ test('closing a whole round needs a 1.2 s hold; a short press only explains', as
   await close.click();
   await expect(round.getByRole('status')).toContainText('Hald inne knappen');
   await page.waitForTimeout(1500);
-  await expect(round.locator('.runde-topp')).toContainText('Open');
+  await expect(page.locator('.rom-topp')).toContainText('Open');
   await close.click({ delay: 1400 });
-  await expect(round.locator('.runde-topp')).toContainText('Avslutta');
+  await expect(page.locator('.rom-topp')).toContainText('Avslutta');
 });

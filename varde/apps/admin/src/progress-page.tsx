@@ -1,20 +1,22 @@
-import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+// «Framdrift» of one round (the round page, 2.17): key numbers, the trail per client, the table and
+// where people stop. Only aggregates from the progress API (ADR-021).
+import { useQuery } from '@tanstack/react-query';
 import { api } from './api.js';
 import type { Cell, Progress, Round } from './models.js';
-import { ErrorMessage, useRounds } from './queries.js';
-import { AuditLog } from './rounds-page.js';
-import { ClientTrails, Kpis, OverviewIntro } from './overview.js';
+import { ErrorMessage } from './queries.js';
+import { ClientTrails, Kpis } from './overview.js';
 
 const value = (cell: Cell) => (cell.suppressed ? '–' : cell.value);
+/** The progress of one round, shared by «I dag», the round page and its client cards. */
+export const progressQuery = (id: string) => ({
+  queryKey: ['progress', id],
+  queryFn: () =>
+    api<{ class: 'aggregate'; clients: Progress[] }>(`/api/admin/rounds/${id}/progress`),
+  // Active sessions expire without a write, so refresh the time-derived cells too.
+  refetchInterval: 60_000,
+});
 export function ProgressRound({ round }: { round: Round }) {
-  const progress = useQuery({
-    queryKey: ['progress', round.id],
-    queryFn: () =>
-      api<{ class: 'aggregate'; clients: Progress[] }>(`/api/admin/rounds/${round.id}/progress`),
-    // Active sessions expire without a write, so refresh the time-derived cells too.
-    refetchInterval: 60_000,
-  });
+  const progress = useQuery(progressQuery(round.id));
   const clients = progress.data?.clients ?? [];
   return (
     <>
@@ -113,44 +115,6 @@ export function ProgressRound({ round }: { round: Round }) {
           ))}
         </div>
       </section>
-    </>
-  );
-}
-
-export function ProgressPage() {
-  const rounds = useRounds();
-  const [selected, setSelected] = useState('');
-  const round =
-    rounds.data?.find((r) => r.id === selected) ??
-    rounds.data?.find((r) => r.status === 'open') ??
-    rounds.data?.[0];
-  const name = useQueryClient().getQueryData<{ name: string | null }>(['session'])?.name ?? null;
-  return (
-    <>
-      <OverviewIntro name={name} round={round} />
-      <ErrorMessage error={rounds.error} />
-      <label className="velg">
-        Runde{' '}
-        <select
-          aria-label="Runde"
-          value={round?.id ?? ''}
-          onChange={(e) => {
-            setSelected(e.target.value);
-          }}
-        >
-          {rounds.data?.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      {round ? (
-        <ProgressRound key={round.id} round={round} />
-      ) : (
-        rounds.data && <p>Ingen rundar enno. Opprett ein under «Kundar og rundar».</p>
-      )}
-      <AuditLog />
     </>
   );
 }

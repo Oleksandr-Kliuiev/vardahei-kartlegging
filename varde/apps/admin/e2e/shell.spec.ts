@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { login, scenario } from './support.js';
+import { login, menu, scenario, state } from './support.js';
 
 test('member login → shell with the name from /auth/me', async ({ page }) => {
   await login(page);
@@ -12,44 +12,57 @@ test('non-member → 403 and no protected API access', async ({ page }) => {
   await expect(page.locator('body')).toContainText('Du har ikkje tilgang');
   expect((await page.request.get('/api/admin/rounds')).status()).toBe(401);
 });
-test('ten History API sections in menu order, back navigation and direct reload', async ({
-  page,
-}) => {
+test('seven places in menu order, back navigation and direct reload (2.17)', async ({ page }) => {
   await login(page);
   expect(
     await page.getByRole('navigation', { name: 'Hovudmeny' }).locator('a').allTextContents(),
-  ).toEqual([
-    'Oversikt',
-    'Kundar og rundar',
-    'Dashbord',
-    'Skjema',
-    'Funn',
-    'Seminar',
-    'Rapportar',
-    'Eksport',
-    'Sletting',
-    'Innstillingar',
-  ]);
+  ).toEqual(['I dag', 'Skjema', 'Rundar', 'Kundar', 'Seminar', 'Personvern', 'Innstillingar']);
   for (const label of [
-    'Kundar og rundar',
+    'Rundar',
     'Skjema',
-    'Funn',
+    'Kundar',
     'Seminar',
-    'Rapportar',
-    'Dashbord',
-    'Eksport',
-    'Sletting',
-    'Oversikt',
+    'Personvern',
+    'Innstillingar',
+    'I dag',
   ]) {
-    await page.getByRole('link', { name: label, exact: true }).click();
-    // «Rapportar» opens the page «Rapport til kunden» (Vardestien).
-    const heading = label === 'Rapportar' ? 'Rapport til kunden' : label;
-    await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible();
+    await menu(page, label);
+    await expect(page.getByRole('heading', { name: label, exact: true, level: 1 })).toBeVisible();
   }
   await page.goBack();
-  await expect(page.getByRole('heading', { name: 'Sletting', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Innstillingar', level: 1 })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Sletting', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Innstillingar', level: 1 })).toBeVisible();
+});
+test('old addresses open their new places; ⌘K opens a client page (2.17)', async ({ page }) => {
+  await login(page);
+  const s = await state(page),
+    report = s.rounds.report!;
+  await page.goto('/admin/export');
+  await expect(page).toHaveURL(/\/admin\/personvern\/eksport$/);
+  await expect(
+    page.getByRole('navigation', { name: 'Personvern' }).getByRole('link', { name: 'Eksport' }),
+  ).toHaveAttribute('aria-current', 'page');
+  await page.goto('/admin/deletion');
+  await expect(page).toHaveURL(/\/admin\/personvern\/sletting$/);
+  await page.goto('/admin/findings');
+  await expect(page).toHaveURL(/\/admin\/surveys\/funn$/);
+  await expect(page.getByRole('heading', { name: 'Funn-reglar', level: 1 })).toBeVisible();
+  await page.goto(`/admin/reports/${report.rc}`);
+  await expect(page).toHaveURL(new RegExp(`/admin/rounds/${report.id}/rapportar/${report.rc}$`));
+  await expect(page.getByRole('heading', { name: report.name, level: 1 })).toBeVisible();
+  await page.goto(`/admin/dashboard?round=${report.id}`);
+  await expect(page).toHaveURL(new RegExp(`/admin/rounds/${report.id}/resultat$`));
+  await menu(page, 'I dag');
+  await page.keyboard.press('Control+k');
+  await page.getByRole('textbox', { name: 'Søk' }).fill('Syntetisk admin kunde');
+  await page.keyboard.press('Enter');
+  // Old local databases may hold more clients with the fixture name: any of them is right.
+  await expect(page).toHaveURL(/\/admin\/clients\/[0-9a-f-]{36}$/);
+  await expect(
+    page.getByRole('heading', { name: 'Syntetisk admin kunde', level: 1 }),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Over tid' })).toBeVisible();
 });
 test('Logg ut revokes the server session → API 401', async ({ page }) => {
   await login(page);

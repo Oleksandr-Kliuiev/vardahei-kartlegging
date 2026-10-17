@@ -15,54 +15,69 @@ import {
 import { animate, ease, setTheme } from '@varde/ui/motion';
 import { Icon, type IconName } from './icons.js';
 import logo from './logo.png';
-import { useClients } from './queries.js';
+import { useClients, useRounds } from './queries.js';
 
 export interface Section {
   url: string;
   label: string;
   icon: IconName;
-  group: string;
-  /** Page heading and intro when they differ from the menu label (Vardestien «Rapportar»). */
+  /** The lower group of the menu, below a line: «Personvern» and «Innstillingar» (2.17). */
+  bottom?: boolean;
+  /** Page heading and intro when they differ from the menu label. */
   title?: string;
   intro?: string;
-  /** Has pages below its URL (`/admin/reports/<round client>`). */
+  /** Has pages below its URL (`/admin/rounds/<round>`). */
   sub?: boolean;
 }
+/** Five places for the work and two below (decision 1 of 17.10): each object has its own page. */
 export const SECTIONS: Section[] = [
-  { url: '/admin', label: 'Oversikt', icon: 'heim', group: 'Arbeid' },
-  { url: '/admin/rounds', label: 'Kundar og rundar', icon: 'flagg', group: 'Arbeid' },
-  { url: '/admin/dashboard', label: 'Dashbord', icon: 'graf', group: 'Arbeid' },
-  { url: '/admin/surveys', label: 'Skjema', icon: 'skjema', group: 'Innhald', sub: true },
-  { url: '/admin/findings', label: 'Funn', icon: 'lyspare', group: 'Innhald' },
+  { url: '/admin', label: 'I dag', icon: 'heim' },
+  {
+    url: '/admin/surveys',
+    label: 'Skjema',
+    icon: 'skjema',
+    intro: 'Skjema og reglane for funn. Eit skjema opnar utkastet om det finst, elles den nyaste versjonen.',
+    sub: true,
+  },
+  {
+    url: '/admin/rounds',
+    label: 'Rundar',
+    icon: 'flagg',
+    intro: 'Ei runde er eitt skjema hos ein eller fleire kundar. Opne ei runde for framdrift, utsending, resultat og rapportar.',
+    sub: true,
+  },
+  {
+    url: '/admin/clients',
+    label: 'Kundar',
+    icon: 'bygg',
+    intro: 'Opne ein kunde for rundane, utviklinga over tid, rapportar og seminar.',
+    sub: true,
+  },
   {
     url: '/admin/seminars',
     label: 'Seminar',
     icon: 'folk',
-    group: 'Innhald',
     intro: 'Påmelding, materiell og invitasjon. Varde sender ingenting av seg sjølv.',
     sub: true,
   },
   {
-    url: '/admin/reports',
-    label: 'Rapportar',
-    icon: 'dok',
-    group: 'Innhald',
-    title: 'Rapport til kunden',
-    intro: 'Ein PDF frå publiserte tal, på språket til kunden. Du sjekkar og sender han sjølv.',
+    url: '/admin/personvern',
+    label: 'Personvern',
+    icon: 'skjold',
+    bottom: true,
+    intro: 'Eksport, sletting, kontaktar som ventar på den årlege sjekken, og loggen over kven som gjorde kva.',
     sub: true,
   },
-  { url: '/admin/export', label: 'Eksport', icon: 'ned', group: 'Personvern' },
-  { url: '/admin/deletion', label: 'Sletting', icon: 'slett', group: 'Personvern' },
   {
     url: '/admin/settings',
     label: 'Innstillingar',
     icon: 'tannhjul',
-    group: 'Oppsett',
+    bottom: true,
     intro: 'Nye skjema byrjar med desse opplysningane. Skjema som finst, endrar seg ikkje.',
   },
 ];
 
-/** The section of a path; a section may have sub-paths (`/admin/reports/<id>`). */
+/** The section of a path; a section may have sub-paths (`/admin/rounds/<id>`). */
 export function sectionOf(path: string): Section | undefined {
   return (
     SECTIONS.find((s) => s.url === path) ??
@@ -225,7 +240,6 @@ export function Sidebar({
     .join('')
     .slice(0, 2)
     .toUpperCase();
-  const groups = [...new Set(SECTIONS.map((s) => s.group))];
   return (
     <aside className="sidemeny" id="sidemeny" data-open={open ? 'true' : 'false'}>
       <a className="merke" href="/" aria-label="Varde, heim">
@@ -243,20 +257,19 @@ export function Sidebar({
       </button>
       <nav className="nav" aria-label="Hovudmeny" ref={nav}>
         <span className="nav-tommel" ref={thumb} aria-hidden="true" />
-        {groups.map((g) => (
-          <Fragment key={g}>
-            <div className="nav-gruppe">{g}</div>
-            {SECTIONS.filter((s) => s.group === g).map((s) => (
-              <a
-                key={s.url}
-                href={s.url}
-                aria-current={sectionOf(path) === s ? 'page' : undefined}
-                onClick={(e) => go(e, s.url)}
-              >
-                <Icon name={s.icon} />
-                <span>{s.label}</span>
-              </a>
-            ))}
+        {SECTIONS.map((s, i) => (
+          <Fragment key={s.url}>
+            {s.bottom && !SECTIONS[i - 1]?.bottom && (
+              <span className="nav-skilje" aria-hidden="true" />
+            )}
+            <a
+              href={s.url}
+              aria-current={sectionOf(path) === s ? 'page' : undefined}
+              onClick={(e) => go(e, s.url)}
+            >
+              <Icon name={s.icon} />
+              <span>{s.label}</span>
+            </a>
           </Fragment>
         ))}
       </nav>
@@ -332,6 +345,14 @@ interface Hit {
   to: string;
   icon: IconName;
 }
+/** Views inside the places, found by their old names too (2.17: «Funn», «Eksport» and «Sletting» moved). */
+const PLACES: Hit[] = [
+  { label: 'Funn-reglar', hint: 'Skjema', to: '/admin/surveys/funn', icon: 'lyspare' },
+  { label: 'Eksport', hint: 'Personvern', to: '/admin/personvern/eksport', icon: 'ned' },
+  { label: 'Sletting', hint: 'Personvern', to: '/admin/personvern/sletting', icon: 'slett' },
+  { label: 'Kontaktar', hint: 'Personvern', to: '/admin/personvern/kontaktar', icon: 'folk' },
+  { label: 'Logg', hint: 'Personvern', to: '/admin/personvern/logg', icon: 'dok' },
+];
 export function Palette({
   open,
   onClose,
@@ -343,7 +364,8 @@ export function Palette({
 }) {
   const [q, setQ] = useState('');
   const [sel, setSel] = useState(0);
-  const clients = useClients();
+  const clients = useClients(),
+    rounds = useRounds();
   const box = useRef<HTMLDivElement>(null),
     input = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -367,10 +389,17 @@ export function Palette({
   if (!open) return null;
   const hits: Hit[] = [
     ...SECTIONS.map((s) => ({ label: s.label, hint: 'Side', to: s.url, icon: s.icon })),
+    ...PLACES,
     ...(clients.data ?? []).map((c) => ({
       label: c.name,
       hint: 'Kunde',
-      to: '/admin/rounds',
+      to: `/admin/clients/${c.id}`,
+      icon: 'bygg' as const,
+    })),
+    ...(rounds.data ?? []).map((r) => ({
+      label: r.name,
+      hint: 'Runde',
+      to: `/admin/rounds/${r.id}`,
       icon: 'flagg' as const,
     })),
   ].filter((h) => h.label.toLowerCase().includes(q.trim().toLowerCase()));
@@ -389,7 +418,7 @@ export function Palette({
             ref={input}
             type="text"
             value={q}
-            placeholder="Skriv ein kunde eller ei side"
+            placeholder="Skriv ein kunde, ei runde eller ei side"
             aria-label="Søk"
             aria-controls="palett-liste"
             autoComplete="off"
@@ -412,7 +441,7 @@ export function Palette({
           {hits.length === 0 && <li className="palett-tom">Ingen treff</li>}
           {hits.map((h, i) => (
             <li
-              key={`${h.hint}:${h.label}`}
+              key={`${h.hint}:${h.to}`}
               role="option"
               aria-selected={i === sel}
               onMouseEnter={() => setSel(i)}

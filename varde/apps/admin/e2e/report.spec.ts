@@ -1,9 +1,9 @@
-// Client report (5.1): from the round card to the A4 preview; the human check gates the PDF;
+// Client report (5.1; on the round page since 2.17): from the client card to the A4 preview; the human check gates the PDF;
 // print media shows only the sheet (no menu, buttons or preview notice); page.pdf() works.
 // The fixture round (e2e/server.cjs «report») has synthetic initials, leader answers with a free
 // text and a role group below k: none of it may reach the page.
 import { expect, test, type Page } from '@playwright/test';
-import { login, state } from './support.js';
+import { login, openRound, state } from './support.js';
 
 const SECRETS = ['ZZRAP', 'ZZTEST', 'ZZLEIARTEKST', 'respondent_key', 'leaders_all'];
 
@@ -18,18 +18,14 @@ test.describe('client report (5.1)', () => {
   }, info) => {
     await login(page);
     const f = (await state(page)).rounds.report!;
-    await page.getByRole('link', { name: 'Kundar og rundar', exact: true }).click();
-    await page.getByRole('region', { name: f.name }).locator('summary').click(); // finished rounds are folded
-    const card = page
-      .getByRole('region', { name: f.name })
-      .getByRole('article', { name: 'Syntetisk admin kunde' });
+    await openRound(page, f.name, 'Utsending');
+    const card = page.getByRole('article', { name: 'Syntetisk admin kunde' });
     await card.getByRole('link', { name: 'Rapport til kunden' }).click();
-    await expect(page).toHaveURL(new RegExp(`/admin/reports/${f.rc}$`));
-    await expect(page.getByRole('heading', { name: 'Rapport til kunden', level: 1 })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Rapportar', exact: true })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
+    await expect(page).toHaveURL(new RegExp(`/admin/rounds/${f.id}/rapportar/${f.rc}$`));
+    await expect(page.getByRole('heading', { name: f.name, level: 1 })).toBeVisible();
+    await expect(
+      page.getByRole('navigation', { name: 'Runden' }).getByRole('link', { name: 'Rapportar' }),
+    ).toHaveAttribute('aria-current', 'page');
     const sheet = page.locator('.rapport-ark');
     await expect(sheet.getByRole('heading', { name: 'Syntetisk admin kunde' })).toBeVisible();
     await expect(sheet).toContainText('IT-tryggleik hos');
@@ -59,7 +55,7 @@ test.describe('client report (5.1)', () => {
     await expect(page.getByRole('button')).toHaveCount(0);
     await expect(page.getByRole('navigation')).toHaveCount(0);
     await expect(page.getByText('Førehandsvising', { exact: true })).toBeHidden();
-    await expect(page.getByRole('heading', { name: 'Rapport til kunden', level: 1 })).toBeHidden();
+    await expect(page.getByRole('heading', { name: f.name, level: 1 })).toBeHidden();
     await expect(sheet).toBeVisible();
     const background = await page
       .locator('.rapport-side')
@@ -81,15 +77,15 @@ test.describe('client report (5.1)', () => {
     );
   });
 
-  test('«Rapportar» in the menu: choose round and client; English resets the check', async ({
+  test('«Rapportar» of the round: choose a client; English resets the check', async ({
     page,
   }, info) => {
     await login(page);
     const f = (await state(page)).rounds.report!;
-    await page.getByRole('link', { name: 'Rapportar', exact: true }).click();
+    await openRound(page, f.name, 'Rapportar');
     await expect(page.getByText('Vel ein kunde for å sjå rapporten.')).toBeVisible();
-    await page.getByLabel('Runde', { exact: true }).selectOption(f.id);
     await page.getByLabel('Kunde', { exact: true }).selectOption(f.rc);
+    await expect(page).toHaveURL(new RegExp(`/admin/rounds/${f.id}/rapportar/${f.rc}$`));
     const sheet = page.locator('.rapport-ark');
     await expect(sheet).toContainText('IT-tryggleik hos');
     await page.getByText('Eg har lese gjennom rapporten').click();

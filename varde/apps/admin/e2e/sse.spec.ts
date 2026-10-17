@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { login, state, selectProgress, submit } from './support.js';
+import { login, menu, state, selectProgress, submit } from './support.js';
 
 test('second tab refetches changed progress within two seconds', async ({ page, context }) => {
   await login(page);
@@ -53,7 +53,7 @@ test('API restart reconnects; one connection per tab and one refetch per event',
     { timeout: 2000 },
   );
   expect(calls).toHaveLength(1);
-  await second.getByRole('link', { name: 'Kundar og rundar' }).click();
+  await menu(second, 'Rundar');
   await expect.poll(async () => (await state(page)).connections).toBe(2);
   await second.close();
   await expect.poll(async () => (await state(page)).connections).toBe(1);
@@ -61,7 +61,7 @@ test('API restart reconnects; one connection per tab and one refetch per event',
 test('events require session; navigation and reload preserve one listener', async ({ page }) => {
   expect((await page.request.get('/api/admin/events')).status()).toBe(401);
   await login(page);
-  await page.getByRole('link', { name: 'Kundar og rundar' }).click();
+  await menu(page, 'Rundar');
   await expect.poll(async () => (await state(page)).connections).toBe(1);
   await page.reload();
   await expect.poll(async () => (await state(page)).connections).toBe(1);

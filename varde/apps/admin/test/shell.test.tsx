@@ -82,7 +82,7 @@ describe('admin shell', () => {
     await settle();
     expect(count()).toBe(before + 1);
   });
-  it('loads the member name with same-origin credentials and navigates ten sections using history', async () => {
+  it('loads the member name with same-origin credentials and navigates seven places using history', async () => {
     view = mount(<App />);
     await settle();
     expect(view.div.textContent).toContain('Syntetisk admin');
@@ -90,35 +90,53 @@ describe('admin shell', () => {
       '/auth/me',
       expect.objectContaining({ credentials: 'same-origin' }),
     );
-    const links = [...view.div.querySelectorAll('nav a')];
+    const links = [...view.div.querySelectorAll('nav[aria-label="Hovudmeny"] a')];
     expect(links.map((a) => a.textContent)).toEqual([
-      'Oversikt',
-      'Kundar og rundar',
-      'Dashbord',
+      'I dag',
       'Skjema',
-      'Funn',
+      'Rundar',
+      'Kundar',
       'Seminar',
-      'Rapportar',
-      'Eksport',
-      'Sletting',
+      'Personvern',
       'Innstillingar',
     ]);
+    // «Personvern» and «Innstillingar» sit below a line (decision 1 of 17.10).
+    expect(view.div.querySelectorAll('nav[aria-label="Hovudmeny"] .nav-skilje')).toHaveLength(1);
     for (const link of links) {
       act(() => {
         (link as HTMLAnchorElement).click();
       });
       expect(window.location.pathname).toBe(link.getAttribute('href'));
-      // «Rapportar» opens the page «Rapport til kunden» (Vardestien).
-      expect(view.div.querySelector('h1')?.textContent).toBe(
-        link.textContent === 'Rapportar' ? 'Rapport til kunden' : link.textContent,
-      );
+      expect(view.div.querySelector('h1')?.textContent).toBe(link.textContent);
       expect(link.getAttribute('aria-current')).toBe('page');
     }
     act(() => {
       window.history.replaceState(null, '', '/admin/rounds');
       window.dispatchEvent(new PopStateEvent('popstate'));
     });
-    expect(view.div.querySelector('h1')?.textContent).toBe('Kundar og rundar');
+    expect(view.div.querySelector('h1')?.textContent).toBe('Rundar');
+  });
+  it('old addresses lead to their new places without a new history entry (2.17)', async () => {
+    view = mount(<App />);
+    await settle();
+    const before = window.history.length;
+    for (const [from, to] of [
+      ['/admin/export', '/admin/personvern/eksport'],
+      ['/admin/deletion', '/admin/personvern/sletting'],
+      ['/admin/findings?rule=tryggleik.f8', '/admin/surveys/funn?rule=tryggleik.f8'],
+      [
+        '/admin/dashboard?round=00000000-0000-4000-8000-000000000001',
+        '/admin/rounds/00000000-0000-4000-8000-000000000001/resultat',
+      ],
+    ] as const) {
+      act(() => {
+        window.history.replaceState(null, '', from);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      });
+      await settle();
+      expect(window.location.pathname + window.location.search).toBe(to);
+    }
+    expect(window.history.length).toBe(before);
   });
   it('403 from a protected API shows the Nynorsk access page', async () => {
     get.mockImplementationOnce(() =>

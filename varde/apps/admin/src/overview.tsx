@@ -26,17 +26,20 @@ export const longDate = (d: Date) =>
 const greeting = (h: number) =>
   h < 10 ? 'God morgon' : h < 13 ? 'God dag' : h < 18 ? 'God ettermiddag' : 'God kveld';
 const visible = (c: Cell) => (c.suppressed ? null : c.value);
-const daysTo = (deadline: string | null) =>
-  deadline === null
-    ? null
-    : Math.ceil(
-        (new Date(`${deadline.slice(0, 10)}T23:59:59`).getTime() - Date.now()) / 86_400_000,
-      );
+/** Calendar days from today to a deadline (0 on the day, negative after it); null without one. */
+export const daysTo = (deadline: string | null, now = Date.now()) => {
+  if (deadline === null) return null;
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  return Math.round(
+    (new Date(`${deadline.slice(0, 10)}T00:00:00`).getTime() - today.getTime()) / 86_400_000,
+  );
+};
 
-export function OverviewIntro({ name, round }: { name: string | null; round: Round | undefined }) {
+/** Today's date and a greeting with the first name, then what the page has to say. */
+export function Ingress({ name, text }: { name: string | null; text: string }) {
   const now = new Date(),
     first = name?.split(/\s+/)[0];
-  const open = round?.round_clients.filter((rc) => rc.status === 'open').length ?? 0;
   const day = DAYS[now.getDay()]!;
   return (
     <p className="ingress">
@@ -45,10 +48,7 @@ export function OverviewIntro({ name, round }: { name: string | null; round: Rou
       </span>
       <br />
       {greeting(now.getHours())}
-      {first ? `, ${first}` : ''}.{' '}
-      {round
-        ? `${round.name} er open hos ${open} ${open === 1 ? 'kunde' : 'kundar'}.`
-        : 'Ingen rundar enno.'}
+      {first ? `, ${first}` : ''}. {text}
     </p>
   );
 }
@@ -313,10 +313,9 @@ export function ClientTrails({ round, clients }: { round: Round; clients: Progre
           })}
         </div>
         <p className="forklaring">
-          Aktive økter under 3 blir ikkje viste («–»). Svara per person ligg berre i dashbordet og
-          blir logga når nokon opnar dei. Varde veit kor mange som har svart, ikkje kven: be leiaren
-          hos kunden minne på undersøkinga (under «Kundar og rundar»: Hent invitasjon, så
-          Påminning).
+          Aktive økter under 3 blir ikkje viste («–»). Svara per person ligg berre under «Resultat»
+          og blir logga når nokon opnar dei. Varde veit kor mange som har svart, ikkje kven: be
+          leiaren hos kunden minne på undersøkinga (fana «Utsending»: Påminning).
         </p>
       </div>
     </section>

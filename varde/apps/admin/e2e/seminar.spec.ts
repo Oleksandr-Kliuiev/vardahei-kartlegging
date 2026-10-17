@@ -1,10 +1,10 @@
 // Seminar (3a) end to end: create a seminar → its link → registration on the public page with both
 // boxes ticked → the registration is in the admin list (read on request) with «Invitasjon: ja» →
 // «Last ned invitasjon», the calendar file and the poster → «Ny lenkje» → the admin corrects the
-// contact and withdraws its consent to invitations → deletion by e-mail on «Sletting».
+// contact and withdraws its consent to invitations → deletion by e-mail on «Personvern › Sletting».
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
-import { login } from './support.js';
+import { login, personvern } from './support.js';
 
 test('create → link → register on /s → visible in the list → invitation, ICS and poster → delete by e-mail', async ({
   page,
@@ -27,7 +27,9 @@ test('create → link → register on /s → visible in the list → invitation,
   await form.getByRole('button', { name: 'Lag seminaret' }).click();
   await expect(page).toHaveURL(/\/admin\/seminars\/[0-9a-f-]{36}$/);
   await expect(page.locator('.sem-tittel')).toHaveText('Passord og MFA i kvardagen');
-  await expect(page.locator('.sem-meta')).toContainText('torsdag 5. november 2099, kl. 09.00–11.30');
+  await expect(page.locator('.sem-meta')).toContainText(
+    'torsdag 5. november 2099, kl. 09.00–11.30',
+  );
   await expect(page.getByTestId('pamelde')).toHaveText('0');
   const link = await page.getByRole('link', { name: 'Opne påmeldingssida' }).getAttribute('href');
   expect(link).toMatch(/^http:\/\/127\.0\.0\.1:3100\/s\?c=[A-Za-z0-9_-]{22}$/);
@@ -51,7 +53,9 @@ test('create → link → register on /s → visible in the list → invitation,
     pub.waitForEvent('download'),
     pub.getByRole('button', { name: 'Legg i kalenderen' }).click(),
   ]);
-  expect(readFileSync(await calendar.path(), 'utf8')).toContain('SUMMARY:Passord og MFA i kvardagen\r\n');
+  expect(readFileSync(await calendar.path(), 'utf8')).toContain(
+    'SUMMARY:Passord og MFA i kvardagen\r\n',
+  );
   await pub.close();
 
   // Back in the admin: the count follows live, the names only on request.
@@ -67,8 +71,13 @@ test('create → link → register on /s → visible in the list → invitation,
   await page.screenshot({ path: info.outputPath('admin-seminar-pamelding.png'), fullPage: true });
 
   // «Invitasjon»: the letter, the package, the calendar file and the poster; nothing is sent.
-  await page.getByRole('group', { name: 'Del' }).getByRole('button', { name: 'Invitasjon' }).click();
-  await expect(page.locator('textarea')).toHaveValue(/Vardahei IT inviterer til seminaret «Passord og MFA i kvardagen»\./);
+  await page
+    .getByRole('group', { name: 'Del' })
+    .getByRole('button', { name: 'Invitasjon' })
+    .click();
+  await expect(page.locator('textarea')).toHaveValue(
+    /Vardahei IT inviterer til seminaret «Passord og MFA i kvardagen»\./,
+  );
   await expect(page.locator('textarea')).toHaveValue(new RegExp(link!.replace(/[.?]/g, '\\$&')));
   const [zip] = await Promise.all([
     page.waitForEvent('download'),
@@ -77,14 +86,24 @@ test('create → link → register on /s → visible in the list → invitation,
   expect(zip.suggestedFilename()).toBe('invitasjon-seminar.zip');
   const bytes = readFileSync(await zip.path());
   expect(bytes.subarray(0, 2).toString()).toBe('PK');
-  for (const name of ['LES-MEG.txt', 'invitasjon.txt', 'invitation-en.txt', 'seminar.ics', 'plakat.html', 'plakat-en.html', 'lenkje-til-pamelding.txt'])
+  for (const name of [
+    'LES-MEG.txt',
+    'invitasjon.txt',
+    'invitation-en.txt',
+    'seminar.ics',
+    'plakat.html',
+    'plakat-en.html',
+    'lenkje-til-pamelding.txt',
+  ])
     expect(bytes.includes(Buffer.from(name)), name).toBe(true);
   const [ics] = await Promise.all([
     page.waitForEvent('download'),
     page.getByRole('link', { name: 'Kalenderfil (ICS)' }).click(),
   ]);
   expect(ics.suggestedFilename()).toBe('seminar.ics');
-  expect(readFileSync(await ics.path(), 'utf8')).toMatch(/^BEGIN:VCALENDAR\r\n[\s\S]*Meld deg på her:/);
+  expect(readFileSync(await ics.path(), 'utf8')).toMatch(
+    /^BEGIN:VCALENDAR\r\n[\s\S]*Meld deg på her:/,
+  );
   const [poster] = await Promise.all([
     context.waitForEvent('page'),
     page.getByRole('link', { name: 'Opne plakaten (A4)' }).click(),
@@ -100,7 +119,10 @@ test('create → link → register on /s → visible in the list → invitation,
   await page.getByRole('group', { name: 'Del' }).getByRole('button', { name: 'Påmelding' }).click();
   await page.getByRole('button', { name: 'Ny lenkje', exact: true }).click();
   await page.getByRole('button', { name: 'Stadfest ny lenkje' }).click();
-  await expect(page.getByRole('link', { name: 'Opne påmeldingssida' })).not.toHaveAttribute('href', link!);
+  await expect(page.getByRole('link', { name: 'Opne påmeldingssida' })).not.toHaveAttribute(
+    'href',
+    link!,
+  );
   const old = await context.newPage();
   await old.goto(link!);
   await expect(old.locator('h1')).toHaveText('Lenkja er bytt ut');
@@ -116,19 +138,25 @@ test('create → link → register on /s → visible in the list → invitation,
   await page.screenshot({ path: info.outputPath('admin-seminar-endre-kontakt.png') });
   await edit.getByRole('button', { name: 'Lagre kontakten' }).click();
   await expect(page.locator('table.sem-pamelde')).toContainText('ZZ E2E Retta');
-  await expect(page.locator('table.sem-pamelde').getByRole('cell', { name: 'nei', exact: true })).toBeVisible();
+  await expect(
+    page.locator('table.sem-pamelde').getByRole('cell', { name: 'nei', exact: true }),
+  ).toBeVisible();
   // Read again from the server: the consent is gone, only the person can give it again.
   await page.reload();
   await page.getByRole('button', { name: 'Vis namnelista' }).click();
-  await expect(page.locator('table.sem-pamelde').getByRole('cell', { name: 'nei', exact: true })).toBeVisible();
+  await expect(
+    page.locator('table.sem-pamelde').getByRole('cell', { name: 'nei', exact: true }),
+  ).toBeVisible();
 
   // «Sletting», area «Deltakar»: the contact and the registration go, by e-mail.
-  await page.getByRole('link', { name: 'Sletting', exact: true }).click();
+  await personvern(page, 'Sletting');
   await page.getByLabel('Område').selectOption('participant');
   await page.getByLabel('E-post').fill(email.toUpperCase());
   await page.getByLabel('Grunngjeving').fill('Syntetisk førespurnad');
   await page.getByRole('button', { name: 'Førehandsvis' }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'Kontakten og 1 påmelding blir sletta.' })).toBeVisible();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Kontakten og 1 påmelding blir sletta.' }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Stadfest sletting' }).click({ delay: 1400 });
   await expect(page.getByText('Deltakaren er sletta.')).toBeVisible();
   await page.getByRole('link', { name: 'Seminar', exact: true }).click();

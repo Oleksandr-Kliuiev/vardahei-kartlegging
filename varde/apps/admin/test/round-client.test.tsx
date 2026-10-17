@@ -18,6 +18,7 @@ beforeEach(() => {
         deadline: '2099-06-01',
         population_snapshot: 12,
       }}
+      round="r"
     />,
     true,
   );

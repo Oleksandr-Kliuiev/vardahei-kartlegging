@@ -2,14 +2,14 @@
 // of aggregates and definitions, without initials, answers or leader free text.
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
-import { login, state } from './support.js';
+import { login, personvern, state } from './support.js';
 
 test('closed round: «Last ned arkiv» downloads the aggregate archive; open round: no button', async ({
   page,
 }) => {
   await login(page);
   const s = await state(page);
-  await page.getByRole('link', { name: 'Eksport', exact: true }).click();
+  await personvern(page, 'Eksport');
   await page.getByLabel('Runde', { exact: true }).selectOption(s.rounds.dashboard!.id);
   await expect(page.getByRole('link', { name: 'Master_Analyse', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Last ned arkiv' })).toHaveCount(0);

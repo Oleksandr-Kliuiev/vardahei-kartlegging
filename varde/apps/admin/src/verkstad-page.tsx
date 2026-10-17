@@ -44,6 +44,7 @@ import {
 import { Invitasjon, Leiardel, OmSkjemaet, Seksjon, Slutt, Velkomen } from './verkstad-nodar.js';
 import { Publiser } from './verkstad-publiser.js';
 import { useSpelling } from './verkstad-merke.js';
+import { lastNode, useHaldFram } from './hald-fram.js';
 import { Omsetjing } from './verkstad-omsetjing.js';
 import { diffQuestions, withText } from './verkstad-tekst.js';
 import { Versjonar } from './verkstad-versjonar.js';
@@ -103,7 +104,10 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
   const readOnly = saved.status !== 'draft';
   const languages = content.required_languages as Lang[];
   const [lang, setLang] = useState<Lang>('nn');
-  const [sel, setSel] = useState<string>(() => content.questions[0]?.id ?? NODE.intro);
+  const [sel, setSel] = useState<string>(
+    () => lastNode(initial.id, content) ?? content.questions[0]?.id ?? NODE.intro,
+  );
+  useHaldFram(saved.id, content.intro.title.nn || content.key, sel);
   const [ask, setAsk] = useState(0);
   const [unlocked, setUnlocked] = useState<ReadonlySet<string>>(new Set());
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -617,7 +621,11 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
           onMark={markQuestion}
           onAccept={(l) => void accept(l)}
           onPublish={() => void publish()}
-          onRound={() => goTo('/admin/rounds')}
+          onRound={() => {
+            // The new version must be in the wizard's list: read the published versions again.
+            void queries.invalidateQueries({ queryKey: ['rounds', 'versions'] });
+            goTo(`/admin/rounds?ny=${saved.id}`);
+          }}
           onClose={() => setPanel(null)}
         />
       )}

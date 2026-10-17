@@ -75,8 +75,8 @@ export function FindingsPage() {
   return (
     <>
       <p className="ingress funn-ingress">
-        Reglane bak funna i dashbordet. Ei endring blir lagra som ein ny versjon, og du ser med ein
-        gong kva ho gjer med tala i ein runde.
+        Reglane bak funna under «Resultat» i kvar runde. Ei endring blir lagra som ein ny versjon,
+        og du ser med ein gong kva ho gjer med tala i ein runde.
       </p>
       <div className="funn-filter">
         <Seg

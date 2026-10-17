@@ -18,7 +18,8 @@ const save = (closed: Record<string, boolean>) => {
 };
 
 interface FoldState {
-  isOpen: (title: string) => boolean;
+  /** A block nobody has folded or opened yet starts as `start`. */
+  isOpen: (title: string, start: boolean) => boolean;
   toggle: (title: string, open: boolean) => void;
   register: (title: string) => void;
   setAll: (open: boolean) => void;
@@ -33,7 +34,7 @@ export function FoldProvider({ children }: { children: ReactNode }) {
     save(next);
   };
   const state: FoldState = {
-    isOpen: (t) => !closed[t],
+    isOpen: (t, start) => (t in closed ? !closed[t] : start),
     toggle: (t, open) => apply({ ...closed, [t]: !open }),
     register: (t) => void titles.current.add(t),
     setAll: (open) => apply(Object.fromEntries([...titles.current].map((t) => [t, !open]))),
@@ -67,11 +68,28 @@ export function FoldAll() {
   );
 }
 
-export function Fold({ title, children }: { title: string; children: ReactNode }) {
+/**
+ * A block of the results. Details (`closed`) start folded so the summary comes first (2.17); a
+ * `lazy` block mounts its content when first opened, so rows of answers are read (and logged) only
+ * when someone opens them.
+ */
+export function Fold({
+  title,
+  closed = false,
+  lazy = false,
+  children,
+}: {
+  title: string;
+  closed?: boolean;
+  lazy?: boolean;
+  children: ReactNode;
+}) {
   const fold = useContext(Ctx);
-  const [local, setLocal] = useState(true);
+  const [local, setLocal] = useState(!closed);
   fold?.register(title);
-  const open = fold ? fold.isOpen(title) : local;
+  const open = fold ? fold.isOpen(title, !closed) : local;
+  const [seen, setSeen] = useState(open);
+  if (open && !seen) setSeen(true);
   return (
     <section className="del fold">
       <details
@@ -86,7 +104,7 @@ export function Fold({ title, children }: { title: string; children: ReactNode }
         <summary>
           <h2>{title}</h2>
         </summary>
-        <div className="fold-innhald">{children}</div>
+        <div className="fold-innhald">{!lazy || seen ? children : null}</div>
       </details>
     </section>
   );

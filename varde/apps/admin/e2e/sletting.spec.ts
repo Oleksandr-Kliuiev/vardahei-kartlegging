@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
-import { login, state } from './support.js';
+import { login, openRound, personvern, state } from './support.js';
 
 test('submission ID from quotes → preview → confirmed deletion removes the quote', async ({
   page,
@@ -27,12 +27,13 @@ test('submission ID from quotes → preview → confirmed deletion removes the q
   expect(quotes.quotes.find((q) => q.submission_id === id)?.text).toBe(
     'Syntetisk sitat for sletting.',
   );
-  await page.getByRole('link', { name: 'Dashbord', exact: true }).click();
-  await page.getByLabel('Runde', { exact: true }).selectOption(f.id);
+  await openRound(page, f.name, 'Resultat');
+  // Quotes are a detail of the results: folded until opened (2.17).
+  await page.locator('summary').filter({ hasText: 'Sitat frå tilsette' }).click();
   const quote = page.locator('li').filter({ hasText: 'Syntetisk sitat for sletting.' });
   await quote.getByText('Innsendings-ID for sletting', { exact: true }).click();
   await expect(quote.locator('code')).toHaveText(id);
-  await page.getByRole('link', { name: 'Sletting', exact: true }).click();
+  await personvern(page, 'Sletting');
   await page.getByLabel('Område').selectOption('submissions');
   await page.getByLabel('Innsendings-ID-ar').fill(id);
   await page.getByLabel('Grunngjeving').fill('Syntetisk slettingsførespurnad');

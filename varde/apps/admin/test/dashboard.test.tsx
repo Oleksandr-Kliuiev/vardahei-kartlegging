@@ -1,12 +1,20 @@
 import { act } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { DashboardPage, thresholdText } from '../src/dashboard-page.js';
+import { DashboardRound, thresholdText } from '../src/dashboard-page.js';
 import { Findings, KeyQuestions } from '../src/dashboard-aggregate.js';
 import { EmployeeSection, QuotesSection } from '../src/dashboard-rows.js';
 import type { Dashboard, Employees } from '../src/dashboard-models.js';
 import { mount, settle } from './support.js';
 
 let view: ReturnType<typeof mount> | undefined;
+/** Opens the first folded block, as a click on its heading does. */
+function openFold(div: HTMLElement) {
+  const details = div.querySelector('details')!;
+  act(() => {
+    details.open = true;
+    details.dispatchEvent(new Event('toggle'));
+  });
+}
 afterEach(() => {
   view?.close();
   vi.unstubAllGlobals();
@@ -49,11 +57,18 @@ it('separate short labels drive client/role queries; anonymous rounds never requ
     ),
   );
   vi.stubGlobal('fetch', get);
-  view = mount(<DashboardPage />, true);
+  // The round is fixed by its page (2.17); client and role filter inside it.
+  view = mount(
+    <DashboardRound
+      round="synthetic"
+      clients={[{ client_id: 'client', client: { name: 'Syntetisk kunde' } }]}
+    />,
+    true,
+  );
   await settle();
   await settle();
   const labels = [...view.div.querySelectorAll('label')];
-  expect(labels.map((l) => l.textContent)).toEqual(['Runde', 'Kunde', 'Rolle']);
+  expect(labels.map((l) => l.textContent)).toEqual(['Kunde', 'Rolle']);
   expect(
     labels.every((l) => !l.querySelector('select') && !!document.getElementById(l.htmlFor)),
   ).toBe(true);
@@ -133,8 +148,14 @@ it('KI history column and red marked answers use the server model, with no unsaf
     'fetch',
     vi.fn(() => Promise.resolve(new Response(JSON.stringify(data)))),
   );
+  const fetcher = vi.mocked(fetch);
   view = mount(<EmployeeSection query="round=synthetic" />, true);
   await settle();
+  // Folded at first: no rows are read (or logged) until someone opens the block (2.17).
+  expect(fetcher).not.toHaveBeenCalled();
+  openFold(view.div);
+  await settle();
+  expect(fetcher).toHaveBeenCalledTimes(1);
   expect(view.div.textContent).toContain('Førre runde');
   expect(view.div.querySelector('td.merk')?.textContent).toBe('Privat konto');
   expect(view.div.textContent).toContain('Prøvd, usikker → opp');
@@ -163,6 +184,9 @@ it('quotes render as plain text and never invent a role omitted by privacy', asy
   );
   view = mount(<QuotesSection query="round=anonymous" showClient />, true);
   await settle();
+  expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+  openFold(view.div);
+  await settle();
   expect(view.div.querySelector('script')).toBeNull();
   expect(view.div.querySelector('blockquote')?.textContent).toBe('<script>syntetisk</script>');
   expect(view.div.querySelector('.kjelde')?.textContent).toBe('Daco');
@@ -190,17 +214,17 @@ it('a closed round keeps its finding and links to a newer rule version inside th
   const links = view.div.querySelectorAll<HTMLAnchorElement>('a.nyare-regel');
   expect(links).toHaveLength(1);
   expect(links[0]!.textContent).toBe('Regelen har ein nyare versjon');
-  expect(links[0]!.getAttribute('href')).toBe('/admin/findings?rule=tryggleik.f8');
+  expect(links[0]!.getAttribute('href')).toBe('/admin/surveys/funn?rule=tryggleik.f8');
   act(() => links[0]!.click());
   expect(window.location.pathname + window.location.search).toBe(
-    '/admin/findings?rule=tryggleik.f8',
+    '/admin/surveys/funn?rule=tryggleik.f8',
   );
   expect(moved).toHaveBeenCalledTimes(1);
   window.removeEventListener('popstate', moved);
   window.history.replaceState(null, '', '/');
 });
 
-it('names the thresholds of the rules, or points to «Funn» when the rules differ (16.10)', () => {
+it('names the thresholds of the rules, or points to «Funn-reglar» when the rules differ (16.10)', () => {
   expect(thresholdText({ min_count: 2, medium: 0.15, high: 0.3 })).toBe(
     'Funn rekna ut frå svara: minst 2 personar, middels frå 15 %, høg frå 30 %.',
   );
@@ -209,6 +233,6 @@ it('names the thresholds of the rules, or points to «Funn» when the rules diff
   );
   for (const t of [{ min_count: 2, medium: null, high: 0.3 }, undefined])
     expect(thresholdText(t)).toBe(
-      'Funn rekna ut frå svara etter tersklane i kvar regel (sjå «Funn»).',
+      'Funn rekna ut frå svara etter tersklane i kvar regel (sjå «Funn-reglar» under Skjema).',
     );
 });

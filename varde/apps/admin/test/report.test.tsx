@@ -1,10 +1,11 @@
 // Client report in the admin (5.1): the A4 sheet shows hidden numbers as «–», the PDF button
 // needs the human check, a new language or client resets it, and the round card links to the
 // report only for a closed round with released snapshots.
-import { act } from 'react';
+import { act, useEffect, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { findBokmal } from '../../../packages/schema/src/i18n/nn-stoplist.js';
-import { ReportPage } from '../src/report-page.js';
+import { RoundReports } from '../src/report-page.js';
+import type { Round } from '../src/models.js';
 import { ReportSheet } from '../src/report-sheet.js';
 import { type ClientReport, TEXTS } from '../src/report-texts.js';
 import { RoundClientCard } from '../src/round-client.js';
@@ -179,10 +180,22 @@ describe('Rapportar page', () => {
     vi.stubGlobal('fetch', fetcher);
     const print = vi.fn();
     vi.stubGlobal('print', print);
-    view = mount(<ReportPage initial={undefined} />, true);
+    // The round page passes the client from the address (2.17): choosing one changes the address.
+    function Page() {
+      const [path, setPath] = useState(window.location.pathname);
+      useEffect(() => {
+        const pop = () => setPath(window.location.pathname);
+        window.addEventListener('popstate', pop);
+        return () => window.removeEventListener('popstate', pop);
+      }, []);
+      const rc = /\/rapportar\/([^/]+)$/.exec(path)?.[1];
+      return <RoundReports round={rounds[0] as Round} rc={rc} />;
+    }
+    window.history.replaceState(null, '', '/admin/rounds/r/rapportar');
+    view = mount(<Page />, true);
     await settle();
-    const [roundSelect, clientSelect] = [...view.div.querySelectorAll('select')];
-    expect([...roundSelect!.options].map((o) => o.text)).toEqual(['Syntetisk runde']);
+    const [clientSelect, other] = [...view.div.querySelectorAll('select')];
+    expect(other).toBeUndefined();
     expect([...clientSelect!.options].map((o) => o.text)).toEqual(['Vel kunde', 'Syntetisk kunde']);
     expect(fetcher.mock.calls.some(([p]) => p.includes('/report'))).toBe(false);
     act(() => {
@@ -190,14 +203,14 @@ describe('Rapportar page', () => {
       clientSelect!.dispatchEvent(new Event('change', { bubbles: true }));
     });
     await settle();
-    expect(window.location.pathname).toBe('/admin/reports/rc-1');
+    expect(window.location.pathname).toBe('/admin/rounds/r/rapportar/rc-1');
     expect(fetcher).toHaveBeenCalledWith('/api/admin/round-clients/rc-1/report', expect.anything());
     expect(view.div.querySelector('.sjekk')?.textContent).toContain('Det viktigaste funnet');
     const save = button(view.div, 'Lagre som PDF');
     expect(save.disabled).toBe(true);
-    const check = view.div.querySelector<HTMLInputElement>('.brytar input')!;
+    const check = () => view!.div.querySelector<HTMLInputElement>('.brytar input')!;
     act(() => {
-      check.click();
+      check().click();
     });
     expect(save.disabled).toBe(false);
     act(() => {
@@ -212,7 +225,7 @@ describe('Rapportar page', () => {
       '/api/admin/round-clients/rc-1/report?lang=en',
       expect.anything(),
     );
-    expect(check.checked).toBe(false);
+    expect(check().checked).toBe(false);
     expect(button(view.div, 'Lagre som PDF').disabled).toBe(true);
     expect(view.div.querySelector('.rapport-side')?.textContent).toContain('IT security at');
   });
@@ -229,11 +242,13 @@ describe('round client card', () => {
     released: true,
   };
   it('links to the report only when the round is closed and released', () => {
-    view = mount(<RoundClientCard rc={rc} reportReady />, true);
-    const link = view.div.querySelector<HTMLAnchorElement>('a[href="/admin/reports/rc-1"]');
+    view = mount(<RoundClientCard rc={rc} round="r" reportReady />, true);
+    const link = view.div.querySelector<HTMLAnchorElement>(
+      'a[href="/admin/rounds/r/rapportar/rc-1"]',
+    );
     expect(link?.textContent).toBe('Rapport til kunden');
     view.close();
-    view = mount(<RoundClientCard rc={rc} />, true);
-    expect(view.div.querySelector('a[href^="/admin/reports"]')).toBeNull();
+    view = mount(<RoundClientCard rc={rc} round="r" />, true);
+    expect(view.div.querySelector('a[href*="/rapportar"]')).toBeNull();
   });
 });

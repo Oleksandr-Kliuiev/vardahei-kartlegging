@@ -25,14 +25,15 @@ import {
 export const roundsKey = (seminar: string) => ['seminars', 'rounds', seminar] as const;
 
 function Links({ round }: { round: string }) {
-  const insight = `/admin/dashboard?round=${round}`;
+  const result = `/admin/rounds/${round}/resultat`,
+    page = `/admin/rounds/${round}`;
   return (
     <span className="sem-steg-lenkjer">
-      <a className="linkbtn" href={insight} onClick={(e) => go(e, insight)}>
-        Sjå i dashbordet
+      <a className="linkbtn" href={result} onClick={(e) => go(e, result)}>
+        Sjå resultatet
       </a>
-      <a className="linkbtn" href="/admin/rounds" onClick={(e) => go(e, '/admin/rounds')}>
-        Sjå under «Kundar og rundar»
+      <a className="linkbtn" href={page} onClick={(e) => go(e, page)}>
+        Opne runden
       </a>
     </span>
   );

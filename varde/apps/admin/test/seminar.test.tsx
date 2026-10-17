@@ -6,6 +6,7 @@ import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { participantText } from '../src/deletion-page.js';
 import { SeminarPage } from '../src/seminar-page.js';
+import { KontaktSjekk } from '../src/kontaktar.js';
 import { bodyOf, emptyDraft, names, perCompany } from '../src/seminar-models.js';
 import { Toasts } from '../src/shell.js';
 import { button, mount, settle } from './support.js';
@@ -93,12 +94,15 @@ describe('seminar list', () => {
     expect(text).toContain('For Syntetisk A og Syntetisk B');
     expect(text).toContain('3 påmelde');
     expect(text).toContain('1 kontakt ventar på den årlege sjekken.');
+    expect(view.div.querySelector('a[href="/admin/personvern/kontaktar"]')).not.toBeNull();
     expect(calls('/registrations')).toHaveLength(0);
     expect(calls('/contacts/review')).toHaveLength(0);
   });
-  it('the contacts to check load on request and can be confirmed', async () => {
-    view = mount(<SeminarPage />, true);
+  it('the contacts to check load on request under «Personvern» and can be confirmed', async () => {
+    view = mount(<KontaktSjekk />, true);
     await settle();
+    expect(view.div.textContent).toContain('1 kontakt ventar på den årlege sjekken.');
+    expect(calls('/contacts/review')).toHaveLength(0);
     act(() => {
       button(view!.div, 'Vis kontaktane').click();
     });
