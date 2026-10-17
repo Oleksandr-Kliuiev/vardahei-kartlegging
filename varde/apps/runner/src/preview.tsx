@@ -2,7 +2,7 @@
 // In the workshop's phone frame (2.15) the admin page sends the draft as it is (`varde:forhand-innhald`,
 // shape only: an unfinished draft is shown as far as it goes), moves the phone to a question
 // (`varde:forhand-ga`) and hears where the phone is (`varde:forhand-her`). Same origin, the parent only.
-import { useEffect, useErrorBoundary, useState } from 'preact/hooks';
+import { useEffect, useErrorBoundary, useRef, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import { prune, type Answers, type AnswerValue } from '@varde/rules/runner';
 import { TemplateContentShape, type TemplateContent } from '@varde/schema/template/template';
@@ -45,6 +45,7 @@ export function Preview({ id }: { id: string }) {
       signal: controller.signal,
     })
       .then(async (r) => {
+        if (r.status === 400) throw new Error(UNFINISHED);
         if (!r.ok) throw new Error('Førehandsvisinga krev innlogging og eit gyldig utkast.');
         const body = (await r.json()) as { content: unknown };
         const parsed = TemplateContentShape.safeParse(body.content);
@@ -147,16 +148,37 @@ export function PreviewSurvey({
   const [answers, setAnswers] = useState<Answers>({});
   const [free, setFree] = useState<Record<string, string>>({});
   const [lang, setLang] = useState<Lang>('nn');
-  const [step, setStep] = useState(-1);
+  const [stepState, setStep] = useState(-1);
   const [done, setDone] = useState(false);
   // A question the current answers hide, shown because the workshop asked for it.
   const [forced, setForced] = useState<{ q: Question; note: string } | null>(null);
   const [land, setLand] = useState<Landscape | null>(null);
-  const path = steps(content, answers),
-    current = forced ? forced.q : path[step];
+  const path = steps(content, answers);
+  // The draft changed under the phone: it stays where it was (the same question, the leader start, the
+  // overview), not on the same step number, and a question shown although hidden takes its new wording,
+  // or its place on the path once the answers show it.
+  const was = useRef<{ content: TemplateContent; at: Spot }>({ content, at: ':intro' });
+  let step = stepState;
+  let hidden = forced ? content.questions.find((x) => x.id === forced.q.id) : undefined;
+  if (was.current.content !== content) {
+    const spot = forced?.q.id ?? was.current.at;
+    const i =
+      spot === ':leiar'
+        ? path.indexOf('B-intro')
+        : spot === ':oversikt'
+          ? path.length
+          : spot.startsWith(':')
+            ? -1
+            : path.findIndex((x) => isQuestion(x) && x.id === spot);
+    if (i >= 0) {
+      step = i;
+      hidden = undefined;
+    }
+  }
+  const current = hidden ?? (forced ? undefined : path[step]);
   const screen: Screen = done
     ? 'summit'
-    : forced
+    : hidden
       ? 'q'
       : step < 0
         ? 'intro'
@@ -182,7 +204,17 @@ export function PreviewSurvey({
   useEffect(() => {
     if (land) direct(land, screen, trail, { of: ui(lang, 'av'), top: ui(lang, 'toppen') }, false);
   }, [land, screen, step, key, lang]);
-  useEffect(() => onHere?.(at), [at]);
+  // Where the phone starts is no choice: only moves are told, or the workshop's chosen question would
+  // give way to the start each time the phone loads.
+  const told = useRef(at);
+  useEffect(() => {
+    was.current = { content, at };
+    if (step !== stepState) setStep(step);
+    if (forced && !hidden) setForced(null);
+    if (told.current === at) return;
+    told.current = at;
+    onHere?.(at);
+  });
   useEffect(() => {
     if (!goal) return;
     const to = goal.to;
@@ -258,9 +290,9 @@ export function PreviewSurvey({
         {NOTICE}
       </p>
       <main class="app">
-        {forced && (
+        {hidden && (
           <p class="forhand-skjult" role="note">
-            {forced.note || 'Svara du har gitt no, skjuler dette spørsmålet.'}
+            {forced?.note || 'Svara du har gitt no, skjuler dette spørsmålet.'}
           </p>
         )}
         {done ? (

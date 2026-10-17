@@ -107,8 +107,9 @@ async function framed(content: ReturnType<typeof syntheticContent>) {
 const shown = () => root.querySelector('[data-question-id]')?.getAttribute('data-question-id');
 it('the workshop moves the phone to a question and hears where the phone is', async () => {
   const { parent, send } = await framed(syntheticContent());
-  expect(parent.postMessage).toHaveBeenCalledWith(
-    { type: 'varde:forhand-her', at: ':intro' },
+  // The start is not reported: the workshop keeps the question it asked for.
+  expect(parent.postMessage).not.toHaveBeenCalledWith(
+    expect.objectContaining({ type: 'varde:forhand-her' }),
     location.origin,
   );
   await send({ type: 'varde:forhand-ga', to: 'K6' });
@@ -123,6 +124,10 @@ it('the workshop moves the phone to a question and hears where the phone is', as
   expect(root.textContent).not.toContain('skjuler dette spørsmålet');
   await send({ type: 'varde:forhand-ga', to: ':intro' });
   expect(shown()).toBeUndefined();
+  expect(parent.postMessage).toHaveBeenLastCalledWith(
+    { type: 'varde:forhand-her', at: ':intro' },
+    location.origin,
+  );
   await send({ type: 'varde:forhand-ga', to: 'finst-ikkje' });
   expect(shown()).toBeUndefined();
 });
@@ -153,4 +158,31 @@ it('an unfinished draft is shown as far as it goes; the schema shape still guard
   expect(root.textContent).toContain('Utkast utan engelsk');
   await send({ type: 'varde:forhand-innhald', content: { ...unfinished, questions: 'feil' } });
   expect(root.textContent).toContain('Utkast utan engelsk');
+});
+it('the phone keeps its place when the draft changes around it, and tells nothing', async () => {
+  const content = syntheticContent();
+  const { parent, send } = await framed(content);
+  await send({ type: 'varde:forhand-ga', to: 'K6' });
+  expect(shown()).toBe('K6');
+  const told = parent.postMessage.mock.calls.length;
+  // K6 moves up one place, then a new question comes in before it: the phone stays on K6.
+  const moved = structuredClone(content);
+  const i = moved.questions.findIndex((q) => q.id === 'K6');
+  moved.questions.splice(i - 1, 0, moved.questions.splice(i, 1)[0]!);
+  await send({ type: 'varde:forhand-innhald', content: moved });
+  expect(shown()).toBe('K6');
+  const added = structuredClone(moved);
+  added.questions.splice(i - 1, 0, { ...structuredClone(added.questions[i - 1]!), id: 'N1' });
+  await send({ type: 'varde:forhand-innhald', content: added });
+  expect(shown()).toBe('K6');
+  expect(parent.postMessage.mock.calls.length).toBe(told);
+  // A hidden question shown on request takes its new wording.
+  await send({ type: 'varde:forhand-ga', to: 'K16', note: 'Skjult.' });
+  expect(shown()).toBe('K16');
+  const reworded = structuredClone(added);
+  reworded.questions.find((q) => q.id === 'K16')!.texts.text.nn = 'Ny ordlyd for K16';
+  await send({ type: 'varde:forhand-innhald', content: reworded });
+  expect(shown()).toBe('K16');
+  expect(root.textContent).toContain('Ny ordlyd for K16');
+  expect(root.querySelector('.forhand-skjult')?.textContent).toBe('Skjult.');
 });
