@@ -40,6 +40,8 @@ import {
 
 const DEFS = [SYNTHETIC_DEF] as unknown as MetricDefinition[];
 const ACTOR = { type: 'auto', who: 'system' } as const;
+// The random rounds take up to about 5 s each alone: the 5 s default fails under a parallel run.
+const RANDOM_ROUNDS = 30_000;
 
 /** A round released into memory and read back through PrivacyService as the app reads it. */
 async function releasedRound(input: readonly ResponseRow[], status = 'closed') {
@@ -172,7 +174,7 @@ describe('subtraction attack: round_client ↔ all_clients', () => {
       expect(describeLeaks(leaks(r.groups, eqs))).toEqual(describeLeaks(leaks(r.groups, base)));
     }
     expect(complementaryRounds).toBeGreaterThan(100);
-  });
+  }, RANDOM_ROUNDS);
 
   it('random rounds: the own channel of a client next to «alle» gives clients away — why it goes to that client only', async () => {
     const rand = rng(777);
@@ -190,7 +192,7 @@ describe('subtraction attack: round_client ↔ all_clients', () => {
       }
     }
     expect(leaking).toBeGreaterThan(50);
-  });
+  }, RANDOM_ROUNDS);
 
   it('random rounds: the own channel of a client alone gives away no group below k', async () => {
     const rand = rng(4242);
@@ -202,7 +204,7 @@ describe('subtraction attack: round_client ↔ all_clients', () => {
         expect(describeLeaks(leaks(r.groups, eqs))).toEqual([]);
       }
     }
-  });
+  }, RANDOM_ROUNDS);
 });
 
 describe('round_client cells leave privacy through two named doors (decision 16.10)', () => {
@@ -414,7 +416,7 @@ describe('«alle» by itself gives away no client × role group below k (release
     }
     expect(hiddenRoles).toBeGreaterThan(0);
     expect(changed).toBeGreaterThan(0);
-  });
+  }, RANDOM_ROUNDS);
 
   it('random rounds: the live «alle» of an open round determines no set of groups below k', async () => {
     const rand = rng(2610);
@@ -433,7 +435,7 @@ describe('«alle» by itself gives away no client × role group below k (release
       // The live view hides what the first release hides, no more (no blanket role hiding).
       expect(shape(live)).toEqual(shape(await alle(await closedRound(rows))));
     }
-  });
+  }, RANDOM_ROUNDS);
 
   it('random rounds released 2–3 times: every «alle» release together determines no set below k, nor a difference below k', async () => {
     // The attacker of rule 7 knows which client has which roles, not who answered between two
@@ -464,7 +466,7 @@ describe('«alle» by itself gives away no client × role group below k (release
     // Rule 7 waits for rules 1–3 and answers only what they leave: hiding more is a regression
     // (16.10: 14 128 cells hidden or carried; 14 519 when rule 7 ran before rules 1–3 settled).
     expect(lost).toBeLessThanOrEqual(14_128);
-  });
+  }, RANDOM_ROUNDS);
 });
 
 describe('«alle» released twice on a client × role structure in pieces (acceptance 16.10)', () => {
@@ -569,5 +571,5 @@ describe('«Før og etter» of every client next to the report of one client (BA
       }
     }
     expect(hiddenTotals).toBeGreaterThan(0);
-  });
+  }, RANDOM_ROUNDS);
 });
