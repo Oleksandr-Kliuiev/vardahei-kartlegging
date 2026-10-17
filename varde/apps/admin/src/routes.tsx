@@ -124,7 +124,7 @@ export function resolve(path: string, search: string): Page {
       heading: null,
       wide: true,
     };
-  if (path === '/admin/rounds') return page(<RundarPage />);
+  if (path === '/admin/rounds') return page(<RundarPage key={search} />);
   const round = match(path, `/admin/rounds/${ID}(?:/([a-z]+)(?:/${ID})?)?`);
   if (round)
     return page(

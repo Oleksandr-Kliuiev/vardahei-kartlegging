@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import type { z } from 'zod';
-import { emptyTexts } from '@varde/schema/template/respondent-texts';
+import { emptyTexts, unfinishedTexts } from '@varde/schema/template/respondent-texts';
 import { TemplateContentShape, type TemplateContent } from '@varde/schema/template/template';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { namesOf } from '../auth/people.js';
@@ -32,7 +32,14 @@ function leftOf(v: { content: unknown; translation_acceptance: unknown }): numbe
   const c = shape.data,
     hash = sourceHash(c);
   const accepted = v.translation_acceptance as Record<string, { source_hash?: string } | undefined>;
-  const languages = c.required_languages.filter((l) => accepted[l]?.source_hash !== hash).length;
+  // A language counts until it is approved for this source and every required text is written in it,
+  // as publishing demands (2.16 review).
+  const unfinished = unfinishedTexts(c);
+  const languages = c.required_languages.filter(
+    (l) =>
+      accepted[l]?.source_hash !== hash ||
+      unfinished.some((t) => !(t.text[l] ?? '').trim()),
+  ).length;
   return issues(c).length + emptyTexts(c).length + languages;
 }
 

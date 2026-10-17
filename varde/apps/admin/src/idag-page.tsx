@@ -86,15 +86,16 @@ export function todos(input: {
     }
   out.push(...deadlines.sort((a, b) => a.d - b.d).map((x) => x.t));
   for (const r of input.rounds) {
-    const closed = r.closed_at ? (now - new Date(r.closed_at).getTime()) / 86_400_000 : 0;
     // Until it is marked as sent (2.18).
     const ready = r.round_clients.filter((rc) => rc.released && !rc.report_sent_at);
-    // Imported history (1.4c) has no report to send; a report is news for a month after closing.
+    // A report is news for a month after a round run in Varde closes; imported history (never
+    // opened here) has none to send.
     if (
-      r.type === 'external_import' ||
       !['closed', 'archived'].includes(r.status) ||
-      !ready.length ||
-      closed > REPORT_DAYS
+      !r.opened_at ||
+      !r.closed_at ||
+      (now - new Date(r.closed_at).getTime()) / 86_400_000 > REPORT_DAYS ||
+      !ready.length
     )
       continue;
     const one = ready.length === 1 ? ready[0]! : null;

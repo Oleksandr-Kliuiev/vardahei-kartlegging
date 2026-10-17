@@ -110,9 +110,18 @@ beforeAll(async () => {
             : q,
     ),
   }));
-  // v3: the same questions, own metrics of the version (as the editor makes them): F12 declares an
-  // approximate link to the F12 of v1, F14 declares none.
-  v3 = await scoredVersion(t, template, 3);
+  // v3: F12 and F14 take a free text, so the template's own definitions no longer hold for them
+  // (2.16: a workshop version keeps those only for questions that mean the same); the version's
+  // own metrics (as the editor makes them): F12 declares an approximate link to the F12 of v1, F14
+  // declares none.
+  v3 = await scoredVersion(t, template, 3, (c: TemplateContent) => ({
+    ...c,
+    questions: c.questions.map((q) =>
+      q.id === 'F12' || q.id === 'F14'
+        ? { ...q, free_text: { texts: { text: { nn: 'Anna', en: 'Other' } } } }
+        : q,
+    ),
+  }));
   const prefix = editorMetricPrefix(v3);
   for (const [q, options, comparability] of [
     [

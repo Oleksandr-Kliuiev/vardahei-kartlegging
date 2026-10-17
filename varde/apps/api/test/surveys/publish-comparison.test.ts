@@ -7,6 +7,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { TemplateContent } from '@varde/schema/template/template';
 import { ComparisonView } from '../../src/modules/dashboard/comparison-view.js';
 import { MetricsService } from '../../src/modules/metrics/metrics.service.js';
+import { MetricDefinition } from '@varde/schema/metrics/metric-definition';
+import { subMetrics } from '@varde/rules/findings';
 import { editorMetricPrefix } from '../../src/modules/surveys/editor-metrics.js';
 import { EditorService } from '../../src/modules/surveys/editor.service.js';
 import { dashboardFixture, type DashboardFixture } from '../dashboard/fixture.js';
@@ -268,6 +270,41 @@ describe('2.16 acceptance: workshop publication keeps the comparison with round 
     const two = await series(semantic);
     expect(two.filter((k) => k === 'F5')).toHaveLength(1);
     expect(two).toHaveLength(new Set(two).size);
+  });
+
+  it('a round released before keeps the set it was released with (rule 4 of 1.4c)', async () => {
+    const metrics = f.app.get(MetricsService);
+    // Released now: the set holds what definitionsFor gives, nothing more.
+    const set = await f.prisma.roundMetricSet.findUniqueOrThrow({
+      where: { round_id: orthographic },
+    });
+    const now = (await metrics.definitionsFor(orthographic)).flatMap(subMetrics);
+    expect(new Set(now)).toEqual(new Set(set.metric_keys));
+    // Released before 2.16 with the version's own distributions only: it keeps exactly those.
+    const v = (await f.prisma.round.findUniqueOrThrow({ where: { id: orthographic } }))
+      .template_version_id!;
+    const earlier = await f.prisma.round.create({
+      data: {
+        name: 'acc-216 released before',
+        type: 'regular',
+        status: 'closed',
+        identification: 'initials',
+        template_version_id: v,
+      },
+    });
+    rounds.push(earlier.id);
+    const own = (
+      await f.prisma.metricDefinition.findMany({
+        where: { key: { startsWith: editorMetricPrefix(v) } },
+      })
+    ).map((x) => MetricDefinition.parse(x.definition));
+    await f.prisma.roundMetricSet.create({
+      data: { round_id: earlier.id, metric_keys: own.flatMap(subMetrics) },
+    });
+    const kept = (await metrics.definitionsFor(earlier.id)).map((d) => d.key);
+    expect(kept.length).toBe(own.length);
+    expect(kept.every((k) => k.startsWith(editorMetricPrefix(v)))).toBe(true);
+    await f.prisma.roundMetricSet.delete({ where: { round_id: earlier.id } });
   });
 
   it('a new question made in the workshop is counted by its own distribution', async () => {

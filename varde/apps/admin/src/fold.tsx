@@ -21,23 +21,40 @@ interface FoldState {
   /** A block nobody has folded or opened yet starts as `start`. */
   isOpen: (title: string, start: boolean) => boolean;
   toggle: (title: string, open: boolean) => void;
-  register: (title: string) => void;
+  register: (title: string, lazy: boolean) => void;
   setAll: (open: boolean) => void;
 }
 const Ctx = createContext<FoldState | null>(null);
 
 export function FoldProvider({ children }: { children: ReactNode }) {
   const [closed, setClosed] = useState<Record<string, boolean>>(read);
-  const titles = useRef(new Set<string>());
+  // Blocks of rows (2.17) open for this visit only: a later visit never reads (and logs) them by itself.
+  const [opened, setOpened] = useState<ReadonlySet<string>>(new Set());
+  const titles = useRef(new Set<string>()),
+    lazy = useRef(new Set<string>());
   const apply = (next: Record<string, boolean>) => {
-    setClosed(next);
-    save(next);
+    const kept = Object.fromEntries(Object.entries(next).filter(([t]) => !lazy.current.has(t)));
+    setClosed(kept);
+    save(kept);
   };
   const state: FoldState = {
-    isOpen: (t, start) => (t in closed ? !closed[t] : start),
-    toggle: (t, open) => apply({ ...closed, [t]: !open }),
-    register: (t) => void titles.current.add(t),
-    setAll: (open) => apply(Object.fromEntries([...titles.current].map((t) => [t, !open]))),
+    isOpen: (t, start) =>
+      lazy.current.has(t) ? opened.has(t) : t in closed ? !closed[t] : start,
+    toggle: (t, open) => {
+      if (!lazy.current.has(t)) return apply({ ...closed, [t]: !open });
+      const next = new Set(opened);
+      if (open) next.add(t);
+      else next.delete(t);
+      setOpened(next);
+    },
+    register: (t, isLazy) => {
+      titles.current.add(t);
+      if (isLazy) lazy.current.add(t);
+    },
+    setAll: (open) => {
+      apply(Object.fromEntries([...titles.current].map((t) => [t, !open])));
+      setOpened(new Set(open ? [...lazy.current] : []));
+    },
   };
   return <Ctx.Provider value={state}>{children}</Ctx.Provider>;
 }
@@ -69,9 +86,10 @@ export function FoldAll() {
 }
 
 /**
- * A block of the results. Details (`closed`) start folded so the summary comes first (2.17); a
- * `lazy` block mounts its content when first opened, so rows of answers are read (and logged) only
- * when someone opens them.
+ * A block of the results. Details (`closed`) start folded so the summary comes first (2.17). A
+ * `lazy` block holds rows of answers: its content is there only while it is open, so the rows are
+ * read (and logged) only when someone opens it, never again while it is folded, and every visit
+ * starts with it folded.
  */
 export function Fold({
   title,
@@ -86,10 +104,8 @@ export function Fold({
 }) {
   const fold = useContext(Ctx);
   const [local, setLocal] = useState(!closed);
-  fold?.register(title);
+  fold?.register(title, lazy);
   const open = fold ? fold.isOpen(title, !closed) : local;
-  const [seen, setSeen] = useState(open);
-  if (open && !seen) setSeen(true);
   return (
     <section className="del fold">
       <details
@@ -104,7 +120,7 @@ export function Fold({
         <summary>
           <h2>{title}</h2>
         </summary>
-        <div className="fold-innhald">{!lazy || seen ? children : null}</div>
+        <div className="fold-innhald">{!lazy || open ? children : null}</div>
       </details>
     </section>
   );

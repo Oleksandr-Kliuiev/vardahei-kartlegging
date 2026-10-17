@@ -4,7 +4,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { FindingsService } from '../findings/findings.service.js';
-import type { Question } from '@varde/schema/template/question';
 import type { TemplateContent } from '@varde/schema/template/template';
 import { Injectable } from '@nestjs/common';
 import { subMetrics } from '@varde/rules/findings';
@@ -16,29 +15,13 @@ import {
 import { POPULATIONS } from '@varde/schema/metrics/populations';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { editorMetricPrefix } from '../surveys/editor-metrics.js';
-import { structureOf } from '../surveys/question-structure.js';
 import { canonical } from '../surveys/hashes.js';
+import { type ReferenceVersion, referenceOf, sameMeaning } from './same-meaning.js';
 import {
   type ComputedCell,
   PrivacyService,
   type ReleaseActor,
 } from '../privacy/privacy.service.js';
-
-/** A definition holds for a version when every question it reads has the same id, part, anchor and
- * structure there as in a version the template's definitions were made for (ADR-005, ADR-020). */
-function meaningKept(content: TemplateContent, reference: ReadonlyMap<string, Question[]>) {
-  return (def: MetricDefinition) =>
-    def.questions.every((ref) => {
-      const q = content.questions.find((x) => x.id === ref.key.split('.')[0]);
-      return (
-        q !== undefined &&
-        q.part === ref.part &&
-        (reference.get(q.id) ?? []).some(
-          (s) => s.anchor_key === q.anchor_key && structureOf(s) === structureOf(q),
-        )
-      );
-    });
-}
 
 export interface RoundRelease {
   round: string;
@@ -91,11 +74,10 @@ export class MetricsService {
   /**
    * Definitions of the round's version. A seeded version reads the template's definitions (key
    * prefix `<template>.`). A version published in the workshop (1d, 2.16) has distributions of its
-   * own, and keeps every template definition whose questions kept their meaning — same id, part,
-   * anchor and structure as in a version the definitions were made for — so zones, findings and the
-   * comparison with round 1 go on after a spelling fix. A question with a new meaning, new answers
-   * or new scores leaves those definitions out and is counted by its own distribution (ADR-005,
-   * ADR-020); a new metric version would be needed to bring it back into a zone.
+   * own and keeps every template definition whose questions mean what they meant (`sameMeaning`),
+   * so zones, findings and the comparison with round 1 go on after a spelling fix; other questions
+   * are counted by their own distribution, one series per question (ADR-005, ADR-020). A round that
+   * was released keeps the set it was released with (rule 4 of 1.4c).
    */
   async definitionsFor(round: string): Promise<MetricDefinition[]> {
     const r = await this.prisma.round.findUniqueOrThrow({
@@ -117,21 +99,27 @@ export class MetricsService {
     });
     const seeded = rows.map((x) => MetricSchema.parse(x.definition));
     if (!generated.length && !authoredSet) return seeded;
-    const content = version.content as unknown as TemplateContent;
+    const own = generated.map((x) => MetricSchema.parse(x.definition));
+    const fixed = await this.prisma.roundMetricSet.findUnique({ where: { round_id: round } });
+    if (fixed) {
+      const set = new Set(fixed.metric_keys);
+      return [...seeded, ...own].filter((d) => {
+        const metrics = subMetrics(d);
+        return metrics.length > 0 && metrics.every((m) => set.has(m));
+      });
+    }
     const holds = seeded.length
-      ? meaningKept(content, await this.referenceQuestions(version.template_id))
+      ? sameMeaning(
+          version.content as unknown as TemplateContent,
+          await this.referenceVersions(version.template_id),
+        )
       : () => false;
     const kept = seeded.filter(holds);
     // One distribution per series: the template's own where it still holds, the version's elsewhere.
     const covered = new Set(
       kept.filter((d) => d.kind === 'distribution').map((d) => d.questions[0]?.key),
     );
-    return [
-      ...kept,
-      ...generated
-        .map((x) => MetricSchema.parse(x.definition))
-        .filter((d) => !covered.has(d.questions[0]?.key)),
-    ];
+    return [...kept, ...own.filter((d) => !covered.has(d.questions[0]?.key))];
   }
 
   /**
@@ -149,9 +137,9 @@ export class MetricsService {
       orderBy: [{ key: 'asc' }, { version: 'asc' }],
     });
     if (!rows.length) return [];
-    const holds = meaningKept(
+    const holds = sameMeaning(
       v.content as unknown as TemplateContent,
-      await this.referenceQuestions(v.template_id),
+      await this.referenceVersions(v.template_id),
     );
     return rows.map((x) => {
       const def = MetricSchema.parse(x.definition);
@@ -165,36 +153,44 @@ export class MetricsService {
     });
   }
 
-  /** Questions of the template's published versions made outside the workshop, by id. */
-  private async referenceQuestions(template: string): Promise<Map<string, Question[]>> {
-    const versions = await this.prisma.templateVersion.findMany({
+  /** The template's published versions made outside the workshop, by template; a published
+   * version never changes, so the list is read again only when another version is published. */
+  private readonly reference = new Map<string, { ids: string; versions: ReferenceVersion[] }>();
+  private async referenceVersions(template: string): Promise<ReferenceVersion[]> {
+    const published = await this.prisma.templateVersion.findMany({
       where: { template_id: template, status: 'published' },
-      select: { id: true, content: true },
+      select: { id: true },
+      orderBy: { id: 'asc' },
     });
-    const editor = new Set(
-      (
-        await this.prisma.auditLog.findMany({
-          where: {
-            what: 'surveys.editor_metrics',
-            target: { in: versions.map((v) => `template_version:${v.id}`) },
-          },
-          select: { target: true },
+    const ids = published.map((v) => v.id).join(',');
+    const hit = this.reference.get(template);
+    if (hit?.ids === ids) return hit.versions;
+    const audited = await this.prisma.auditLog.findMany({
+      where: {
+        what: 'surveys.editor_metrics',
+        target: { in: published.map((v) => `template_version:${v.id}`) },
+      },
+      select: { target: true },
+    });
+    const generated = published.length
+      ? await this.prisma.metricDefinition.findMany({
+          where: { OR: published.map((v) => ({ key: { startsWith: editorMetricPrefix(v.id) } })) },
+          select: { key: true },
         })
-      ).map((a) => a.target?.slice('template_version:'.length)),
-    );
-    const out = new Map<string, Question[]>();
-    for (const v of versions) {
-      if (editor.has(v.id)) continue;
-      if (
-        await this.prisma.metricDefinition.count({
-          where: { key: { startsWith: editorMetricPrefix(v.id) } },
-        })
-      )
-        continue;
-      for (const q of (v.content as unknown as TemplateContent).questions)
-        out.set(q.id, [...(out.get(q.id) ?? []), q]);
-    }
-    return out;
+      : [];
+    const editor = new Set([
+      ...audited.map((a) => a.target?.slice('template_version:'.length)),
+      ...published
+        .filter((v) => generated.some((g) => g.key.startsWith(editorMetricPrefix(v.id))))
+        .map((v) => v.id),
+    ]);
+    const rows = await this.prisma.templateVersion.findMany({
+      where: { id: { in: published.filter((v) => !editor.has(v.id)).map((v) => v.id) } },
+      select: { content: true },
+    });
+    const versions = rows.map((v) => referenceOf(v.content as unknown as TemplateContent));
+    this.reference.set(template, { ids, versions });
+    return versions;
   }
 
   async releaseRound(round: string, actor: ReleaseActor): Promise<RoundRelease> {
