@@ -34,7 +34,10 @@ function parseShape(content: unknown): TemplateContent {
   return r.data;
 }
 
-const withoutAnchor = (q: Question) => canonical({ ...q, anchor_key: undefined });
+// A section title belongs to the section, not to the frozen question that happens to open it: moving a
+// question to or from the top of a section, or renaming the section, changes no wording.
+const withoutAnchor = (q: Question) =>
+  canonical({ ...q, anchor_key: undefined, texts: { ...q.texts, section_title: undefined } });
 
 /** Frozen questions of `prev` that changed in `next`, checked against the marks. */
 export function frozenChanges(

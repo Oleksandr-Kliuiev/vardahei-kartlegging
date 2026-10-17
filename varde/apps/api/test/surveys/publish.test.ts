@@ -102,6 +102,24 @@ describe('publish with the translation gate (1.5)', () => {
     expect(v.frozen_changes).toEqual([{ id: 'F3', kind: 'orthographic' }]);
   });
 
+  it('a section title is no frozen change: moving a frozen question to the top of a section publishes', async () => {
+    const c = content();
+    await publisher.publish((await draft(c)).id, WHO);
+    // F4 opens its section; the title moves to F5 (as when F4 moves up) and the section is renamed.
+    const texts = (id: string) =>
+      (c.questions.find((q) => q.id === id) as { texts: Record<string, unknown> }).texts;
+    const title = texts('F4')['section_title'] as { nn: string; en?: string };
+    delete texts('F4')['section_title'];
+    texts('F5')['section_title'] = { ...title, nn: `${title.nn} (ny)` };
+    const i = c.questions.findIndex((q) => q.id === 'F4');
+    const f4 = c.questions.splice(i, 1)[0]!;
+    c.questions.splice(i - 1, 0, f4);
+    const d = await draft(c);
+    await publisher.publish(d.id, WHO);
+    const v = await prisma.templateVersion.findUniqueOrThrow({ where: { id: d.id } });
+    expect(v.frozen_changes).toEqual([]);
+  });
+
   it('a semantic change takes a new anchor_key', async () => {
     const c = content();
     await publisher.publish((await draft(c)).id, WHO);

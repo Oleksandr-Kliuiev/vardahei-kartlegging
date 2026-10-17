@@ -5,13 +5,12 @@ import { expressionRefs, rowRefs, type Expression } from './expression.js';
 import { isChoice, type Question } from './question.js';
 import { TemplateContentShape, type TemplateContent } from './template.js';
 import { requireLanguages, type Lang, type LocalizedText } from './texts.js';
+import { IDENTIFIER_MAX_LENGTH } from './structure.js';
 
 export interface TemplateIssue {
   message: string;
   path: (string | number)[];
 }
-
-const IDENTIFIER_MAX_LENGTH = 8;
 
 /** Every localized text of the content with its path (the language gate of ADR-019). */
 export function templateTexts(

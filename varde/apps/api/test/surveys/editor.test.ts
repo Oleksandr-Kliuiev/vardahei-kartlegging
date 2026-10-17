@@ -99,6 +99,14 @@ describe('admin survey editor and launch (1d)', () => {
     expect(result.statusCode).toBe(201);
     version = result.json<Version>();
     expect(version).toMatchObject({ status: 'draft', version_no: 1 });
+    // Decision 5: a new survey has its role question (anonymous here, so no initials question).
+    expect(version.content.questions.map((q) => [q.id, !!q.role, !!q.identifier])).toEqual([
+      ['Q1', true, false],
+    ]);
+    expect(version.content.questions[0]!.texts.section_title).toEqual({
+      nn: 'Om deg',
+      en: 'About you',
+    });
     expect((await call('POST', '/api/admin/surveys', input)).statusCode).toBe(409);
     expect(
       await db.auditLog.count({

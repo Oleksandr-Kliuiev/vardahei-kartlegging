@@ -6,6 +6,7 @@ import {
   TemplateContentShape,
   type TemplateContent,
 } from '@varde/schema/template/template';
+import { initialsQuestion, roleQuestion } from '@varde/schema/template/structure';
 import { Lang } from '@varde/schema/template/texts';
 import { TemplateVersionContent } from '@varde/schema/template/validate';
 
@@ -68,14 +69,20 @@ export function validatedDraft(content: unknown): TemplateContent {
   return parse(TemplateContentShape, content);
 }
 
-/** An intentionally empty draft; schema issues guide the editor before it can be saved/published. */
+/** A new draft: the questions its structure needs (decision 5: the role question, and the initials
+ * question with identification «initials») in a first section, everything else empty; the shared
+ * validator guides the workshop from there. */
 export function emptyContent(input: z.infer<typeof TemplateInput>): TemplateContent {
+  const langs = input.required_languages;
+  const first = input.identification === 'initials' ? [initialsQuestion('Q1', langs)] : [];
+  const [head, ...rest] = [...first, roleQuestion(`Q${first.length + 1}`, langs)];
+  const section = { nn: 'Om deg', ...(langs.includes('en') ? { en: 'About you' } : {}) };
   return {
     ...input,
     leader_roles: [],
     max_tips: 0,
     tips: [],
-    questions: [],
+    questions: [{ ...head, texts: { ...head.texts, section_title: section } }, ...rest],
     intro: {
       title: { nn: '' },
       short: { nn: '' },

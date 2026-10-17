@@ -52,6 +52,11 @@
       "source": "./src/template/question.ts",
       "default": "./dist/template/question.js"
     },
+    "./template/structure": {
+      "types": "./src/template/structure.ts",
+      "source": "./src/template/structure.ts",
+      "default": "./dist/template/structure.js"
+    },
     "./template/template": {
       "types": "./src/template/template.ts",
       "source": "./src/template/template.ts",
