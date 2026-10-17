@@ -56,7 +56,7 @@ export class AdminController {
     return this.admin.rounds();
   }
   @Get('/audit')
-  audit(@Query('limit') limit?: string) {
-    return this.admin.audit(limit);
+  audit(@Query('limit') limit?: string, @Query('round') round?: string) {
+    return this.admin.audit(limit, round);
   }
 }

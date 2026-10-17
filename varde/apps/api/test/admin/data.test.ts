@@ -65,7 +65,15 @@ describe('admin lists and employee count (1.24)', () => {
     const rounds = await call('GET', '/api/admin/rounds');
     expect(rounds.statusCode).toBe(200);
     expect(rounds.json<unknown[]>()).toEqual(
-      expect.arrayContaining([expect.objectContaining({ id: fixture.round.id })]),
+      expect.arrayContaining([
+        // When it was made, opened and closed: «I dag» and the round page read them (2.17).
+        expect.objectContaining({
+          id: fixture.round.id,
+          created_at: expect.any(String) as unknown,
+          opened_at: null,
+          closed_at: null,
+        }),
+      ]),
     );
     expect(rounds.body).not.toMatch(/code|answers|respondent_key|session_id/);
     const clients = await call('GET', '/api/admin/clients');
@@ -91,6 +99,12 @@ describe('admin lists and employee count (1.24)', () => {
     expect(versions.body).toContain(fixture.version.id);
     expect(versions.body).not.toContain(draft.id);
     expect(versions.body).not.toContain('content');
+    // The survey's title, so the wizard names a version by what people read (2.17).
+    expect(
+      versions
+        .json<{ id: string; title: string | null }[]>()
+        .find((v) => v.id === fixture.version.id),
+    ).toHaveProperty('title');
   });
   it('rounds say whether they have answers, without leaking counts', async () => {
     const rounds = await call('GET', '/api/admin/rounds');
@@ -149,7 +163,7 @@ describe('admin lists and employee count (1.24)', () => {
         })
       ).statusCode,
     ).toBe(400);
-    for (const limit of ['0', '41', 'x', '1.5'])
+    for (const limit of ['0', '201', 'x', '1.5'])
       expect((await call('GET', `/api/admin/audit?limit=${limit}`)).statusCode).toBe(400);
   });
   it('audit projection omits details and respects the bounded limit', async () => {
@@ -164,9 +178,35 @@ describe('admin lists and employee count (1.24)', () => {
     const result = await call('GET', '/api/admin/audit?limit=1');
     expect(result.statusCode).toBe(200);
     expect(result.json()).toEqual([
-      { who: mark, what: 'test.admin', target: 'synthetic', at: expect.any(String) as unknown },
+      {
+        who: mark,
+        who_name: mark,
+        what: 'test.admin',
+        target: 'synthetic',
+        at: expect.any(String) as unknown,
+      },
     ]);
     expect(result.body).not.toMatch(/details|private_marker|hidden/);
+  });
+  it('the journal of one round keeps its own entries and its clients (2.17)', async () => {
+    const made = await call('POST', '/api/admin/rounds', {
+      name: `${mark}-journal`,
+      template_version_id: fixture.version.id,
+    });
+    const id = made.json<{ id: string }>().id;
+    ids.push(id);
+    const added = await call('POST', `/api/admin/rounds/${id}/clients`, {
+      client_id: fixture.client.id,
+      deadline: '2099-06-01',
+    });
+    const rc = added.json<{ id: string }>().id;
+    await prisma.auditLog.create({ data: { who: mark, what: 'test.other', target: 'synthetic' } });
+    const result = await call('GET', `/api/admin/audit?round=${id}&limit=200`);
+    expect(result.statusCode).toBe(200);
+    const rows = result.json<{ what: string; target: string }[]>();
+    expect(rows.map((r) => r.target).sort()).toEqual([`round:${id}`, `round_client:${rc}`]);
+    expect(rows.map((r) => r.what).sort()).toEqual(['rounds.client.add', 'rounds.create']);
+    expect((await call('GET', '/api/admin/audit?round=x')).statusCode).toBe(400);
   });
   it('unknown population remains null in a new RoundClient', async () => {
     await call('PATCH', `/api/admin/clients/${fixture.client.id}`, { employee_count: null });

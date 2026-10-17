@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { PrivacyService } from '../modules/privacy/privacy.service.js';
+import { namesOf } from '../modules/auth/people.js';
 
 @Injectable()
 export class AdminService {
@@ -38,8 +39,14 @@ export class AdminService {
       },
     });
     return rows.map(({ content, ...v }) => {
-      const questions = (content as { questions?: unknown } | null)?.questions;
-      return { ...v, question_count: Array.isArray(questions) ? questions.length : 0 };
+      const c = content as { questions?: unknown; intro?: { title?: { nn?: unknown } } } | null;
+      const title = c?.intro?.title?.nn;
+      return {
+        ...v,
+        // The title people read (2.17): new surveys have keys made from their titles.
+        title: typeof title === 'string' && title.trim() ? title : null,
+        question_count: Array.isArray(c?.questions) ? c.questions.length : 0,
+      };
     });
   }
 
@@ -56,6 +63,10 @@ export class AdminService {
         type: true,
         status: true,
         template_version_id: true,
+        // When it was made, opened and closed (2.17: «I dag» and the round page).
+        created_at: true,
+        opened_at: true,
+        closed_at: true,
         round_clients: {
           orderBy: { client: { name: 'asc' } },
           select: {
@@ -80,13 +91,32 @@ export class AdminService {
     }));
   }
 
-  audit(raw = '40') {
-    const limit = z.coerce.number().int().min(1).max(40).safeParse(raw);
-    if (!limit.success) throw new BadRequestException('Vel mellom 1 og 40 hendingar.');
-    return this.prisma.auditLog.findMany({
+  /**
+   * The journal, newest first, with the name of who did it (2.17). `round` keeps the entries of one
+   * round and its clients (the round page); details never leave the database.
+   */
+  async audit(raw = '40', round?: string) {
+    const limit = z.coerce.number().int().min(1).max(200).safeParse(raw);
+    if (!limit.success) throw new BadRequestException('Vel mellom 1 og 200 hendingar.');
+    let targets: string[] | undefined;
+    if (round !== undefined) {
+      if (!z.uuid().safeParse(round).success) throw new BadRequestException('Ukjend runde.');
+      const clients = await this.prisma.roundClient.findMany({
+        where: { round_id: round },
+        select: { id: true },
+      });
+      targets = [`round:${round}`, ...clients.map((c) => `round_client:${c.id}`)];
+    }
+    const rows = await this.prisma.auditLog.findMany({
+      ...(targets ? { where: { target: { in: targets } } } : {}),
       take: limit.data,
       orderBy: [{ at: 'desc' }, { id: 'desc' }],
       select: { who: true, what: true, at: true, target: true },
     });
+    const names = await namesOf(
+      this.prisma,
+      rows.map((r) => r.who),
+    );
+    return rows.map((r) => ({ ...r, who_name: names[r.who] ?? r.who }));
   }
 }
