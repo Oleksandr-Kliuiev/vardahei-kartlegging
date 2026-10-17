@@ -1,6 +1,11 @@
 import { BadRequestException } from '@nestjs/common';
 import { z } from 'zod';
-import { Audience, Identification, type TemplateContent } from '@varde/schema/template/template';
+import {
+  Audience,
+  Identification,
+  TemplateContentShape,
+  type TemplateContent,
+} from '@varde/schema/template/template';
 import { Lang } from '@varde/schema/template/texts';
 import { TemplateVersionContent } from '@varde/schema/template/validate';
 
@@ -31,12 +36,36 @@ export function parse<T>(schema: z.ZodType<T>, input: unknown): T {
     throw new BadRequestException({ message: 'Kontroller felta.', issues: r.error.issues });
   return r.data;
 }
+/** Issues that only say a draft is not finished (texts, languages, the role and initials questions).
+ * A draft may be saved with them (autosave, decision 17.10); accept and publish need none (ADR-019). */
+const INCOMPLETE = [
+  /^missing (nn|en|nb)$/,
+  /requires (nn|en)$/,
+  /^exactly one role question$/,
+  /^identification initials needs exactly one identifier$/,
+  /^leader role .+ is not an option of the role question$/,
+];
+export const incomplete = (message: string) => INCOMPLETE.some((r) => r.test(message));
 export function issues(content: unknown) {
   const r = TemplateVersionContent.safeParse(content);
-  return r.success ? [] : r.error.issues.map(({ path, message }) => ({ path, message }));
+  return r.success
+    ? []
+    : r.error.issues.map(({ path, message }) => ({
+        path,
+        message,
+        blocking: !incomplete(message),
+      }));
 }
 export function validated(content: unknown): TemplateContent {
   return parse(TemplateVersionContent, content);
+}
+/** A draft as the workshop saves it: the schema shape and every reference hold (2.2: a broken
+ * reference is never saved), while texts, translations and the role question may still be missing. */
+export function validatedDraft(content: unknown): TemplateContent {
+  const blocking = issues(content).filter((i) => i.blocking);
+  if (blocking.length)
+    throw new BadRequestException({ message: 'Kontroller felta.', issues: blocking });
+  return parse(TemplateContentShape, content);
 }
 
 /** An intentionally empty draft; schema issues guide the editor before it can be saved/published. */

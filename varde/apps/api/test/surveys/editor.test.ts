@@ -122,7 +122,9 @@ describe('admin survey editor and launch (1d)', () => {
     ).toBe(true);
     expect(await db.auditLog.count({ where: { who, what: 'surveys.save' } })).toBe(0);
     const validation = await call('POST', '/api/admin/surveys/validate', c);
-    expect(validation.json<{ issues: unknown[] }>().issues.length).toBeGreaterThan(0);
+    const found = validation.json<{ issues: { blocking: boolean }[] }>().issues;
+    expect(found.length).toBeGreaterThan(0);
+    expect(found.some((i) => i.blocking)).toBe(true);
   });
   it('saves valid content, rejects key/audience changes and lost updates', async () => {
     const result = await call('PUT', path(version.id), {
@@ -160,6 +162,57 @@ describe('admin survey editor and launch (1d)', () => {
     expect(results.map((r) => r.statusCode).sort()).toEqual([200, 409]);
     version = (await call('GET', path(version.id))).json<Version>();
     expect(version.content_hash).toBe(contentHash(version.content));
+  });
+  it('saves and previews an unfinished draft, never a broken reference; accept still needs a complete version', async () => {
+    const c = content();
+    delete c.questions[1]!.texts.text.en;
+    c.questions[0]!.role = undefined;
+    const validation = await call('POST', '/api/admin/surveys/validate', c);
+    const found = validation.json<{ issues: { message: string; blocking: boolean }[] }>().issues;
+    expect(found.map((i) => i.message).sort()).toEqual(['exactly one role question', 'missing en']);
+    expect(found.every((i) => !i.blocking)).toBe(true);
+    const saved = await call('PUT', path(version.id), {
+      content_hash: version.content_hash,
+      content: c,
+    });
+    expect(saved.statusCode).toBe(200);
+    version = saved.json<Version>();
+    expect((await call('GET', `${path(version.id)}/preview`)).statusCode).toBe(200);
+    expect(
+      (
+        await call('POST', `${path(version.id)}/accept`, {
+          content_hash: version.content_hash,
+          lang: 'nn',
+        })
+      ).statusCode,
+    ).toBe(400);
+    const broken = structuredClone(c);
+    broken.questions[1]!.visible_if = { '==': [{ var: 'missing' }, 'ja'] };
+    const rejected = await call('PUT', path(version.id), {
+      content_hash: version.content_hash,
+      content: broken,
+    });
+    expect(rejected.statusCode).toBe(400);
+    expect(
+      rejected.json<{ issues: { blocking: boolean }[] }>().issues.every((i) => i.blocking),
+    ).toBe(true);
+    const shapeless = structuredClone(c) as unknown as { intro: { contact: { name: string } } };
+    shapeless.intro.contact.name = '';
+    expect(
+      (
+        await call('PUT', path(version.id), {
+          content_hash: version.content_hash,
+          content: shapeless,
+        })
+      ).statusCode,
+    ).toBe(400);
+    version = (
+      await call('PUT', path(version.id), {
+        content_hash: version.content_hash,
+        content: content(),
+      })
+    ).json<Version>();
+    expect(version.content).toEqual(content());
   });
   it('translation acceptances serialize and changed content clears every acceptance', async () => {
     const responses = await Promise.all(

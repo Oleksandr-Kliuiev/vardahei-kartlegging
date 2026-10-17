@@ -51,7 +51,8 @@ export class EditorController {
   @Get('/versions/:id/preview')
   async preview(@Param('id', ParseUUIDPipe) id: string) {
     const v = await this.editor.get(id);
-    const errors = issues(v.content);
+    // An unfinished draft is shown as far as it goes; a broken structure is not.
+    const errors = issues(v.content).filter((i) => i.blocking);
     if (errors.length)
       throw new BadRequestException({ message: 'Rett felta før førehandsvising.', issues: errors });
     return { id: v.id, content: v.content };

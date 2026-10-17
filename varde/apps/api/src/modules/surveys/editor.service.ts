@@ -13,6 +13,7 @@ import { createEditorMetrics } from './editor-metrics.js';
 import {
   emptyContent,
   validated,
+  validatedDraft,
   type TemplateInput,
   type DraftInput,
   type SaveInput,
@@ -178,7 +179,7 @@ export class EditorService {
     });
   }
   save(id: string, input: z.infer<typeof SaveInput>, who: string) {
-    const content = validated(input.content);
+    const content = validatedDraft(input.content);
     return this.locked(id, input.content_hash, async (tx, v) => {
       if (content.key !== v.template.key || content.audience !== v.template.audience)
         throw new BadRequestException('Nøkkel og målgruppe kan ikkje endrast.');
