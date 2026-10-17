@@ -530,7 +530,7 @@ describe('«alle» released twice on a client × role structure in pieces (accep
       expect(wrong(eqs)).toEqual([]);
       expect(model).toEqual([]);
     }
-  });
+  }, 30_000); // 3000 rounds take about 4.7 s alone: the 5 s default fails under a parallel run
 });
 
 describe('«Før og etter» of every client next to the report of one client (BACKLOG 16.10)', () => {
