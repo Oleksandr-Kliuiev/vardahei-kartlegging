@@ -69,9 +69,13 @@ export class AdminService {
         },
       },
     });
-    const released = await this.privacy.releasedRoundClients(rounds.map((r) => r.id));
+    const ids = rounds.map((r) => r.id);
+    const released = await this.privacy.releasedRoundClients(ids);
+    const answered = await this.privacy.roundsWithAnswers(ids);
+    // `has_data`: at least one answer in the round (the dashboard opens on the newest such round).
     return rounds.map((r) => ({
       ...r,
+      has_data: answered.has(r.id),
       round_clients: r.round_clients.map((rc) => ({ ...rc, released: released.has(rc.id) })),
     }));
   }

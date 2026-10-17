@@ -92,6 +92,16 @@ describe('admin lists and employee count (1.24)', () => {
     expect(versions.body).not.toContain(draft.id);
     expect(versions.body).not.toContain('content');
   });
+  it('rounds say whether they have answers, without leaking counts', async () => {
+    const rounds = await call('GET', '/api/admin/rounds');
+    expect(rounds.statusCode).toBe(200);
+    const list = JSON.parse(rounds.body) as { has_data: boolean; round_clients: object[] }[];
+    expect(list.length).toBeGreaterThan(0);
+    for (const round of list) {
+      expect(typeof round.has_data).toBe('boolean');
+      for (const rc of round.round_clients) expect(rc).not.toHaveProperty('_count');
+    }
+  });
   it('employee edits affect future snapshots, preserve existing ones, and leave audit', async () => {
     expect(
       (await call('PATCH', `/api/admin/clients/${fixture.client.id}`, { employee_count: 20 }))

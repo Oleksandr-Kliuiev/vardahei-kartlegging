@@ -8,6 +8,7 @@ import { EmployeeSection, QuotesSection } from './dashboard-rows.js';
 import { LeaderSection } from './dashboard-leader.js';
 import { ComparisonSection } from './dashboard-comparison.js';
 import './dashboard.css';
+import { Fold, FoldAll, FoldProvider } from './fold.js';
 
 function DashboardRound({
   round,
@@ -77,11 +78,10 @@ function DashboardRound({
             {data.suppression_note}
           </p>
           {data.zones && <Zones data={data.zones} />}
-          <section className="del">
-            <h2>{data.template === 'ki' ? 'Kvar KI kan hjelpe' : 'Dette bør vi ta tak i'}</h2>
+          <Fold title={data.template === 'ki' ? 'Kvar KI kan hjelpe' : 'Dette bør vi ta tak i'}>
             <p className="under">{thresholdText(data.finding_thresholds)}</p>
             <Findings findings={data.findings} />
-          </section>
+          </Fold>
           {data.template === 'ki' && data.mode === 'initials' && (
             <EmployeeSection query={rowsQuery} />
           )}
@@ -116,12 +116,14 @@ export function DashboardPage() {
     [selected, setSelected] = useState(
       () => new URLSearchParams(window.location.search).get('round') ?? '',
     );
+  // Opens on the newest round that has answers; then an open round; then the newest.
   const round =
     rounds.data?.find((r) => r.id === selected) ??
+    rounds.data?.find((r) => r.has_data) ??
     rounds.data?.find((r) => r.status === 'open') ??
     rounds.data?.[0];
   return (
-    <>
+    <FoldProvider>
       <ErrorMessage error={rounds.error} />
       <div className="dashboard-filter">
         <span className="filterpar">
@@ -138,12 +140,13 @@ export function DashboardPage() {
             ))}
           </select>
         </span>
+        <FoldAll />
       </div>
       {round ? (
         <DashboardRound key={round.id} round={round.id} clients={round.round_clients} />
       ) : (
         <p>Ingen rundar enno.</p>
       )}
-    </>
+    </FoldProvider>
   );
 }

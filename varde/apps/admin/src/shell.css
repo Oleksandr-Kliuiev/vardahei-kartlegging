@@ -279,3 +279,26 @@ input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; margin:
   .nav a, .sok { min-height: 44px; }
   .ikonknapp { width: 44px; height: 44px; }
 }
+
+/* Dashbord: blokkene kan foldast; val blir hugsa i nettlesaren */
+.del.fold > details > summary { display: flex; align-items: center; gap: 10px; cursor: pointer; list-style: none; border-radius: var(--r-sm); }
+.del.fold > details > summary::-webkit-details-marker { display: none; }
+.del.fold > details > summary::before { content: ""; flex: none; width: 8px; height: 8px; margin: 0 4px 0 2px; border-right: 2px solid var(--ink-muted); border-bottom: 2px solid var(--ink-muted); transform: rotate(-45deg); transition: transform var(--t-quick); }
+.del.fold > details[open] > summary::before { transform: rotate(45deg); }
+.del.fold > details > summary h2 { margin: 0; }
+.del.fold > details > summary:hover h2 { color: var(--accent-text); }
+.del.fold > details > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+.fold-innhald { margin-top: 12px; }
+.dashboard-filter .fold-alle { margin-left: auto; }
+
+/* Utlevering av data: ei eiga gruppe i eksportkortet (ikkje kort i kort), skild med strek og jamn avstand */
+.handover { display: grid; gap: 14px; margin-top: 8px; padding-top: 20px; border-top: 1px solid var(--line); }
+.handover > h2, .handover > p { margin: 0; }
+.handover > label { display: grid; gap: 6px; font-weight: 600; font-size: 13.5px; }
+.handover > label :is(input, textarea) { width: 100%; font-weight: 400; font-size: 14.5px; }
+.handover > button { justify-self: start; }
+.handover [role="status"] { display: grid; gap: 10px; padding: 14px 16px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--line); }
+.handover [role="status"] p { margin: 0; }
+.handover code { display: inline-block; padding: 2px 8px; border-radius: var(--r-xs); background: var(--bg-sunken); font-family: var(--font-mono); font-size: 13.5px; overflow-wrap: anywhere; user-select: all; }
+
+.del.smal .handlingar { display: flex; flex-wrap: wrap; gap: 8px; }

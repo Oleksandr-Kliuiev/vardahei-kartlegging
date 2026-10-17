@@ -23,8 +23,8 @@ export function HandoverForm({ client }: { client: string }) {
     }
   }
   return (
-    <section className="del">
-      <h2>Lever data tilbake til kunden</h2>
+    <section className="handover" aria-labelledby="handover-tittel">
+      <h2 id="handover-tittel">Lever data tilbake til kunden</h2>
       <p>
         Bruk dette ved skriftleg krav frå kunden. Fila inneheld svar frå alle rundar, leiarsvar og
         publiserte samla tal.

@@ -125,7 +125,8 @@ button,
   text-decoration: none;
   font-size: 14px;
 }
-button:hover,
+/* .btn and .linkbtn (from @varde/ui) own their hover; this plain-button rule must not paint over them. */
+button:hover:not(.btn, .linkbtn, :disabled),
 .knapp:hover {
   border-color: var(--line-strong);
   background: var(--surface-hover);

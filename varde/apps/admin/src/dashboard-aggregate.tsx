@@ -1,6 +1,7 @@
 import type { MouseEvent } from 'react';
 import type { Dashboard, QuestionView, Finding, Bucket } from './dashboard-models.js';
 import { numberText, percent, zoneNames, zoneIds } from './dashboard-models.js';
+import { Fold } from './fold.js';
 
 export function Zone({ zone }: { zone: number | null }) {
   return (
@@ -58,8 +59,7 @@ export function Findings({ findings }: { findings: Finding[] }) {
 export function Zones({ data }: { data: NonNullable<Dashboard['zones']> }) {
   const header = data.questions;
   return (
-    <section className="del">
-      <h2>Soner</h2>
+    <Fold title="Soner">
       <p className="under">
         Same modell som Master_Analyse frå runde 1. Kvart svar har ein farge: grøn 0, gul 1, oransje
         2, raud 3 poeng. Kritisk andel er delen av svara som er oransje eller raude.
@@ -137,7 +137,7 @@ export function Zones({ data }: { data: NonNullable<Dashboard['zones']> }) {
           </tbody>
         </table>
       </div>
-    </section>
+    </Fold>
   );
 }
 function Ring({
@@ -194,8 +194,7 @@ function Ring({
 }
 export function KeyQuestions({ questions }: { questions: Dashboard['key_questions'] }) {
   return (
-    <section className="del">
-      <h2>Nøkkelspørsmåla</h2>
+    <Fold title="Nøkkelspørsmåla">
       <p className="under">Fargane er sonene frå reknearket. Talet i midten er kritisk andel.</p>
       <div className="kaker">
         {questions.map((q) => (
@@ -229,7 +228,7 @@ export function KeyQuestions({ questions }: { questions: Dashboard['key_question
           </article>
         ))}
       </div>
-    </section>
+    </Fold>
   );
 }
 export function QuestionBlock({
@@ -282,8 +281,7 @@ export function QuestionBlock({
 export function CommonQuestions({ data }: { data: Dashboard }) {
   const tasks = data.ki?.tasks ?? [];
   return (
-    <section className="del">
-      <h2>Svar frå alle tilsette</h2>
+    <Fold title="Svar frå alle tilsette">
       <p className="under">Spørsmål for spørsmål, i same rekkjefølgje som i skjemaet.</p>
       {data.ki && (
         <>
@@ -332,6 +330,6 @@ export function CommonQuestions({ data }: { data: Dashboard }) {
             <QuestionBlock key={q.id} question={q} />
           ))}
       </div>
-    </section>
+    </Fold>
   );
 }

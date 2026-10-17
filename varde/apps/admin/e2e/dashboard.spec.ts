@@ -44,6 +44,17 @@ async function dashboard(page: Page) {
   return s;
 }
 test.describe('dashboard (1.27–1.29)', () => {
+  test('opens on the newest round that has answers', async ({ page }) => {
+    await login(page);
+    const rounds = (await (await page.request.get('/api/admin/rounds')).json()) as {
+      id: string;
+      has_data: boolean;
+    }[];
+    const expected = rounds.find((r) => r.has_data);
+    expect(expected).toBeDefined();
+    await page.getByRole('link', { name: 'Dashbord', exact: true }).click();
+    await expect(page.locator('#dashboard-round')).toHaveValue(expected!.id);
+  });
   test('legacy section order, eight accessible rings and audited employee rows', async ({
     page,
   }) => {
@@ -52,7 +63,9 @@ test.describe('dashboard (1.27–1.29)', () => {
       page.getByRole('heading', { name: 'Samanlikning med runde 1', exact: true }),
     ).toBeVisible();
     await expect(page.locator('table.tilsette tbody tr')).toHaveCount(9);
-    const headings = await page.locator('main section > h2').allTextContents();
+    const headings = await page
+      .locator('main section.fold > details > summary > h2')
+      .allTextContents();
     expect(headings).toEqual([
       'Soner',
       'Dette bør vi ta tak i',
@@ -64,6 +77,17 @@ test.describe('dashboard (1.27–1.29)', () => {
       'Leiarane',
     ]);
     await expect(page.locator('.kaker svg[role="img"]')).toHaveCount(8);
+    await expect(page.locator('table.tilsette tbody tr')).toHaveCount(9);
+    // Blocks fold, the choice survives a reload, «Opne alle» opens them again.
+    await page.getByRole('button', { name: 'Fold alle' }).click();
+    await expect(page.locator('main section.fold details[open]')).toHaveCount(0);
+    await expect(page.locator('table.tilsette')).toBeHidden();
+    await page.reload();
+    await expect(page.locator('main section.fold details[open]')).toHaveCount(0);
+    // After a reload the page opens on the default round again: the newest one with answers.
+    await page.getByLabel('Runde', { exact: true }).selectOption(s.rounds.dashboard!.id);
+    await page.getByRole('button', { name: 'Opne alle' }).click();
+    await expect(page.locator('main section.fold details[open]')).toHaveCount(8);
     await expect(page.locator('table.tilsette tbody tr')).toHaveCount(9);
     const audit = await page.request.get('/api/admin/audit?limit=40');
     expect(await audit.json()).toEqual(

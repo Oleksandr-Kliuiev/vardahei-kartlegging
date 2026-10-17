@@ -4,6 +4,7 @@ import type { Employees, Quotes } from './dashboard-models.js';
 import { numberText } from './dashboard-models.js';
 import { Zone } from './dashboard-aggregate.js';
 import { ErrorMessage } from './queries.js';
+import { Fold } from './fold.js';
 
 export function EmployeeSection({ query }: { query: string }) {
   const result = useQuery({
@@ -12,8 +13,7 @@ export function EmployeeSection({ query }: { query: string }) {
   });
   const data = result.data;
   return (
-    <section className="del">
-      <h2>Svar per tilsett</h2>
+    <Fold title="Svar per tilsett">
       <p className="under">
         Denne tabellen er berre for Vardahei IT; bedrifta får eit samla bilete utan initialar.
       </p>
@@ -110,7 +110,7 @@ export function EmployeeSection({ query }: { query: string }) {
           </div>
         </>
       )}
-    </section>
+    </Fold>
   );
 }
 export function QuotesSection({ query, showClient }: { query: string; showClient: boolean }) {
@@ -121,8 +121,7 @@ export function QuotesSection({ query, showClient }: { query: string; showClient
   const quotes = result.data?.quotes ?? [];
   const questions = [...new Set(quotes.map((q) => q.question))];
   return (
-    <section className="del">
-      <h2>Sitat frå tilsette</h2>
+    <Fold title="Sitat frå tilsette">
       <ErrorMessage error={result.error} />
       {questions.length ? (
         questions.map((id) => (
@@ -149,6 +148,6 @@ export function QuotesSection({ query, showClient }: { query: string; showClient
       ) : (
         <p className="under">Ingen fritekstsvar i dette utvalet enno.</p>
       )}
-    </section>
+    </Fold>
   );
 }

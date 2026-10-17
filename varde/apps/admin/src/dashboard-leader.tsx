@@ -3,6 +3,7 @@ import { api } from './api.js';
 import type { Leader, LeaderSummary } from './dashboard-models.js';
 import { Findings, QuestionBlock } from './dashboard-aggregate.js';
 import { ErrorMessage } from './queries.js';
+import { Fold } from './fold.js';
 
 function LeaderClient({ round, client }: { round: string; client: string }) {
   const result = useQuery({
@@ -93,9 +94,8 @@ function LeaderAll({ round }: { round: string }) {
 }
 export function LeaderSection({ round, client }: { round: string; client: string }) {
   return (
-    <section className="del">
-      <h2>Leiarane</h2>
+    <Fold title="Leiarane">
       {client ? <LeaderClient round={round} client={client} /> : <LeaderAll round={round} />}
-    </section>
+    </Fold>
   );
 }

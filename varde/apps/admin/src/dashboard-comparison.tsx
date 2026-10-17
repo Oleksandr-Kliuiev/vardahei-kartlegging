@@ -4,6 +4,7 @@ import type { Comparison, ComparisonRow } from './dashboard-models.js';
 import { numberText, percent } from './dashboard-models.js';
 import { Zone } from './dashboard-aggregate.js';
 import { ErrorMessage } from './queries.js';
+import { Fold } from './fold.js';
 
 function Change({ value, points = false }: { value: ComparisonRow['change']; points?: boolean }) {
   if (!value) return <>–</>;
@@ -63,8 +64,7 @@ export function ComparisonSection({ query, showClients }: { query: string; showC
   const data = result.data;
   if (!data && !result.error) return null;
   return (
-    <section className="del">
-      <h2>Samanlikning med runde 1</h2>
+    <Fold title="Samanlikning med runde 1">
       <ErrorMessage error={result.error} />
       {data && (
         <>
@@ -85,6 +85,6 @@ export function ComparisonSection({ query, showClients }: { query: string; showC
           <ComparisonTable rows={[...data.questions, data.total]} />
         </>
       )}
-    </section>
+    </Fold>
   );
 }

@@ -38,10 +38,18 @@ export function ExportPage() {
       </label>
       {round && (
         <div className="handlingar">
-          {client && <a href={'/api/admin/exports/client.csv?' + q}>Samla CSV til kunden</a>}
-          <a href={'/api/admin/exports/rows.csv?' + q}>Svarrader (CSV)</a>
-          <a href={'/api/admin/exports/analyse.csv?round=' + round}>Master_Analyse</a>
-          <a href={'/api/admin/exports/analyse-personar.csv?round=' + round}>
+          {client && (
+            <a className="knapp" href={'/api/admin/exports/client.csv?' + q}>
+              Samla CSV til kunden
+            </a>
+          )}
+          <a className="knapp" href={'/api/admin/exports/rows.csv?' + q}>
+            Svarrader (CSV)
+          </a>
+          <a className="knapp" href={'/api/admin/exports/analyse.csv?round=' + round}>
+            Master_Analyse
+          </a>
+          <a className="knapp" href={'/api/admin/exports/analyse-personar.csv?round=' + round}>
             Svar per tilsett (CSV)
           </a>
         </div>

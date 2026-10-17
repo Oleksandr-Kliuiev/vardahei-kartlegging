@@ -219,6 +219,17 @@ export class PrivacyService {
     return new Set(found.flatMap((s) => (s.round_client_id ? [s.round_client_id] : [])));
   }
 
+  /** Rounds with at least one answer. Existence only: no answer and no count leaves this method. */
+  async roundsWithAnswers(rounds: readonly string[]): Promise<Set<string>> {
+    if (rounds.length === 0) return new Set();
+    const found = await this.prisma.response.findMany({
+      where: { round_client: { round_id: { in: [...rounds] } } },
+      distinct: ['round_client_id'],
+      select: { round_client: { select: { round_id: true } } },
+    });
+    return new Set(found.map((r) => r.round_client.round_id));
+  }
+
   /** Role × client intersections also form a partition of the round's role total.
    * Recheck subtraction against that total; independently safe client cells alone do not suffice. */
   async roleClientCells(

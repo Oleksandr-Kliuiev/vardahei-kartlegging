@@ -21,6 +21,8 @@ export interface Round {
   type?: string;
   status: string;
   template_version_id: string | null;
+  /** At least one answer in the round. */
+  has_data?: boolean;
   round_clients: RoundClient[];
 }
 export interface Version {
