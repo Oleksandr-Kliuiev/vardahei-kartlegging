@@ -11,6 +11,8 @@ type Langs = readonly string[];
 const text = (langs: Langs, nn: string, en: string) => ({
   nn,
   ...(langs.includes('en') ? { en } : {}),
+  // Bokmål is written in the workshop; the key is there, so the survey is complete apart from it.
+  ...(langs.includes('nb') ? { nb: '' } : {}),
 });
 
 /** The role question: its answer decides who gets the leader part. */

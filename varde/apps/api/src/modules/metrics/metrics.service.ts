@@ -4,6 +4,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { FindingsService } from '../findings/findings.service.js';
+import type { Question } from '@varde/schema/template/question';
 import type { TemplateContent } from '@varde/schema/template/template';
 import { Injectable } from '@nestjs/common';
 import { subMetrics } from '@varde/rules/findings';
@@ -15,6 +16,7 @@ import {
 import { POPULATIONS } from '@varde/schema/metrics/populations';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { editorMetricPrefix } from '../surveys/editor-metrics.js';
+import { structureOf } from '../surveys/question-structure.js';
 import { canonical } from '../surveys/hashes.js';
 import {
   type ComputedCell,
@@ -70,31 +72,93 @@ export class MetricsService {
     return out;
   }
 
-  /** Definitions of the round's template (key prefix `<template>.`). */
+  /**
+   * Definitions of the round's version. A seeded version reads the template's definitions (key
+   * prefix `<template>.`). A version published in the workshop (1d, 2.16) has distributions of its
+   * own, and keeps every template definition whose questions kept their meaning — same id, part,
+   * anchor and structure as in a version the definitions were made for — so zones, findings and the
+   * comparison with round 1 go on after a spelling fix. A question with a new meaning, new answers
+   * or new scores leaves those definitions out and is counted by its own distribution (ADR-005,
+   * ADR-020); a new metric version would be needed to bring it back into a zone.
+   */
   async definitionsFor(round: string): Promise<MetricDefinition[]> {
     const r = await this.prisma.round.findUniqueOrThrow({
       where: { id: round },
       include: { template_version: { include: { template: true } } },
     });
-    const key = r.template_version?.template.key;
-    if (key === undefined) throw new Error(`round ${round} has no template version`);
+    const version = r.template_version;
+    if (!version) throw new Error(`round ${round} has no template version`);
     const generated = await this.prisma.metricDefinition.findMany({
-      where: { key: { startsWith: editorMetricPrefix(r.template_version!.id) } },
+      where: { key: { startsWith: editorMetricPrefix(version.id) } },
     });
     const authoredSet = await this.prisma.auditLog.findFirst({
-      where: {
-        what: 'surveys.editor_metrics',
-        target: `template_version:${r.template_version!.id}`,
-      },
+      where: { what: 'surveys.editor_metrics', target: `template_version:${version.id}` },
       select: { id: true },
     });
-    if (generated.length || authoredSet)
-      return generated.map((x) => MetricSchema.parse(x.definition));
     const rows = await this.prisma.metricDefinition.findMany({
-      where: { key: { startsWith: `${key}.` } },
+      where: { key: { startsWith: `${version.template.key}.` } },
       orderBy: [{ key: 'asc' }, { version: 'asc' }],
     });
-    return rows.map((x) => MetricSchema.parse(x.definition));
+    const seeded = rows.map((x) => MetricSchema.parse(x.definition));
+    if (!generated.length && !authoredSet) return seeded;
+    const content = version.content as unknown as TemplateContent;
+    const reference = seeded.length
+      ? await this.referenceQuestions(version.template_id)
+      : new Map<string, Question[]>();
+    const kept = seeded.filter((def) =>
+      def.questions.every((ref) => {
+        const q = content.questions.find((x) => x.id === ref.key.split('.')[0]);
+        return (
+          q !== undefined &&
+          q.part === ref.part &&
+          (reference.get(q.id) ?? []).some(
+            (s) => s.anchor_key === q.anchor_key && structureOf(s) === structureOf(q),
+          )
+        );
+      }),
+    );
+    // One distribution per series: the template's own where it still holds, the version's elsewhere.
+    const covered = new Set(
+      kept.filter((d) => d.kind === 'distribution').map((d) => d.questions[0]?.key),
+    );
+    return [
+      ...kept,
+      ...generated
+        .map((x) => MetricSchema.parse(x.definition))
+        .filter((d) => !covered.has(d.questions[0]?.key)),
+    ];
+  }
+
+  /** Questions of the template's published versions made outside the workshop, by id. */
+  private async referenceQuestions(template: string): Promise<Map<string, Question[]>> {
+    const versions = await this.prisma.templateVersion.findMany({
+      where: { template_id: template, status: 'published' },
+      select: { id: true, content: true },
+    });
+    const editor = new Set(
+      (
+        await this.prisma.auditLog.findMany({
+          where: {
+            what: 'surveys.editor_metrics',
+            target: { in: versions.map((v) => `template_version:${v.id}`) },
+          },
+          select: { target: true },
+        })
+      ).map((a) => a.target?.slice('template_version:'.length)),
+    );
+    const out = new Map<string, Question[]>();
+    for (const v of versions) {
+      if (editor.has(v.id)) continue;
+      if (
+        await this.prisma.metricDefinition.count({
+          where: { key: { startsWith: editorMetricPrefix(v.id) } },
+        })
+      )
+        continue;
+      for (const q of (v.content as unknown as TemplateContent).questions)
+        out.set(q.id, [...(out.get(q.id) ?? []), q]);
+    }
+    return out;
   }
 
   async releaseRound(round: string, actor: ReleaseActor): Promise<RoundRelease> {

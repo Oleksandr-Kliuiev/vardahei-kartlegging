@@ -8,8 +8,9 @@ import { TemplateContentShape, type TemplateContent } from '@varde/schema/templa
 import type { Lang } from '@varde/schema/template/texts';
 import { TemplateVersionContent } from '@varde/schema/template/validate';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { respondentTexts } from '@varde/schema/template/respondent-texts';
+import { respondentTexts, unfinishedTexts } from '@varde/schema/template/respondent-texts';
 import { canonical, contentHash, sourceHash } from './hashes.js';
+import { structureOf } from './question-structure.js';
 
 export type FrozenChange = 'orthographic' | 'semantic';
 export type Origin = 'authored' | 'kartlegging' | 'external_import';
@@ -50,12 +51,18 @@ export function frozenChanges(
   for (const old of prev.questions.filter((q) => q.frozen)) {
     const q = next.questions.find((x) => x.id === old.id);
     if (q === undefined) throw new PublishRejected(`frozen question ${old.id} removed`);
+    // Without the flag no later version would check the question again.
+    if (!q.frozen) throw new PublishRejected(`frozen question ${old.id} stays frozen`);
     if (withoutAnchor(q) === withoutAnchor(old) && q.anchor_key === old.anchor_key) continue;
     const kind = marks[old.id];
     if (kind === undefined)
       throw new PublishRejected(`frozen question ${old.id} changed without a mark`);
     if (kind === 'orthographic' && q.anchor_key !== old.anchor_key) {
       throw new PublishRejected(`orthographic change of ${old.id} keeps anchor_key`);
+    }
+    // A spelling fix changes words only: answers, scores, type and conditions stay as they were.
+    if (kind === 'orthographic' && structureOf(q) !== structureOf(old)) {
+      throw new PublishRejected(`orthographic change of ${old.id} changes words only`);
     }
     if (kind === 'semantic' && q.anchor_key === old.anchor_key) {
       throw new PublishRejected(`semantic change of ${old.id} needs a new anchor_key`);
@@ -204,6 +211,16 @@ export class PublishService {
       if (!c.required_languages.includes(lang))
         throw new PublishRejected(`${c.audience} requires ${lang}`);
     }
+    // Every text a respondent needs is written in every language of the survey (2.16 acceptance):
+    // the workshop's starts leave the first question and some translations empty on purpose.
+    const unfinished = unfinishedTexts(c);
+    if (unfinished.length)
+      throw new PublishRejected(
+        `empty texts: ${unfinished
+          .slice(0, 5)
+          .map((t) => t.key)
+          .join(', ')}${unfinished.length > 5 ? ' …' : ''}`,
+      );
     const hash = sourceHash(c);
     const accepted = v.translation_acceptance as unknown as Record<string, Acceptance | undefined>;
     for (const lang of c.required_languages) {

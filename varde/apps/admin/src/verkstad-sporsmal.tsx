@@ -413,8 +413,9 @@ function Fast({
               onChange={() => onMark('semantic')}
             />
             <span>
-              <b>Ny meining.</b> Spørsmålet blir nytt i statistikken, og samanlikninga startar på
-              nytt frå denne versjonen.
+              <b>Ny meining.</b> Spørsmålet blir nytt i statistikken. Samanlikninga startar på
+              nytt, og sona og funna som byggjer på spørsmålet, blir ikkje rekna for denne
+              versjonen.
             </span>
           </label>
         </fieldset>
@@ -449,7 +450,7 @@ function Teknisk({
       </summary>
       <div className="vk-teknisk-innhald">
         <label className="vk-felt">
-          Kortnamn i dashbordet
+          Kortnamn i resultatet
           <input
             className="input"
             value={q.texts.short_label?.nn ?? ''}

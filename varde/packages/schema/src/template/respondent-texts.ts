@@ -94,3 +94,11 @@ export function respondentTexts(c: TemplateContent): RespondentText[] {
 /** Texts a respondent would meet empty: a question without words, an answer without a label … */
 export const emptyTexts = (c: TemplateContent): RespondentText[] =>
   respondentTexts(c).filter((t) => t.required && !t.text.nn.trim());
+
+/** Required texts that are empty in Nynorsk or in a language the survey must have: publishing waits. */
+export const unfinishedTexts = (c: TemplateContent): RespondentText[] =>
+  respondentTexts(c).filter(
+    (t) =>
+      t.required &&
+      ['nn', ...c.required_languages].some((l) => !(t.text[l as keyof typeof t.text] ?? '').trim()),
+  );
