@@ -7,6 +7,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { auditWho } from '../auth/audit-who.js';
+import { MetricDefinition } from '@varde/schema/metrics/metric-definition';
 import { MetricsService } from '../metrics/metrics.service.js';
 import { PrivacyService, type PrivacySession } from '../privacy/privacy.service.js';
 import { canonical } from '../surveys/hashes.js';
@@ -65,7 +66,19 @@ export class RoundArchiveService {
       orderBy: [{ release_id: 'asc' }, { scope: 'asc' }],
     });
     const rcs = [...r.round_clients].sort((a, b) => a.client.slug.localeCompare(b.client.slug));
-    const defs = (await this.metrics.definitionsFor(round)).sort(
+    // Every definition of the template family, and the round's own: restoring rounds from the newest
+    // archive to the oldest then never meets a family key the database lacks (a workshop round may
+    // read fewer of them, 2.16); the round's metric set says which ones it reads.
+    const familyDefs = (
+      await this.prisma.metricDefinition.findMany({ where: { key: { startsWith: `${family}.` } } })
+    ).map((x) => MetricDefinition.parse(x.definition));
+    const byKey = new Map(
+      [...familyDefs, ...(await this.metrics.definitionsFor(round))].map((d) => [
+        `${d.key}@${d.version}`,
+        d,
+      ]),
+    );
+    const defs = [...byKey.values()].sort(
       (a, b) => a.key.localeCompare(b.key) || a.version - b.version,
     );
     return {

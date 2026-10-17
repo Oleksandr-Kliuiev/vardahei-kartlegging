@@ -22,12 +22,15 @@ interface Use {
   part: string;
   questions: string[];
   holds: boolean;
+  /** The questions that changed, when it does not hold. */
+  causes?: string[];
 }
 export interface Note {
   id: string;
   node: string;
   text: string;
-  version_no: number;
+  /** The version it was written on; empty when that draft is gone. */
+  version_no: number | null;
   created_at: string;
   created_by: string;
   resolved_at: string | null;
@@ -38,6 +41,9 @@ const KIND: Record<string, string> = {
   mean_score: 'snittet',
   critical_share: 'den kritiske delen',
   persons_per_zone: 'personar per sone',
+  cross: 'krysstabellen',
+  routine_hours_week: 'timane med rutinearbeid',
+  heaviest_task: 'den tyngste oppgåva',
   distribution: 'fordelinga',
 };
 const refers = (expression: unknown, id: string) =>
@@ -108,15 +114,32 @@ function BruktI({
     [...new Set(list.map((u) => u.kind))]
       .sort((a, b) => rank(a) - rank(b))
       .map((k) => KIND[k] ?? k);
-  const kept = mine.filter((u) => u.holds),
-    lost = mine.filter((u) => !u.holds);
+  const kept = mine.filter((u) => u.holds);
+  // A distribution that no longer holds is counted again by the version's own (2.16): it is only no
+  // longer compared. What drops out is the rest, said on the question that changed and named on the
+  // others that lose it with it.
+  const lost = mine.filter((u) => !u.holds && u.kind !== 'distribution');
+  const here = lost.filter((u) => (u.causes ?? [q.id]).includes(q.id));
+  const elsewhere = lost.filter((u) => !(u.causes ?? [q.id]).includes(q.id));
+  const recounted = mine.some(
+    (u) => !u.holds && u.kind === 'distribution' && (u.causes ?? [q.id]).includes(q.id),
+  );
+  const because = [...new Set(elsewhere.flatMap((u) => u.causes ?? []))];
   const own = rules
     .flatMap((r) => (Array.isArray(r.data) ? r.data : []))
     .filter((r) => r.rule.question === q.id || r.questions.some((x) => x.id === q.id));
   const options = 'options' in q ? new Set(q.options.map((o) => o.id)) : null;
+  // The answers a rule counts: the raw answers of a leader rule, the answers of a distribution
+  // otherwise (a cross or a computed rule counts no answers of its own here).
+  const counted = (r: RuleSummary) =>
+    (r.rule.raw_options ?? r.rule.options).filter((o) => !o.includes('.'));
   const broken = own.flatMap((r) =>
-    r.rule.question === q.id && options
-      ? r.rule.options.filter((o) => !options.has(o)).map((o) => ({ rule: r, option: o }))
+    options &&
+    (r.rule.question === q.id || (r.questions.length === 1 && r.questions[0]!.id === q.id)) &&
+    (!r.rule.computed || r.rule.computed === 'f12_b13')
+      ? counted(r)
+          .filter((o) => !options.has(o))
+          .map((o) => ({ rule: r, option: o }))
       : [],
   );
   if (!conditions.length && !tips.length && !own.length && !mine.length) return null;
@@ -146,11 +169,23 @@ function BruktI({
           <span className="chip ok">Tal i resultatet: {words(kept).join(', ')}</span>
         )}
       </p>
-      {lost.length > 0 && (
+      {here.length > 0 && (
         <p className="vk-problem">
           <Icon name="varsel" small />
           Spørsmålet har endra meining eller svar, så rundar på denne versjonen får ikkje{' '}
-          {words(lost).join(', ')} for det.
+          {words(here).join(', ')}.
+        </p>
+      )}
+      {elsewhere.length > 0 && (
+        <p className="vk-problem">
+          <Icon name="varsel" small />
+          {because.join(', ')} har endra meining eller svar, så rundar på denne versjonen får ikkje{' '}
+          {words(elsewhere).join(', ')}.
+        </p>
+      )}
+      {recounted && (
+        <p className="vk-dempa">
+          Svara blir talde på nytt, men blir ikkje samanlikna med tidlegare rundar.
         </p>
       )}
       {broken.map(({ rule, option }) => (
@@ -164,19 +199,34 @@ function BruktI({
   );
 }
 
-/** The same question means the same in an earlier version: same anchor and the same answers. */
-function same(a: Question, b: Question) {
-  if (a.type !== b.type || a.anchor_key !== b.anchor_key) return false;
-  const ids = (q: Question) =>
+/**
+ * An earlier answer belongs to this question when it means the same — the rule of «Før og etter»
+ * (round-pair.ts `questionChange`): the same type, answers and scores, rows and scale; the same
+ * anchor, or, without anchors on both, the same wording.
+ */
+export function same(before: Question, now: Question) {
+  if (before.type !== now.type) return false;
+  if (before.anchor_key && now.anchor_key) {
+    if (before.anchor_key !== now.anchor_key) return false;
+  } else if (before.texts.text.nn !== now.texts.text.nn) return false;
+  const answers = (q: Question) =>
     'options' in q
-      ? q.options.map((o) => o.id).join('|')
-      : q.type === 'scale'
-        ? q.rows.map((r) => r.id).join('|')
+      ? q.options.map((o) => `${o.id}:${o.score ?? ''}`).join('|')
+      : q.type === 'scale' || q.type === 'nps'
+        ? [q.scale.min, q.scale.max, ...(q.type === 'scale' ? q.rows.map((r) => r.id) : [])].join(
+            '|',
+          )
         : '';
-  return ids(a) === ids(b);
+  return answers(before) === answers(now);
 }
 
 function Innsikt({ content, q }: { content: TemplateContent; q: Question }) {
+  // Free text has no numbers to show.
+  if (q.type === 'text') return null;
+  return <InnsiktTal content={content} q={q} />;
+}
+
+function InnsiktTal({ content, q }: { content: TemplateContent; q: Question }) {
   const rounds = useRounds(),
     versions = useVersions();
   const mine = new Set(
@@ -208,6 +258,8 @@ function Innsikt({ content, q }: { content: TemplateContent; q: Question }) {
         <p className="vk-dempa">
           Spørsmålet har endra svar eller meining sidan då, så svara kan ikkje visast her.
         </p>
+      ) : result.error ? (
+        <p className="vk-dempa">Kunne ikkje hente svara frå runden.</p>
       ) : !result.data ? (
         <p className="vk-dempa" role="status">
           Hentar svara …
@@ -221,7 +273,7 @@ function Innsikt({ content, q }: { content: TemplateContent; q: Question }) {
             <ul>
               {s.buckets.map((b) => {
                 const share = b.cell.suppressed ? null : b.cell.numerator / b.cell.denominator;
-                const unsure = /^usikker$|veit ikkje/i.test(`${b.id} ${b.label}`);
+                const unsure = b.id === 'usikker' || /^usikker$|veit ikkje/i.test(b.label);
                 return (
                   <li key={b.id} className={unsure ? 'usikker' : undefined}>
                     <span>{b.label}</span>
@@ -274,7 +326,8 @@ function Kommentarar({ versionId, node }: { versionId: string; node: string }) {
         <article key={c.id} className="vk-kommentar">
           <p>{c.text}</p>
           <small>
-            {c.created_by} · {when(c.created_at)} · v{c.version_no}
+            {c.created_by} · {when(c.created_at)}
+            {c.version_no !== null && ` · v${c.version_no}`}
           </small>
           <button
             type="button"

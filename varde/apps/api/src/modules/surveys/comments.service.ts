@@ -34,7 +34,7 @@ export class CommentsService {
       id: r.id,
       node: r.node,
       text: r.text,
-      version_no: r.template_version.version_no,
+      version_no: r.template_version?.version_no ?? null,
       created_at: r.created_at.toISOString(),
       created_by: names[r.created_by] ?? r.created_by,
       resolved_at: r.resolved_at?.toISOString() ?? null,
@@ -81,7 +81,7 @@ export class CommentsService {
         data: {
           who,
           what: 'surveys.comment.resolve',
-          target: `template_version:${found.template_version_id}`,
+          target: `survey_template:${found.template_id}`,
           details: { comment: id, resolved },
         },
       });

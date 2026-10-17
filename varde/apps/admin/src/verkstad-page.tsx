@@ -187,7 +187,11 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
   useEffect(() => {
     for (const x of content.questions) seen.current.add(x.id);
   }, [content]);
-  const used = () => [...seen.current, ...(baseContent?.questions.map((x) => x.id) ?? [])];
+  const used = () => [
+    ...seen.current,
+    ...(baseContent?.questions.map((x) => x.id) ?? []),
+    ...(initial.used_ids ?? []),
+  ];
   const change = (fn: (c: TemplateContent) => TemplateContent, key = '') => {
     if (!readOnly) history.change(fn, key);
   };
@@ -569,6 +573,7 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
               onAddSection={addSectionAfter}
               onBank={(where) => {
                 setBankAt(where);
+                opener.current = document.activeElement as HTMLElement | null;
                 setPanel('bank');
               }}
               notes={openNotes(notes.data)}

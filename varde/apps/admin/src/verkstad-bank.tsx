@@ -1,7 +1,8 @@
 // «Hent spørsmål» (2.18): a ready question from the bank, or one from another survey, copied with a
-// new id. A copy has no lock, anchor, role or initials flag and no condition (those point into the
-// other survey); its wording, answers and scores come along, so it reads the same and is tested in
-// the phone like any new question.
+// new id. A copy has no lock, anchor, role or initials flag, no condition on the question or on an
+// answer, and takes no answers from another question (those point into the other survey); its
+// wording, answers and scores come along, so it reads the same and is tested in the phone like any
+// new question.
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { Question } from '../../../packages/schema/src/template/question.js';
@@ -76,7 +77,11 @@ export function standard(languages: readonly string[]): { title: string; q: Ques
 /** A question of another survey as a new one here: its own id, none of the other survey's ties. */
 export function copyOf(q: Question, languages: readonly string[]): Question {
   const copy = structuredClone(q) as Question & Record<string, unknown>;
-  for (const key of ['frozen', 'anchor_key', 'role', 'identifier', 'visible_if']) delete copy[key];
+  for (const key of ['frozen', 'anchor_key', 'role', 'identifier', 'visible_if', 'choices_from'])
+    delete copy[key];
+  // Conditions on single answers point into the other survey too.
+  if (Array.isArray(copy['options']))
+    for (const o of copy['options'] as Record<string, unknown>[]) delete o['visible_if'];
   // Every text gets the languages of this survey; one it lacks is written here.
   const fit = (v: unknown): unknown => {
     if (Array.isArray(v)) return v.map(fit);

@@ -12,7 +12,7 @@ ADD COLUMN     "report_sent_by" TEXT;
 CREATE TABLE "question_comment" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "template_id" UUID NOT NULL,
-    "template_version_id" UUID NOT NULL,
+    "template_version_id" UUID,
     "node" TEXT NOT NULL,
     "text" TEXT NOT NULL,
     "created_by" TEXT NOT NULL,
@@ -30,5 +30,5 @@ CREATE INDEX "question_comment_template_id_idx" ON "question_comment"("template_
 ALTER TABLE "question_comment" ADD CONSTRAINT "question_comment_template_id_fkey" FOREIGN KEY ("template_id") REFERENCES "survey_template"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "question_comment" ADD CONSTRAINT "question_comment_template_version_id_fkey" FOREIGN KEY ("template_version_id") REFERENCES "template_version"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "question_comment" ADD CONSTRAINT "question_comment_template_version_id_fkey" FOREIGN KEY ("template_version_id") REFERENCES "template_version"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 

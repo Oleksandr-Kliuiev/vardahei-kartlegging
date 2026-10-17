@@ -5,7 +5,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { FindingsService } from '../findings/findings.service.js';
 import type { TemplateContent } from '@varde/schema/template/template';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { subMetrics } from '@varde/rules/findings';
 import {
   type MetricDefinition,
@@ -98,8 +98,8 @@ export class MetricsService {
       orderBy: [{ key: 'asc' }, { version: 'asc' }],
     });
     const seeded = rows.map((x) => MetricSchema.parse(x.definition));
-    if (!generated.length && !authoredSet) return seeded;
     const own = generated.map((x) => MetricSchema.parse(x.definition));
+    // A round that was released keeps the set it was released with, whatever was added since.
     const fixed = await this.prisma.roundMetricSet.findUnique({ where: { round_id: round } });
     if (fixed) {
       const set = new Set(fixed.metric_keys);
@@ -108,6 +108,7 @@ export class MetricsService {
         return metrics.length > 0 && metrics.every((m) => set.has(m));
       });
     }
+    if (!generated.length && !authoredSet) return seeded;
     const holds = seeded.length
       ? sameMeaning(
           version.content as unknown as TemplateContent,
@@ -128,10 +129,11 @@ export class MetricsService {
    * definitionsFor, applied to a draft before it is published.
    */
   async templateUses(versionId: string) {
-    const v = await this.prisma.templateVersion.findUniqueOrThrow({
+    const v = await this.prisma.templateVersion.findUnique({
       where: { id: versionId },
       include: { template: true },
     });
+    if (!v) throw new NotFoundException('Versjonen finst ikkje.');
     const rows = await this.prisma.metricDefinition.findMany({
       where: { key: { startsWith: `${v.template.key}.` } },
       orderBy: [{ key: 'asc' }, { version: 'asc' }],
@@ -149,6 +151,8 @@ export class MetricsService {
         part: def.part,
         questions: [...new Set(def.questions.map((q) => q.key.split('.')[0]!))],
         holds: holds(def),
+        // The questions that changed, so the workshop names the cause on the others.
+        causes: holds(def) ? [] : holds.causes(def),
       };
     });
   }

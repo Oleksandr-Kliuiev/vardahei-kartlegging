@@ -38,7 +38,8 @@ function leftOf(v: { content: unknown; translation_acceptance: unknown }): numbe
   const languages = c.required_languages.filter(
     (l) =>
       accepted[l]?.source_hash !== hash ||
-      unfinished.some((t) => !(t.text[l] ?? '').trim()),
+      // Written in Nynorsk but not in this language (an empty Nynorsk text counts once, above).
+      unfinished.some((t) => t.text.nn.trim() && !(t.text[l] ?? '').trim()),
   ).length;
   return issues(c).length + emptyTexts(c).length + languages;
 }
@@ -115,7 +116,17 @@ export class EditorService {
     const basis = Object.values(
       v.acceptance_basis as Record<string, { by?: string } | undefined>,
     ).map((a) => a?.by);
-    return { ...v, people: await namesOf(this.prisma, [v.published_by, ...accepted, ...basis]) };
+    // Every question id any version of the survey has used (2.18 review): a new question never gets
+    // the id of a deleted one, so earlier answers and notes never attach to a different question.
+    const ids = await this.prisma.$queryRaw<{ id: string }[]>`
+      SELECT DISTINCT q->>'id' AS id
+      FROM template_version, jsonb_array_elements(content->'questions') AS q
+      WHERE template_id = ${v.template_id}::uuid AND jsonb_typeof(content->'questions') = 'array'`;
+    return {
+      ...v,
+      people: await namesOf(this.prisma, [v.published_by, ...accepted, ...basis]),
+      used_ids: ids.map((r) => r.id).filter(Boolean),
+    };
   }
   async get(id: string) {
     const version = await this.prisma.templateVersion.findUnique({
@@ -140,6 +151,8 @@ export class EditorService {
         })
       ).map((t) => t.key),
     );
+    // «auto» names the metrics a workshop version makes for itself (`auto.<version>.`).
+    taken.add('auto');
     let key = wanted;
     for (let n = 2; taken.has(key); n += 1) key = `${wanted}-${n}`;
     return key;

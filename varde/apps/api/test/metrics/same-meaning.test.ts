@@ -79,6 +79,45 @@ describe('the template definitions in a workshop version', () => {
     expect(after.get('ki.k1.distribution')).toBe(true);
   });
 
+  it('conditions on answers and the role question count as dependencies too', () => {
+    // K3 and K16 show some answers only for K2 «praktisk»: new words for it drop them.
+    const k2 = edit(ki(), 'K2', (q) => {
+      const x = q as Extract<Q, { type: 'multi' }>;
+      x.options = x.options.map((o) =>
+        o.id === 'praktisk'
+          ? { ...o, texts: { text: { ...o.texts.text, nn: 'Praktisk arbeid' } } }
+          : o,
+      );
+    });
+    const after = held(k2, ki(), 'ki');
+    expect(after.get('ki.k3.distribution')).toBe(false);
+    expect(after.get('ki.k16.distribution')).toBe(false);
+    expect(after.get('ki.heaviest_task')).toBe(false);
+    expect(after.get('ki.k6.distribution')).toBe(true);
+    // The role question decides who gets the leader part.
+    const role = ki().questions.find((q) => q.role)!.id;
+    const relabelled = edit(ki(), role, (q) => {
+      const x = q as Extract<Q, { type: 'single' }>;
+      x.options = x.options.map((o) =>
+        o.id === 'leiar' ? { ...o, texts: { text: { ...o.texts.text, nn: 'Sjef' } } } : o,
+      );
+    });
+    const leaders = held(relabelled, ki(), 'ki');
+    expect(leaders.get('ki.leiar_l2.distribution')).toBe(false);
+  });
+
+  it('names the question that changed, not the ones that only depend on it', () => {
+    const zone = defsOf('tryggleik').find((d) => d.key === 'tryggleik.zone')!;
+    const meaning = edit(tryggleik(), 'F5', (q) => (q.anchor_key = 'F5~v3'));
+    expect(sameMeaning(meaning, [referenceOf(tryggleik())]).causes(zone)).toEqual(['F5']);
+    const heaviest = defsOf('ki').find((d) => d.key === 'ki.heaviest_task')!;
+    const k3 = edit(ki(), 'K3', (q) => {
+      const x = q as Extract<Q, { type: 'multi' }>;
+      x.options = x.options.slice(1);
+    });
+    expect(sameMeaning(k3, [referenceOf(ki())]).causes(heaviest)).toEqual(['K3']);
+  });
+
   it('a leader question needs the same leader roles', () => {
     const c = ki();
     c.leader_roles = ['leiar'];

@@ -307,6 +307,35 @@ describe('2.16 acceptance: workshop publication keeps the comparison with round 
     await f.prisma.roundMetricSet.delete({ where: { round_id: earlier.id } });
   });
 
+  it('a released seeded round keeps its set when the family gets a new definition later', async () => {
+    const metrics = f.app.get(MetricsService);
+    const before = (await metrics.definitionsFor(seeded)).map((d) => d.key);
+    const extra = MetricDefinition.parse({
+      key: 'tryggleik.acc218_extra.distribution',
+      version: 1,
+      kind: 'distribution',
+      part: 'common',
+      questions: [{ key: 'F3', part: 'common' }],
+      options_mapping: { F3: { ja: 'ja', nei: 'nei' } },
+      scale: 'categorical',
+      recall_period: 'as_worded',
+      denominator_rule: 'answered',
+      populations: ['round_client', 'all_clients'],
+      comparability: [],
+      first_version: true,
+    });
+    await f.prisma.metricDefinition.create({
+      data: { key: extra.key, version: 1, definition: extra },
+    });
+    try {
+      expect((await metrics.definitionsFor(seeded)).map((d) => d.key)).toEqual(before);
+    } finally {
+      await f.prisma.metricDefinition.delete({
+        where: { key_version: { key: extra.key, version: 1 } },
+      });
+    }
+  });
+
   it('a new question made in the workshop is counted by its own distribution', async () => {
     const id = await workshopVersion((qs) => {
       const out = qs.map((q) => structuredClone(q));

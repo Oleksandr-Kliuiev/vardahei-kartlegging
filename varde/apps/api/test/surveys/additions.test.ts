@@ -136,6 +136,10 @@ describe('sent by hand and notes on questions (2.18)', () => {
         })
       ).statusCode,
     ).toBe(404);
+    // Nothing went out before the client is opened, and a report waits for a closed round.
+    expect((await call('PUT', url, { kind: 'invitation', sent: true })).statusCode).toBe(409);
+    expect((await call('PUT', url, { kind: 'report', sent: true })).statusCode).toBe(409);
+    expect((await call('POST', `/api/admin/round-clients/${rc.id}/open`)).statusCode).toBe(201);
     const marked = await call('PUT', url, { kind: 'invitation', sent: true });
     expect(marked.statusCode).toBe(200);
     const listed = () =>
@@ -152,19 +156,29 @@ describe('sent by hand and notes on questions (2.18)', () => {
     });
     await call('PUT', url, { kind: 'reminder', sent: true });
     await call('PUT', url, { kind: 'invitation', sent: false });
+    // Taking back what is not marked changes nothing and is not logged.
+    await call('PUT', url, { kind: 'invitation', sent: false });
     expect(await listed()).toMatchObject({
       invitation_sent_at: null,
       reminder_sent_at: expect.any(String) as unknown,
     });
     const audit = await db.auditLog.findMany({
-      where: { who, what: 'rounds.client.sent', target: `round_client:${rc.id}` },
+      where: {
+        who,
+        what: { in: ['rounds.client.sent', 'rounds.client.unsent'] },
+        target: `round_client:${rc.id}`,
+      },
       orderBy: { at: 'asc' },
     });
-    expect(audit.map((a) => a.details)).toEqual([
-      { kind: 'invitation', sent: true },
-      { kind: 'reminder', sent: true },
-      { kind: 'invitation', sent: false },
+    expect(audit.map((a) => [a.what, a.details])).toEqual([
+      ['rounds.client.sent', { kind: 'invitation' }],
+      ['rounds.client.sent', { kind: 'reminder' }],
+      ['rounds.client.unsent', { kind: 'invitation' }],
     ]);
+    // A new link: what went out with the old one has to go out again.
+    await call('PUT', url, { kind: 'invitation', sent: true });
+    expect((await call('POST', `/api/admin/round-clients/${rc.id}/reissue`)).statusCode).toBe(201);
+    expect(await listed()).toMatchObject({ invitation_sent_at: null, reminder_sent_at: null });
   });
 
   it('notes: written on a question, read with name and version, solved and opened again; they follow the next draft', async () => {

@@ -91,18 +91,19 @@ model TemplateVersion {
 
 /// A note on a question or a part of a survey (2.18), written and read by admins in the workshop.
 /// Kept per survey, so it follows the next draft; `template_version_id` is the version it was written
-/// on. `node` is a question id or a part (`:velkomen`, `:slutt` …). Never shown to respondents.
+/// on (empty if that draft is deleted; the note stays). `node` is a question id or a part
+/// (`:velkomen`, `:slutt` …). Never shown to respondents.
 model QuestionComment {
-  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  template_id         String          @db.Uuid
-  template            SurveyTemplate  @relation(fields: [template_id], references: [id], onDelete: Cascade)
-  template_version_id String          @db.Uuid
-  template_version    TemplateVersion @relation(fields: [template_version_id], references: [id], onDelete: Cascade)
+  id                  String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  template_id         String           @db.Uuid
+  template            SurveyTemplate   @relation(fields: [template_id], references: [id], onDelete: Cascade)
+  template_version_id String?          @db.Uuid
+  template_version    TemplateVersion? @relation(fields: [template_version_id], references: [id], onDelete: SetNull)
   node                String
   text                String
   created_by          String
-  created_at          DateTime        @default(now()) @db.Timestamptz(6)
-  resolved_at         DateTime?       @db.Timestamptz(6)
+  created_at          DateTime         @default(now()) @db.Timestamptz(6)
+  resolved_at         DateTime?        @db.Timestamptz(6)
   resolved_by         String?
 
   @@index([template_id])

@@ -18,6 +18,8 @@ export const TemplateInput = z
       .string()
       .regex(/^[a-z0-9_-]+$/)
       .max(100)
+      // «auto» names the metrics a workshop version makes for itself (`auto.<version>.`).
+      .refine((k) => k !== 'auto', { message: 'Vel ein annan nøkkel.' })
       .optional(),
     title: z.string().trim().min(1).max(120).optional(),
     audience: Audience,

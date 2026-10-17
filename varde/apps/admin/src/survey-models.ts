@@ -17,6 +17,8 @@ export interface EditorVersion {
   published_by?: string | null;
   /** Names of who approved and published, by the id AuditLog keeps. */
   people?: Record<string, string>;
+  /** Every question id any version of the survey has used (2.18). */
+  used_ids?: string[];
 }
 export interface ApprovalBasis {
   at: string;

@@ -6,7 +6,7 @@ import type { Question } from '../../../packages/schema/src/template/question.js
 import type { RoundClient } from '../src/models.js';
 import { SendtListe } from '../src/sendt.js';
 import { copyOf, standard } from '../src/verkstad-bank.js';
-import { Meir, openNotes, type Note } from '../src/verkstad-meir.js';
+import { Meir, openNotes, same, type Note } from '../src/verkstad-meir.js';
 import { mount, settle } from './support.js';
 import { byText, open, serve, versions, wait, workshopTests } from './verkstad-support.js';
 
@@ -38,6 +38,27 @@ describe('a copy and the ready questions', () => {
     });
     expect(q).toMatchObject({ frozen: true, anchor_key: 'F5' });
   });
+  it('answer conditions and answers taken from another question stay behind', () => {
+    const q = {
+      id: 'K16',
+      type: 'single',
+      part: 'common',
+      choices_from: 'K3',
+      texts: { text: { nn: 'Kva tek mest tid?' } },
+      options: [
+        {
+          id: 'timar',
+          visible_if: { '==': [{ var: 'K1' }, 'prod'] },
+          texts: { text: { nn: 'Timar' } },
+        },
+      ],
+    } as unknown as Question;
+    const copy = copyOf(q, ['nn']) as Question & Record<string, unknown>;
+    expect(copy['choices_from']).toBeUndefined();
+    expect(
+      (copy as unknown as { options: Record<string, unknown>[] }).options[0]!['visible_if'],
+    ).toBeUndefined();
+  });
   it('ready questions are written in Nynorsk and English, other languages left to fill in', () => {
     const [nps] = standard(['nn', 'en', 'nb']);
     expect(nps!.q.type).toBe('nps');
@@ -46,6 +67,46 @@ describe('a copy and the ready questions', () => {
       en: 'How likely are you to recommend us to a colleague?',
       nb: '',
     });
+  });
+});
+
+describe('an earlier answer belongs to this question only when it means the same', () => {
+  const base = {
+    id: 'Q7',
+    type: 'single',
+    part: 'common',
+    texts: { text: { nn: 'Tek de backup?' } },
+    options: [
+      { id: 'a1', texts: { text: { nn: 'Ja' } } },
+      { id: 'a2', texts: { text: { nn: 'Nei' } } },
+    ],
+  } as unknown as Question;
+  it('without anchors the wording must match; ids and scores always', () => {
+    expect(same(base, structuredClone(base))).toBe(true);
+    const words = structuredClone(base);
+    words.texts.text.nn = 'Har de nødstraum?';
+    expect(same(base, words)).toBe(false);
+    const score = structuredClone(base) as Question & { options: { score?: number }[] };
+    score.options[0]!.score = 2;
+    expect(same(base, score)).toBe(false);
+  });
+  it('with anchors on both, a spelling fix keeps it; a new anchor does not', () => {
+    const a = { ...structuredClone(base), anchor_key: 'X' } as Question;
+    const fixed = { ...structuredClone(a), texts: { text: { nn: 'Tek de back-up?' } } } as Question;
+    expect(same(a, fixed)).toBe(true);
+    expect(same(a, { ...fixed, anchor_key: 'Y' })).toBe(false);
+  });
+  it('a scale with other bounds is another question', () => {
+    const nps = {
+      id: 'N',
+      type: 'nps',
+      part: 'common',
+      texts: { text: { nn: 'Tilrå?' } },
+      scale: { min: 0, max: 10, low: { nn: '' }, high: { nn: '' } },
+    } as unknown as Question;
+    const five = structuredClone(nps) as Question & { scale: { max: number } };
+    five.scale.max = 5;
+    expect(same(nps, five)).toBe(false);
   });
 });
 
@@ -117,12 +178,68 @@ describe('more about a question', () => {
     expect(text).toContain('Vilkåret til Q3');
     expect(text).toContain('Funn: brukar ikkje MFA');
     expect(text).toContain('Tal i resultatet: fordelinga');
-    expect(text).toContain('rundar på denne versjonen får ikkje sona for det');
+    expect(text).toContain('rundar på denne versjonen får ikkje sona.');
     // The rule counts «usikker», which F1 no longer has.
     expect(text).toContain('tel svaret «usikker», som ikkje finst i spørsmålet lenger');
     expect(view.div.querySelector('a.chip')?.getAttribute('href')).toBe(
       '/admin/surveys/funn?rule=tryggleik.f1',
     );
+    view.close();
+  });
+
+  it('names the question that changed on the others, keeps leader rules quiet, says a recount is no loss', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) => {
+        if (url.endsWith('/metrics'))
+          return json([
+            {
+              key: 'z',
+              kind: 'zone',
+              part: 'common',
+              questions: ['F1', 'Q3'],
+              holds: false,
+              causes: ['Q3'],
+            },
+            {
+              key: 'd',
+              kind: 'distribution',
+              part: 'common',
+              questions: ['F1'],
+              holds: false,
+              causes: ['F1'],
+            },
+          ]);
+        if (url.includes('/finding-rules?') && url.includes('leader'))
+          return json([
+            {
+              key: 'tryggleik.leader_b17',
+              version: 1,
+              versions: 1,
+              rule: {
+                question: 'F1',
+                options: ['sensitive'],
+                raw_options: ['ja'],
+                text: { nn: 'Sensitivt', en: '' },
+              },
+              questions: [{ id: 'F1', label: 'F1' }],
+            },
+          ]);
+        return json([]);
+      }),
+    );
+    const view = mount(<Meir versionId="version" hash="h" content={content} q={f1} />, true);
+    await settle();
+    await settle();
+    const text = view.div.textContent ?? '';
+    expect(text).toContain(
+      'Q3 har endra meining eller svar, så rundar på denne versjonen får ikkje sona.',
+    );
+    expect(text).not.toContain('Spørsmålet har endra meining');
+    expect(text).toContain(
+      'Svara blir talde på nytt, men blir ikkje samanlikna med tidlegare rundar.',
+    );
+    expect(text).not.toContain('som ikkje finst i spørsmålet lenger');
     view.close();
   });
 
@@ -184,7 +301,9 @@ describe('more about a question', () => {
     expect(block.textContent).toContain('–');
     expect(block.textContent).toContain('12 svar');
     // Aggregates only: the dashboard of the round, never rows, quotes or leader answers.
-    expect(fetcher.mock.calls.some(([u]) => /\/rows\/|leader-answers|\/report/.test(u))).toBe(false);
+    expect(fetcher.mock.calls.some(([u]) => /\/rows\/|leader-answers|\/report/.test(u))).toBe(
+      false,
+    );
     view.close();
     // Another anchor: the earlier answers are about something else, so they are not shown.
     const changed = { ...f1, anchor_key: 'F1-ny' } as Question;

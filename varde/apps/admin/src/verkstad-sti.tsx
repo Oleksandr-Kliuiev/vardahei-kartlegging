@@ -161,7 +161,14 @@ export function Sti(p: StiProps) {
               <span className="vk-merke">ny</span>
             ) : null}
             {p.notes?.get(x.id) ? (
-              <span className="vk-notat" title={`${p.notes.get(x.id)} opne kommentarar`}>
+              <span
+                className="vk-notat"
+                title={
+                  p.notes.get(x.id) === 1
+                    ? 'Éin open kommentar'
+                    : `${p.notes.get(x.id)} opne kommentarar`
+                }
+              >
                 <Icon name="prat" small />
                 {p.notes.get(x.id)}
               </span>

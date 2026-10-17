@@ -299,7 +299,18 @@ export class RoundsService {
   markSent(id: string, kind: 'invitation' | 'reminder' | 'report', sent: boolean, who: string) {
     return this.changed(
       this.prisma.$transaction(async (tx) => {
-        await this.lockClient(tx, id);
+        const { rc: before, round } = await this.lockClient(tx, id);
+        // An invitation or reminder needs a link (the client was opened); a report a closed round.
+        if (kind !== 'report' && before.status === 'draft')
+          throw new ConflictException('Kunden er ikkje opna for svar enno.');
+        if (kind === 'report' && !['closed', 'archived'].includes(round.status))
+          throw new ConflictException('Rapporten kjem når runden er avslutta.');
+        const marked =
+          kind === 'invitation'
+            ? before.invitation_sent_at
+            : kind === 'reminder'
+              ? before.reminder_sent_at
+              : before.report_sent_at;
         const at = sent ? new Date() : null;
         const by = sent ? who : null;
         const data =
@@ -308,15 +319,18 @@ export class RoundsService {
             : kind === 'reminder'
               ? { reminder_sent_at: at, reminder_sent_by: by }
               : { report_sent_at: at, report_sent_by: by };
-        const rc = await tx.roundClient.update({ where: { id }, data });
-        await tx.auditLog.create({
-          data: {
-            who,
-            what: 'rounds.client.sent',
-            target: `round_client:${id}`,
-            details: { kind, sent },
-          },
-        });
+        // Taking back a mark that is not there changes nothing and is not logged.
+        const rc =
+          !sent && marked === null ? before : await tx.roundClient.update({ where: { id }, data });
+        if (sent || marked !== null)
+          await tx.auditLog.create({
+            data: {
+              who,
+              what: sent ? 'rounds.client.sent' : 'rounds.client.unsent',
+              target: `round_client:${id}`,
+              details: { kind },
+            },
+          });
         return {
           id,
           invitation_sent_at: rc.invitation_sent_at,
@@ -333,7 +347,18 @@ export class RoundsService {
         const { rc, round } = await this.lockClient(tx, id);
         if (rc.status !== 'open' || round.status !== 'open')
           throw new ConflictException('Kartlegginga er ikkje open.');
-        return this.codes.issue(tx, id, who);
+        const issued = await this.codes.issue(tx, id, who);
+        // The old link stops working: what was sent with it has to go out again (2.18).
+        await tx.roundClient.update({
+          where: { id },
+          data: {
+            invitation_sent_at: null,
+            invitation_sent_by: null,
+            reminder_sent_at: null,
+            reminder_sent_by: null,
+          },
+        });
+        return issued;
       }),
     );
   }
