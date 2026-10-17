@@ -49,7 +49,7 @@ export const SECTIONS: Section[] = [
     group: 'Innhald',
     title: 'Rapport til kunden',
     intro:
-      'Ein PDF frå publiserte tal, på språket til kunden. Eit menneske sjekkar og sender han sjølv.',
+      'Ein PDF frå publiserte tal, på språket til kunden. Du sjekkar og sender han sjølv.',
     sub: true,
   },
   { url: '/admin/export', label: 'Eksport', icon: 'ned', group: 'Personvern' },
@@ -209,7 +209,6 @@ export function Sidebar({
         </span>
       </a>
       <div className="produkt">
-        <span className="produkt-namn">Varde</span>
         <span className="produkt-sub">Kartlegging · seminar · oppfølging</span>
       </div>
       <button type="button" className="sok" onClick={onSearch}>

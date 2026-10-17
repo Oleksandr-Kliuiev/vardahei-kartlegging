@@ -5,8 +5,7 @@ import { ErrorMessage, useClients, useRounds } from './queries.js';
 import { HoldButton } from './widgets.js';
 
 type Counts = { total: number; dry_run: boolean } & (
-  | { common: number; leader: number }
-  | { contacts: number; registrations: number }
+  { common: number; leader: number } | { contacts: number; registrations: number }
 );
 
 /** What a participant deletion removes (3.1). */
@@ -19,17 +18,19 @@ export function DeletionPage() {
   const clients = useClients(),
     rounds = useRounds(),
     queries = useQueryClient();
-  const [scope, setScope] = useState('submissions'),
+  const [scope, setScope] = useState('respondent'),
     [client, setClient] = useState(''),
     [key, setKey] = useState(''),
     [round, setRound] = useState('');
   const [ids, setIds] = useState(''),
     [mail, setMail] = useState(''),
     [reason, setReason] = useState(''),
-    [preview, setPreview] = useState<Counts | null>(null);
+    [preview, setPreview] = useState<Counts | null>(null),
+    [target, setTarget] = useState('');
   const [error, setError] = useState<Error | null>(null),
     [busy, setBusy] = useState(false),
-    [done, setDone] = useState(false);
+    [done, setDone] = useState(false),
+    [receipt, setReceipt] = useState('');
   const input = () => ({
     reason,
     scope:
@@ -38,17 +39,29 @@ export function DeletionPage() {
         : scope === 'participant'
           ? { scope, email: mail.trim() }
           : scope === 'client'
-          ? { scope, client }
-          : {
-              scope,
-              client,
-              respondent_key: key.trim().toUpperCase(),
-              ...(round ? { round } : {}),
-            },
+            ? { scope, client }
+            : {
+                scope,
+                client,
+                respondent_key: key.trim().toUpperCase(),
+                ...(round ? { round } : {}),
+              },
   });
   const changed = () => {
     setPreview(null);
     setDone(false);
+  };
+  /** The selection in words, so the preview says exactly what would be deleted. */
+  const describe = () => {
+    const clientName = clients.data?.find((c) => c.id === client)?.name ?? 'kunden';
+    const roundName = rounds.data?.find((r) => r.id === round)?.name;
+    if (scope === 'participant') return `Deltakaren ${mail.trim()} på seminar`;
+    if (scope === 'submissions') {
+      const n = ids.split(/[\s,]+/).filter(Boolean).length;
+      return `${n} ${n === 1 ? 'valt innsending' : 'valde innsendingar'}`;
+    }
+    if (scope === 'client') return `Alle svar frå ${clientName}`;
+    return `Initialar ${key.trim().toUpperCase()} hos ${clientName}, ${roundName ? `runden ${roundName}` : 'alle identifiserte rundar'}`;
   };
   async function act(dry_run: boolean) {
     setBusy(true);
@@ -58,8 +71,19 @@ export function DeletionPage() {
         ...input(),
         dry_run,
       });
-      if (dry_run) setPreview(result);
-      else {
+      if (dry_run) {
+        setPreview(result);
+        setTarget(describe());
+      } else {
+        const when = new Date();
+        const p = (n: number) => String(n).padStart(2, '0');
+        setReceipt(
+          `${target}. ${
+            'contacts' in result
+              ? participantText(result.contacts, result.registrations)
+              : `${result.total} innsendingar fjerna`
+          }. ${p(when.getDate())}.${p(when.getMonth() + 1)}.${when.getFullYear()} ${p(when.getHours())}:${p(when.getMinutes())}.`,
+        );
         setPreview(null);
         setDone(true);
         await queries.invalidateQueries({
@@ -73,15 +97,15 @@ export function DeletionPage() {
     }
   }
   return (
-    <section className="del">
+    <section className="del smal">
       <p>Sletting tek bort svar og fritekst. Publiserte samla tal blir verande.</p>
       <fieldset disabled={busy} onChange={changed}>
         <label>
           Område{' '}
           <select aria-label="Område" value={scope} onChange={(e) => setScope(e.target.value)}>
-            <option value="submissions">Valde innsendingar</option>
-            <option value="client">Alle svar frå kunden</option>
             <option value="respondent">Ein person (initialar)</option>
+            <option value="client">Alle svar frå kunden</option>
+            <option value="submissions">Valde innsendingar (ID-ar)</option>
             <option value="participant">Deltakar på seminar (e-post)</option>
           </select>
         </label>
@@ -98,8 +122,8 @@ export function DeletionPage() {
               />
             </label>
             <p className="forklaring">
-              Kontakten og alle påmeldingane til personen blir sletta. Skriv ikkje namn eller
-              e-post i grunngjevinga.
+              Kontakten og alle påmeldingane til personen blir sletta. Skriv ikkje namn eller e-post
+              i grunngjevinga.
             </p>
           </>
         ) : scope === 'submissions' ? (
@@ -157,11 +181,17 @@ export function DeletionPage() {
             void act(true);
           }}
         >
-          Vis førehandsvising
+          Førehandsvis
         </button>
+        {!reason.trim() && (
+          <p className="forklaring">Skriv ei grunngjeving for å sjå førehandsvisinga.</p>
+        )}
       </fieldset>
       {preview && (
         <div role="status">
+          <p>
+            <strong>Du slettar:</strong> {target}
+          </p>
           <p>
             {'contacts' in preview
               ? participantText(preview.contacts, preview.registrations)
@@ -179,7 +209,10 @@ export function DeletionPage() {
         </div>
       )}
       {done && (
-        <p role="status">{scope === 'participant' ? 'Deltakaren er sletta.' : 'Svara er sletta.'}</p>
+        <p role="status">
+          {scope === 'participant' ? 'Deltakaren er sletta.' : 'Svara er sletta.'}{' '}
+          <span className="forklaring">{receipt}</span>
+        </p>
       )}
       <ErrorMessage error={error} />
     </section>

@@ -127,7 +127,7 @@ test('create → link → register on /s → visible in the list → invitation,
   await page.getByLabel('Område').selectOption('participant');
   await page.getByLabel('E-post').fill(email.toUpperCase());
   await page.getByLabel('Grunngjeving').fill('Syntetisk førespurnad');
-  await page.getByRole('button', { name: 'Vis førehandsvising' }).click();
+  await page.getByRole('button', { name: 'Førehandsvis' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Kontakten og 1 påmelding blir sletta.' })).toBeVisible();
   await page.getByRole('button', { name: 'Stadfest sletting' }).click({ delay: 1400 });
   await expect(page.getByText('Deltakaren er sletta.')).toBeVisible();

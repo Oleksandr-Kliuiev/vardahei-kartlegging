@@ -33,8 +33,8 @@ test('wizard creates a client and launches an open round with an invitation; clo
   const round = page.getByRole('region', { name: roundName, exact: true });
   await expect(round.getByText('12 tilsette i denne runden')).toBeVisible();
   const customer = round.getByRole('article', { name, exact: true });
-  await customer.getByRole('button', { name: 'Steng', exact: true }).click();
-  await expect(customer.getByText('Stengd', { exact: true })).toBeVisible();
+  await customer.getByRole('button', { name: 'Steng for svar', exact: true }).click();
+  await expect(customer.getByText('Stengd for svar', { exact: true })).toBeVisible();
   await expect(customer.getByRole('button', { name: 'Opne', exact: true })).toHaveCount(0);
 });
 

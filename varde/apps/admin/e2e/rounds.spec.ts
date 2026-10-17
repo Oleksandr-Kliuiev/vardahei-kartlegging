@@ -23,8 +23,8 @@ test('create from published version, add client, open → journal entry', async 
   const { client } = await newRound(page);
   await client.getByRole('button', { name: 'Opne', exact: true }).click();
   await expect(client.getByText('Open', { exact: true })).toBeVisible();
-  await expect(page.locator('.logg')).toContainText('rounds.client.open');
-  await client.getByRole('button', { name: 'Send ut' }).click();
+  await expect(page.locator('.logg')).toContainText('Kunde opna for svar');
+  await client.getByRole('button', { name: 'Hent invitasjon' }).click();
   await expect(client.getByLabel('Tekst til tilsette')).toHaveValue(/Hei alle!/);
   await expect(client.getByRole('link', { name: 'Plakat med QR-kode' })).toHaveAttribute(
     'target',
@@ -34,37 +34,37 @@ test('create from published version, add client, open → journal entry', async 
 test('Steng from UI → audit and runner avslutta', async ({ page, context }) => {
   const { client } = await newRound(page);
   await client.getByRole('button', { name: 'Opne', exact: true }).click();
-  await expect(client.getByRole('button', { name: 'Send ut' })).toBeVisible();
-  await client.getByRole('button', { name: 'Send ut' }).click();
+  await expect(client.getByRole('button', { name: 'Hent invitasjon' })).toBeVisible();
+  await client.getByRole('button', { name: 'Hent invitasjon' }).click();
   const link = await client.getByLabel('Lenkje til kartlegginga').inputValue();
-  await client.getByRole('button', { name: 'Steng', exact: true }).click();
-  await expect(client.getByText('Stengd', { exact: true })).toBeVisible();
-  await expect(page.locator('.logg')).toContainText('rounds.client.close');
+  await client.getByRole('button', { name: 'Steng for svar', exact: true }).click();
+  await expect(client.getByText('Stengd for svar', { exact: true })).toBeVisible();
+  await expect(page.locator('.logg')).toContainText('Kunde stengd');
   const runner = await context.newPage();
   await runner.goto(link);
   await expect(runner.locator('body')).toContainText('avslutta');
   await runner.close();
 });
-test('Ny kode requires confirmation → audit, old link replaced, new link works', async ({
+test('Ny lenkje requires confirmation → audit, old link replaced, new link works', async ({
   page,
   context,
 }) => {
   const { client } = await newRound(page);
   await client.getByRole('button', { name: 'Opne', exact: true }).click();
-  await expect(client.getByRole('button', { name: 'Send ut' })).toBeVisible();
-  await client.getByRole('button', { name: 'Send ut' }).click();
+  await expect(client.getByRole('button', { name: 'Hent invitasjon' })).toBeVisible();
+  await client.getByRole('button', { name: 'Hent invitasjon' }).click();
   const linkField = client.getByLabel('Lenkje til kartlegginga');
   const oldLink = await linkField.inputValue();
   const calls: string[] = [];
   page.on('request', (r) => {
     if (r.url().endsWith('/reissue')) calls.push(r.url());
   });
-  await client.getByRole('button', { name: 'Ny kode', exact: true }).click();
+  await client.getByRole('button', { name: 'Ny lenkje', exact: true }).click();
   expect(calls).toHaveLength(0);
   await client.getByRole('button', { name: 'Gamle lenkjer sluttar å verke. Stadfest' }).click();
   await expect(linkField).not.toHaveValue(oldLink);
   expect(calls).toHaveLength(1);
-  await expect(page.locator('.logg')).toContainText('rounds.code.reissue');
+  await expect(page.locator('.logg')).toContainText('Ny lenkje laga');
   const runner = await context.newPage();
   await runner.goto(oldLink);
   await expect(runner.locator('body')).toContainText('Lenkja er bytt ut');
@@ -101,8 +101,8 @@ test('employee count is editable, new snapshots use it, deadline and invitation 
   await expect(next).toContainText('24 tilsette i denne runden');
   await client.getByRole('button', { name: 'Opne', exact: true }).click();
   await client.getByLabel('Frist for Syntetisk admin kunde').fill('2099-07-01');
-  await expect(page.locator('.logg')).toContainText('rounds.client.deadline');
-  await client.getByRole('button', { name: 'Send ut' }).click();
+  await expect(page.locator('.logg')).toContainText('Frist endra');
+  await client.getByRole('button', { name: 'Hent invitasjon' }).click();
   await client.getByRole('button', { name: 'English', exact: true }).click();
   await expect(client.getByLabel('Tekst til tilsette')).toHaveValue(/Hi everyone,/);
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);

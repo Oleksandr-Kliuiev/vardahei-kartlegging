@@ -96,8 +96,15 @@ function Shell({ name }: { name: string | null }) {
   const report = /^\/admin\/reports(?:\/([0-9a-f-]{36}))?$/i.exec(path);
   // Seminar (3a): the list, or one seminar by its id.
   const seminar = /^\/admin\/seminars(?:\/([0-9a-f-]{36}))?$/i.exec(path);
+  // One title per page for the tab, history and screen readers; the report page sets its own while open.
+  useEffect(() => {
+    document.title = `${section?.title ?? section?.label ?? 'Sida finst ikkje'} – Varde`;
+  }, [section]);
   return (
     <div className="skal">
+      <a className="hopp" href="#innhald">
+        Hopp til innhald
+      </a>
       <Sidebar
         path={path}
         go={navigate}
@@ -116,7 +123,7 @@ function Shell({ name }: { name: string | null }) {
           open={menu}
           onMenu={() => setMenu(!menu)}
         />
-        <main className="side" ref={page}>
+        <main className="side" id="innhald" ref={page}>
           <div className="sidetittel">
             <div>
               <h1>{section?.title ?? section?.label ?? 'Sida finst ikkje'}</h1>

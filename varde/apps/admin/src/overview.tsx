@@ -95,7 +95,7 @@ export function Kpis({ clients }: { clients: Progress[] }) {
         <span className="stort">
           <Rolling value={total} /> {population > 0 && <small>av {population}</small>}
         </span>
-        <span className="under">Felles del, alle kundar</span>
+        <span className="under">Dei felles spørsmåla, alle kundar</span>
       </div>
       <div className="kort s3 talkort">
         <span className="etikett">
@@ -212,7 +212,8 @@ function TrailRow({ name, p, deadline }: { name: string; p: Progress; deadline: 
       { duration: 1400, fill: 'none' },
     );
   }, [on]);
-  const [hx, hy] = dotPos(Math.max(0, on - 1), Math.max(1, n));
+  // Unknown head count: no dots to count, but the hiker still stands at the start of the trail.
+  const [hx, hy] = n === 0 ? dotPos(0, 2) : dotPos(Math.max(0, on - 1), n);
   const active = visible(p.in_progress),
     left = daysTo(deadline);
   const percent = pop ? Math.round((100 * p.responses_total) / pop) : null;
@@ -243,14 +244,12 @@ function TrailRow({ name, p, deadline }: { name: string; p: Progress; deadline: 
             );
           })}
         </div>
-        {n > 0 && (
-          <span
-            className="mini-gaar"
-            style={{ left: `${hx.toFixed(2)}%`, top: `${(hy - 22).toFixed(1)}px` }}
-          >
-            <MiniHiker />
-          </span>
-        )}
+        <span
+          className="mini-gaar"
+          style={{ left: `${hx.toFixed(2)}%`, top: `${(hy - 22).toFixed(1)}px` }}
+        >
+          <MiniHiker />
+        </span>
       </div>
       <div className="spor-tal">
         <b>
@@ -313,7 +312,9 @@ export function ClientTrails({ round, clients }: { round: Round; clients: Progre
         </div>
         <p className="forklaring">
           Aktive økter under 3 blir ikkje viste («–»). Svara per person ligg berre i dashbordet og
-          blir logga når nokon opnar dei.
+          blir logga når nokon opnar dei. Varde veit kor mange som har svart, ikkje kven: be leiaren
+          hos kunden minne på undersøkinga (under «Kundar og rundar»: Hent invitasjon, så
+          Påminning).
         </p>
       </div>
     </section>

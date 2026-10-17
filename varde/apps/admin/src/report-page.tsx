@@ -187,7 +187,9 @@ export function ReportPage({ initial }: { initial: string | undefined }) {
               Lagre som PDF
             </button>
             <p className="forklaring">
-              I utskriftsvindauget vel du «Lagre som PDF». Menyen og denne delen kjem ikkje med.
+              I utskriftsvindauget vel du «Lagre som PDF». Fila får namnet «
+              {data ? `Rapport ${data.client.name} ${data.round.name}` : 'Rapport …'}». Menyen og
+              denne delen kjem ikkje med.
             </p>
           </div>
         </section>

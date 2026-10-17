@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, mutate } from './api.js';
-import type { Round, Client, Progress } from './models.js';
+import { versionText, type Round, type Client, type Progress } from './models.js';
 import {
   ErrorMessage,
   useAction,
@@ -10,6 +10,7 @@ import {
   useRounds,
   useVersions,
 } from './queries.js';
+import { auditTarget, auditWhat, auditWhen, auditWho } from './audit-labels.js';
 import { LaunchForm } from './launch-form.js';
 import { ClientForm } from './clients-form.js';
 import { RoundClientCard } from './round-client.js';
@@ -96,7 +97,8 @@ function AddClient({ round, clients }: { round: Round; clients: Client[] }) {
 }
 
 export function AuditLog() {
-  const audit = useAudit();
+  const audit = useAudit(),
+    rounds = useRounds();
   return (
     <section className="del">
       <h2>Siste hendingar</h2>
@@ -104,8 +106,9 @@ export function AuditLog() {
       <ol className="logg">
         {audit.data?.map((row, i) => (
           <li key={`${row.at}-${i}`}>
-            <time dateTime={row.at}>{new Date(row.at).toLocaleString('nn-NO')}</time>{' '}
-            <strong>{row.who}</strong> {row.what} <small>{row.target}</small>
+            <time dateTime={row.at}>{auditWhen(row.at)}</time> <strong>{auditWho(row.who)}</strong>{' '}
+            {auditWhat(row.what)}{' '}
+            <small>{auditTarget(row.target, { rounds: rounds.data ?? [] })}</small>
           </li>
         ))}
       </ol>
@@ -130,15 +133,23 @@ function RoundSection({ round, clients }: { round: Round; clients: Client[] }) {
     enabled: round.status !== 'draft',
   });
   const [text, chip] = roundStatus[round.status] ?? ['Avslutta', 'chip'];
-  return (
-    <section className="del runde" aria-label={round.name}>
-      <div className="runde-topp">
-        <h2>{round.name}</h2>
-        <span className="handlingar">
-          {round.type === 'post_seminar' && <span className="chip accent">Etter seminar</span>}
-          <span className={chip}>{text}</span>
-        </span>
-      </div>
+  const finished = !['draft', 'open'].includes(round.status);
+  const top = (
+    <div className="runde-topp">
+      <h2>{round.name}</h2>
+      <span className="handlingar">
+        {finished && (
+          <small className="runde-tal">
+            {round.round_clients.length} {round.round_clients.length === 1 ? 'kunde' : 'kundar'}
+          </small>
+        )}
+        {round.type === 'post_seminar' && <span className="chip accent">Etter seminar</span>}
+        <span className={chip}>{text}</span>
+      </span>
+    </div>
+  );
+  const body = (
+    <>
       <div className="kundekort-grid">
         {round.round_clients.map((rc) => (
           <RoundClientCard
@@ -149,7 +160,7 @@ function RoundSection({ round, clients }: { round: Round; clients: Client[] }) {
           />
         ))}
       </div>
-      {['draft', 'open'].includes(round.status) && <AddClient round={round} clients={clients} />}
+      {!finished && <AddClient round={round} clients={clients} />}
       {round.status === 'open' && (
         <HoldButton
           className="fare"
@@ -162,6 +173,22 @@ function RoundSection({ round, clients }: { round: Round; clients: Client[] }) {
         />
       )}
       <ErrorMessage error={action.error ?? progress.error} />
+    </>
+  );
+  // Finished rounds are folded to one line (click to open), so the active work stays on top.
+  return (
+    <section className={finished ? 'del runde samla' : 'del runde'} aria-label={round.name}>
+      {finished ? (
+        <details>
+          <summary>{top}</summary>
+          <div className="runde-innhald">{body}</div>
+        </details>
+      ) : (
+        <>
+          {top}
+          {body}
+        </>
+      )}
     </section>
   );
 }
@@ -191,65 +218,78 @@ export function RoundsPage() {
   return (
     <>
       <ErrorMessage error={clients.error ?? rounds.error ?? versions.error ?? action.error} />
-      <section className="del">
-        <h2>Kundar</h2>
-        <p className="under">
-          Talet på tilsette blir brukt i nye rundar. Rundar som alt er oppretta, held på sitt eige
-          tal.
-        </p>
-        <table className="kompakt">
-          <thead>
-            <tr>
-              <th>Kunde</th>
-              <th>Tal tilsette</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="runder-oppsett">
+        <div className="kol">
+          <section className="del">
+            <h2>Kundar</h2>
+            <p className="under">
+              Talet på tilsette blir brukt i nye rundar. Rundar som alt er oppretta, held på sitt
+              eige tal.
+            </p>
+            <table className="kompakt">
+              <thead>
+                <tr>
+                  <th>Kunde</th>
+                  <th>Tal tilsette</th>
+                </tr>
+              </thead>
+              <tbody>
+                {clients.data?.map((c) => (
+                  <EmployeeCount key={c.id} client={c} />
+                ))}
+              </tbody>
+            </table>
+          </section>
+          <section className="del">
+            <h2>Legg til eller endre kunde</h2>
+            <ClientForm />
             {clients.data?.map((c) => (
-              <EmployeeCount key={c.id} client={c} />
+              <details key={c.id}>
+                <summary>Endre {c.name}</summary>
+                <ClientForm key={`${c.name}-${c.employee_count}`} client={c} />
+              </details>
             ))}
-          </tbody>
-        </table>
-      </section>
-      <section className="del">
-        <h2>Legg til eller endre kunde</h2>
-        <ClientForm />
-        {clients.data?.map((c) => (
-          <details key={c.id}>
-            <summary>Endre {c.name}</summary>
-            <ClientForm key={`${c.name}-${c.employee_count}`} client={c} />
-          </details>
-        ))}
-      </section>
-      <LaunchForm clients={clients.data ?? []} versions={versions.data ?? []} />
-      <section className="del">
-        <h2>Ny tom runde</h2>
-        <form className="knappar" onSubmit={create}>
-          <label>
-            Namn på runden <input required name="name" maxLength={200} />
-          </label>
-          <label>
-            Publisert versjon{' '}
-            <select required aria-label="Publisert versjon" name="version">
-              <option value="">Vel versjon</option>
-              {versions.data?.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.template.key === 'tryggleik'
-                    ? 'IT-tryggleik'
-                    : v.template.key === 'ki'
-                      ? 'KI i kvardagen'
-                      : v.template.key}{' '}
-                  · {v.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button disabled={action.isPending}>Opprett runde</button>
-        </form>
-      </section>
-      {rounds.data?.map((round) => (
-        <RoundSection key={round.id} round={round} clients={clients.data ?? []} />
-      ))}
+          </section>
+        </div>
+        <div className="kol">
+          <LaunchForm clients={clients.data ?? []} versions={versions.data ?? []} />
+          <section className="del">
+            <h2>Ny tom runde</h2>
+            <p className="under">
+              Ei runde utan kundar. Bruk ho når du vil leggje til kundane ein for ein, med eiga
+              frist for kvar. Vil du starte med kundane valde med ein gong, bruk «Start ein runde».
+            </p>
+            <form className="knappar" onSubmit={create}>
+              <label>
+                Namn på runden <input required name="name" maxLength={200} />
+              </label>
+              <label>
+                Publisert versjon{' '}
+                <select required aria-label="Publisert versjon" name="version">
+                  <option value="">Vel versjon</option>
+                  {versions.data?.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {versionText(v)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button disabled={action.isPending}>Opprett runde</button>
+            </form>
+          </section>
+        </div>
+      </div>
+      <div className="runder-liste">
+        {[...(rounds.data ?? [])]
+          .sort(
+            (x, y) =>
+              Number(!['draft', 'open'].includes(x.status)) -
+              Number(!['draft', 'open'].includes(y.status)),
+          )
+          .map((round) => (
+            <RoundSection key={round.id} round={round} clients={clients.data ?? []} />
+          ))}
+      </div>
       <AuditLog />
     </>
   );

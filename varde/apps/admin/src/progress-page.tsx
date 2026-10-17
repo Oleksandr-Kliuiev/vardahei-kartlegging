@@ -89,25 +89,29 @@ export function ProgressRound({ round }: { round: Round }) {
         <p className="under">
           Berre grupper med minst 3 økter er viste. Framdrifta gjeld dei siste 24 timane.
         </p>
-        {clients.map((p) => (
-          <div key={p.round_client_id} className="skjemablokk">
-            <h3>{round.round_clients.find((rc) => rc.id === p.round_client_id)?.client.name}</h3>
-            <p>
-              {value(p.started)} økter starta, {p.responses_total} svar sende
-            </p>
-            <ul>
-              {Object.entries(p.stopped)
-                .filter(([, cell]) => !cell.suppressed)
-                .sort(([, a], [, b]) => Number(value(b)) - Number(value(a)))
-                .map(([question, cell]) => (
-                  <li key={question} data-question={question}>
-                    {question === '0' ? 'Før første spørsmål' : `Spørsmål ${question}`}:{' '}
-                    {value(cell)} avbrote
-                  </li>
-                ))}
-            </ul>
-          </div>
-        ))}
+        <div className="rutenett">
+          {clients.map((p) => (
+            <div key={p.round_client_id} className="skjemablokk">
+              <h3>{round.round_clients.find((rc) => rc.id === p.round_client_id)?.client.name}</h3>
+              <p>
+                {p.started.suppressed
+                  ? `Færre enn 3 økter siste døgn, så talet blir ikkje vist. ${p.responses_total} svar sende.`
+                  : `${p.started.value} økter starta, ${p.responses_total} svar sende.`}
+              </p>
+              <ul>
+                {Object.entries(p.stopped)
+                  .filter(([, cell]) => !cell.suppressed)
+                  .sort(([, a], [, b]) => Number(value(b)) - Number(value(a)))
+                  .map(([question, cell]) => (
+                    <li key={question} data-question={question}>
+                      {question === '0' ? 'Før første spørsmål' : `Spørsmål ${question}`}:{' '}
+                      {value(cell)} avbrote
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          ))}
+        </div>
       </section>
     </>
   );

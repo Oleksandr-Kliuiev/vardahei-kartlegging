@@ -49,8 +49,7 @@ h3 {
   box-shadow: var(--shadow-1), var(--edge);
   padding: 18px 20px 20px;
 }
-.sidetittel + .del,
-.sidetittel + * + .del {
+.sidetittel + * {
   margin-top: 0;
 }
 .under {

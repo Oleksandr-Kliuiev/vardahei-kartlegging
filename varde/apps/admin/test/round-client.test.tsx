@@ -27,10 +27,10 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
-describe('Ny kode', () => {
+describe('Ny lenkje', () => {
   it('requires two clicks and sends exactly one reissue mutation', async () => {
     act(() => {
-      button(view.div, 'Ny kode').click();
+      button(view.div, 'Ny lenkje').click();
     });
     expect(fetcher).not.toHaveBeenCalled();
     act(() => {
@@ -46,7 +46,7 @@ describe('Ny kode', () => {
   it('confirmation expires after five seconds; a later click only rearms', () => {
     vi.useFakeTimers();
     act(() => {
-      button(view.div, 'Ny kode').click();
+      button(view.div, 'Ny lenkje').click();
     });
     act(() => {
       vi.advanceTimersByTime(4999);
@@ -56,7 +56,7 @@ describe('Ny kode', () => {
       vi.advanceTimersByTime(1);
     });
     act(() => {
-      button(view.div, 'Ny kode').click();
+      button(view.div, 'Ny lenkje').click();
     });
     expect(fetcher).not.toHaveBeenCalled();
   });

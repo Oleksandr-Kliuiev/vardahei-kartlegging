@@ -19,6 +19,7 @@ test.describe('client report (5.1)', () => {
     await login(page);
     const f = (await state(page)).rounds.report!;
     await page.getByRole('link', { name: 'Kundar og rundar', exact: true }).click();
+    await page.getByRole('region', { name: f.name }).locator('summary').click(); // finished rounds are folded
     const card = page
       .getByRole('region', { name: f.name })
       .getByRole('article', { name: 'Syntetisk admin kunde' });

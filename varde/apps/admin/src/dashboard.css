@@ -215,6 +215,24 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0 32px;
 }
+/* Question blocks are small cards in as many columns as fit (three on a wide screen), so the page does not become one long scroll. */
+.rutenett {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr));
+  gap: 14px;
+}
+.rutenett > .skjemablokk,
+.rutenett > .skjemablokk + .skjemablokk {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  align-self: start;
+}
+.skjemablokk > :last-child,
+.skjemablokk > div:last-child > :last-child {
+  margin-bottom: 0;
+}
 .distribution {
   display: grid;
   grid-template-columns: minmax(90px, 1fr) minmax(50px, 1.2fr) auto;

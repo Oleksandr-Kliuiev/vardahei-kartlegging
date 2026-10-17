@@ -12,7 +12,7 @@ export function ExportPage() {
     rounds.data?.find((r) => r.id === round)?.status ?? '',
   );
   return (
-    <section className="del">
+    <section className="del smal">
       <p>Samla tal til kunden, svarrader til Vardahei IT.</p>
       <label>
         Runde{' '}

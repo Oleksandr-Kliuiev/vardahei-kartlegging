@@ -24,11 +24,22 @@ export class AdminService {
     });
   }
 
-  versions() {
-    return this.prisma.templateVersion.findMany({
+  /** Published versions to start a round from: when it was published and how many questions it asks. */
+  async versions() {
+    const rows = await this.prisma.templateVersion.findMany({
       where: { status: 'published' },
       orderBy: [{ template_id: 'asc' }, { version_no: 'desc' }],
-      select: { id: true, label: true, template: { select: { key: true } } },
+      select: {
+        id: true,
+        label: true,
+        published_at: true,
+        template: { select: { key: true } },
+        content: true,
+      },
+    });
+    return rows.map(({ content, ...v }) => {
+      const questions = (content as { questions?: unknown } | null)?.questions;
+      return { ...v, question_count: Array.isArray(questions) ? questions.length : 0 };
     });
   }
 

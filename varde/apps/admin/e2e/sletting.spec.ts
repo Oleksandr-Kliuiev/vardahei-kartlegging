@@ -33,10 +33,14 @@ test('submission ID from quotes → preview → confirmed deletion removes the q
   await quote.getByText('Innsendings-ID for sletting', { exact: true }).click();
   await expect(quote.locator('code')).toHaveText(id);
   await page.getByRole('link', { name: 'Sletting', exact: true }).click();
+  await page.getByLabel('Område').selectOption('submissions');
   await page.getByLabel('Innsendings-ID-ar').fill(id);
   await page.getByLabel('Grunngjeving').fill('Syntetisk slettingsførespurnad');
-  await page.getByRole('button', { name: 'Vis førehandsvising' }).click();
+  await page.getByRole('button', { name: 'Førehandsvis' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Til saman 1' })).toBeVisible();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Du slettar: 1 valt innsending' }),
+  ).toBeVisible();
   await page.screenshot({ path: info.outputPath('sletting-preview.png'), fullPage: true });
   // A short press does not delete; holding for 1.2 s does.
   await page.getByRole('button', { name: 'Stadfest sletting' }).click();

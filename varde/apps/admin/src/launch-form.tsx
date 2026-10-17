@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { mutate } from './api.js';
-import type { Client, Version } from './models.js';
+import { versionText, type Client, type Version } from './models.js';
 import { ErrorMessage, useAction } from './queries.js';
 import { SendOut } from './round-client.js';
 
@@ -80,7 +80,7 @@ export function LaunchForm({
             <option value="">Vel publisert versjon</option>
             {versions.map((v) => (
               <option key={v.id} value={v.id}>
-                {v.template.key} · {v.label}
+                {versionText(v)}
               </option>
             ))}
           </select>
@@ -137,6 +137,7 @@ export function LaunchForm({
         <button disabled={action.isPending || !selected.length}>
           {seminar ? 'Start undersøkinga' : 'Start runden'}
         </button>
+        {!selected.length && <p className="forklaring">Vel minst éin kunde for å starte.</p>}
         <ErrorMessage error={action.error} />
       </form>
       {launched.length > 0 && (

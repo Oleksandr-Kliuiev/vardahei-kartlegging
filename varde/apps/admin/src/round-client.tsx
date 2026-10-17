@@ -5,7 +5,21 @@ import type { Invitation, Progress, RoundClient } from './models.js';
 import { ErrorMessage, useAction } from './queries.js';
 import { Ring } from './widgets.js';
 
-export function SendOut({ id }: { id: string }) {
+/** A short reminder, built from the invitation link and the deadline (Varde itself sends nothing). */
+export function reminderText(lang: string, link: string, deadline: string | null): string {
+  const date = deadline
+    ? new Date(deadline).toLocaleDateString(lang === 'en' ? 'en-GB' : 'nb-NO', {
+        day: 'numeric',
+        month: 'long',
+      })
+    : '';
+  if (lang === 'en')
+    return `A reminder to answer the survey${date ? ` before ${date}` : ''}. It only takes a few minutes.\n\n${link}`;
+  return `Hugs å svare på undersøkinga${date ? ` innan ${date}` : ''}. Det tek berre nokre minutt.\n\n${link}`;
+}
+
+export function SendOut({ id, deadline = null }: { id: string; deadline?: string | null }) {
+  const [kind, setKind] = useState<'invitation' | 'reminder'>('invitation');
   const [lang, setLang] = useState('nn');
   const [message, setMessage] = useState('');
   const invitation = useQuery({
@@ -20,12 +34,30 @@ export function SendOut({ id }: { id: string }) {
       setMessage('Kunne ikkje kopiere. Merk teksten og kopier sjølv.');
     }
   }
+  const shown =
+    kind === 'reminder' && invitation.data
+      ? reminderText(lang, invitation.data.link, deadline)
+      : (invitation.data?.text ?? '');
   return (
     <div className="utsending">
       <p>
         Teksten er skriven for at leiaren sender han frå si eiga e-post eller i Teams. Fortel gjerne
         om undersøkinga på eit møte først, så ingen trur det er svindel.
       </p>
+      <div className="knappar" role="group" aria-label="Type tekst">
+        {(['invitation', 'reminder'] as const).map((k) => (
+          <button
+            key={k}
+            aria-pressed={kind === k}
+            onClick={() => {
+              setKind(k);
+              setMessage('');
+            }}
+          >
+            {k === 'invitation' ? 'Invitasjon' : 'Påminning'}
+          </button>
+        ))}
+      </div>
       <div className="knappar">
         {(invitation.data?.languages ?? ['nn', 'en']).map((code) => (
           <button
@@ -43,12 +75,12 @@ export function SendOut({ id }: { id: string }) {
       <ErrorMessage error={invitation.error} />
       {invitation.data && (
         <>
-          <textarea readOnly aria-label="Tekst til tilsette" value={invitation.data.text} />
+          <textarea readOnly aria-label="Tekst til tilsette" value={shown} />
           <input readOnly aria-label="Lenkje til kartlegginga" value={invitation.data.link} />
           <div className="knappar">
             <button
               onClick={() => {
-                void copy(invitation.data.text);
+                void copy(shown);
               }}
             >
               Kopier tekst
@@ -79,7 +111,7 @@ export function SendOut({ id }: { id: string }) {
 const statusText: Record<string, string> = {
   draft: 'Ikkje opna',
   open: 'Open',
-  closed: 'Stengd',
+  closed: 'Stengd for svar',
   archived: 'Arkivert',
 };
 const statusChip: Record<string, string> = {
@@ -163,7 +195,7 @@ export function RoundClientCard({
         )}
         {rc.status === 'open' && (
           <button disabled={action.isPending} onClick={() => run(() => mutate(`${base}/close`))}>
-            Steng
+            Steng for svar
           </button>
         )}
         <label>
@@ -193,7 +225,7 @@ export function RoundClientCard({
               run(() => mutate(`${base}/reissue`));
             }}
           >
-            {confirm ? 'Gamle lenkjer sluttar å verke. Stadfest' : 'Ny kode'}
+            {confirm ? 'Gamle lenkjer sluttar å verke. Stadfest' : 'Ny lenkje'}
           </button>
         )}
         {reportReady && (
@@ -208,16 +240,17 @@ export function RoundClientCard({
         {rc.status === 'open' && (
           <button
             aria-expanded={send}
+            title="Varde sender ingenting sjølv. Du får teksten og lenkja, og leiaren hos kunden sender dei."
             onClick={() => {
               setSend(!send);
             }}
           >
-            Send ut
+            Hent invitasjon
           </button>
         )}
       </div>
       <ErrorMessage error={action.error} />
-      {send && rc.status === 'open' && <SendOut id={rc.id} />}
+      {send && rc.status === 'open' && <SendOut id={rc.id} deadline={rc.deadline ?? null} />}
     </article>
   );
 }

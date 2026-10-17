@@ -27,6 +27,27 @@ export interface Version {
   id: string;
   label: string;
   template: { key: string };
+  published_at?: string | null;
+  question_count?: number;
+}
+
+/** «tryggleik · 2026-10-13 · 16 spørsmål, publisert 13.10.2026», so the choice shows what it is. */
+export function versionText(v: Version): string {
+  const name =
+    v.template.key === 'tryggleik'
+      ? 'IT-tryggleik'
+      : v.template.key === 'ki'
+        ? 'KI i kvardagen'
+        : v.template.key;
+  const parts = [`${name} · ${v.label}`];
+  const facts = [
+    v.question_count ? `${v.question_count} spørsmål` : '',
+    v.published_at
+      ? `publisert ${new Date(v.published_at).toLocaleDateString('nn-NO', { day: 'numeric', month: 'short', year: 'numeric' })}`
+      : '',
+  ].filter(Boolean);
+  if (facts.length) parts.push(`(${facts.join(', ')})`);
+  return parts.join(' ');
 }
 export interface Audit {
   who: string;
