@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from './api.js';
 import type { Cell, Progress, Round } from './models.js';
 import { ErrorMessage } from './queries.js';
-import { ClientTrails, Kpis } from './overview.js';
+import { ClientTrails, dayText, Kpis } from './overview.js';
 
 const value = (cell: Cell) => (cell.suppressed ? '–' : cell.value);
 /** The progress of one round, shared by «I dag», the round page and its client cards. */
@@ -71,7 +71,7 @@ export function ProgressRound({ round }: { round: Round }) {
                     </td>
                     <td>{value(p.in_progress)}</td>
                     <td>{value(p.abandoned)}</td>
-                    <td>{p.last_response_day?.slice(0, 10) ?? '–'}</td>
+                    <td>{dayText(p.last_response_day)}</td>
                     <td>
                       {p.median_duration_s.suppressed
                         ? '–'

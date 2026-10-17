@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api, mutate } from './api.js';
 import type { Invitation, Progress, RoundClient } from './models.js';
 import { follow } from './nav.js';
+import { dayText } from './overview.js';
 import { ErrorMessage, useAction } from './queries.js';
 import { SendtListe } from './sendt.js';
 import { Ring } from './widgets.js';
@@ -198,7 +199,7 @@ export function RoundClientCard({
           <dt>Svar</dt>
           <dd>{progress?.responses_total ?? 0}</dd>
           <dt>Siste svar</dt>
-          <dd>{progress?.last_response_day?.slice(0, 10) ?? '–'}</dd>
+          <dd>{dayText(progress?.last_response_day)}</dd>
         </dl>
       </div>
       <div className="knappar">

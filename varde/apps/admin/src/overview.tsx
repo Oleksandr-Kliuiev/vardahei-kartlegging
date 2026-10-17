@@ -23,6 +23,13 @@ const MONTHS = [
 /** «15. oktober», with the year when it is not this year. */
 export const longDate = (d: Date) =>
   `${d.getDate()}. ${MONTHS[d.getMonth()]}${d.getFullYear() === new Date().getFullYear() ? '' : ` ${d.getFullYear()}`}`;
+/** The day of an answer as the API gives it («2026-10-14…»): «i dag», «14. oktober»; «–» without one. */
+export const dayText = (day: string | null | undefined) => {
+  if (!day) return '–';
+  if (day.slice(0, 10) === new Date().toISOString().slice(0, 10)) return 'i dag';
+  const [y = 0, m = 1, d = 1] = day.slice(0, 10).split('-').map(Number);
+  return longDate(new Date(y, m - 1, d));
+};
 const greeting = (h: number) =>
   h < 10 ? 'God morgon' : h < 13 ? 'God dag' : h < 18 ? 'God ettermiddag' : 'God kveld';
 const visible = (c: Cell) => (c.suppressed ? null : c.value);
@@ -80,11 +87,7 @@ export function Kpis({ clients }: { clients: Progress[] }) {
     .filter((d): d is string => d !== null)
     .sort()
     .at(-1);
-  const lastText = last
-    ? last.slice(0, 10) === new Date().toISOString().slice(0, 10)
-      ? 'i dag'
-      : longDate(new Date(last))
-    : '–';
+  const lastText = dayText(last);
   return (
     <div className="flate kpi" aria-live="polite">
       <div className="kort s3 talkort">

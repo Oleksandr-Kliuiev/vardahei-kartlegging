@@ -11,7 +11,7 @@ test('runner events and submissions agree with progress counts, rate, day and me
   await expect(page.locator('tbody')).toContainText('3 svar');
   await expect(page.locator('tbody')).toContainText('25 %');
   await expect(page.locator('tbody td').nth(2)).toHaveText('3');
-  await expect(page.locator('tbody')).toContainText(new Date().toISOString().slice(0, 10));
+  await expect(page.locator('tbody')).toContainText('i dag');
   await expect(page.locator('tbody')).toContainText('2 min.');
   await page.request.post('/__e2e/age/progress');
   await expect(page.locator('tbody td').nth(3)).toHaveText('3');

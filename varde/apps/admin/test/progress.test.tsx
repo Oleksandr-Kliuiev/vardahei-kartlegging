@@ -54,7 +54,7 @@ it('shows exact common count, unknown denominator as dash, and hides suppressed 
   view = mount(<ProgressRound round={round} />, true);
   await settle();
   const cells = [...view.div.querySelectorAll('tbody td')].map((e) => e.textContent);
-  expect(cells).toEqual(['–', '4 svar–', '3', '–', '2026-10-14', '2 min.']);
+  expect(cells).toEqual(['–', '4 svar–', '3', '–', expect.stringMatching(/^14\. oktober( 2026)?$/), '2 min.']);
   expect(view.div.querySelector('[data-question="2"]')).toBeNull();
   expect(view.div.querySelector('[data-question="4"]')?.textContent).toBe('Spørsmål 4: 3 avbrote');
   expect(view.div.querySelector('progress')).toBeNull();
