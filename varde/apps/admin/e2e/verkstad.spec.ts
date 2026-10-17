@@ -41,7 +41,10 @@ test('an edit saves itself and stays after a reload; the phone follows the trail
   await row(page, 'Q2').click();
   await expect(text).toHaveValue('Brukar du tofaktor (MFA)?');
   // A new question after Q2, shown only when Q2 is «Nei».
-  await page.locator('.vk-seksjon.aktiv .vk-legg').click();
+  await page
+    .locator('.vk-seksjon.aktiv')
+    .getByRole('button', { name: 'Spørsmål', exact: true })
+    .click();
   await expect(chosen(page)).toHaveAttribute('data-sel', 'Q3');
   await text.fill('Kva hindrar deg?');
   await page.getByLabel('Svar 1', { exact: true }).fill('Det er tungvint');

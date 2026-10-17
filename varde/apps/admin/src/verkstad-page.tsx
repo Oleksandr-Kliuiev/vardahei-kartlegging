@@ -45,6 +45,8 @@ import { Invitasjon, Leiardel, OmSkjemaet, Seksjon, Slutt, Velkomen } from './ve
 import { Publiser } from './verkstad-publiser.js';
 import { useSpelling } from './verkstad-merke.js';
 import { lastNode, useHaldFram } from './hald-fram.js';
+import { Bank } from './verkstad-bank.js';
+import { Meir, notesQuery, openNotes } from './verkstad-meir.js';
 import { Omsetjing } from './verkstad-omsetjing.js';
 import { diffQuestions, withText } from './verkstad-tekst.js';
 import { Versjonar } from './verkstad-versjonar.js';
@@ -112,7 +114,10 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
   const [unlocked, setUnlocked] = useState<ReadonlySet<string>>(new Set());
   const [issues, setIssues] = useState<Issue[]>([]);
   // One side panel at a time: publishing or the versions; «Omsetjing» replaces the three panes.
-  const [panel, setPanel] = useState<'publiser' | 'versjonar' | null>(null);
+  const [panel, setPanel] = useState<'publiser' | 'versjonar' | 'bank' | null>(null);
+  const [bankAt, setBankAt] = useState<number | 'leader'>(0);
+  // Open notes per trail node (2.18): a mark on the trail, the notes at the question.
+  const notes = useQuery(notesQuery(initial.id));
   const [view, setView] = useState<'verkstad' | 'omsetjing'>('verkstad');
   const [phone, setPhone] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -206,9 +211,9 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
     setAsk((n) => n + 1);
     document.querySelector('.vk-redigering-flate')?.scrollTo({ top: 0 });
   };
-  const add = (where: number | 'leader') => {
+  const add = (where: number | 'leader', from?: Question) => {
     const id = nextId(content, used());
-    const q = newQuestion('single', id, languages);
+    const q = from ? { ...from, id } : newQuestion('single', id, languages);
     const current = content.questions.find((x) => x.id === sel);
     const list =
       where === 'leader' ? leaderOf(content) : (sectionsOf(content)[where]?.questions ?? []);
@@ -442,6 +447,7 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
       onDelete={() => remove(q)}
       onDuplicate={() => duplicate(q)}
       onMove={(to) => move(q.id, { in: to })}
+      more={<Meir versionId={saved.id} hash={saved.content_hash} content={content} q={q} />}
     />
   ) : sel === NODE.settings ? (
     <OmSkjemaet
@@ -561,6 +567,11 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
               onMove={move}
               onAdd={add}
               onAddSection={addSectionAfter}
+              onBank={(where) => {
+                setBankAt(where);
+                setPanel('bank');
+              }}
+              notes={openNotes(notes.data)}
             />
           </div>
           <section className="vk-rute vk-redigering-flate" aria-label="Redigering">
@@ -625,6 +636,17 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
             // The new version must be in the wizard's list: read the published versions again.
             void queries.invalidateQueries({ queryKey: ['rounds', 'versions'] });
             goTo(`/admin/rounds?ny=${saved.id}`);
+          }}
+          onClose={() => setPanel(null)}
+        />
+      )}
+      {panel === 'bank' && (
+        <Bank
+          content={content}
+          languages={languages}
+          onPick={(picked) => {
+            add(bankAt, picked);
+            setPanel(null);
           }}
           onClose={() => setPanel(null)}
         />

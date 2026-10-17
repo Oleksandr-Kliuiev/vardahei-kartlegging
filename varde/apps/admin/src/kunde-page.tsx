@@ -13,6 +13,7 @@ import { roundsOf } from './kundar-page.js';
 import type { Round } from './models.js';
 import { follow, useTitle } from './nav.js';
 import { ErrorMessage, useClients, useRounds } from './queries.js';
+import { longDate } from './overview.js';
 import { ROUND_STATUS, roundWhen } from './runde-page.js';
 import { type SeminarList, shortDate } from './seminar-models.js';
 import './dashboard.css';
@@ -209,7 +210,14 @@ function Steg({
           </span>
         ) : null}
         {rc?.released && ['closed', 'archived'].includes(round.status) && (
-          <Lenkje to={report}>Rapporten til kunden</Lenkje>
+          <span className="tid-tal">
+            <Lenkje to={report}>Rapporten til kunden</Lenkje>
+            <small>
+              {rc.report_sent_at
+                ? `Sendt ${longDate(new Date(rc.report_sent_at))}`
+                : 'Ikkje merkt som sendt'}
+            </small>
+          </span>
         )}
       </div>
     </li>

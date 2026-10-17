@@ -1,6 +1,7 @@
 // The workshop's header (2.15): where you are, the version and its base, the save state, undo, the
 // language you write in, and the way to publishing; below it the messages that need a decision.
 import { Icon } from './icons.js';
+import { useToast } from './shell.js';
 import { Seg } from './widgets.js';
 import { goTo } from './nav.js';
 import { LANG_NAME } from './verkstad-felt.js';
@@ -55,6 +56,29 @@ export function Lagrestatus({
         </>
       )}
     </span>
+  );
+}
+
+/**
+ * «Del førehandsvising» (2.18): the link to the phone view of this version, to read it through with
+ * a colleague. It opens only for people signed in to Varde (access for others is Oleksandr's call).
+ */
+function DelForhand({ id }: { id: string }) {
+  const toast = useToast();
+  const copy = async () => {
+    const link = `${window.location.origin}/r?preview=${id}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      toast('Lenkja er kopiert. Ho opnar berre for dei som er logga inn i Varde.');
+    } catch {
+      window.prompt('Kopier lenkja:', link);
+    }
+  };
+  return (
+    <button type="button" className="btn sm ghost" onClick={() => void copy()}>
+      <Icon name="kopi" small />
+      Del førehandsvising
+    </button>
   );
 }
 
@@ -173,6 +197,7 @@ export function Topp(p: {
             {p.view === 'omsetjing' ? 'Tilbake til skjemaet' : 'Omsetjing'}
           </button>
         )}
+        <DelForhand id={p.saved.id} />
         <button
           type="button"
           className="btn sm ghost vk-telefonknapp"

@@ -8,6 +8,7 @@ import { Icon } from './icons.js';
 import type { Round } from './models.js';
 import { goTo } from './nav.js';
 import { ErrorMessage } from './queries.js';
+import { SendtListe } from './sendt.js';
 import { ReportSheet } from './report-sheet.js';
 import { type ClientReport, LANGUAGE_NAMES, type ReportLang } from './report-texts.js';
 import './report.css';
@@ -97,6 +98,7 @@ function ReportView({ round, selected }: { round: Round; selected: string }) {
   }, [data]);
   const base = `/admin/rounds/${round.id}/rapportar`;
   const choose = (rc: string) => goTo(rc ? `${base}/${rc}` : base);
+  const chosen = round.round_clients.find((rc) => rc.id === selected);
   return (
     <div className="rapport">
       <div className="kort rapport-varsel" role="note">
@@ -176,6 +178,7 @@ function ReportView({ round, selected }: { round: Round; selected: string }) {
               <Icon name="ned" small />
               Lagre som PDF
             </button>
+            {chosen && <SendtListe rc={chosen} kinds={['report']} />}
             <p className="forklaring">
               I utskriftsvindauget vel du «Lagre som PDF». Fila får namnet «
               {data ? `Rapport ${data.client.name} ${data.round.name}` : 'Rapport …'}». Menyen og

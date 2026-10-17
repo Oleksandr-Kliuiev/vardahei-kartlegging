@@ -4,6 +4,7 @@ import { api, mutate } from './api.js';
 import type { Invitation, Progress, RoundClient } from './models.js';
 import { follow } from './nav.js';
 import { ErrorMessage, useAction } from './queries.js';
+import { SendtListe } from './sendt.js';
 import { Ring } from './widgets.js';
 
 /** A short reminder, built from the invitation link and the deadline (Varde itself sends nothing). */
@@ -258,6 +259,18 @@ export function RoundClientCard({
           </button>
         )}
       </div>
+      {rc.status !== 'draft' && (
+        <SendtListe
+          rc={rc}
+          kinds={
+            rc.status === 'open'
+              ? ['invitation', 'reminder']
+              : reportReady
+                ? ['invitation', 'reminder', 'report']
+                : ['invitation', 'reminder']
+          }
+        />
+      )}
       <ErrorMessage error={action.error} />
       {send && rc.status === 'open' && (
         <SendOut

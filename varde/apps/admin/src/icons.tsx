@@ -113,6 +113,8 @@ const P = {
       d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"
     />,
   ],
+  // Notes on questions in the workshop (2.18).
+  prat: [<path key="a" d="M5 5h14a2 2 0 012 2v8a2 2 0 01-2 2h-7l-4.5 3.5V17H5a2 2 0 01-2-2V7a2 2 0 012-2z" />],
   // «Kundar» and «Personvern» in the menu (2.17).
   bygg: [
     <path key="a" d="M4 21V5.5L12 3v18M12 9l8 2.5V21M2 21h20" />,

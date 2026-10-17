@@ -1,7 +1,7 @@
 // One question in the workshop (2.15): the text as the respondent reads it, the answers, who gets it,
 // when it is shown, and the technical details last. Frozen questions (F1–F22) are locked until
 // «Rett ordlyden»; a changed wording then asks whether it is spelling or a new meaning.
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Question } from '../../../packages/schema/src/template/question.js';
 import type { TemplateContent } from '../../../packages/schema/src/template/template.js';
 import { Icon, type IconName } from './icons.js';
@@ -51,6 +51,8 @@ export interface SporsmalProps {
   onDelete: () => void;
   onDuplicate: () => void;
   onMove: (to: number | 'leader') => void;
+  /** Where the question is used, what the last round answered and notes (2.18). */
+  more?: ReactNode;
 }
 
 export function Sporsmal(p: SporsmalProps) {
@@ -68,10 +70,6 @@ export function Sporsmal(p: SporsmalProps) {
   const sectionTitle = s >= 0 ? sections[s]!.title?.nn : undefined;
   const textIssue = p.issues.find((i) => i.path.slice(2).join('.') === 'texts.text.nn');
   const other = p.issues.filter((i) => i !== textIssue);
-  const ref = new RegExp(`"var":"${q.id}(\\.|")`);
-  const users = content.questions.filter(
-    (x) => x.visible_if !== undefined && ref.test(JSON.stringify(x.visible_if)),
-  );
   const setTexts = (texts: Partial<Question['texts']>) =>
     p.onChange({ ...q, texts: { ...q.texts, ...texts } });
   return (
@@ -254,18 +252,7 @@ export function Sporsmal(p: SporsmalProps) {
           p.onChange(next);
         }}
       />
-      {users.length > 0 && (
-        <div className="vk-blokk">
-          <div className="vk-etikett">Brukt i</div>
-          <p className="vk-brukt">
-            {users.map((u) => (
-              <span key={u.id} className="chip accent">
-                Vilkåret til {u.id}
-              </span>
-            ))}
-          </p>
-        </div>
-      )}
+      {p.more}
       <Teknisk q={q} readOnly={locked || fixed} onApply={p.onChange} />
       {!p.readOnly && (
         <footer className="vk-fot">

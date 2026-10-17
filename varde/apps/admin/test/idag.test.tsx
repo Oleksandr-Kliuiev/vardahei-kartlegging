@@ -110,6 +110,30 @@ describe('«I dag»', () => {
     expect(items[2]!.to).toBe('/admin/rounds/closed/rapportar/r1');
     expect(items[3]!.text).toBe('2 ting att før publisering.');
   });
+  it('a report marked as sent leaves the list; a reminder marked as sent is named (2.18)', () => {
+    const sent = rounds.map((r) => ({
+      ...r,
+      round_clients: r.round_clients.map((rc) =>
+        rc.id === 'r1'
+          ? { ...rc, report_sent_at: new Date(NOW).toISOString() }
+          : rc.id === 'soon'
+            ? { ...rc, reminder_sent_at: new Date(NOW - 86_400_000).toISOString() }
+            : rc,
+      ),
+    }));
+    const items = todos({
+      rounds: sent,
+      progress: new Map([answered('soon', 6), answered('late', 3)]),
+      surveys: [],
+      contacts: 0,
+      reminder: null,
+      now: NOW,
+    });
+    expect(items.map((t) => t.title)).not.toContain('Rapporten til Daco er klar');
+    expect(items.find((t) => t.key === 'frist:soon')!.text).toBe(
+      '6 av 10 har svart. Påminning sendt 16. oktober.',
+    );
+  });
   it('an archive deadline comes first and has no link: the deletion is done outside Varde', () => {
     const [first] = todos({
       rounds: [],

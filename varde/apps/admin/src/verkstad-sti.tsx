@@ -32,6 +32,10 @@ export interface StiProps {
   onMove: (id: string, place: Place) => void;
   onAdd: (where: number | 'leader') => void;
   onAddSection: () => void;
+  /** «Hent spørsmål» (2.18): a ready question or one from another survey. */
+  onBank?: (where: number | 'leader') => void;
+  /** Open notes per question (2.18). */
+  notes?: ReadonlyMap<string, number>;
 }
 
 export function Sti(p: StiProps) {
@@ -156,6 +160,12 @@ export function Sti(p: StiProps) {
             ) : isNew ? (
               <span className="vk-merke">ny</span>
             ) : null}
+            {p.notes?.get(x.id) ? (
+              <span className="vk-notat" title={`${p.notes.get(x.id)} opne kommentarar`}>
+                <Icon name="prat" small />
+                {p.notes.get(x.id)}
+              </span>
+            ) : null}
             {p.problems.get(x.id) ? <span className="vk-feil" title="Må fiksast" /> : null}
           </span>
         </button>
@@ -226,10 +236,18 @@ export function Sti(p: StiProps) {
               )}
               <ul>{rows}</ul>
               {!p.readOnly && !q && (
-                <button type="button" className="vk-legg" onClick={() => p.onAdd(i)}>
-                  <Icon name="pluss" small />
-                  Spørsmål
-                </button>
+                <div className="vk-legg-rad">
+                  <button type="button" className="vk-legg" onClick={() => p.onAdd(i)}>
+                    <Icon name="pluss" small />
+                    Spørsmål
+                  </button>
+                  {p.onBank && (
+                    <button type="button" className="vk-legg" onClick={() => p.onBank?.(i)}>
+                      <Icon name="kopi" small />
+                      Hent
+                    </button>
+                  )}
+                </div>
               )}
             </li>
           );

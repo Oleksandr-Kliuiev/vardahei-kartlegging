@@ -13,6 +13,10 @@ export interface RoundClient {
   population_snapshot: number | null;
   /** Released round_client snapshots exist (5.1: a client report can be made). */
   released?: boolean;
+  /** Marked as sent by hand (2.18): the invitation, the last reminder, the report. */
+  invitation_sent_at?: string | null;
+  reminder_sent_at?: string | null;
+  report_sent_at?: string | null;
 }
 export interface Round {
   id: string;

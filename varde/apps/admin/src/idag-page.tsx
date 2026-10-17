@@ -7,7 +7,7 @@ import { lastPlace, placeName, sidan } from './hald-fram.js';
 import { Icon, type IconName } from './icons.js';
 import type { Progress, Round } from './models.js';
 import { follow } from './nav.js';
-import { daysTo, Ingress } from './overview.js';
+import { daysTo, Ingress, longDate } from './overview.js';
 import { progressQuery } from './progress-page.js';
 import { ErrorMessage, useRounds } from './queries.js';
 import type { SeminarList } from './seminar-models.js';
@@ -64,6 +64,9 @@ export function todos(input: {
         pop = rc.population_snapshot;
       if (pop !== null && n >= pop) continue;
       const answered = pop === null ? `${n} svar så langt.` : `${n} av ${pop} har svart.`;
+      const reminded = rc.reminder_sent_at
+        ? ` Påminning sendt ${longDate(new Date(rc.reminder_sent_at))}.`
+        : '';
       deadlines.push({
         d,
         t: {
@@ -74,15 +77,18 @@ export function todos(input: {
           title: deadlineTitle(rc.client.name, d),
           text:
             d < 0
-              ? `${answered} Steng for svar eller flytt fristen.`
-              : `${answered} Hent påminning og send ho til leiaren.`,
+              ? `${answered}${reminded} Steng for svar eller flytt fristen.`
+              : rc.reminder_sent_at
+                ? `${answered}${reminded}`
+                : `${answered} Hent påminning og send ho til leiaren.`,
         },
       });
     }
   out.push(...deadlines.sort((a, b) => a.d - b.d).map((x) => x.t));
   for (const r of input.rounds) {
     const closed = r.closed_at ? (now - new Date(r.closed_at).getTime()) / 86_400_000 : 0;
-    const ready = r.round_clients.filter((rc) => rc.released);
+    // Until it is marked as sent (2.18).
+    const ready = r.round_clients.filter((rc) => rc.released && !rc.report_sent_at);
     // Imported history (1.4c) has no report to send; a report is news for a month after closing.
     if (
       r.type === 'external_import' ||
@@ -102,7 +108,7 @@ export function todos(input: {
         : `Rapportane frå «${r.name}» er klare`,
       text: one
         ? `«${r.name}» er avslutta. Les gjennom rapporten og send han.`
-        : `${kundar(ready.length)}. Les gjennom kvar rapport og send han.`,
+        : `${kundar(ready.length)} ventar. Les gjennom kvar rapport og send han.`,
     });
   }
   for (const s of input.surveys)
