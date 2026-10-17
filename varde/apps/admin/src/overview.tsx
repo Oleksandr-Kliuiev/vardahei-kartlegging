@@ -187,7 +187,8 @@ function MiniHiker() {
 function TrailRow({ name, p, deadline }: { name: string; p: Progress; deadline: string | null }) {
   const pop = p.population_snapshot;
   const per = pop !== null && pop > MAX_DOTS ? Math.ceil(pop / MAX_DOTS) : 1;
-  const n = pop === null ? 0 : Math.ceil(pop / per),
+  // Unknown head count: an open-ended trail, the hiker walks by the number of answers (up to MAX_DOTS).
+  const n = pop === null ? MAX_DOTS : Math.ceil(pop / per),
     on = Math.min(n, Math.floor(p.responses_total / per));
   const row = useRef<HTMLDivElement>(null),
     before = useRef<number | null>(null);
@@ -212,8 +213,7 @@ function TrailRow({ name, p, deadline }: { name: string; p: Progress; deadline: 
       { duration: 1400, fill: 'none' },
     );
   }, [on]);
-  // Unknown head count: no dots to count, but the hiker still stands at the start of the trail.
-  const [hx, hy] = n === 0 ? dotPos(0, 2) : dotPos(Math.max(0, on - 1), n);
+  const [hx, hy] = dotPos(Math.max(0, on - 1), n);
   const active = visible(p.in_progress),
     left = daysTo(deadline);
   const percent = pop ? Math.round((100 * p.responses_total) / pop) : null;
@@ -226,14 +226,16 @@ function TrailRow({ name, p, deadline }: { name: string; p: Progress; deadline: 
     >
       <div className="spor-namn">
         {name}
-        <small>{pop === null ? 'Tal tilsette manglar' : `${pop} tilsette`}</small>
+        <small>
+          {pop === null ? 'Tal tilsette manglar, stien viser berre svar' : `${pop} tilsette`}
+        </small>
       </div>
       <div className="spor-felt" aria-hidden="true">
         <svg className="spor-line" viewBox="0 0 100 34" preserveAspectRatio="none">
           <path d="M2,25 L98,11.6" vectorEffect="non-scaling-stroke" />
         </svg>
         <div className="spor-prikkar">
-          {Array.from({ length: n }, (_, i) => {
+          {Array.from({ length: pop === null ? on : n }, (_, i) => {
             const [x, y] = dotPos(i, n);
             return (
               <span
