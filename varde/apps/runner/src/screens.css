@@ -2,7 +2,8 @@
 
 /* Intro: brevet, fakta og kort svar på kven som ser svara */
 .intro h1 { font-size: clamp(2.15rem, 8vw, 3rem); line-height: 1.04; font-weight: 800; letter-spacing: -0.026em; margin: 10px 0 18px; }
-.brev { display: grid; gap: 14px; max-width: 34em; }
+/* One column that may shrink: a long word or customer name wraps instead of widening the page. */
+.brev { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; max-width: 34em; overflow-wrap: anywhere; }
 .brev > h1 { margin-bottom: 4px; }
 .kunde { display: inline-block; padding: 1px 9px; border-radius: 8px; background: var(--accent-soft); color: var(--ink-strong); font-weight: 700; }
 .fakta { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 12px; }

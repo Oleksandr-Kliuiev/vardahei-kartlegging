@@ -93,9 +93,10 @@ button:has(> .icon), .knapp:has(> .icon) { display: inline-flex; align-items: ce
 
 /* Logo: same merke, aldri omteikna. I mørk modus står det på ei lys plate. */
 .logo { display: block; height: 26px; width: auto; }
-.logo-plate { display: inline-flex; align-items: center; border-radius: 10px; padding: 0; transition: background-color var(--t-base), padding var(--t-base); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .logo-plate { background: var(--graa-100); padding: 5px 9px; } }
-:root[data-theme="dark"] .logo-plate { background: var(--graa-100); padding: 5px 9px; }
+.logo-plate { display: inline-flex; align-items: center; }
+/* Dark theme: no light plate; the logo is recoloured instead (dark grey text turns light, the blue stays blue but lighter). */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .logo { filter: invert(1) hue-rotate(180deg) brightness(1.15); } }
+:root[data-theme="dark"] .logo { filter: invert(1) hue-rotate(180deg) brightness(1.15); }
 
 /* Skjelett: berre når lasting tek meir enn 300 ms */
 .skel { background: linear-gradient(90deg, var(--bg-sunken) 0 40%, var(--surface-hover) 50%, var(--bg-sunken) 60% 100%); background-size: 300% 100%; animation: skel calc(1400ms * var(--motion-scale)) linear infinite; border-radius: var(--r-sm); }
