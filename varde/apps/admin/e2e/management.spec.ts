@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
-import { editorFixture } from '../test/editor-fixture.js';
-import { login, state } from './support.js';
+import { login, newSurvey, state } from './support.js';
 
 test('wizard creates a client and launches an open round with an invitation; closed clients have no reopen action', async ({
   page,
@@ -38,43 +37,20 @@ test('wizard creates a client and launches an open round with an invitation; clo
   await expect(customer.getByRole('button', { name: 'Opne', exact: true })).toHaveCount(0);
 });
 
-test('create template, edit and validate a draft, accept translations, preview without writes, publish and copy', async ({
+test('create a survey, write it in the workshop, accept both languages, preview without writes, publish and open the next draft', async ({
   page,
   context,
 }) => {
-  await login(page);
-  await page.getByRole('link', { name: 'Skjema', exact: true }).click();
-  const key = `e2e_${randomUUID().replaceAll('-', '')}`;
-  await page.getByLabel('Nøkkel', { exact: true }).fill(key);
-  await page.getByLabel('Identifikasjon', { exact: true }).selectOption('none');
-  const created = page.waitForResponse(
-    (r) => r.url().endsWith('/api/admin/surveys') && r.request().method() === 'POST',
-  );
-  await page.getByRole('button', { name: 'Opprett skjema', exact: true }).click();
-  const v = (await (await created).json()) as { id: string; content_hash: string };
-  // Synthetic valid baseline; the remaining operations exercise the actual editor and runner.
-  const c = editorFixture().content;
-  c.key = key;
-  const saved = await page.request.put(`/api/admin/surveys/versions/${v.id}`, {
-    data: { content_hash: v.content_hash, content: c },
-  });
-  expect(saved.status()).toBe(200);
-  await page.getByRole('button', { name: 'Hent lagra versjon på nytt' }).click();
-  await page.locator('.question-card summary').first().click();
-  await page.getByLabel('Spørsmålstekst (nn)', { exact: true }).fill('Kva rolle har du?');
-  await page.getByLabel('Spørsmålstekst (en)', { exact: true }).fill('What is your role?');
-  // The phone frame in the editor shows the unsaved text at once (1.46).
+  const v = await newSurvey(page);
+  await page.locator('.vk-sti [data-sel="R"]').click();
+  await page.getByLabel('Spørsmålet', { exact: true }).fill('Kva rolle har du?');
+  // The phone stands on the chosen question and shows the text before it is saved (1.46, 2.15).
   const phone = page.frameLocator('iframe[title="Førehandsvising på telefon"]');
-  await phone.locator('#start').click();
   await expect(phone.getByRole('heading', { name: 'Kva rolle har du?' })).toBeVisible();
-  await page.getByRole('button', { name: 'Lagre utkast', exact: true }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'Utkastet er lagra.' })).toBeVisible();
-  for (const lang of ['nn', 'en']) {
-    await page.getByRole('button', { name: `Godkjenn ${lang}`, exact: true }).click();
-    await expect(
-      page.getByRole('button', { name: `Godkjenn ${lang} ✓`, exact: true }),
-    ).toBeEnabled();
-  }
+  await page.getByRole('button', { name: 'English', exact: true }).click();
+  await page.locator('textarea.vk-stor').fill('What is your role?');
+  await page.getByRole('button', { name: 'Nynorsk', exact: true }).click();
+  await expect(page.locator('.vk-lagring')).toHaveText(/^Lagra kl\. \d\d\.\d\d$/);
   const preview = await context.newPage();
   const writes: string[] = [];
   preview.on('request', (r) => {
@@ -88,16 +64,21 @@ test('create template, edit and validate a draft, accept translations, preview w
   await preview.getByRole('button', { name: 'Sjå avslutninga' }).click();
   expect(writes).toEqual([]);
   await preview.close();
-  await page.getByLabel('Eg stadfestar publisering.', { exact: false }).check();
-  await page.getByRole('button', { name: 'Publiser versjonen', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Lagre utkast', exact: true })).toHaveCount(0);
-  const template = page
-    .locator('section.del')
-    .filter({ has: page.getByRole('heading', { name: key, exact: true }) });
-  await template.getByLabel('Namn på utkast').fill('v2');
-  await template.getByLabel('Utgangspunkt').selectOption(v.id);
-  await template.getByRole('button', { name: 'Nytt utkast', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'v2 · Utkast', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /Gjer klar til publisering/ }).click();
+  const panel = page.locator('.vk-skuff');
+  await panel.getByRole('button', { name: 'Eg har lese korrektur', exact: true }).click();
+  await expect(panel.getByText(/^Godkjend /)).toHaveCount(1);
+  await panel.getByRole('button', { name: 'Godkjenn English', exact: true }).click();
+  await expect(panel.getByText(/^Godkjend /)).toHaveCount(2);
+  await panel.getByRole('button', { name: 'Hald inne for å publisere v1' }).click({ delay: 1400 });
+  await expect(panel.getByText('v1 er publisert', { exact: true })).toBeVisible();
+  await panel.getByRole('button', { name: 'Tilbake til skjemaet', exact: true }).click();
+  await expect(page.getByText(/^v1 er publisert og låst/)).toBeVisible();
+  await expect(page.getByLabel('Spørsmålet', { exact: true })).not.toBeEditable();
+  await page.getByRole('button', { name: 'Lag utkast v2', exact: true }).click();
+  await expect(page.locator('.vk-tittel .chip')).toHaveText('Utkast v2');
+  await expect(page.locator('.vk-base')).toContainText('Bygd på v1');
+  await expect(page.getByLabel('Spørsmålet', { exact: true })).toHaveValue('Kva rolle har du?');
 });
 
 test('360 px admin forms and employee tables stay inside the viewport', async ({ page }, info) => {

@@ -72,6 +72,67 @@ const P = {
   tilbake: [<path key="a" d="M19 12H5M11 6l-6 6 6 6" />],
   // Seminar rounds (3.8): the survey after the seminar
   send: [<path key="a" d="M22 2L11 13" />, <path key="b" d="M22 2l-7 20-4-9-9-4z" />],
+  // Survey workshop (2.15)
+  grep: [
+    <circle key="a" cx="9" cy="6" r=".6" />,
+    <circle key="b" cx="15" cy="6" r=".6" />,
+    <circle key="c" cx="9" cy="12" r=".6" />,
+    <circle key="d" cx="15" cy="12" r=".6" />,
+    <circle key="e" cx="9" cy="18" r=".6" />,
+    <circle key="f" cx="15" cy="18" r=".6" />,
+  ],
+  greiner: [
+    <path key="a" d="M6 3v12" />,
+    <circle key="b" cx="6" cy="18" r="3" />,
+    <circle key="c" cx="18" cy="6" r="3" />,
+    <path key="d" d="M18 9a9 9 0 01-9 9" />,
+  ],
+  angre: [<path key="a" d="M9 14L4 9l5-5" />, <path key="b" d="M4 9h10.5a5.5 5.5 0 010 11H11" />],
+  gjerom: [<path key="a" d="M15 14l5-5-5-5" />, <path key="b" d="M20 9H9.5a5.5 5.5 0 000 11H13" />],
+  telefon: [
+    <rect key="a" x="7" y="2" width="10" height="20" rx="2" />,
+    <path key="b" d="M11 18h2" />,
+  ],
+  sprak: [
+    <circle key="a" cx="12" cy="12" r="9" />,
+    <path key="b" d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18" />,
+  ],
+  chev: [<path key="a" d="M9 6l6 6-6 6" />],
+  topp: [
+    <path key="a" d="M3 20l6.5-11 4 6.5 2.5-4L21 20z" />,
+    <path key="b" d="M9.5 9V4l4 1.6-4 1.6" />,
+  ],
+  leiar: [
+    <circle key="a" cx="12" cy="7" r="3.5" />,
+    <path key="b" d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7" />,
+  ],
+  tannhjul: [
+    <circle key="a" cx="12" cy="12" r="3" />,
+    <path
+      key="b"
+      d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"
+    />,
+  ],
+  t_single: [
+    <circle key="a" cx="12" cy="12" r="8.5" />,
+    <circle key="b" cx="12" cy="12" r="3.2" />,
+  ],
+  t_multi: [
+    <rect key="a" x="3.5" y="3.5" width="17" height="17" rx="3.5" />,
+    <path key="b" d="M8 12.3l2.8 2.8L16.2 9.5" />,
+  ],
+  t_scale: [
+    <path key="a" d="M3 12h18" />,
+    <circle key="b" cx="6.5" cy="12" r="2" />,
+    <circle key="c" cx="12" cy="12" r="2" />,
+    <circle key="d" cx="17.5" cy="12" r="2" />,
+  ],
+  t_nps: [
+    <rect key="a" x="3" y="7" width="5" height="10" rx="1.4" />,
+    <rect key="b" x="9.5" y="7" width="5" height="10" rx="1.4" />,
+    <rect key="c" x="16" y="7" width="5" height="10" rx="1.4" />,
+  ],
+  t_text: [<path key="a" d="M4 7h16M4 12h11M4 17h14" />],
 } satisfies Record<string, ReactElement[]>;
 export type IconName = keyof typeof P;
 

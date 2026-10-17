@@ -31,5 +31,9 @@ export function schemaMessage(message: string): string {
   if (message.includes('min_choices > max_choices'))
     return 'Minimum tal val kan ikkje vere større enn maksimum.';
   if (message.includes('scale.min must')) return 'Minimum på skalaen må vere mindre enn maksimum.';
+  if (message.startsWith('Too small: expected string')) return 'Feltet kan ikkje vere tomt.';
+  if (message.startsWith('Too small: expected array')) return 'Legg til minst éin.';
+  if (message.startsWith('Invalid string')) return 'Bruk berre bokstavar, tal og understrek.';
+  if (message.startsWith('bad var')) return 'Vilkåret viser til eit spørsmål som ikkje finst.';
   return 'Kontroller verdien og formatet i dette feltet.';
 }

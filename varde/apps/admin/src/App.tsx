@@ -6,6 +6,7 @@ import { ReportPage } from './report-page.js';
 import { ArchiveReminder } from './archive-reminder.js';
 import { DashboardPage } from './dashboard-page.js';
 import { SeminarPage } from './seminar-page.js';
+import { VerkstadPage } from './verkstad-page.js';
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from 'react';
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ease, reduced, stagger } from '@varde/ui/motion';
@@ -96,10 +97,13 @@ function Shell({ name }: { name: string | null }) {
   const report = /^\/admin\/reports(?:\/([0-9a-f-]{36}))?$/i.exec(path);
   // Seminar (3a): the list, or one seminar by its id.
   const seminar = /^\/admin\/seminars(?:\/([0-9a-f-]{36}))?$/i.exec(path);
+  // Survey workshop (2.15): one template version by its id, with its own header.
+  const workshop = /^\/admin\/surveys\/([0-9a-f-]{36})$/i.exec(path);
   // One title per page for the tab, history and screen readers; the report page sets its own while open.
   useEffect(() => {
+    if (workshop) return;
     document.title = `${section?.title ?? section?.label ?? 'Sida finst ikkje'} – Varde`;
-  }, [section]);
+  }, [section, workshop?.[1]]);
   return (
     <div className="skal">
       <a className="hopp" href="#innhald">
@@ -123,14 +127,18 @@ function Shell({ name }: { name: string | null }) {
           open={menu}
           onMenu={() => setMenu(!menu)}
         />
-        <main className="side" id="innhald" ref={page}>
-          <div className="sidetittel">
-            <div>
-              <h1>{section?.title ?? section?.label ?? 'Sida finst ikkje'}</h1>
-              {section?.intro && <p>{section.intro}</p>}
+        <main className={workshop ? 'side side-vid' : 'side'} id="innhald" ref={page}>
+          {!workshop && (
+            <div className="sidetittel">
+              <div>
+                <h1>{section?.title ?? section?.label ?? 'Sida finst ikkje'}</h1>
+                {section?.intro && <p>{section.intro}</p>}
+              </div>
             </div>
-          </div>
-          {path === '/admin' ? (
+          )}
+          {workshop ? (
+            <VerkstadPage key={workshop[1]} id={workshop[1]!} />
+          ) : path === '/admin' ? (
             <>
               <ArchiveReminder />
               <ProgressPage />

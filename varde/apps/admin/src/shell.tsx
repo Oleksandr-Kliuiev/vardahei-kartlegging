@@ -32,7 +32,7 @@ export const SECTIONS: Section[] = [
   { url: '/admin', label: 'Oversikt', icon: 'heim', group: 'Arbeid' },
   { url: '/admin/rounds', label: 'Kundar og rundar', icon: 'flagg', group: 'Arbeid' },
   { url: '/admin/dashboard', label: 'Dashbord', icon: 'graf', group: 'Arbeid' },
-  { url: '/admin/surveys', label: 'Skjema', icon: 'skjema', group: 'Innhald' },
+  { url: '/admin/surveys', label: 'Skjema', icon: 'skjema', group: 'Innhald', sub: true },
   { url: '/admin/findings', label: 'Funn', icon: 'lyspare', group: 'Innhald' },
   {
     url: '/admin/seminars',
@@ -48,8 +48,7 @@ export const SECTIONS: Section[] = [
     icon: 'dok',
     group: 'Innhald',
     title: 'Rapport til kunden',
-    intro:
-      'Ein PDF frå publiserte tal, på språket til kunden. Du sjekkar og sender han sjølv.',
+    intro: 'Ein PDF frå publiserte tal, på språket til kunden. Du sjekkar og sender han sjølv.',
     sub: true,
   },
   { url: '/admin/export', label: 'Eksport', icon: 'ned', group: 'Personvern' },
@@ -65,15 +64,22 @@ export function sectionOf(path: string): Section | undefined {
 }
 
 /* ---------- Toasts ---------- */
-const ToastContext = createContext<(message: string) => void>(() => undefined);
+/** An optional action on a toast, for example «Angre» after a deletion; such toasts stay longer. */
+export interface ToastAction {
+  label: string;
+  run: () => void;
+}
+const ToastContext = createContext<(message: string, action?: ToastAction) => void>(
+  () => undefined,
+);
 export const useToast = () => useContext(ToastContext);
 export function Toasts({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<{ id: number; message: string }[]>([]);
+  const [items, setItems] = useState<{ id: number; message: string; action?: ToastAction }[]>([]);
   const next = useRef(0);
-  const show = useCallback((message: string) => {
+  const show = useCallback((message: string, action?: ToastAction) => {
     const id = ++next.current;
-    setItems((list) => [...list, { id, message }]);
-    setTimeout(() => setItems((list) => list.filter((t) => t.id !== id)), 3400);
+    setItems((list) => [...list, { id, message, ...(action ? { action } : {}) }]);
+    setTimeout(() => setItems((list) => list.filter((t) => t.id !== id)), action ? 8000 : 3400);
   }, []);
   return (
     <ToastContext.Provider value={show}>
@@ -102,6 +108,18 @@ export function Toasts({ children }: { children: ReactNode }) {
           >
             <Icon name="hake" small />
             <span>{t.message}</span>
+            {t.action && (
+              <button
+                type="button"
+                className="btn sm"
+                onClick={() => {
+                  t.action!.run();
+                  setItems((list) => list.filter((x) => x.id !== t.id));
+                }}
+              >
+                {t.action.label}
+              </button>
+            )}
           </div>
         ))}
       </div>

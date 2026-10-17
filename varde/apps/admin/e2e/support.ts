@@ -1,5 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import { expect, type Page } from '@playwright/test';
+import type { TemplateContent } from '../../../packages/schema/src/template/template.js';
+import { editorFixture } from '../test/editor-fixture.js';
 import { ADMIN_GROUP } from './global-setup.js';
 
 export interface Fixture {
@@ -62,4 +64,53 @@ export async function selectProgress(page: Page, label: string) {
   await page.getByLabel('Runde', { exact: true }).selectOption(f.id);
   await expect(page.getByRole('heading', { name: `Framdrift i ${f.name}` })).toBeVisible();
   return f;
+}
+
+/** A synthetic survey made on the Skjema page, filled through the API and opened in the workshop (2.15). */
+export async function newSurvey(page: Page, questions?: TemplateContent['questions']) {
+  await login(page);
+  await page.getByRole('link', { name: 'Skjema', exact: true }).click();
+  const key = `e2e_${randomUUID().replaceAll('-', '')}`;
+  await page.getByLabel('Nøkkel', { exact: true }).fill(key);
+  await page.getByLabel('Identifikasjon', { exact: true }).selectOption('none');
+  const created = page.waitForResponse(
+    (r) => r.url().endsWith('/api/admin/surveys') && r.request().method() === 'POST',
+  );
+  await page.getByRole('button', { name: 'Opprett skjema', exact: true }).click();
+  const v = (await (await created).json()) as {
+    id: string;
+    template_id: string;
+    content_hash: string;
+  };
+  await expect(page).toHaveURL(new RegExp(`/admin/surveys/${v.id}$`));
+  const content = editorFixture().content;
+  content.key = key;
+  if (questions) content.questions = questions;
+  const saved = await page.request.put(`/api/admin/surveys/versions/${v.id}`, {
+    data: { content_hash: v.content_hash, content },
+  });
+  expect(saved.status()).toBe(200);
+  await page.reload();
+  await expect(page.locator('.vk-sti')).toBeVisible();
+  return { ...v, key, content, content_hash: ((await saved.json()) as Saved).content_hash };
+}
+interface Saved {
+  content_hash: string;
+}
+/** Accepts every required language of a saved version and publishes it, as the API allows. */
+export async function publish(page: Page, id: string, frozen_changes: Record<string, string> = {}) {
+  const v = (await (
+    await page.request.get(`/api/admin/surveys/versions/${id}`)
+  ).json()) as Saved & {
+    required_languages: string[];
+  };
+  for (const lang of v.required_languages) {
+    const r = await page.request.post(`/api/admin/surveys/versions/${id}/accept`, {
+      data: { content_hash: v.content_hash, lang },
+    });
+    expect(r.status()).toBe(201);
+  }
+  return page.request.post(`/api/admin/surveys/versions/${id}/publish`, {
+    data: { content_hash: v.content_hash, confirmed: true, frozen_changes },
+  });
 }

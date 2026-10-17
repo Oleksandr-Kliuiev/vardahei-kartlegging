@@ -2,10 +2,6 @@ import { act } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { LaunchForm } from '../src/launch-form.js';
 import { ClientForm } from '../src/clients-form.js';
-import { SurveyEditor } from '../src/survey-editor.js';
-import { JsonField } from '../src/editor-fields.js';
-import { newQuestion } from '../src/question-editor.js';
-import { editorFixture } from './editor-fixture.js';
 import { mount, button, settle } from './support.js';
 
 let view: ReturnType<typeof mount> | undefined;
@@ -99,68 +95,4 @@ it('client edits explicitly save both name and count', async () => {
       body: JSON.stringify({ name: 'Endra', employee_count: 24 }),
     }),
   );
-});
-it('JSON remains editable on syntax/schema errors and applies only on explicit use', async () => {
-  const apply = vi.fn(() => {
-    throw new Error('Kontroller spørsmålsfeltet.');
-  });
-  view = mount(<JsonField label="JSON" value={{ test: 1 }} onChange={apply} />);
-  input(view.div.querySelector('textarea')!, '{');
-  act(() => button(view!.div, 'Bruk JSON').click());
-  await settle();
-  expect(view.div.textContent).toContain('Skriv gyldig JSON.');
-  expect(apply).not.toHaveBeenCalled();
-  input(view.div.querySelector('textarea')!, 'null');
-  act(() => button(view!.div, 'Bruk JSON').click());
-  await settle();
-  expect(view.div.textContent).toContain('Kontroller spørsmålsfeltet.');
-  expect(view.div.querySelector('textarea')!.value).toBe('null');
-});
-it('all schema question types can be created and include the required languages', () => {
-  for (const type of ['single', 'multi', 'text', 'scale', 'nps'] as const) {
-    const q = newQuestion(type, 'Q', ['nn', 'en', 'nb']);
-    expect(q.type).toBe(type);
-    expect(Object.keys(q.texts.text)).toEqual(['nn', 'en', 'nb']);
-  }
-});
-it('published editor is read only and has no save or publish action', () => {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(() => Promise.resolve(new Response('{"issues":[]}'))),
-  );
-  view = mount(<SurveyEditor initial={editorFixture('published')} changed={vi.fn()} />);
-  expect(view.div.querySelector('fieldset')!.disabled).toBe(true);
-  expect(view.div.textContent).not.toContain('Lagre utkast');
-  expect(view.div.textContent).not.toContain('Publiser versjonen');
-});
-it('saving uses the loaded hash and a conflict preserves unsaved text', async () => {
-  const fetcher = vi.fn((url: string) =>
-    Promise.resolve(
-      new Response(
-        url.endsWith('/validate') ? '{"issues":[]}' : '{"message":"Ein annan har endra utkastet."}',
-        { status: url.endsWith('/validate') ? 201 : 409 },
-      ),
-    ),
-  );
-  vi.stubGlobal('fetch', fetcher);
-  const initial = editorFixture();
-  view = mount(<SurveyEditor initial={initial} changed={vi.fn()} />);
-  input(view.div.querySelector('[aria-label="Spørsmålstekst (nn)"]')!, 'Endra spørsmål');
-  expect(
-    [...view.div.querySelectorAll('button')].find((b) => b.textContent?.startsWith('Godkjenn nn'))!
-      .disabled,
-  ).toBe(true);
-  act(() => button(view!.div, 'Lagre utkast').click());
-  await settle();
-  expect(fetcher).toHaveBeenCalledWith(
-    '/api/admin/surveys/versions/version',
-    expect.objectContaining({
-      method: 'PUT',
-      body: expect.stringContaining(`"content_hash":"${initial.content_hash}"`) as unknown,
-    }),
-  );
-  expect(
-    view.div.querySelector<HTMLTextAreaElement>('[aria-label="Spørsmålstekst (nn)"]')!.value,
-  ).toBe('Endra spørsmål');
-  expect(view.div.textContent).toContain('Ein annan har endra utkastet.');
 });

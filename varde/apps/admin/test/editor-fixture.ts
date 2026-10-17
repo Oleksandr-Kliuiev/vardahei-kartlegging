@@ -5,6 +5,7 @@ export function editorFixture(status = 'draft'): EditorVersion {
     id: 'version',
     template_id: 'template',
     label: 'v1',
+    version_no: 1,
     status,
     content_hash: 'a'.repeat(64),
     required_languages: ['nn', 'en'],
