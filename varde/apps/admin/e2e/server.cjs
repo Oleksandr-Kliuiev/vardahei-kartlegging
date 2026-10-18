@@ -174,6 +174,43 @@ require(require.resolve('reflect-metadata', { paths: [resolve(__dirname, '../../
     await db.$transaction((tx) => app.get(PrivacyService).store.insertParts(tx, beforeParts));
     await rounds.close(before.id, 'test:admin-e2e');
     state.rounds.before = { id: before.id, rc: '', name: before.name, code: '' };
+    // 2.17: a client of its own with one closed, released round that has two findings (F12, F14),
+    // so its page shows them and their follow-up whatever the other tests answer.
+    const kunde = await db.client.create({
+      data: { slug: `${mark}-kunde`, name: 'Syntetisk kunde med funn', employee_count: 8 },
+    });
+    const kundeRound = await rounds.create(
+      { name: `${mark}-kunde`, template_version_id: version.id },
+      'test:admin-e2e',
+    );
+    const kundeRc = await rounds.addClient(
+      kundeRound.id,
+      { client_id: kunde.id, deadline: '2099-06-01' },
+      'test:admin-e2e',
+    );
+    await rounds.openClient(kundeRc.id, 'test:admin-e2e');
+    const kundeParts = [0, 1, 2, 3, 4, 5].map((i) => ({
+      round_client_id: kundeRc.id,
+      part: 'common',
+      role: 'kontor',
+      lang: 'nn',
+      respondent_key: `ZZKUNDE${String.fromCharCode(65 + i)}`,
+      answers: {
+        F2: 'kontor',
+        F8: 'nei',
+        F12: i < 3 ? 'usikker' : 'ja',
+        F14: i < 2 ? 'nei' : 'ja',
+      },
+      free: {},
+      submission_id: randomUUID(),
+      content_hash: '0'.repeat(64),
+      source_id: null,
+      duration_s: null,
+      submitted_day: '2026-10-14',
+    }));
+    await db.$transaction((tx) => app.get(PrivacyService).store.insertParts(tx, kundeParts));
+    await rounds.close(kundeRound.id, 'test:admin-e2e');
+    state.kunde = { client: kunde.id, round: kundeRound.id, name: kundeRound.name };
     // 3b: a published version made for live questions (synthetic, apps/api/test/support/live-template.json).
     const liveContent = JSON.parse(
       readFileSync(resolve(__dirname, '../../api/test/support/live-template.json'), 'utf8'),
@@ -243,12 +280,17 @@ require(require.resolve('reflect-metadata', { paths: [resolve(__dirname, '../../
         await db.roundClient.deleteMany({ where: { round_id: s.round_live_id } });
         await db.round.delete({ where: { id: s.round_live_id } });
       }
-      // Seminars of the e2e (3a) and their participants go first: they hang on the clients.
+      // Seminars of the e2e (3a) and their participants go first: they hang on the clients. A
+      // finding taken up at one of them (2.17) holds it, so that status goes before.
+      const clients = [state.client, state.other_client, state.kunde.client];
       await db.$executeRaw`DELETE FROM contact WHERE email LIKE 'zz-e2e-%@example.test'`;
-      await db.seminar.deleteMany({
-        where: { clients: { some: { client_id: { in: [state.client, state.other_client] } } } },
+      await db.findingStatus.deleteMany({
+        where: { seminar: { clients: { some: { client_id: { in: clients } } } } },
       });
-      await db.client.deleteMany({ where: { id: { in: [state.client, state.other_client] } } });
+      await db.seminar.deleteMany({
+        where: { clients: { some: { client_id: { in: clients } } } },
+      });
+      await db.client.deleteMany({ where: { id: { in: clients } } });
       await app.close();
     })().finally(() => process.exit(0));
   });

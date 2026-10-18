@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import type { Dashboard, QuestionView, Finding, Bucket } from './dashboard-models.js';
 import { numberText, percent, zoneNames, zoneIds } from './dashboard-models.js';
 import { Fold } from './fold.js';
@@ -18,7 +18,14 @@ function openRule(e: MouseEvent<HTMLAnchorElement>) {
   window.history.pushState(null, '', e.currentTarget.getAttribute('href'));
   window.dispatchEvent(new PopStateEvent('popstate'));
 }
-export function Findings({ findings }: { findings: Finding[] }) {
+/** `follow` adds a line under each finding (the follow-up on the client page, 2.17). */
+export function Findings({
+  findings,
+  follow,
+}: {
+  findings: Finding[];
+  follow?: (f: Finding) => ReactNode;
+}) {
   return findings.length ? (
     <ul className="funn">
       {findings.map((f) => (
@@ -49,6 +56,7 @@ export function Findings({ findings }: { findings: Finding[] }) {
               Regelen har ein nyare versjon
             </a>
           )}
+          {follow?.(f)}
         </li>
       ))}
     </ul>

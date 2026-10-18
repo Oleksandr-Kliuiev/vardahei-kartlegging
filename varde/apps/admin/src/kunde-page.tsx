@@ -1,15 +1,18 @@
 // The page of one client (2.17): its rounds over time with the zone of each, the report of each
-// closed round, the findings of the newest round with answers, and its seminars — so the client is
-// chosen once, by opening it. The numbers come from the same aggregate API as «Resultat».
+// closed round, the findings of its rounds and how each is followed up, its seminars and its
+// contacts — so the client is chosen once, by opening it. The numbers come from the same aggregate
+// API as «Resultat»; the contacts only on request, through privacy.
 import { useState } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { api } from './api.js';
 import { ClientForm } from './clients-form.js';
-import { Findings, Zone } from './dashboard-aggregate.js';
+import { Zone } from './dashboard-aggregate.js';
 import { type Dashboard, numberText } from './dashboard-models.js';
 import { dashboardQuery } from './dashboard-page.js';
 import { Icon } from './icons.js';
 import { roundsOf } from './kundar-page.js';
+import { KundeFunn } from './kunde-funn.js';
+import { KundeKontaktar } from './kunde-kontaktar.js';
 import type { Round } from './models.js';
 import { follow, useTitle } from './nav.js';
 import { ErrorMessage, useClients, useRounds } from './queries.js';
@@ -61,8 +64,6 @@ export function KundePage({ id }: { id: string }) {
         </p>
       </div>
     );
-  const newest = answered[0];
-  const found = newest ? result.get(newest.id)?.data : undefined;
   const own = (seminars.data?.seminars ?? []).filter((s) => s.clients.some((c) => c.id === id));
   return (
     <>
@@ -102,43 +103,33 @@ export function KundePage({ id }: { id: string }) {
         </section>
       )}
       <div className="flate">
-        <section className="kort s7" aria-labelledby="kunde-tid">
-          <div className="kort-hovud">
-            <h2 id="kunde-tid">Over tid</h2>
-          </div>
-          <div className="kort-innhald">
-            {rounds.data && mine.length === 0 && (
-              <p className="under">Kunden har ikkje vore med i ei runde enno.</p>
-            )}
-            <ol className="tidslinje">
-              {[...mine].reverse().map((r) => (
-                <Steg key={r.id} round={r} client={id} data={result.get(r.id)?.data} />
-              ))}
-            </ol>
-          </div>
-        </section>
-        <div className="s5 rom-side">
-          <section className="kort" aria-labelledby="kunde-funn">
+        <div className="s7 rom-side">
+          <section className="kort" aria-labelledby="kunde-tid">
             <div className="kort-hovud">
-              <h2 id="kunde-funn">{newest ? `Funn frå ${newest.name}` : 'Funn'}</h2>
+              <h2 id="kunde-tid">Over tid</h2>
             </div>
             <div className="kort-innhald">
-              {!newest ? (
-                <p className="under">Funna kjem når kunden har svar i ei runde.</p>
-              ) : found ? (
-                <>
-                  {found.findings.length ? (
-                    <Findings findings={found.findings} />
-                  ) : (
-                    <p className="under">Ingen tydelege funn i denne runden.</p>
-                  )}
-                  <Lenkje to={`/admin/rounds/${newest.id}/resultat`}>Sjå heile resultatet</Lenkje>
-                </>
-              ) : (
-                <p role="status">Hentar funna …</p>
+              {rounds.data && mine.length === 0 && (
+                <p className="under">Kunden har ikkje vore med i ei runde enno.</p>
               )}
+              <ol className="tidslinje">
+                {[...mine].reverse().map((r) => (
+                  <Steg key={r.id} round={r} client={id} data={result.get(r.id)?.data} />
+                ))}
+              </ol>
             </div>
           </section>
+          <KundeKontaktar key={client.id} client={client} />
+        </div>
+        <div className="s5 rom-side">
+          <KundeFunn
+            key={client.id}
+            client={id}
+            rounds={answered}
+            ready={!!rounds.data}
+            results={result}
+            seminars={own}
+          />
           <section className="kort" aria-labelledby="kunde-seminar">
             <div className="kort-hovud">
               <h2 id="kunde-seminar">Seminar</h2>

@@ -18,6 +18,8 @@ export interface State {
   rounds: Record<string, Fixture>;
   /** A published version for live questions (3b). */
   live_version: string;
+  /** A client with one closed round that has findings (2.17, the client page). */
+  kunde: { client: string; round: string; name: string };
   connections: number;
 }
 
