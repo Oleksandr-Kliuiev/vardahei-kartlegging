@@ -2,8 +2,13 @@
 // findings — and how each is followed up: open, taken up at a seminar (with a link to it) or done.
 // A closed round keeps its findings (2.5), so the status is set once the round is closed; it lives
 // beside the finding (3.1), and every change is in the log. This is the one place to change it.
-import { useState } from 'react';
-import { type UseQueryResult, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import {
+  keepPreviousData,
+  type UseQueryResult,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { api, mutate } from './api.js';
 import { Findings } from './dashboard-aggregate.js';
 import type { Dashboard } from './dashboard-models.js';
@@ -20,7 +25,7 @@ export interface FindingFollowUp {
   round: string;
   rule_key: string;
   status: 'open' | 'in_seminar' | 'closed';
-  seminar: { id: string; topic: string; starts_at: string; held: boolean } | null;
+  seminar: { id: string; topic: string; starts_at: string } | null;
   changed_by: string | null;
   changed_at: string | null;
 }
@@ -60,6 +65,22 @@ function Oppfolging({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [label, chip] = FOLLOW_UP[row.status] ?? FOLLOW_UP.open!;
+  // Focus goes to the choice when the editor opens and back to «Endre status» when it closes, so a
+  // keyboard or screen reader user is never left on the page body.
+  const opener = useRef<HTMLButtonElement>(null),
+    field = useRef<HTMLSelectElement>(null),
+    back = useRef(false);
+  useEffect(() => {
+    if (editing) field.current?.focus();
+    else if (back.current) {
+      back.current = false;
+      opener.current?.focus();
+    }
+  }, [editing]);
+  const close = () => {
+    back.current = true;
+    setEditing(false);
+  };
   // The client's seminars, and the one the finding is taken up at even if the client left it.
   const options = [
     ...seminars.map((s) => ({ id: s.id, topic: s.topic_nn, starts_at: s.starts_at })),
@@ -71,7 +92,7 @@ function Oppfolging({
     try {
       await mutate(`/api/admin/findings/${row.id}/status`, 'PUT', statusBody(choice, row));
       await queries.invalidateQueries({ queryKey: ['seminars'] });
-      setEditing(false);
+      close();
       toast('Status for funnet er lagra.');
     } catch (e) {
       setError(e instanceof Error ? e : new Error('Noko gjekk gale.'));
@@ -98,6 +119,7 @@ function Oppfolging({
         )}
         {!editing && (
           <button
+            ref={opener}
             type="button"
             className="btn sm ghost"
             aria-label={`Endre status for funnet: ${text}`}
@@ -111,8 +133,13 @@ function Oppfolging({
         )}
       </span>
       {editing && (
-        <span className="oppfolging-endre">
+        <span
+          className="oppfolging-endre"
+          role="group"
+          aria-label={`Ny status for funnet: ${text}`}
+        >
           <select
+            ref={field}
             aria-label={`Status for funnet: ${text}`}
             value={choice}
             onChange={(e) => setChoice(e.target.value)}
@@ -133,7 +160,7 @@ function Oppfolging({
           >
             Lagre
           </button>
-          <button type="button" className="btn sm" onClick={() => setEditing(false)}>
+          <button type="button" className="btn sm" onClick={close}>
             Avbryt
           </button>
           {options.length === 0 && (
@@ -152,6 +179,7 @@ export function KundeFunn({
   client,
   rounds,
   ready,
+  error,
   results,
   seminars,
 }: {
@@ -160,27 +188,35 @@ export function KundeFunn({
   rounds: Round[];
   /** The list of rounds has loaded (until then no round says nothing). */
   ready: boolean;
+  /** The list of rounds could not be read. */
+  error: Error | null;
   results: ReadonlyMap<string, Result | undefined>;
   seminars: Seminar[];
 }) {
   const [chosen, setChosen] = useState<string | null>(null);
   const loading = rounds.some((r) => results.get(r.id)?.isPending ?? true);
   const count = (r: Round) => results.get(r.id)?.data?.findings.length;
-  // The newest round with findings comes first; after that the choice is the person's.
-  const round =
-    rounds.find((r) => r.id === chosen) ??
-    (loading ? undefined : (rounds.find((r) => (count(r) ?? 0) > 0) ?? rounds[0]));
+  const first = loading ? undefined : (rounds.find((r) => (count(r) ?? 0) > 0) ?? rounds[0]);
+  // The newest round with findings comes first and stays, also when a newer round gets answers;
+  // after that the choice is the person's.
+  useEffect(() => {
+    if (chosen === null && first) setChosen(first.id);
+  }, [chosen, first]);
+  const round = rounds.find((r) => r.id === chosen) ?? first;
   const current = round ? results.get(round.id) : undefined;
   const found = current?.data;
   const closed = !!round && CLOSED.includes(round.status);
-  // A closed round saves its findings when its result is read: the statuses follow those reads.
-  const read = rounds
+  // A closed round saves its findings for its release when the result is first read: the statuses
+  // follow a new release, not every new read of a result (an open editor stays open).
+  const releases = rounds
     .filter((r) => CLOSED.includes(r.status))
-    .map((r) => results.get(r.id)?.dataUpdatedAt ?? 0);
+    .map((r) => results.get(r.id)?.data?.findings[0]?.release_id ?? '')
+    .join(' ');
   const status = useQuery({
-    queryKey: ['seminars', 'finding-status', client, Math.max(0, ...read)],
+    queryKey: ['seminars', 'finding-status', client, releases],
     queryFn: () => api<{ rows: FindingFollowUp[] }>(`/api/admin/clients/${client}/finding-status`),
     enabled: closed && !!found,
+    placeholderData: keepPreviousData,
   });
   const rows = new Map(
     (status.data?.rows ?? []).filter((r) => r.round === round?.id).map((r) => [r.rule_key, r]),
@@ -211,7 +247,9 @@ export function KundeFunn({
         )}
       </div>
       <div className="kort-innhald">
-        {ready && rounds.length === 0 ? (
+        {error ? (
+          <ErrorMessage error={error} />
+        ) : ready && rounds.length === 0 ? (
           <p className="under">Funna kjem når kunden har svar i ei runde.</p>
         ) : !round || !found ? (
           current?.error ? (

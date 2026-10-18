@@ -38,6 +38,8 @@ export interface Finding {
   key: string;
   /** Rule version the finding was computed with; a closed round keeps it (2.5). */
   version?: number;
+  /** The release a closed round's finding was saved for (2.5). */
+  release_id?: string;
   latest_version?: number;
   n: number;
   count: number;

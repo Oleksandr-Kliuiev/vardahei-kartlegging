@@ -109,6 +109,7 @@ export function KundePage({ id }: { id: string }) {
               <h2 id="kunde-tid">Over tid</h2>
             </div>
             <div className="kort-innhald">
+              <ErrorMessage error={rounds.error} />
               {rounds.data && mine.length === 0 && (
                 <p className="under">Kunden har ikkje vore med i ei runde enno.</p>
               )}
@@ -127,6 +128,7 @@ export function KundePage({ id }: { id: string }) {
             client={id}
             rounds={answered}
             ready={!!rounds.data}
+            error={rounds.error}
             results={result}
             seminars={own}
           />

@@ -23,7 +23,7 @@ export interface ReleaseScope {
 type Db = Pick<Prisma.TransactionClient, 'findingRule'>;
 /** A saved finding of one client for its follow-up (2.17): no numbers, the newest status. */
 export interface SavedFinding {
-  /** The row of the round's current set: the one a new status goes to. */
+  /** The row a new status goes to: the one with the newest status, else the current set's row. */
   id: string;
   round: string;
   rule_key: string;
@@ -213,7 +213,8 @@ export class FindingsService {
    * The saved findings of one client without their numbers (2.17, the follow-up on the client
    * page): per round the set computed last for the client — its current release — and per rule
    * the newest status of any release of that round. A release made again saves new rows (above),
-   * so the follow-up done on the older rows is kept; a new status goes to the current row.
+   * so the follow-up done on an older row is kept, and a new status goes to the row that holds it:
+   * a rule keeps one status (the seminar lists the findings it takes up by these rows).
    */
   async ofClient(client: string): Promise<SavedFinding[]> {
     const sets = await this.prisma.findingSet.findMany({
@@ -247,7 +248,7 @@ export class FindingsService {
     for (const r of rows) {
       const saved = out.get(`${r.round_id}:${r.rule_key}`);
       if (saved && r.status && !(saved.status && saved.status.changed_at >= r.status.changed_at))
-        saved.status = r.status;
+        Object.assign(saved, { id: r.id, status: r.status });
     }
     return [...out.values()];
   }

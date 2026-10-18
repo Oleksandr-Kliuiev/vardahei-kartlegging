@@ -188,7 +188,7 @@ async function saveSet(
 }
 
 describe('follow-up of the saved findings of one client (2.17)', () => {
-  it('the current set of each round with the newest status of any release; no numbers; changes go to the current row', async () => {
+  it('the current set of each round with the newest status of any release; no numbers; a change goes to the row with the status', async () => {
     const [a, b] = clients;
     const round = randomUUID(),
       older = randomUUID();
@@ -264,15 +264,14 @@ describe('follow-up of the saved findings of one client (2.17)', () => {
         id: s.id,
         topic: `Passord og MFA ${t.mark}`,
         starts_at: '2099-11-05T08:00:00.000Z',
-        held: false,
       },
       // The name the admin signed in with, as in the journal.
       changed_by: 'Syntetisk admin',
       changed_at: expect.any(String) as unknown,
     });
 
-    // The round is released again: a new set with new rows. The work done stays, a new status
-    // goes to the new row and wins by time.
+    // The round is released again: a new set with new rows. The work done stays, and a new
+    // status goes to the row that holds it, so the rule keeps one status.
     const second = await saveSet(
       round,
       { client: a!.id },
@@ -282,39 +281,38 @@ describe('follow-up of the saved findings of one client (2.17)', () => {
     const again = await list();
     expect(again.filter((r) => r.round === round)).toEqual([
       expect.objectContaining({
-        id: second['tryggleik.f12'],
+        id: first['tryggleik.f12'],
         status: 'in_seminar',
         seminar: expect.objectContaining({ id: s.id }) as unknown,
       }),
       expect.objectContaining({ id: second['tryggleik.f8'], status: 'open' }),
     ]);
-    const done = await t.call('PUT', `/api/admin/findings/${second['tryggleik.f12']}/status`, {
+    const done = await t.call('PUT', `/api/admin/findings/${first['tryggleik.f12']}/status`, {
       status: 'closed',
       seminar: s.id,
     });
     expect(done.statusCode).toBe(200);
     expect((await list()).find((r) => r.rule_key === 'tryggleik.f12')).toMatchObject({
-      id: second['tryggleik.f12'],
+      id: first['tryggleik.f12'],
       status: 'closed',
       seminar: { id: s.id },
     });
+    const rule = [first['tryggleik.f12']!, second['tryggleik.f12']!];
+    expect(await t.prisma.findingStatus.count({ where: { finding_id: { in: rule } } })).toBe(1);
+    // Two rows with a status (a status set on the new row directly): the newest one counts.
     const reopened = await t.call('PUT', `/api/admin/findings/${second['tryggleik.f12']}/status`, {
       status: 'open',
     });
     expect(reopened.statusCode).toBe(200);
     expect((await list()).find((r) => r.rule_key === 'tryggleik.f12')).toMatchObject({
+      id: second['tryggleik.f12'],
       status: 'open',
       seminar: null,
       changed_by: 'Syntetisk admin',
     });
     expect(
       await t.prisma.auditLog.count({
-        where: {
-          what: 'findings.status',
-          target: {
-            in: [`finding:${first['tryggleik.f12']}`, `finding:${second['tryggleik.f12']}`],
-          },
-        },
+        where: { what: 'findings.status', target: { in: rule.map((id) => `finding:${id}`) } },
       }),
     ).toBe(3);
     // The other client sees only its own row; a client without saved findings has none.

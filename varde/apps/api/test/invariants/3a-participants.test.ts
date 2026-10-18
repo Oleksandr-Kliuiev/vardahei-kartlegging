@@ -43,6 +43,7 @@ async function textOf(res: LightMyRequestResponse): Promise<{ text: string; zip:
 }
 const currentCode = async () =>
   (await f.prisma.seminar.findUniqueOrThrow({ where: { id: seminar.id } })).code;
+const CLIENT_PAGE = ['GET /api/admin/clients/:id/contacts/count', 'GET /api/admin/clients/:id/finding-status'];
 /** Each channel and the e-mail it must carry. */
 const PARTICIPANT_CHANNELS = new Map([
   ['GET /api/admin/seminars/:id/registrations', EMAIL],
@@ -146,14 +147,15 @@ it('walks every API route: participant data only in the three named channels, ea
         expect(await f.prisma.auditLog.count({ where: { what: 'privacy.participants' } }), key).toBe(before + 1);
         continue;
       }
+      // The numbers and findings of the client page answer for real, without names (2.17).
+      if (CLIENT_PAGE.includes(key)) expect(res.statusCode, key).toBe(200);
       for (const secret of SECRETS) expect(body, `${key} → ${secret}`).not.toContain(secret);
       expect(await f.prisma.auditLog.count({ where: { what: 'privacy.participants' } }), key).toBe(before);
     }
   }
   for (const key of [
     ...PARTICIPANT_CHANNELS.keys(),
-    'GET /api/admin/clients/:id/contacts/count',
-    'GET /api/admin/clients/:id/finding-status',
+    ...CLIENT_PAGE,
     'GET /api/public/seminar',
     'GET /api/admin/seminars/:id',
     'GET /api/admin/seminars',

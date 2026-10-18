@@ -24,6 +24,8 @@
 .rom-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .rom-liste li { display: grid; gap: 2px; }
 .rom-liste small { color: var(--ink-muted); font-size: 12.5px; }
+.rom-liste > li > a { justify-self: start; color: var(--accent-text); font-weight: 650; text-decoration: none; overflow-wrap: anywhere; }
+.rom-liste > li > a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* Lenkje med pil: «Opne runden», «Sjå heile resultatet» */
 .lenkje { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; margin-top: 8px; color: var(--accent-text); font-weight: 650; font-size: 14px; text-decoration: none; }
@@ -88,6 +90,8 @@ a.ting:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* Kunden: korleis kvart funn blir følgt opp, og kontaktane (berre når ein ber om dei) */
 .funn .oppfolging { grid-column: 2; display: grid; gap: 8px; min-width: 0; }
+/* Same break as the list itself (dashboard.css): one column, the follow-up under the text */
+@media (max-width: 620px) { .funn .oppfolging { grid-column: 1; } }
 .oppfolging-status { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; min-width: 0; }
 .oppfolging-status a { color: var(--accent-text); font-size: 13.5px; font-weight: 650; text-decoration: none; overflow-wrap: anywhere; }
 .oppfolging-status a:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -104,7 +108,7 @@ a.ting:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .kontakt-namn { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
 .kontakt-namn b { color: var(--ink-strong); overflow-wrap: anywhere; }
 .kontakt-liste small { overflow-wrap: anywhere; }
-.kontakt-liste a { color: var(--accent-text); }
+.kontakt-liste a { color: var(--accent-text); text-underline-offset: 2px; }
 
 /* Loggen: overskrift og val av område på same line */
 .logg-topp { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; }

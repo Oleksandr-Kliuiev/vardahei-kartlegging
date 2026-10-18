@@ -1,7 +1,8 @@
 // The contacts of one client on its page (2.17): how many first, then names and e-mail only on
 // request, through the privacy module, and each read is written to the log — as «Personvern ›
-// Kontaktar». The names live in this card while it is open, never in the query cache.
-import { useState } from 'react';
+// Kontaktar». The names live in this card while it is open, never in the query cache, and go when
+// the count changes (a registration, a deletion): then they come again only on request.
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from './api.js';
 import { Icon } from './icons.js';
@@ -34,6 +35,8 @@ export function KundeKontaktar({ client }: { client: Client }) {
   const [rows, setRows] = useState<ClientContact[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  // Same numbers keep the same object (structural sharing): only a real change hides the list.
+  useEffect(() => setRows(null), [count.data]);
   const load = async () => {
     setBusy(true);
     setError(null);
@@ -76,15 +79,23 @@ export function KundeKontaktar({ client }: { client: Client }) {
           Kontaktane kjem frå påmeldingar til seminar. Lista har namn og e-post. Kvar gong nokon
           opnar ho, blir det skrive i loggen.
         </p>
-        {total > 0 && rows === null && (
+        {total > 0 && (
+          // One button that stays where it is, so the focus does not fall to the page.
           <div className="handlingar">
-            <button type="button" className="btn sm" disabled={busy} onClick={() => void load()}>
-              Vis kontaktane
+            <button
+              type="button"
+              className="btn sm"
+              disabled={busy}
+              aria-expanded={rows !== null}
+              aria-controls={rows ? 'kunde-kontaktliste' : undefined}
+              onClick={() => (rows ? setRows(null) : void load())}
+            >
+              {rows ? 'Skjul kontaktane' : 'Vis kontaktane'}
             </button>
           </div>
         )}
         {rows && (
-          <>
+          <div id="kunde-kontaktliste">
             {rows.length === 0 ? (
               <p className="under">Ingen kontaktar å vise no.</p>
             ) : (
@@ -121,12 +132,7 @@ export function KundeKontaktar({ client }: { client: Client }) {
                 ))}
               </ul>
             )}
-            <div className="handlingar">
-              <button type="button" className="btn sm ghost" onClick={() => setRows(null)}>
-                Skjul kontaktane
-              </button>
-            </div>
-          </>
+          </div>
         )}
         <ErrorMessage error={error ?? count.error} />
       </div>

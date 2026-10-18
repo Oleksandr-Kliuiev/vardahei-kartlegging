@@ -129,11 +129,22 @@ test('contacts on request with a log entry; a finding taken up at a seminar, the
   );
 
   // The page on a phone: no sideways scroll, also with the editor open.
-  await page.goto(`/admin/clients/${kunde.client}`);
   await page.setViewportSize({ width: 360, height: 780 });
+  await page.goto(`/admin/clients/${kunde.client}`);
   await page
     .getByRole('region', { name: 'Funn' })
     .getByRole('button', { name: /^Endre status for funnet: 2 av 6 .*MFA/ })
     .click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+  // One column on a phone: the follow-up sits under the suggestion, not in a sliver beside it.
+  const phone = page
+    .getByRole('region', { name: 'Funn' })
+    .locator('.funn li')
+    .filter({ hasText: 'MFA' });
+  const tiltak = (await phone.locator('.tiltak').boundingBox())!;
+  const oppfolging = (await phone.locator('.oppfolging').boundingBox())!;
+  expect(Math.abs(oppfolging.x - tiltak.x)).toBeLessThanOrEqual(1);
+  expect(oppfolging.y).toBeGreaterThan(tiltak.y);
+  expect(tiltak.width).toBeGreaterThan(200);
+  await page.screenshot({ path: info.outputPath('kunde-telefon.png') });
 });

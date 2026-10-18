@@ -63,7 +63,7 @@ const follow: FindingFollowUp[] = [
     round: 'r2',
     rule_key: 'tryggleik.f12',
     status: 'in_seminar',
-    seminar: { id: 's1', topic: seminar.topic_nn, starts_at: seminar.starts_at, held: false },
+    seminar: { id: 's1', topic: seminar.topic_nn, starts_at: seminar.starts_at },
     changed_by: 'Syntetisk admin',
     changed_at: '2026-10-17T12:00:00.000Z',
   },
@@ -78,6 +78,7 @@ const follow: FindingFollowUp[] = [
   },
 ];
 let rounds = [round('ki', 'KI 2026-10-12'), round('r2', 'Runde 2')];
+let counted = { total: 2, review: 1 };
 const fetcher = vi.fn((path: string, init?: RequestInit) => {
   void init;
   const body =
@@ -95,7 +96,7 @@ const fetcher = vi.fn((path: string, init?: RequestInit) => {
                   finding('tryggleik.f14', '3 av 10', 'brukar ikkje MFA'),
                 ])
               : path === `/api/admin/clients/${C}/contacts/count`
-                ? { total: 2, review: 1 }
+                ? counted
                 : path === `/api/admin/clients/${C}/contacts`
                   ? {
                       rows: [
@@ -138,6 +139,7 @@ afterEach(() => {
   view = undefined;
   vi.unstubAllGlobals();
   rounds = [round('ki', 'KI 2026-10-12'), round('r2', 'Runde 2')];
+  counted = { total: 2, review: 1 };
 });
 const calls = (match: string) => fetcher.mock.calls.filter(([p]) => p === match);
 const region = (name: string) =>
@@ -155,7 +157,7 @@ async function open() {
 }
 
 describe('the client page: contacts (2.17)', () => {
-  it('shows how many first; names and e-mail only on request, once, and gone with «Skjul»', async () => {
+  it('shows how many first; names and e-mail only on request, once, never in the query cache', async () => {
     await open();
     const card = region('Kontaktar');
     expect(card.textContent).toContain('2 kontaktar hos Daco.');
@@ -164,25 +166,62 @@ describe('the client page: contacts (2.17)', () => {
     expect(card.textContent).not.toContain('ZZ Kari');
     expect(calls(`/api/admin/clients/${C}/contacts/count`)).toHaveLength(1);
     expect(calls(`/api/admin/clients/${C}/contacts`)).toHaveLength(0);
+    // One button that stays: the focus stays on it when the list opens and closes.
+    const toggle = button(card, 'Vis kontaktane');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    toggle.focus();
     act(() => {
-      button(card, 'Vis kontaktane').click();
+      toggle.click();
     });
     await settle();
     await settle();
     expect(calls(`/api/admin/clients/${C}/contacts`)).toHaveLength(1);
-    const items = [...card.querySelectorAll('.kontakt-liste li')].map((li) => li.textContent);
+    expect(toggle.textContent).toBe('Skjul kontaktane');
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(toggle.getAttribute('aria-controls')).toBe('kunde-kontaktliste');
+    expect(document.activeElement).toBe(toggle);
+    const items = [...card.querySelectorAll('#kunde-kontaktliste li')].map((li) => li.textContent);
     expect(items).toEqual([
       'ZZ Kari Syntetiskkari@example.test · dagleg leiar · invitasjonar: ja · sist sjekka 16.10.2026Påmeld: Phishing og falske fakturaer (12.11.2026)',
       'ZZ Ola SyntetiskÅrleg sjekkola@example.test · invitasjonar: nei · sist sjekka 01.09.2025',
     ]);
     expect(card.querySelector('a[href="mailto:kari@example.test"]')).not.toBeNull();
     expect(card.querySelector('.kontakt-liste a[href="/admin/seminars/s1"]')).not.toBeNull();
+    const cached = JSON.stringify(
+      view!.client
+        .getQueryCache()
+        .getAll()
+        .map((q) => q.state.data),
+    );
+    expect(cached).not.toContain('ZZ Kari');
+    expect(cached).not.toContain('kari@example.test');
     act(() => {
-      button(card, 'Skjul kontaktane').click();
+      toggle.click();
     });
     await settle();
     expect(card.textContent).not.toContain('ZZ Kari');
-    expect(button(card, 'Vis kontaktane')).toBeTruthy();
+    expect(toggle.textContent).toBe('Vis kontaktane');
+    expect(document.activeElement).toBe(toggle);
+  });
+
+  it('a new count (a registration, a deletion) takes the names off the screen', async () => {
+    await open();
+    const card = region('Kontaktar');
+    act(() => {
+      button(card, 'Vis kontaktane').click();
+    });
+    await settle();
+    await settle();
+    expect(card.textContent).toContain('ZZ Ola');
+    counted = { total: 1, review: 0 };
+    await act(async () => {
+      await view!.client.invalidateQueries({ queryKey: ['seminars'] });
+    });
+    await settle();
+    expect(card.textContent).toContain('1 kontakt hos Daco.');
+    expect(card.textContent).not.toContain('ZZ Ola');
+    expect(button(card, 'Vis kontaktane').getAttribute('aria-expanded')).toBe('false');
+    expect(calls(`/api/admin/clients/${C}/contacts`)).toHaveLength(1);
   });
 });
 
@@ -224,6 +263,10 @@ describe('the client page: follow-up of the findings (2.17)', () => {
     await settle();
     const select = item.querySelector<HTMLSelectElement>('select')!;
     expect(select.getAttribute('aria-label')).toBe('Status for funnet: 3 av 10 brukar ikkje MFA');
+    expect(document.activeElement).toBe(select);
+    expect(item.querySelector('[role="group"]')?.getAttribute('aria-label')).toBe(
+      'Ny status for funnet: 3 av 10 brukar ikkje MFA',
+    );
     expect([...select.options].map((o) => o.textContent)).toEqual([
       'Open',
       'I seminar: Phishing og falske fakturaer (12.11.2026)',
@@ -231,6 +274,13 @@ describe('the client page: follow-up of the findings (2.17)', () => {
     ]);
     expect(button(item, 'Lagre').disabled).toBe(true);
     choose(select, 'seminar:s1');
+    // New answers anywhere read every result again: the open editor and its choice stay.
+    await act(async () => {
+      await view!.client.invalidateQueries({ queryKey: ['responses'] });
+    });
+    await settle();
+    expect(item.querySelector('select')).toBe(select);
+    expect(select.value).toBe('seminar:s1');
     act(() => {
       button(item, 'Lagre').click();
     });
@@ -240,6 +290,26 @@ describe('the client page: follow-up of the findings (2.17)', () => {
       ([p, i]) => p === '/api/admin/findings/f-14/status' && i?.method === 'PUT',
     );
     expect(JSON.parse(put![1]!.body as string)).toEqual({ status: 'in_seminar', seminar: 's1' });
+    // Saved: the editor closes and the focus is back on «Endre status».
+    expect(item.querySelector('select')).toBeNull();
+    expect(document.activeElement).toBe(button(item, 'Endre status'));
+  });
+
+  it('«Avbryt» closes the editor and gives the focus back to «Endre status»', async () => {
+    await open();
+    const item = [...region('Funn').querySelectorAll<HTMLElement>('.funn li')][0]!;
+    act(() => {
+      button(item, 'Endre status').click();
+    });
+    await settle();
+    expect(item.querySelector<HTMLSelectElement>('select')!.value).toBe('seminar:s1');
+    act(() => {
+      button(item, 'Avbryt').click();
+    });
+    await settle();
+    expect(item.querySelector('select')).toBeNull();
+    expect(document.activeElement).toBe(button(item, 'Endre status'));
+    expect(fetcher.mock.calls.some(([, i]) => i?.method === 'PUT')).toBe(false);
   });
 
   it('an open round has no follow-up yet and asks for none', async () => {
