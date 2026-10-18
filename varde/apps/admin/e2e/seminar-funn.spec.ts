@@ -33,14 +33,15 @@ test('a seminar shows the findings it takes up; the status is changed on the cli
   expect(made.status()).toBe(201);
   const seminar = ((await made.json()) as { id: string }).id;
 
-  // None yet: one sentence, and the way to the client page where findings are taken up.
+  // None yet: one sentence, and the way to «Funn» on the client page where findings are taken up.
   await page.goto(`/admin/seminars/${seminar}`);
   await expect(page.getByRole('heading', { name: TOPIC, level: 1 })).toBeVisible();
   await expect(page).toHaveTitle(`${TOPIC} – Varde`);
   const block = page.getByRole('region', { name: 'Funn seminaret tek opp' });
-  await expect(block).toContainText('Seminaret tek ikkje opp nokon funn enno.');
+  await expect(block).toContainText('Ingen funn er knytte til seminaret.');
   await block.getByRole('link', { name: NAME, exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`/admin/clients/${kunde.client}$`));
+  await expect(page).toHaveURL(new RegExp(`/admin/clients/${kunde.client}\\?funn$`));
+  await expect(page.getByRole('region', { name: 'Funn' })).toBeFocused();
 
   // The client page, the one place to change the status, takes the MFA finding up at the seminar.
   const funn = () =>
@@ -106,11 +107,13 @@ test('a seminar shows the findings it takes up; the status is changed on the cli
   expect(chip.x + chip.width).toBeLessThanOrEqual(text.x + text.width + 1);
   expect(chip.y + chip.height).toBeLessThanOrEqual(text.y + text.height + 1);
   await page.screenshot({ path: info.outputPath('seminar-funn-telefon.png'), fullPage: true });
-  // The client page is long on a phone: the link opens it at «Funn», top first.
+  // The client page is long on a phone: the link opens it at «Funn», top first, just under the
+  // sticky top bar (scroll-margin 76 px), whatever the scroll of the page before.
   await block.getByRole('link', { name: `Endre status hos ${NAME}` }).click();
   const card = page.getByRole('region', { name: 'Funn' });
   await expect(card).toBeFocused();
-  await expect(card.getByRole('heading', { name: 'Funn', exact: true })).toBeInViewport();
+  await expect.poll(async () => Math.round((await card.boundingBox())!.y)).toBeLessThanOrEqual(92);
+  expect(Math.round((await card.boundingBox())!.y)).toBeGreaterThanOrEqual(60);
   await page.screenshot({ path: info.outputPath('kunde-frå-seminar-telefon.png') });
 
   // Leave the findings open, as the fixture made them.

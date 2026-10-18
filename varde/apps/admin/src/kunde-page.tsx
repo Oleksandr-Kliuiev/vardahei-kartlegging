@@ -32,11 +32,14 @@ function Lenkje({ to, children }: { to: string; children: string }) {
   );
 }
 
-/** `?runde=<id>` opens «Funn» on that round (the link from a seminar's findings). */
+/** The links from a seminar's findings open the page at «Funn»: `?runde=<id>` on that round,
+ * `?funn` on the first one. */
 export function KundePage({ id, search = '' }: { id: string; search?: string }) {
   const clients = useClients(),
     rounds = useRounds();
-  const asked = new URLSearchParams(search).get('runde');
+  const params = new URLSearchParams(search);
+  const asked = params.get('runde');
+  const toFunn = asked !== null || params.has('funn');
   const seminars = useQuery({
     queryKey: ['seminars', 'list'],
     queryFn: () => api<SeminarList>('/api/admin/seminars'),
@@ -126,9 +129,10 @@ export function KundePage({ id, search = '' }: { id: string; search?: string }) 
         </div>
         <div className="s5 rom-side">
           <KundeFunn
-            key={`${client.id}:${asked ?? ''}`}
+            key={`${client.id}:${search}`}
             client={id}
             asked={asked}
+            focus={toFunn}
             rounds={answered}
             ready={!!rounds.data}
             error={rounds.error}

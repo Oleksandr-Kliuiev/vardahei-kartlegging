@@ -73,7 +73,15 @@ function Gruppe({
     return i < 0 ? found.length : i;
   };
   const to = statusPage(group);
-  const link = group.client ? `Endre status hos ${client}` : 'Sjå resultatet for runden';
+  // The client page changes only the findings of the round's current result: a group of findings
+  // that dropped out of it (a release made again) has no editor to link to.
+  const editable =
+    !!result?.data && group.findings.some((f) => found.some((x) => x.key === f.rule_key));
+  const link = !group.client
+    ? 'Sjå resultatet for runden'
+    : editable
+      ? `Endre status hos ${client}`
+      : null;
   return (
     <div className="sem-funn-gruppe">
       <div className="sem-funn-hovud">
@@ -81,15 +89,17 @@ function Gruppe({
           {client} <small>{round}</small>
         </h3>
         {/* One client with two rounds has the same words twice: the round in the name tells them apart. */}
-        <a
-          className="lenkje"
-          href={to}
-          aria-label={`${link}, ${round}`}
-          onClick={(e) => follow(e, to)}
-        >
-          {link}
-          <Icon name="pil" small />
-        </a>
+        {link && (
+          <a
+            className="lenkje"
+            href={to}
+            aria-label={`${link}, ${round}`}
+            onClick={(e) => follow(e, to)}
+          >
+            {link}
+            <Icon name="pil" small />
+          </a>
+        )}
       </div>
       {result?.error ? (
         <ErrorMessage error={result.error} />
@@ -111,7 +121,7 @@ function Gruppe({
                         <b>{shown.tal}</b> {shown.text}
                       </>
                     ) : (
-                      'Funnet er ikkje med i resultatet for runden no.'
+                      'Funnet er ikkje lenger med i resultatet for runden, så statusen kan ikkje endrast.'
                     )}{' '}
                     <span className={chip}>{label}</span>
                   </div>
@@ -124,21 +134,24 @@ function Gruppe({
   );
 }
 
-/** No findings yet: where they are chosen, with a link to each client of the seminar. */
+/** No findings: where they are chosen, with a link to each client of the seminar that opens its
+ * page at «Funn» (`?funn`). Without tense, so it reads right before and after the seminar. */
 function Tom({ seminar }: { seminar: SeminarDetail }) {
   const list = seminar.clients;
   return (
     <p className="under sem-funn-tom">
-      Seminaret tek ikkje opp nokon funn enno.{' '}
+      Ingen funn er knytte til seminaret.{' '}
       {list.length ? (
         <>
-          Vel «I seminar» for eit funn på sida til kunden:{' '}
+          {list.length === 1
+            ? 'Vel «I seminar» for eit funn på sida til kunden: '
+            : 'Vel «I seminar» for eit funn på sida til ein av kundane: '}
           {list.map((c, i) => (
             <Fragment key={c.id}>
-              {i > 0 && (i === list.length - 1 ? ' og ' : ', ')}
+              {i > 0 && (i === list.length - 1 ? ' eller ' : ', ')}
               <a
-                href={`/admin/clients/${c.id}`}
-                onClick={(e) => follow(e, `/admin/clients/${c.id}`)}
+                href={`/admin/clients/${c.id}?funn`}
+                onClick={(e) => follow(e, `/admin/clients/${c.id}?funn`)}
               >
                 {c.name}
               </a>

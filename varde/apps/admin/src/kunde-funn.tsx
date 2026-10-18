@@ -179,6 +179,7 @@ type Result = Pick<UseQueryResult<Dashboard>, 'data' | 'dataUpdatedAt' | 'isPend
 export function KundeFunn({
   client,
   asked = null,
+  focus = false,
   rounds,
   ready,
   error,
@@ -188,6 +189,8 @@ export function KundeFunn({
   client: string;
   /** The round to show first (`?runde=` from a seminar's findings), if the client has answers in it. */
   asked?: string | null;
+  /** Opened from a seminar's findings (`?runde=` or `?funn`): the card takes the focus. */
+  focus?: boolean;
   /** The client's rounds with answers, newest first. */
   rounds: Round[];
   /** The list of rounds has loaded (until then no round says nothing). */
@@ -202,10 +205,11 @@ export function KundeFunn({
   const count = (r: Round) => results.get(r.id)?.data?.findings.length;
   const first = loading ? undefined : (rounds.find((r) => (count(r) ?? 0) > 0) ?? rounds[0]);
   // The newest round with findings comes first and stays, also when a newer round gets answers;
-  // after that the choice is the person's.
+  // after that the choice is the person's. A round asked for that the client has no answers in (an
+  // old link) gives way to it the same way.
   useEffect(() => {
-    if (chosen === null && first) setChosen(first.id);
-  }, [chosen, first]);
+    if (first && (chosen === null || !rounds.some((r) => r.id === chosen))) setChosen(first.id);
+  }, [chosen, first, rounds]);
   const round = rounds.find((r) => r.id === chosen) ?? first;
   const current = round ? results.get(round.id) : undefined;
   const found = current?.data;
@@ -225,25 +229,29 @@ export function KundeFunn({
   const rows = new Map(
     (status.data?.rows ?? []).filter((r) => r.round === round?.id).map((r) => [r.rule_key, r]),
   );
-  // Opened from a seminar's findings: the card takes the focus once its findings are there, so the
-  // page opens where the status is changed. On a phone the card is far down and comes up, top first
-  // (a long card centred by the focus would hide its first findings); a page that shows it stays.
+  // Opened from a seminar's findings: once the round's findings are there the card takes the focus,
+  // so the page opens where the status is changed — unless the person has moved the focus meanwhile
+  // (the search palette) or the round asked for is not the client's. On a phone the card is far
+  // down and comes up, top first (a long card centred by the focus would hide its first findings);
+  // a page that already shows it stays still.
   const card = useRef<HTMLElement>(null),
     arrived = useRef(false);
   useEffect(() => {
     const el = card.current;
-    if (!asked || !found || arrived.current || !el) return;
+    if (!focus || !found || !round || arrived.current || !el) return;
     arrived.current = true;
+    if (asked !== null && round.id !== asked) return;
+    if (document.activeElement && document.activeElement !== document.body) return;
     el.focus({ preventScroll: true });
     const top = el.getBoundingClientRect().top;
     if (top < 0 || top > window.innerHeight * 0.6) el.scrollIntoView({ block: 'start' });
-  }, [asked, found]);
+  }, [focus, asked, found, round]);
   return (
     <section
       ref={card}
       className="kort kunde-funn"
       aria-labelledby="kunde-funn"
-      tabIndex={asked ? -1 : undefined}
+      tabIndex={focus ? -1 : undefined}
     >
       <div className="kort-hovud">
         <h2 id="kunde-funn">Funn</h2>

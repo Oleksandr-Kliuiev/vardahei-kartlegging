@@ -131,13 +131,16 @@ export function SeminarView({ id }: { id: string }) {
   const [tab, setTab] = useState<Tab>('pamelding');
   const [editing, setEditing] = useState(false);
   const s = seminar.data;
-  useTitle(s?.topic_nn);
+  // A seminar that cannot be read keeps the heading and tab title of the section.
+  const failed = !s && !!seminar.error;
+  useTitle(s?.topic_nn ?? (failed ? 'Seminar' : undefined));
   return (
     <>
       <a className="linkbtn sem-tilbake" href="/admin/seminars" onClick={(e) => go(e, '/admin/seminars')}>
         <Icon name="tilbake" small />
         Alle seminar
       </a>
+      {failed && <h1 className="sem-tittel">Seminar</h1>}
       <ErrorMessage error={seminar.error} />
       {s && (
         <>

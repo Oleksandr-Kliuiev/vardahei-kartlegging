@@ -29,10 +29,12 @@ const row = (
 ): SeminarFinding => ({ id, client, round, rule_key, status, changed_at });
 const FINDINGS = [
   row('b-12', B, R2, 'tryggleik.f12', 'in_seminar', '2026-10-17T10:00:00.000Z'),
-  // An older release of the same rule: the newest status is the one the client page shows.
-  row('a-12-old', A, R2, 'tryggleik.f12', 'in_seminar', '2026-10-16T10:00:00.000Z'),
+  // Two releases of one rule each, in either order and with other statuses: the newest status is
+  // the one the client page shows (neither the first nor the last row wins as such).
+  row('a-14-old', A, R2, 'tryggleik.f14', 'in_seminar', '2026-10-15T10:00:00.000Z'),
   row('a-14', A, R2, 'tryggleik.f14', 'closed', '2026-10-17T12:00:00.000Z'),
   row('a-12', A, R2, 'tryggleik.f12', 'in_seminar', '2026-10-17T11:00:00.000Z'),
+  row('a-12-old', A, R2, 'tryggleik.f12', 'closed', '2026-10-16T10:00:00.000Z'),
   // Taken up from an older round whose result no longer has the rule.
   row('a-8', A, R1, 'tryggleik.f8', 'in_seminar', '2026-10-17T13:00:00.000Z'),
 ];
@@ -112,15 +114,24 @@ const ROUNDS = [
   round_clients: [rc(A, r.id), rc(B, r.id)],
 }));
 
-let current = seminar(FINDINGS);
+/** The seminar the API has; none answers 404. */
+let current: ReturnType<typeof seminar> | null = seminar(FINDINGS);
+/** The query of a result that cannot be read (500). */
+let broken = '';
+const failure = (status: number, message: string) =>
+  Promise.resolve(new Response(JSON.stringify({ message }), { status }));
 const fetcher = vi.fn((path: string, init?: RequestInit) => {
   void init;
+  if (path === `/api/admin/seminars/${ID}` && !current)
+    return failure(404, 'Seminaret finst ikkje.');
+  if (broken && path === `/api/admin/dashboard?${broken}`)
+    return failure(500, 'Resultatet kan ikkje lesast no.');
   const result = path.startsWith('/api/admin/dashboard?') ? RESULTS[path.slice(21)] : undefined;
   const body =
     path === '/auth/me'
       ? { name: 'Syntetisk admin' }
       : path === '/api/admin/seminars'
-        ? { seminars: [current], contacts_to_review: 0 }
+        ? { seminars: current ? [current] : [], contacts_to_review: 0 }
         : path === `/api/admin/seminars/${ID}`
           ? current
           : path === '/api/admin/clients'
@@ -144,6 +155,7 @@ let view: ReturnType<typeof mount> | undefined;
 const scrolled = vi.fn();
 beforeEach(() => {
   current = seminar(FINDINGS);
+  broken = '';
   fetcher.mockClear();
   scrolled.mockClear();
   vi.stubGlobal('fetch', fetcher);
@@ -176,7 +188,7 @@ describe('findings of a seminar', () => {
     const groups = groupFindings(FINDINGS);
     expect(groups.map((g) => [g.client, g.round, g.findings.map((f) => f.id)])).toEqual([
       [B, R2, ['b-12']],
-      [A, R2, ['a-12', 'a-14']],
+      [A, R2, ['a-14', 'a-12']],
       [A, R1, ['a-8']],
     ]);
     expect(groupFindings([])).toEqual([]);
@@ -208,9 +220,14 @@ describe('findings of a seminar', () => {
       'chip ok',
       'chip accent',
     ]);
+    // A finding that dropped out of the result has no editor anywhere: no link that leads nowhere.
     expect([...a1!.querySelectorAll('li')].map(parts)).toEqual([
-      ['Funnet er ikkje med i resultatet for runden no.', 'I seminar'],
+      [
+        'Funnet er ikkje lenger med i resultatet for runden, så statusen kan ikkje endrast.',
+        'I seminar',
+      ],
     ]);
+    expect(a1!.querySelector('a')).toBeNull();
     expect([...b2!.querySelectorAll('li')].map(parts)).toEqual([
       ['Høg', '4 av 9 veit ikkje kvar dei skal melde frå', 'I seminar'],
     ]);
@@ -223,11 +240,6 @@ describe('findings of a seminar', () => {
         'Endre status hos Syntetisk A',
         'Endre status hos Syntetisk A, Haust 2026',
         `/admin/clients/${A}?runde=${R2}`,
-      ],
-      [
-        'Endre status hos Syntetisk A',
-        'Endre status hos Syntetisk A, Runde 1',
-        `/admin/clients/${A}?runde=${R1}`,
       ],
       [
         'Endre status hos Syntetisk B',
@@ -271,30 +283,49 @@ describe('findings of a seminar', () => {
     );
     expect(fetcher).toHaveBeenCalledWith(`/api/admin/dashboard?round=${R2}`, expect.anything());
   });
-  it('no findings: one sentence, and where to choose them', async () => {
+  it('a result that cannot be read is said in its group; the other groups show as usual', async () => {
+    broken = `round=${R2}&client=${B}`;
+    view = mount(<SeminarPage id={ID} />, true);
+    await settle();
+    await settle();
+    const b2 = [...block().querySelectorAll('.sem-funn-gruppe')][2]!;
+    expect(text(b2.querySelector('h3'))).toBe('Syntetisk B Haust 2026');
+    expect(text(b2.querySelector('[role="alert"]'))).toBe('Resultatet kan ikkje lesast no.');
+    expect(b2.querySelector('a, li')).toBeNull();
+    expect(block().querySelectorAll('li')).toHaveLength(3);
+  });
+  it('no findings: one sentence, and the clients to choose them at, each opened at «Funn»', async () => {
     current = seminar([]);
     view = mount(<SeminarPage id={ID} />, true);
     await settle();
     expect(text(block().querySelector('.kort-innhald'))).toBe(
-      'Seminaret tek ikkje opp nokon funn enno. Vel «I seminar» for eit funn på sida til kunden: Syntetisk A og Syntetisk B.',
+      'Ingen funn er knytte til seminaret. Vel «I seminar» for eit funn på sida til ein av kundane: Syntetisk A eller Syntetisk B.',
     );
     expect(
       [...block().querySelectorAll('a')].map((a) => [text(a), a.getAttribute('href')]),
     ).toEqual([
-      ['Syntetisk A', `/admin/clients/${A}`],
-      ['Syntetisk B', `/admin/clients/${B}`],
+      ['Syntetisk A', `/admin/clients/${A}?funn`],
+      ['Syntetisk B', `/admin/clients/${B}?funn`],
     ]);
     expect(text(block().querySelector('.kort-hovud'))).toBe('Funn seminaret tek opp');
     expect(findBokmal(block().textContent ?? '')).toEqual([]);
     // Nothing to show, nothing to read: no results, no lists of clients or rounds.
     expect(fetcher.mock.calls.map(([p]) => p)).toEqual([`/api/admin/seminars/${ID}`]);
+    view.close();
+    // One client: «kunden».
+    current = seminar([], [{ id: A, name: 'Syntetisk A' }]);
+    view = mount(<SeminarPage id={ID} />, true);
+    await settle();
+    expect(text(block().querySelector('.kort-innhald'))).toBe(
+      'Ingen funn er knytte til seminaret. Vel «I seminar» for eit funn på sida til kunden: Syntetisk A.',
+    );
   });
   it('no findings and no clients: the findings come from the clients', async () => {
     current = seminar([], []);
     view = mount(<SeminarPage id={ID} />, true);
     await settle();
     expect(text(block().querySelector('.kort-innhald'))).toBe(
-      'Seminaret tek ikkje opp nokon funn enno. Funna kjem frå kundane: legg til kundar med «Endre» først.',
+      'Ingen funn er knytte til seminaret. Funna kjem frå kundane: legg til kundar med «Endre» først.',
     );
     expect(findBokmal(block().textContent ?? '')).toEqual([]);
   });
@@ -324,6 +355,15 @@ describe('heading and tab title', () => {
     // The second visit renders from cache in the same commit as the new address.
     await open();
     expect(document.title).toBe(`${TOPIC} – Varde`);
+  });
+  it('a seminar that cannot be read keeps the heading and tab title of the section', async () => {
+    current = null;
+    document.title = 'Daco – Varde';
+    view = mount(<SeminarPage id={ID} />, true);
+    await settle();
+    expect([...view.div.querySelectorAll('h1')].map((h) => h.textContent)).toEqual(['Seminar']);
+    expect(text(view.div.querySelector('[role="alert"]'))).toBe('Seminaret finst ikkje.');
+    expect(document.title).toBe('Seminar – Varde');
   });
 });
 
@@ -373,13 +413,55 @@ describe('the client page from a seminar', () => {
     expect(document.activeElement).toBe(document.body);
     expect(scrolled).toHaveBeenCalledTimes(1);
   });
-  it('a page that already shows the card stays still; the card still takes the focus', async () => {
-    at(120);
+  it('the page moves only when the card is out of sight, below or above', async () => {
+    for (const [top, moves] of [
+      [120, false],
+      [-300, true],
+    ] as const) {
+      scrolled.mockClear();
+      const spy = at(top);
+      view = mount(<KundePage id={A} search={`?runde=${R1}`} />, true);
+      await settle();
+      await settle();
+      expect(choice()?.value).toBe(R1);
+      // The card takes the focus either way.
+      expect(document.activeElement).toBe(card());
+      expect(scrolled).toHaveBeenCalledTimes(moves ? 1 : 0);
+      view.close();
+      view = undefined;
+      spy.mockRestore();
+    }
+  });
+  it('«?funn» (no findings yet) opens «Funn» on the newest round with findings, with the focus', async () => {
+    at(1200);
+    view = mount(<KundePage id={A} search="?funn" />, true);
+    await settle();
+    await settle();
+    expect(choice()?.value).toBe(R2);
+    expect(document.activeElement).toBe(card());
+    expect(scrolled).toHaveBeenCalledTimes(1);
+  });
+  it('an old link to a round without answers opens the newest round, and takes no focus', async () => {
+    at(1200);
+    view = mount(<KundePage id={A} search="?runde=00000000-0000-4000-8000-0000000000ee" />, true);
+    await settle();
+    await settle();
+    expect(choice()?.value).toBe(R2);
+    expect(view.div.textContent).toContain('2 av 6');
+    expect(document.activeElement).toBe(document.body);
+    expect(scrolled).not.toHaveBeenCalled();
+  });
+  it('the focus stays where the person put it while the findings loaded (the search palette)', async () => {
+    at(1200);
+    const field = document.createElement('input');
+    document.body.appendChild(field);
     view = mount(<KundePage id={A} search={`?runde=${R1}`} />, true);
+    field.focus();
     await settle();
     await settle();
     expect(choice()?.value).toBe(R1);
-    expect(document.activeElement).toBe(card());
+    expect(document.activeElement).toBe(field);
     expect(scrolled).not.toHaveBeenCalled();
+    field.remove();
   });
 });

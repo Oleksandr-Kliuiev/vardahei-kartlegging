@@ -56,9 +56,9 @@
 .sem-funn-hovud h3 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; min-width: 0; font-size: 14.5px; font-weight: 700; }
 .sem-funn-hovud h3 small { font-size: 13px; font-weight: 500; color: var(--ink-muted); }
 .sem-funn-hovud .lenkje { margin-top: 0; }
-/* The text in the second column, its status right after it */
+/* The text in the second column, its status right after it: a space apart and no margin, so a
+   status that wraps to its own line starts at the text's edge */
 .sem-funn .funn .sem-funn-tekst { grid-column: 2; min-width: 0; overflow-wrap: anywhere; }
-.sem-funn-tekst .chip { margin-left: 4px; }
 .sem-funn .funn li:last-child { padding-bottom: 0; }
 /* Same break as the list itself (dashboard.css): one column, and the link always under the name */
 @media (max-width: 620px) {
