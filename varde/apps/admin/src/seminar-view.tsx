@@ -1,14 +1,17 @@
-// One seminar (Vardestien «Seminar»): what, when and where, then the tabs «Påmelding»,
-// «Materiell», «Invitasjon», «Live» (3b) and «Før og etter» (3c: the rounds before, during and
-// after, and the comparison). The participant list is personal data: it is shown only on request,
-// and every read is written to the log.
+// One seminar (Vardestien «Seminar»): what, when and where — the topic is the heading of the page
+// and of its tab — the findings it takes up (2.17), then the tabs «Påmelding», «Materiell»,
+// «Invitasjon», «Live» (3b) and «Før og etter» (3c: the rounds before, during and after, and the
+// comparison). The participant list is personal data: it is shown only on request, and every read
+// is written to the log.
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, mutate } from './api.js';
 import { Icon } from './icons.js';
+import { useTitle } from './nav.js';
 import { ErrorMessage } from './queries.js';
 import { SeminarForm } from './seminar-form.js';
 import { BeforeAfterTab } from './seminar-before-after.js';
+import { SeminarFunn } from './seminar-funn.js';
 import { Invitation } from './seminar-invitation.js';
 import { Live } from './seminar-live.js';
 import { Materials } from './seminar-materials.js';
@@ -128,6 +131,7 @@ export function SeminarView({ id }: { id: string }) {
   const [tab, setTab] = useState<Tab>('pamelding');
   const [editing, setEditing] = useState(false);
   const s = seminar.data;
+  useTitle(s?.topic_nn);
   return (
     <>
       <a className="linkbtn sem-tilbake" href="/admin/seminars" onClick={(e) => go(e, '/admin/seminars')}>
@@ -140,7 +144,7 @@ export function SeminarView({ id }: { id: string }) {
           <section className="kort sem-topp">
             <div className="kort-innhald">
               <div className="eyebrow">Seminar · {s.status === 'planned' ? 'planlagt' : 'gjennomført'}</div>
-              <h2 className="sem-tittel">{s.topic_nn}</h2>
+              <h1 className="sem-tittel">{s.topic_nn}</h1>
               <p className="sem-meta">
                 {s.when} · {s.format === 'digital' ? `Digitalt, ${s.place}` : s.place}
                 {s.clients.length > 0 && ` · ${names(s.clients.map((c) => c.name))}`} · {registered(s.registrations.total)}
@@ -162,6 +166,7 @@ export function SeminarView({ id }: { id: string }) {
               )}
             </div>
           </section>
+          <SeminarFunn seminar={s} />
           <div className="sem-faner">
             <Seg label="Del" value={tab} options={TABS} onChange={setTab} />
           </div>

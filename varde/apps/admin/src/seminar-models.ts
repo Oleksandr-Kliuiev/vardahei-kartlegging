@@ -31,8 +31,18 @@ export interface Material {
   title: string;
   url: string;
 }
+/** A saved finding whose status points to the seminar (3.1): taken up there or done after it. */
+export interface SeminarFinding {
+  id: string;
+  status: string;
+  rule_key: string;
+  round: string;
+  /** The client of the finding; none for a finding of all the clients of a round. */
+  client: string | null;
+  changed_at: string;
+}
 export interface SeminarDetail extends Seminar {
-  findings: { id: string; status: string; rule_key: string }[];
+  findings: SeminarFinding[];
   materials?: Material[];
 }
 export interface SeminarList {

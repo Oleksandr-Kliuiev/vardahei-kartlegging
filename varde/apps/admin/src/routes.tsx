@@ -133,9 +133,10 @@ export function resolve(path: string, search: string): Page {
     );
   if (path === '/admin/clients') return page(<KundarPage />);
   const client = match(path, `/admin/clients/${ID}`);
-  if (client) return page(<KundePage key={client[1]} id={client[1]!} />, null);
+  if (client) return page(<KundePage key={client[1]} id={client[1]!} search={search} />, null);
   const seminar = match(path, `/admin/seminars(?:/${ID})?`);
-  if (seminar) return page(<SeminarPage id={seminar[1]} />);
+  // One seminar has its own heading and tab title, the topic, as a round and a client have.
+  if (seminar) return page(<SeminarPage id={seminar[1]} />, seminar[1] ? null : undefined);
   const personvern = match(path, '/admin/personvern(?:/([a-z]+))?');
   if (personvern) {
     const tab = personvernTab(personvern[1]);

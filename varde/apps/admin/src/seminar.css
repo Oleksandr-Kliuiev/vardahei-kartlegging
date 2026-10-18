@@ -41,6 +41,30 @@
 .sem-meta { color: var(--ink-muted); overflow-wrap: anywhere; }
 .sem-topp .handlingar { margin-top: 12px; }
 .sem-topp .sem-form { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+
+/* Funn seminaret tek opp (2.17): per kunde og runde, nivå, tal, tekst og status som på sida til kunden */
+.sem-funn { margin-bottom: 16px; }
+.sem-funn .kort-innhald { display: grid; gap: 16px; }
+.sem-funn-tom { margin: 0; }
+/* The clients in the sentence: links in running text keep their line */
+.sem-funn-tom a { color: var(--accent-text); font-weight: 650; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.sem-funn-tom a:hover { color: var(--ink-strong); }
+.sem-funn-gruppe { display: grid; min-width: 0; }
+.sem-funn-gruppe + .sem-funn-gruppe { padding-top: 16px; border-top: 1px solid var(--line); }
+/* Client and round, and on the same line the way to the client page, where the status is changed */
+.sem-funn-hovud { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 16px; }
+.sem-funn-hovud h3 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; min-width: 0; font-size: 14.5px; font-weight: 700; }
+.sem-funn-hovud h3 small { font-size: 13px; font-weight: 500; color: var(--ink-muted); }
+.sem-funn-hovud .lenkje { margin-top: 0; }
+/* The text in the second column, its status right after it */
+.sem-funn .funn .sem-funn-tekst { grid-column: 2; min-width: 0; overflow-wrap: anywhere; }
+.sem-funn-tekst .chip { margin-left: 4px; }
+.sem-funn .funn li:last-child { padding-bottom: 0; }
+/* Same break as the list itself (dashboard.css): one column, and the link always under the name */
+@media (max-width: 620px) {
+  .sem-funn .funn .sem-funn-tekst { grid-column: 1; }
+  .sem-funn-hovud { flex-direction: column; align-items: flex-start; }
+}
 .sem-faner { margin-bottom: 16px; max-width: 100%; }
 .sem-tal-kort .under { margin: 0; }
 .sem-tal-kort .forklaring { margin-top: 10px; }

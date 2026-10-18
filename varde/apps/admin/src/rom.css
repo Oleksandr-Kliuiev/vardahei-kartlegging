@@ -101,6 +101,9 @@ a.ting:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .oppfolging-endre small { flex-basis: 100%; }
 .kunde-funn-open { margin: 0 0 4px; }
 .kort-hovud .kunde-funn-runde { flex: 0 1 auto; min-width: 0; max-width: 100%; min-height: 34px; padding-top: 4px; padding-bottom: 4px; font-size: 13.5px; }
+/* Opened from a seminar (?runde=): the card takes the focus below the sticky top bar, keeping its corners */
+.kunde-funn { scroll-margin-top: 76px; }
+.kunde-funn:focus-visible { border-radius: var(--r-lg); }
 .kontakt-kort .lenkje { margin-top: 4px; }
 .kontakt-kort .handlingar { margin-top: 12px; }
 .kontakt-liste { margin-top: 12px; gap: 8px; }

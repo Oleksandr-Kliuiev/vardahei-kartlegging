@@ -1,5 +1,6 @@
 // The findings of the client's rounds (2.17), one round at a time — first the newest with
-// findings — and how each is followed up: open, taken up at a seminar (with a link to it) or done.
+// findings, or the round a seminar's link asks for — and how each is followed up: open, taken up
+// at a seminar (with a link to it) or done.
 // A closed round keeps its findings (2.5), so the status is set once the round is closed; it lives
 // beside the finding (3.1), and every change is in the log. This is the one place to change it.
 import { useEffect, useRef, useState } from 'react';
@@ -177,6 +178,7 @@ type Result = Pick<UseQueryResult<Dashboard>, 'data' | 'dataUpdatedAt' | 'isPend
 
 export function KundeFunn({
   client,
+  asked = null,
   rounds,
   ready,
   error,
@@ -184,6 +186,8 @@ export function KundeFunn({
   seminars,
 }: {
   client: string;
+  /** The round to show first (`?runde=` from a seminar's findings), if the client has answers in it. */
+  asked?: string | null;
   /** The client's rounds with answers, newest first. */
   rounds: Round[];
   /** The list of rounds has loaded (until then no round says nothing). */
@@ -193,7 +197,7 @@ export function KundeFunn({
   results: ReadonlyMap<string, Result | undefined>;
   seminars: Seminar[];
 }) {
-  const [chosen, setChosen] = useState<string | null>(null);
+  const [chosen, setChosen] = useState<string | null>(asked);
   const loading = rounds.some((r) => results.get(r.id)?.isPending ?? true);
   const count = (r: Round) => results.get(r.id)?.data?.findings.length;
   const first = loading ? undefined : (rounds.find((r) => (count(r) ?? 0) > 0) ?? rounds[0]);
@@ -221,8 +225,26 @@ export function KundeFunn({
   const rows = new Map(
     (status.data?.rows ?? []).filter((r) => r.round === round?.id).map((r) => [r.rule_key, r]),
   );
+  // Opened from a seminar's findings: the card takes the focus once its findings are there, so the
+  // page opens where the status is changed. On a phone the card is far down and comes up, top first
+  // (a long card centred by the focus would hide its first findings); a page that shows it stays.
+  const card = useRef<HTMLElement>(null),
+    arrived = useRef(false);
+  useEffect(() => {
+    const el = card.current;
+    if (!asked || !found || arrived.current || !el) return;
+    arrived.current = true;
+    el.focus({ preventScroll: true });
+    const top = el.getBoundingClientRect().top;
+    if (top < 0 || top > window.innerHeight * 0.6) el.scrollIntoView({ block: 'start' });
+  }, [asked, found]);
   return (
-    <section className="kort" aria-labelledby="kunde-funn">
+    <section
+      ref={card}
+      className="kort kunde-funn"
+      aria-labelledby="kunde-funn"
+      tabIndex={asked ? -1 : undefined}
+    >
       <div className="kort-hovud">
         <h2 id="kunde-funn">Funn</h2>
         {round && rounds.length > 1 ? (

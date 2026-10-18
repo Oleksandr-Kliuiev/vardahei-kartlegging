@@ -18,6 +18,21 @@ function openRule(e: MouseEvent<HTMLAnchorElement>) {
   window.history.pushState(null, '', e.currentTarget.getAttribute('href'));
   window.dispatchEvent(new PopStateEvent('popstate'));
 }
+/** The level of a finding: «Høg» or «Middels» for a risk, «Stor» or «Verdt» for an opportunity. */
+export function Niva({ finding: f }: { finding: Pick<Finding, 'level' | 'severity'> }) {
+  return (
+    <span className={`niva ${f.level}`}>
+      <i aria-hidden="true" />
+      {f.severity === 'opportunity'
+        ? f.level === 'high'
+          ? 'Stor'
+          : 'Verdt'
+        : f.level === 'high'
+          ? 'Høg'
+          : 'Middels'}
+    </span>
+  );
+}
 /** `follow` adds a line under each finding (the follow-up on the client page, 2.17). */
 export function Findings({
   findings,
@@ -30,16 +45,7 @@ export function Findings({
     <ul className="funn">
       {findings.map((f) => (
         <li key={f.key}>
-          <span className={`niva ${f.level}`}>
-            <i aria-hidden="true" />
-            {f.severity === 'opportunity'
-              ? f.level === 'high'
-                ? 'Stor'
-                : 'Verdt'
-              : f.level === 'high'
-                ? 'Høg'
-                : 'Middels'}
-          </span>
+          <Niva finding={f} />
           <div>
             <b>{f.tal}</b> {f.text}
           </div>
