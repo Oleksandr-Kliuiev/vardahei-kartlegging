@@ -143,7 +143,7 @@ Unit admin 94 → см. итог ниже; schema 62; API 225. Integration: libr
 
 - M1 и L3 из приёмки 2.16 — см. выше.
 - «Где бросают» у вопроса не сделано (см. «Innsikt»).
-- На странице клиента пока нет статуса funn (FindingStatus) и контактов клиента.
+- На странице клиента пока нет статуса funn (FindingStatus) и контактов клиента. Сделано 18.10 в ветке `varde/kunde-1` — раздел «2.17, хвост» ниже.
 - `verkstad-page.tsx` — 665 строк (лимит 700): следующую функцию мастерской выносить в отдельный файл.
 
 ## Проверки 2.16–2.18 (итог)
@@ -181,3 +181,64 @@ Unit admin 94 → см. итог ниже; schema 62; API 225. Integration: libr
   - Новые адреса API без входа отвечают 401, `/admin` — 302 на вход.
   - Админку на проде без входа проверить нельзя — смотрит Oleksandr.
 - **Откат:** `bash infra/ops/rollback.sh 557a6c91b955 20261018100000_sent_marks_and_comments 20261018090000_settings_and_acceptance_basis`.
+
+## 2.17, хвост — контакты и статусы funn на странице клиента (18.10)
+
+Ветка `varde/kunde-1` от `main` 89ead22 (прод `3b35575ff167` + docs): b37d286 (api), 9da06d3 (admin), f2f6498 (invariants 3a), e1147d0 (исправления по ревью), d0b83da (docs). Миграций нет.
+
+### Что сделано
+
+- **Kontaktar** (`kunde-kontaktar.tsx`): сначала только число — «2 kontaktar hos Daco.» и ссылка «1 ventar på den årlege sjekken» на «Personvern › Kontaktar». Имена, e-post, роль у клиента, согласие на приглашения, «sist sjekka» и семинары, на которые человек записан, — только по «Vis kontaktane». Список живёт в карточке, пока она открыта, а не в кэше запросов. Одна кнопка «Vis kontaktane / Skjul kontaktane» (`aria-expanded`) — фокус не теряется. Если число контактов клиента изменилось (запись, удаление), список убирается и открывается снова только по запросу.
+- **Funn** (`kunde-funn.tsx`): выбор раунда в карточке («KI runde 1 · 7 funn», «Runde 2 IT-tryggleik · 15 funn»). Сначала открыт последний раунд, где есть funn, и выбор держится. Так сделано потому, что на staging (и, вероятно, на проде) у клиентов последний раунд — KI без funn, и funn по IT-безопасности иначе не видны.
+- **Статус у каждого funn закрытого раунда:**
+  - «Open», «I seminar» со ссылкой на семинар («Phishing og falske fakturaer · 12.11.2026») или «Ferdig»; кто и когда менял («Endra av Oleksandr 18.10.2026»).
+  - «Endre status» открывает выбор «Open / I seminar: <семинар клиента> / Ferdig» и «Lagre»; фокус переходит в выбор, после «Lagre» или «Avbryt» возвращается на «Endre status».
+  - «Ferdig» сохраняет семинар, на котором funn разбирали.
+  - У открытого раунда funn считаются вживую и не сохраняются (2.5), поэтому статуса нет: «Runden er open. Status på funna kan du setje når runden er avslutta.».
+- **API:**
+  - `GET /api/admin/clients/:id/contacts/count` — только числа, без журнала.
+  - `GET /api/admin/clients/:id/contacts` — имена через privacy, с журналом.
+  - `GET /api/admin/clients/:id/finding-status` — статусы funn клиента.
+  - Статус меняет прежний `PUT /api/admin/findings/:id/status` (3.1, AuditLog `findings.status`); после смены — SSE `seminars`.
+  - Технический клиент live-опросов и неизвестный id — 404 «Kunden finst ikkje.».
+- **Повторный выпуск закрытого раунда** сохраняет новые строки Finding (2.5). `FindingsService.ofClient` берёт по каждому раунду набор, посчитанный для клиента последним, и самый новый статус из всех выпусков того же правила. Новый статус пишется в ту строку, где статус уже есть: у правила остаётся один статус, работа по funn не теряется.
+
+### Отклонение от брифа
+
+В брифе сказано: «если статус уже меняют на «Seminar», дать ссылку туда, а не второй редактор». Редактора статуса в админке не было нигде: API 3.1 есть (`PUT /findings/:id/status`, `POST /seminars/:id/findings`), а UI нет. Поэтому единственный редактор — на странице клиента, а у статуса «I seminar» есть ссылка на семинар. Страница семинара пока не показывает, какие funn он разбирает, хотя данные в `GET /api/admin/seminars/:id` → `findings` есть. Это кандидат на следующий шаг.
+
+### Privacy
+
+- Имена и e-post контактов — третий канал `privacy.participants` (`clientList`) рядом со списком семинара и ежегодной проверкой. Нужна админ-сессия; запись AuditLog `privacy.participants` с целью `client:<id>` создаётся первой в той же транзакции, затем в неё дописывается `count`.
+- Contact и Registration по-прежнему читает только `modules/privacy/participants.ts` (lint `privacy-only-release`). Число контактов клиента отдаётся без имён и без журнала, как счётчики по семинару.
+- Обход всех маршрутов 3a знает третий канал: второй синтетический контакт выбрал клиента Daco. Обход теперь проверяет, что ни один другой маршрут не пишет `privacy.participants`, а маршруты числа контактов и статусов funn отвечают 200 без имён.
+- Статусы funn читают сохранённые Finding без `numbers` в `modules/findings` (lint `round-client-exits`); чисел funn в ответе нет.
+- Протокол обработки (`personvern/behandlingsregister-varde.md`) не меняется: доступ у тех же трёх сотрудников, каждая выдача имён пишется в журнал.
+
+### Тексты админки (нюношк) — на проверку Oleksandr
+
+Респонденты эти тексты не видят.
+
+- Контакты: «Kontaktar», «2 kontaktar hos Daco.», «Ingen kontaktar hos Daco enno.», «1 ventar på den årlege sjekken», «Kontaktane kjem frå påmeldingar til seminar. Lista har namn og e-post. Kvar gong nokon opnar ho, blir det skrive i loggen.», «Vis kontaktane», «Skjul kontaktane», «Ingen kontaktar å vise no.», «Årleg sjekk», «invitasjonar: ja / nei», «Påmeld: …».
+- Funn: «Funn», «· ingen funn», «· 7 funn», «Runden er open. Status på funna kan du setje når runden er avslutta.», «Open», «I seminar», «Ferdig», «Endra av …», «Endre status», «I seminar: … (12.11.2026)», «Lagre», «Avbryt», «Kunden er ikkje med på noko seminar. Lag seminaret under «Seminar» først.», «Status for funnet er lagra.».
+
+### Ревью (агент, только чтение) — исправлено
+
+Блокирующих замечаний нет. Важные:
+1. Ключ запроса статусов зависел от каждого нового чтения результатов, поэтому любой ответ в любом раунде закрывал открытый редактор. Теперь ключ — выпуск раунда, `keepPreviousData`.
+2. На телефоне (≤ 620 px) блок статуса оставался во второй колонке и сжимал «Forslag» в полоску 80 px. Исправлено в CSS, e2e сравнивает положение блоков.
+3. Фокус уходил в `body` при открытии и закрытии редактора и списка контактов. Исправлено, unit-тесты.
+
+Мелкие: одна строка статуса на правило после повторного выпуска; ошибка списка раундов показывается, а не «Hentar funna …» навсегда; выбор раунда фиксируется; имена убираются при смене числа контактов; лишнее поле `held` убрано; 200 от маршрутов страницы клиента в обходе 3a. Каждое исправление в unit-тестах проверено мутацией: без исправления тест падает.
+
+### Проверки
+
+ПРОВЕРКИ
+
+### Риски и ограничения
+
+- Статус ставится только на funn закрытых раундов (у открытого раунда funn не сохраняются, 2.5).
+- Страница семинара не показывает свои funn (см. «Отклонение»). `PUT /findings/:id/status` не проверяет, что семинар — семинар клиента этого funn: UI предлагает только семинары клиента, API — как в 3.1.
+- Роль у клиента (`role_at_client`) показывается, но задать её нельзя: ни форма, ни админка её не пишут.
+- В журнале чтение контактов клиента называется «Deltakarar lesne · Daco» — та же запись `privacy.participants`, что и у двух других каналов.
+- `participants.ts` — ровно 500 строк: следующую функцию privacy для контактов выносить в отдельный файл.
