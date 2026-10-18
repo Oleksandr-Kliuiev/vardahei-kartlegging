@@ -44,6 +44,9 @@ async function textOf(res: LightMyRequestResponse): Promise<{ text: string; zip:
 const currentCode = async () =>
   (await f.prisma.seminar.findUniqueOrThrow({ where: { id: seminar.id } })).code;
 const CLIENT_PAGE = ['GET /api/admin/clients/:id/contacts/count', 'GET /api/admin/clients/:id/finding-status'];
+// A walk calls every route, round releases included: about 35 s on a quiet machine, 75-90 s on a
+// busy one (18.10), past the 60 s default.
+const ROUTE_WALK = 180_000;
 /** Each channel and the e-mail it must carry. */
 const PARTICIPANT_CHANNELS = new Map([
   ['GET /api/admin/seminars/:id/registrations', EMAIL],
@@ -97,6 +100,8 @@ afterAll(async () => {
 
 it('walks every API route: participant data only in the three named channels, each read audited', async () => {
   const client = await f.prisma.client.findUniqueOrThrow({ where: { slug: 'daco' } });
+  const audits = () => f.prisma.auditLog.count({ where: { what: 'privacy.participants' } });
+  const start = await audits();
   const rc = await f.prisma.roundClient.findFirstOrThrow({ where: { round_id: f.tryggleik, client_id: client.id } });
   const seen = new Set<string>(),
     unzipped = new Set<string>();
@@ -150,9 +155,10 @@ it('walks every API route: participant data only in the three named channels, ea
       // The numbers and findings of the client page answer for real, without names (2.17).
       if (CLIENT_PAGE.includes(key)) expect(res.statusCode, key).toBe(200);
       for (const secret of SECRETS) expect(body, `${key} → ${secret}`).not.toContain(secret);
-      expect(await f.prisma.auditLog.count({ where: { what: 'privacy.participants' } }), key).toBe(before);
     }
   }
+  // Each channel is one GET route, read once: any other route that wrote this entry shows here.
+  expect(await audits()).toBe(start + PARTICIPANT_CHANNELS.size);
   for (const key of [
     ...PARTICIPANT_CHANNELS.keys(),
     ...CLIENT_PAGE,
@@ -168,7 +174,7 @@ it('walks every API route: participant data only in the three named channels, ea
     expect(seen, key).toContain(key);
   // The invitation package was really opened and read, file by file.
   expect(unzipped).toContain('GET /api/admin/seminars/:id/invitation.zip');
-});
+}, ROUTE_WALK);
 
 it('the public page of a held seminar shows its material, never a participant', async () => {
   const res = await f.app

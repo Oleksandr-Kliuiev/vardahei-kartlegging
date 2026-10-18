@@ -32,6 +32,9 @@ const rowClass = (url: string) =>
   /\/exports\/(rows|analyse|analyse-personar)\.csv$/.test(url) ||
   /\/clients\/[^/]+\/leader-answers$/.test(url) ||
   /\/handover\//.test(url);
+// A walk calls every route, round releases included: about 35 s on a quiet machine, 75-90 s on a
+// busy one (18.10), past the 60 s default.
+const ROUTE_WALK = 180_000;
 it('walks actual registered API routes; only named row channels can release identifiers or answers', async () => {
   const client = await f.prisma.client.findUniqueOrThrow({ where: { slug: 'daco' } });
   const rc = await f.prisma.roundClient.findFirstOrThrow({
@@ -84,7 +87,7 @@ it('walks actual registered API routes; only named row channels can release iden
   expect(tested).toContain('POST /api/admin/retention/forget');
   // SSE carries only topics; unauthenticated stream is bounded and returns no data.
   expect((await f.get('/api/admin/events')).statusCode).toBe(401);
-});
+}, ROUTE_WALK);
 it('client CSV never contains leader cells; anonymous rows never contain identifiers', async () => {
   const client = await f.get(
     `/api/admin/exports/client.csv?round=${f.tryggleik}&client=daco`,
