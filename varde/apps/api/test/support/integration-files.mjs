@@ -58,6 +58,7 @@ export const INTEGRATION_FILES = [
   'test/reports/client-report-versions.test.ts',
   'test/exports/round-archive.test.ts',
   'test/seminars/seminars.test.ts',
+  'test/seminars/client-page.test.ts',
   'test/seminars/participants.test.ts',
   'test/seminars/registration.test.ts',
   'test/seminars/materials.test.ts',

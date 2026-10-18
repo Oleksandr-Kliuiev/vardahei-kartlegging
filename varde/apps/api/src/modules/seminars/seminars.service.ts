@@ -154,6 +154,24 @@ export class SeminarsService {
     return { rows: await this.privacy.participants.reviewList(this.prisma, session) };
   }
 
+  /** A customer by id; the technical client of live polls (3.4) is nobody's customer. */
+  private async requireClient(id: string) {
+    const client = await this.prisma.client.findUnique({ where: { id }, select: { kind: true } });
+    if (client?.kind !== 'client') throw new NotFoundException('Kunden finst ikkje.');
+  }
+
+  /** How many contacts a client has (the client page, 2.17): numbers only, no names. */
+  async clientContactCount(client: string) {
+    await this.requireClient(client);
+    return this.privacy.participants.clientCount(this.prisma, client);
+  }
+
+  /** Names and e-mail of a client's contacts (the client page, 2.17), on request (AuditLog). */
+  async clientContacts(client: string, session: PrivacySession | undefined) {
+    await this.requireClient(client);
+    return { rows: await this.privacy.participants.clientList(this.prisma, client, session) };
+  }
+
   /** The admin corrects name and company of a contact (the public form never does). */
   async updateContact(contact: string, input: ContactInput, session: PrivacySession | undefined) {
     let company = input.company ?? '';

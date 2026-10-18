@@ -21,6 +21,19 @@ export interface ReleaseScope {
   scope: string;
 }
 type Db = Pick<Prisma.TransactionClient, 'findingRule'>;
+/** A saved finding of one client for its follow-up (2.17): no numbers, the newest status. */
+export interface SavedFinding {
+  /** The row of the round's current set: the one a new status goes to. */
+  id: string;
+  round: string;
+  rule_key: string;
+  status: {
+    status: string;
+    seminar_id: string | null;
+    changed_by: string;
+    changed_at: Date;
+  } | null;
+}
 interface Numbers {
   n: number;
   count: number;
@@ -195,5 +208,47 @@ export class FindingsService {
       });
     });
     return { findings: findings.sort(byLevel), release };
+  }
+  /**
+   * The saved findings of one client without their numbers (2.17, the follow-up on the client
+   * page): per round the set computed last for the client — its current release — and per rule
+   * the newest status of any release of that round. A release made again saves new rows (above),
+   * so the follow-up done on the older rows is kept; a new status goes to the current row.
+   */
+  async ofClient(client: string): Promise<SavedFinding[]> {
+    const sets = await this.prisma.findingSet.findMany({
+      where: { scope: client },
+      orderBy: [{ computed_at: 'desc' }, { release_id: 'asc' }],
+      select: { round_id: true, release_id: true },
+    });
+    const current = new Map<string, string>();
+    for (const s of sets) if (!current.has(s.round_id)) current.set(s.round_id, s.release_id);
+    if (!current.size) return [];
+    const rows = await this.prisma.finding.findMany({
+      where: { client_id: client, round_id: { in: [...current.keys()] } },
+      orderBy: [{ rule_key: 'asc' }, { rule_version: 'asc' }],
+      select: {
+        id: true,
+        round_id: true,
+        rule_key: true,
+        release_id: true,
+        status: { select: { status: true, seminar_id: true, changed_by: true, changed_at: true } },
+      },
+    });
+    const out = new Map<string, SavedFinding>();
+    for (const r of rows)
+      if (r.release_id === current.get(r.round_id) && !out.has(`${r.round_id}:${r.rule_key}`))
+        out.set(`${r.round_id}:${r.rule_key}`, {
+          id: r.id,
+          round: r.round_id,
+          rule_key: r.rule_key,
+          status: null,
+        });
+    for (const r of rows) {
+      const saved = out.get(`${r.round_id}:${r.rule_key}`);
+      if (saved && r.status && !(saved.status && saved.status.changed_at >= r.status.changed_at))
+        saved.status = r.status;
+    }
+    return [...out.values()];
   }
 }

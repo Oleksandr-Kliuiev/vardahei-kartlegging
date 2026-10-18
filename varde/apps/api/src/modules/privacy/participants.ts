@@ -1,8 +1,8 @@
 // Seminar participants (3.1, ADR-017 classes `contact` and `registration`): the only read and
 // write path of Contact and Registration (lint varde/privacy-only-release). Names, companies and
-// e-mail addresses leave only through `list` and `reviewList`: admin session, AuditLog written
-// first in the same transaction (as class `rows`). Reports, archives, exports, the assistant and
-// Atlas never see them; counts per company carry no names. Reached as `PrivacyService.participants`.
+// e-mail leave only through `list`, `reviewList` and `clientList` (the client page, 2.17): admin
+// session, AuditLog first in the same transaction (class `rows`). Reports, archives, exports, the
+// assistant and Atlas never see them; counts carry no names. Via `PrivacyService.participants`.
 import type { Prisma } from '@prisma/client';
 import { auditWho } from '../auth/audit-who.js';
 import type { RowsDb } from './rows.js';
@@ -53,6 +53,19 @@ export interface ContactReviewRow {
   last_confirmed_at: string;
   flagged_at: string;
   registrations: number;
+}
+/** A contact of one client (the client page, 2.17). `review`: it waits for the yearly check;
+ * `seminars`: its registrations, newest first (they go 90 days after the seminar). */
+export interface ClientContactRow {
+  id: string;
+  name: string;
+  email: string;
+  role: string | null;
+  /** Has consented to invitations to later seminars. */
+  invite: boolean;
+  last_confirmed_at: string;
+  review: boolean;
+  seminars: { id: string; topic: string; starts_at: string }[];
 }
 /** Registrations of a seminar: per client of Varde (names of clients only), the rest as `other`
  * — a company typed by a participant is shown only in the audited list. */
@@ -294,6 +307,65 @@ export class ParticipantStore {
         last_confirmed_at: c.last_confirmed_at.toISOString(),
         flagged_at: (c.review_flagged_at ?? c.last_confirmed_at).toISOString(),
         registrations: c._count.registrations,
+      }));
+    });
+  }
+
+  /** How many contacts belong to a client, and how many of them wait for the yearly check. */
+  async clientCount(db: Prisma.TransactionClient, client: string) {
+    const where = { client_id: client };
+    return {
+      total: await db.contact.count({ where }),
+      review: await db.contact.count({ where: { ...where, review_flagged_at: { not: null } } }),
+    };
+  }
+
+  /** Names and e-mail of one client's contacts (the client page, 2.17): admin session, AuditLog
+   * in the same transaction, target the client. */
+  clientList(
+    db: RowsDb,
+    client: string,
+    session: PrivacySession | null | undefined,
+  ): Promise<ClientContactRow[]> {
+    const who = auditWho(requireSession(session), true);
+    return db.$transaction(async (tx) => {
+      const entry = await tx.auditLog.create({
+        data: { who, what: PARTICIPANTS_AUDIT, target: `client:${client}`, details: {} },
+      });
+      const rows = await tx.contact.findMany({
+        where: { client_id: client },
+        orderBy: [{ name: 'asc' }, { email: 'asc' }],
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role_at_client: true,
+          invite_consent_version: true,
+          last_confirmed_at: true,
+          review_flagged_at: true,
+          registrations: {
+            orderBy: { seminar: { starts_at: 'desc' } },
+            select: { seminar: { select: { id: true, topic_nn: true, starts_at: true } } },
+          },
+        },
+      });
+      await tx.auditLog.update({
+        where: { id: entry.id },
+        data: { details: { count: rows.length } },
+      });
+      return rows.map((c) => ({
+        id: c.id,
+        name: c.name,
+        email: c.email,
+        role: c.role_at_client,
+        invite: c.invite_consent_version !== null,
+        last_confirmed_at: c.last_confirmed_at.toISOString(),
+        review: c.review_flagged_at !== null,
+        seminars: c.registrations.map((r) => ({
+          id: r.seminar.id,
+          topic: r.seminar.topic_nn,
+          starts_at: r.seminar.starts_at.toISOString(),
+        })),
       }));
     });
   }

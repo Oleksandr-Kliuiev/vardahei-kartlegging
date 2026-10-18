@@ -1,9 +1,10 @@
 // 3a invariants (integration): seminar participants are personal data (ADR-017). Walking every
-// registered route with a synthetic registration in the database, the name, company and e-mail
-// leave only through the two named participant channels — the list of one seminar and the
-// contacts to check — and each read there is in AuditLog. Reports, exports, archives, the
-// dashboard, the public seminar page and everything else never carry them; Response never
-// refers to a contact or registration.
+// registered route with synthetic registrations in the database, the name, company and e-mail
+// leave only through the three named participant channels — the list of one seminar, the
+// contacts to check and the contacts of one client (the client page, 2.17) — and each read there
+// is in AuditLog. Reports, exports, archives, the dashboard, the public seminar page, the counts
+// and findings of the client page and everything else never carry them; Response never refers to
+// a contact or registration.
 import 'reflect-metadata';
 import { TextWriter, Uint8ArrayReader, ZipReader } from '@zip.js/zip.js';
 import type { LightMyRequestResponse, RouteOptions } from 'fastify';
@@ -18,6 +19,10 @@ const routes: RouteOptions[] = [];
 const NAME = 'ZZDELTAKAR Syntetisk',
   EMAIL = 'zz-invariant-3a@example.test',
   COMPANY = 'ZZFIRMA Syntetisk';
+/** A second participant, who chose the client Daco: the contact of that client (2.17). */
+const CLIENT_NAME = 'ZZKONTAKT Syntetisk',
+  CLIENT_EMAIL = 'zz-invariant-3a-kunde@example.test';
+const SECRETS = [NAME, EMAIL, COMPANY, CLIENT_NAME, CLIENT_EMAIL];
 let seminar: { id: string; code: string };
 /** The text of a response; a zip is unpacked (its entries are compressed), every file read. */
 async function textOf(res: LightMyRequestResponse): Promise<{ text: string; zip: boolean }> {
@@ -38,9 +43,11 @@ async function textOf(res: LightMyRequestResponse): Promise<{ text: string; zip:
 }
 const currentCode = async () =>
   (await f.prisma.seminar.findUniqueOrThrow({ where: { id: seminar.id } })).code;
-const PARTICIPANT_CHANNELS = new Set([
-  'GET /api/admin/seminars/:id/registrations',
-  'GET /api/admin/contacts/review',
+/** Each channel and the e-mail it must carry. */
+const PARTICIPANT_CHANNELS = new Map([
+  ['GET /api/admin/seminars/:id/registrations', EMAIL],
+  ['GET /api/admin/contacts/review', EMAIL],
+  ['GET /api/admin/clients/:id/contacts', CLIENT_EMAIL],
 ]);
 
 beforeAll(async () => {
@@ -59,13 +66,18 @@ beforeAll(async () => {
     });
   const id = created.json<{ id: string }>().id;
   seminar = { id, code: (await f.prisma.seminar.findUniqueOrThrow({ where: { id } })).code };
-  await f.prisma.$transaction((tx) =>
-    f.app.get(PrivacyService).participants.register(
-      tx,
-      { seminar: id, name: NAME, email: EMAIL, company: COMPANY, client: null, lang: 'nn', consent_version: 'pamelding-v1', invite_version: null },
-      new Date(),
-    ),
-  );
+  const daco = await f.prisma.client.findUniqueOrThrow({ where: { slug: 'daco' } });
+  for (const p of [
+    { name: NAME, email: EMAIL, company: COMPANY, client: null },
+    { name: CLIENT_NAME, email: CLIENT_EMAIL, company: daco.name, client: daco.id },
+  ])
+    await f.prisma.$transaction((tx) =>
+      f.app.get(PrivacyService).participants.register(
+        tx,
+        { seminar: id, ...p, lang: 'nn', consent_version: 'pamelding-v1', invite_version: null },
+        new Date(),
+      ),
+    );
   // The contact also waits for the yearly check, so the second channel has it too.
   await withPg((c) =>
     c.query(`UPDATE contact SET review_flagged_at = now() WHERE email = $1`, [EMAIL]),
@@ -76,13 +88,13 @@ beforeAll(async () => {
 }, 180_000);
 afterAll(async () => {
   await withPg(async (c) => {
-    await c.query('DELETE FROM contact WHERE email = $1', [EMAIL]);
+    await c.query('DELETE FROM contact WHERE email = ANY($1::text[])', [[EMAIL, CLIENT_EMAIL]]);
     await c.query('DELETE FROM seminar WHERE id = $1', [seminar.id]);
   });
   await f.close();
 });
 
-it('walks every API route: participant data only in the two named channels, each read audited', async () => {
+it('walks every API route: participant data only in the three named channels, each read audited', async () => {
   const client = await f.prisma.client.findUniqueOrThrow({ where: { slug: 'daco' } });
   const rc = await f.prisma.roundClient.findFirstOrThrow({ where: { round_id: f.tryggleik, client_id: client.id } });
   const seen = new Set<string>(),
@@ -127,17 +139,21 @@ it('walks every API route: participant data only in the two named channels, each
       seen.add(key);
       const { text: body, zip } = await textOf(res);
       if (zip) unzipped.add(key);
-      if (PARTICIPANT_CHANNELS.has(key)) {
+      const carries = PARTICIPANT_CHANNELS.get(key);
+      if (carries) {
         expect(res.statusCode, key).toBe(200);
-        expect(res.body, key).toContain(EMAIL);
+        expect(res.body, key).toContain(carries);
         expect(await f.prisma.auditLog.count({ where: { what: 'privacy.participants' } }), key).toBe(before + 1);
         continue;
       }
-      for (const secret of [NAME, EMAIL, COMPANY]) expect(body, `${key} → ${secret}`).not.toContain(secret);
+      for (const secret of SECRETS) expect(body, `${key} → ${secret}`).not.toContain(secret);
+      expect(await f.prisma.auditLog.count({ where: { what: 'privacy.participants' } }), key).toBe(before);
     }
   }
   for (const key of [
-    ...PARTICIPANT_CHANNELS,
+    ...PARTICIPANT_CHANNELS.keys(),
+    'GET /api/admin/clients/:id/contacts/count',
+    'GET /api/admin/clients/:id/finding-status',
     'GET /api/public/seminar',
     'GET /api/admin/seminars/:id',
     'GET /api/admin/seminars',
@@ -158,7 +174,7 @@ it('the public page of a held seminar shows its material, never a participant', 
     .getInstance()
     .inject({ method: 'GET', url: '/api/public/seminar', headers: { authorization: `Bearer ${await currentCode()}` } });
   expect(res.json()).toMatchObject({ phase: 'held', materials: [{ title: 'ZZ lysark' }] });
-  for (const secret of [NAME, EMAIL, COMPANY]) expect(res.body).not.toContain(secret);
+  for (const secret of SECRETS) expect(res.body).not.toContain(secret);
 });
 
 it('Response has no foreign key or column towards contact, registration or seminar', async () => {

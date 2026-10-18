@@ -1,5 +1,7 @@
-// Admin routes of seminars (3.1): admin session only. The participant list and the contacts to
-// check are personal data: each read is written to AuditLog by privacy.
+// Admin routes of seminars (3.1): admin session only. The participant list, the contacts to check
+// and the contacts of one client (the client page, 2.17) are personal data: each read is written to
+// AuditLog by privacy. The client page also reads how many contacts a client has (no names) and the
+// status of its findings.
 import {
   Body,
   Controller,
@@ -102,6 +104,18 @@ export class SeminarsController {
   @Post('contacts/:id/confirm')
   confirm(@Param('id', ParseUUIDPipe) id: string, @Req() req: AdminRequest) {
     return this.seminars.confirmContact(id, req.adminSession);
+  }
+  @Get('clients/:id/contacts/count')
+  clientContactCount(@Param('id', ParseUUIDPipe) id: string) {
+    return this.seminars.clientContactCount(id);
+  }
+  @Get('clients/:id/contacts')
+  clientContacts(@Param('id', ParseUUIDPipe) id: string, @Req() req: AdminRequest) {
+    return this.seminars.clientContacts(id, req.adminSession);
+  }
+  @Get('clients/:id/finding-status')
+  clientFindings(@Param('id', ParseUUIDPipe) id: string) {
+    return this.findings.ofClient(id);
   }
   @Get('actions')
   actions() {
