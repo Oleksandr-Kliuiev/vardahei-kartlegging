@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve, sep } from 'node:path';
 import fastifyStatic from '@fastify/static';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
@@ -61,11 +61,15 @@ export async function registerRunnerStatic(app: NestFastifyApplication): Promise
     immutable: true,
     maxAge: '1y',
     index: false,
-    // @fastify/static 10 passes the reply itself (before: the raw response).
+    // Runs for every sendFile of the shared decorator, the HTML entries of the runner and the
+    // admin too, and since @fastify/static 10 it wins over the headers set before: only hashed
+    // files under assets/ are immutable, every other file is no-store.
     setHeaders(reply, path) {
       void reply.header(
         'cache-control',
-        path === resolve(root, 'index.html') ? 'no-store' : 'public, max-age=31536000, immutable',
+        path.startsWith(resolve(root, 'assets') + sep)
+          ? 'public, max-age=31536000, immutable'
+          : 'no-store',
       );
     },
   });

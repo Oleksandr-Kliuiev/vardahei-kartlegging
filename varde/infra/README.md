@@ -140,6 +140,34 @@ docker start varde-app
 
 Откат Caddy: `cat $CF.bak-$TS > $CF`, `caddy reload`.
 
+### 5.1 Замена блока сайта (сжатие и HSTS, план улучшений 0.5, 19.10)
+
+`deploy.sh` Caddy не трогает: блок `varde.vardahei.tech { … }` в общем `/etc/atlas-edge/Caddyfile` меняется руками. Новый `varde.caddy` сначала копируется на VPS (`scp varde/infra/caddy/varde.caddy root@<vps>:/opt/varde/caddy/varde.caddy`), затем:
+
+```bash
+CF=/etc/atlas-edge/Caddyfile
+TS=$(date -u +%Y%m%dT%H%M%SZ)
+cp -p $CF $CF.bak-$TS
+grep -c '^varde.vardahei.tech {$' $CF          # → 1, иначе СТОП
+W=$(mktemp)
+# старый блок (от строки сайта до первой '}' в начале строки) вырезается, новый — в конец
+awk '/^varde\.vardahei\.tech \{$/{skip=1} !skip{print} skip&&/^}$/{skip=0}' $CF > $W
+{ echo; grep -v '^#' /opt/varde/caddy/varde.caddy; } >> $W
+diff $CF $W; cat $W > $CF; rm $W
+docker exec atlas-edge-caddy-1 caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile   # → Valid configuration
+docker exec atlas-edge-caddy-1 caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+```
+
+Проверки:
+
+```bash
+curl -sI https://varde.vardahei.tech/health | grep -i strict-transport   # → max-age=31536000 (без includeSubDomains)
+curl -s -o /dev/null -D - -H 'Accept-Encoding: zstd, gzip' https://varde.vardahei.tech/r/ | grep -i content-encoding   # → zstd
+# SSE (/api/admin/events, /api/presenter/stream) — под входом: в DevTools у ответа text/event-stream нет content-encoding, «I dag» обновляется сам
+```
+
+Откат — как выше: `cat $CF.bak-$TS > $CF`, `caddy reload`.
+
 ## 6. Entra (0.7)
 
 ID лежат в `/etc/varde/entra.env` (их вписал хостинг-оператор 13.10; это идентификаторы, не секреты). Ключ и сертификат — `/etc/varde/entra/key.pem`, `cert.pem`; в контейнер монтируются read-only (`compose.yml`), процесс в контейнере — uid 1000:
