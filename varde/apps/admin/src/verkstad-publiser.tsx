@@ -1,7 +1,7 @@
 // «Gjer klar til publisering» (2.15): one panel that says what is left — issues with «Gå til», changed
 // frozen questions and their kind, proofreading and translations — and publishes by holding the button,
 // like the other actions that cannot be undone. After publishing: the next step is a round.
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { TemplateContent } from '../../../packages/schema/src/template/template.js';
 import { Icon } from './icons.js';
 import { HoldButton } from './widgets.js';
@@ -45,6 +45,9 @@ export interface PubliserProps {
   onMark: (id: string, kind: 'orthographic' | 'semantic') => void;
   onAccept: (lang: Lang) => void;
   onPublish: () => void;
+  /** The draft is the survey's only version: discarding it removes the survey too. */
+  onlyVersion: boolean;
+  onDiscard: () => void;
   onRound: () => void;
   onClose: () => void;
 }
@@ -73,6 +76,42 @@ function Punkt({
         {children}
       </div>
     </section>
+  );
+}
+
+/** «Slett utkastet»: a quiet button under publishing; one more press, with the consequence in words. */
+function Forkast(p: { no: number; onlyVersion: boolean; busy: boolean; onDiscard: () => void }) {
+  const [asking, setAsking] = useState(false);
+  if (!asking)
+    return (
+      <button
+        type="button"
+        className="btn sm ghost fare vk-forkast"
+        disabled={p.busy}
+        onClick={() => setAsking(true)}
+      >
+        <Icon name="slett" small />
+        Slett utkastet
+      </button>
+    );
+  return (
+    <div className="vk-forkast-sporsmal" role="group" aria-label="Stadfest sletting av utkastet">
+      <p>
+        {p.onlyVersion
+          ? 'Dette er den einaste versjonen, så heile skjemaet blir borte frå lista saman med utkastet.'
+          : `Utkastet v${p.no} blir sletta. Publiserte versjonar og rundar blir ikkje rørt.`}{' '}
+        Du finn det att i papirkorga.
+      </p>
+      <div className="vk-knappar">
+        <button type="button" className="btn sm fare" disabled={p.busy} onClick={p.onDiscard}>
+          <Icon name="slett" small />
+          {p.onlyVersion ? 'Slett skjemaet' : `Slett utkastet v${p.no}`}
+        </button>
+        <button type="button" className="btn sm ghost" onClick={() => setAsking(false)}>
+          Avbryt
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -328,6 +367,7 @@ export function Publiser(p: PubliserProps) {
           disabled={!ready || p.busy}
           onConfirm={p.onPublish}
         />
+        <Forkast no={no} onlyVersion={p.onlyVersion} busy={p.busy} onDiscard={p.onDiscard} />
       </footer>
     </aside>
   );

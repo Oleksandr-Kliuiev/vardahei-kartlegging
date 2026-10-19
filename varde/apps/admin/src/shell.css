@@ -77,7 +77,8 @@ kbd { font-family: var(--font-mono); font-size: 12px; padding: 1px 6px; border-r
 .side:focus, .side:focus-visible { outline: none; }
 
 /* Søk og hopp (⌘K) */
-.slor { position: fixed; inset: 0; z-index: 25; background: color-mix(in oklab, var(--graa-950) 38%, transparent); }
+.slor { position: fixed; inset: 0; z-index: 25; background: transparent; } /* berre klikkflate for å lukke skuffa: ingen mørkning av sida */
+@media (min-width: 861px) { .slor { display: none; } }
 .palett-bakgrunn { position: fixed; inset: 0; z-index: 70; background: color-mix(in oklab, var(--graa-950) 30%, transparent); }
 .palett { position: fixed; z-index: 71; left: 50%; top: 12vh; width: min(620px, calc(100vw - 24px)); transform: translateX(-50%); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xl); box-shadow: var(--shadow-3); overflow: hidden; }
 .palett-sok { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--ink-muted); }

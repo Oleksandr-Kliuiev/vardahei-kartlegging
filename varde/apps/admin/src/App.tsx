@@ -23,6 +23,13 @@ function Shell({ name }: { name: string | null }) {
   });
   const [{ path, search }, setWhere] = useState(where);
   const [menu, setMenu] = useState(false);
+  useEffect(() => {
+    const wide = window.matchMedia?.('(min-width: 861px)');
+    if (!wide) return;
+    const close = () => wide.matches && setMenu(false);
+    wide.addEventListener('change', close);
+    return () => wide.removeEventListener('change', close);
+  }, []);
   const [palette, setPalette] = useState(false);
   const main = useRef<HTMLElement>(null);
   // A layout effect, so the listener is there before any page's effect moves an old address on.

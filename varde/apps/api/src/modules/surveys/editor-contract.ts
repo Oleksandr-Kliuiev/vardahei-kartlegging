@@ -38,6 +38,7 @@ export const DraftInput = z.strictObject({
 });
 export const Hash = z.string().regex(/^[a-f0-9]{64}$/);
 export const SaveInput = z.strictObject({ content_hash: Hash, content: z.unknown() });
+export const DiscardInput = z.strictObject({ content_hash: Hash });
 export const AcceptInput = z.strictObject({ content_hash: Hash, lang: Lang });
 export const PublishInput = z.strictObject({
   content_hash: Hash,

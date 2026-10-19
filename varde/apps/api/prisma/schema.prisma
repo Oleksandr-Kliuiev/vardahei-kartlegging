@@ -82,6 +82,9 @@ model TemplateVersion {
   /// language (and their Nynorsk source) at the last approval, so the workshop can say what changed
   /// since. Kept when the draft is saved (the approval itself is not, ADR-019); empty in a new draft.
   acceptance_basis       Json              @default("{}") @db.JsonB
+  /// Papirkorg (2.19): a draft that was deleted but can still be restored; never set on a published version.
+  deleted_at             DateTime?         @db.Timestamptz(6)
+  deleted_by             String?
   comments               QuestionComment[]
 
   @@unique([template_id, version_no])

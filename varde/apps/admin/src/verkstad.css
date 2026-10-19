@@ -214,6 +214,9 @@
 .vk-skuff-topp h2 { margin: 0; font-size: 18px; }
 .vk-skuff-innhald { flex: 1; overflow-y: auto; padding: 16px 18px; display: grid; gap: 12px; align-content: start; }
 .vk-skuff-fot { padding: 14px 18px 18px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+.vk-forkast { justify-self: center; }
+.vk-forkast-sporsmal { display: grid; gap: 10px; padding: 12px; border-radius: var(--r-md); border: 1px solid var(--danger-line); background: var(--danger-bg); }
+.vk-forkast-sporsmal p { margin: 0; font-size: 13.5px; color: var(--ink); }
 .vk-grunn-tekst { margin: 0; font-size: 13px; text-align: center; }
 .vk-skuff-fot .hald-wrap { width: 100%; justify-items: stretch; }
 .vk-skuff-fot .hald.primary { width: 100%; min-height: 46px; border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-size: 15px; }

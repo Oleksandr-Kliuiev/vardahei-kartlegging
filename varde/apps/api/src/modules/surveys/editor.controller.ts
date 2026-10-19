@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -16,6 +17,7 @@ import { PublishRejected } from './publish.service.js';
 import { EditorService } from './editor.service.js';
 import {
   AcceptInput,
+  DiscardInput,
   DraftInput,
   PublishInput,
   SaveInput,
@@ -40,6 +42,18 @@ export class EditorController {
   draft(@Param('id', ParseUUIDPipe) id: string, @Body() body: unknown, @Req() r: AdminRequest) {
     return this.editor.draft(id, parse(DraftInput, body), auditWho(r.adminSession));
   }
+  @Get('/trash')
+  trash() {
+    return this.editor.trash();
+  }
+  @Post('/versions/:id/restore')
+  restore(@Param('id', ParseUUIDPipe) id: string, @Req() r: AdminRequest) {
+    return this.editor.restore(id, auditWho(r.adminSession));
+  }
+  @Delete('/trash/:id')
+  purge(@Param('id', ParseUUIDPipe) id: string, @Req() r: AdminRequest) {
+    return this.editor.purge(id, auditWho(r.adminSession));
+  }
   @Get('/versions/:id')
   get(@Param('id', ParseUUIDPipe) id: string) {
     return this.editor.view(id);
@@ -60,6 +74,14 @@ export class EditorController {
   @Put('/versions/:id')
   save(@Param('id', ParseUUIDPipe) id: string, @Body() body: unknown, @Req() r: AdminRequest) {
     return this.editor.save(id, parse(SaveInput, body), auditWho(r.adminSession));
+  }
+  @Delete('/versions/:id')
+  discard(@Param('id', ParseUUIDPipe) id: string, @Body() body: unknown, @Req() r: AdminRequest) {
+    return this.editor.discard(
+      id,
+      parse(DiscardInput, body).content_hash,
+      auditWho(r.adminSession),
+    );
   }
   @Post('/versions/:id/accept')
   accept(@Param('id', ParseUUIDPipe) id: string, @Body() body: unknown, @Req() r: AdminRequest) {

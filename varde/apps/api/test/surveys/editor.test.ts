@@ -32,7 +32,12 @@ interface Version {
   status: string;
   version_no: number;
 }
-const call = (method: 'GET' | 'POST' | 'PUT', url: string, payload?: object, auth = true) =>
+const call = (
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  url: string,
+  payload?: object,
+  auth = true,
+) =>
   t.app
     .getHttpAdapter()
     .getInstance()
@@ -531,5 +536,60 @@ describe('admin survey editor and launch (1d)', () => {
     const released = await dashboard();
     expect(released.source).toBe('released');
     expect(released.questions).toMatchObject(visible.questions);
+  });
+  it('trash: a deleted draft hides, restores, or is removed for good; a lone draft takes its survey along', async () => {
+    const lone = (
+      await call('POST', '/api/admin/surveys', { ...input, key: `${key}_lone` })
+    ).json<Version>();
+    expect(
+      (await call('DELETE', path(lone.id), { content_hash: contentHash({ stale: true }) }))
+        .statusCode,
+    ).toBe(409);
+    const gone = await call('DELETE', path(lone.id), { content_hash: lone.content_hash });
+    expect(gone.json()).toMatchObject({ survey_removed: true });
+    expect((await call('GET', path(lone.id))).statusCode).toBe(404);
+    const listed = (await call('GET', '/api/admin/surveys')).json<{ id: string }[]>();
+    expect(listed.some((t) => t.id === lone.template_id)).toBe(false);
+    const trash = (await call('GET', '/api/admin/surveys/trash')).json<
+      { id: string; can_restore: boolean; deleted_by: string | null }[]
+    >();
+    expect(trash.find((r) => r.id === lone.id)).toMatchObject({ can_restore: true });
+    // Restore: the survey and its draft are back and can be saved again.
+    expect((await call('POST', `${path(lone.id)}/restore`)).statusCode).toBe(201);
+    expect((await call('GET', path(lone.id))).statusCode).toBe(200);
+    expect((await call('POST', `${path(lone.id)}/restore`)).statusCode).toBe(404);
+    // Purge only works from the trash, and takes the empty survey with it.
+    expect((await call('DELETE', `/api/admin/surveys/trash/${lone.id}`)).statusCode).toBe(404);
+    await call('DELETE', path(lone.id), { content_hash: lone.content_hash });
+    expect((await call('DELETE', `/api/admin/surveys/trash/${lone.id}`)).json()).toMatchObject({
+      survey_removed: true,
+    });
+    expect(await db.surveyTemplate.count({ where: { id: lone.template_id } })).toBe(0);
+    // A survey with published versions keeps them; restoring is refused while another draft is open.
+    const next = (
+      await call('POST', `/api/admin/surveys/${version.template_id}/drafts`, { label: 'to-trash' })
+    ).json<Version>();
+    const kept = await call('DELETE', path(next.id), { content_hash: next.content_hash });
+    expect(kept.json()).toMatchObject({ survey_removed: false });
+    expect((await call('GET', path(version.id))).statusCode).toBe(200);
+    const again = (
+      await call('POST', `/api/admin/surveys/${version.template_id}/drafts`, { label: 'second' })
+    ).json<Version>();
+    expect(again.version_no).toBeGreaterThan(next.version_no);
+    expect((await call('POST', `${path(next.id)}/restore`)).statusCode).toBe(409);
+    expect(
+      (await call('GET', '/api/admin/surveys/trash'))
+        .json<{ id: string; can_restore: boolean }[]>()
+        .find((r) => r.id === next.id),
+    ).toMatchObject({ can_restore: false });
+    await call('DELETE', path(again.id), { content_hash: again.content_hash });
+    expect((await call('POST', `${path(next.id)}/restore`)).statusCode).toBe(201);
+    expect(
+      (await call('DELETE', path(version.id), { content_hash: version.content_hash })).statusCode,
+    ).toBe(409);
+    // Cleanup for the suite's afterAll: nothing of ours stays in the trash.
+    await call('DELETE', path(next.id), { content_hash: next.content_hash });
+    await call('DELETE', `/api/admin/surveys/trash/${next.id}`);
+    await call('DELETE', `/api/admin/surveys/trash/${again.id}`);
   });
 });

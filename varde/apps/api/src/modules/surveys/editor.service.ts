@@ -58,6 +58,7 @@ export class EditorService {
       orderBy: { key: 'asc' },
       include: {
         versions: {
+          where: { deleted_at: null },
           orderBy: { version_no: 'desc' },
           select: {
             id: true,
@@ -80,32 +81,34 @@ export class EditorService {
       this.prisma,
       templates.flatMap((t) => t.versions.map((v) => v.published_by)),
     );
-    return templates.map((t) => {
-      const latest = t.versions[0]?.content as Partial<TemplateContent> | undefined;
-      const draft = t.versions.find((v) => v.status === 'draft');
-      return {
-        id: t.id,
-        key: t.key,
-        audience: t.audience,
-        title: latest?.intro?.title?.nn?.trim() || t.key,
-        question_count: latest?.questions?.length ?? 0,
-        languages: t.required_languages,
-        rounds: t.versions.reduce((n, v) => n + v._count.rounds, 0),
-        draft: draft ? { id: draft.id, version_no: draft.version_no, left: leftOf(draft) } : null,
-        versions: t.versions.map((v) => ({
-          id: v.id,
-          label: v.label,
-          version_no: v.version_no,
-          status: v.status,
-          identification: v.identification,
-          required_languages: v.required_languages,
-          created_at: v.created_at,
-          published_at: v.published_at,
-          published_by: v.published_by ? (names[v.published_by] ?? null) : null,
-          rounds: v._count.rounds,
-        })),
-      };
-    });
+    return templates
+      .filter((t) => t.versions.length > 0)
+      .map((t) => {
+        const latest = t.versions[0]?.content as Partial<TemplateContent> | undefined;
+        const draft = t.versions.find((v) => v.status === 'draft');
+        return {
+          id: t.id,
+          key: t.key,
+          audience: t.audience,
+          title: latest?.intro?.title?.nn?.trim() || t.key,
+          question_count: latest?.questions?.length ?? 0,
+          languages: t.required_languages,
+          rounds: t.versions.reduce((n, v) => n + v._count.rounds, 0),
+          draft: draft ? { id: draft.id, version_no: draft.version_no, left: leftOf(draft) } : null,
+          versions: t.versions.map((v) => ({
+            id: v.id,
+            label: v.label,
+            version_no: v.version_no,
+            status: v.status,
+            identification: v.identification,
+            required_languages: v.required_languages,
+            created_at: v.created_at,
+            published_at: v.published_at,
+            published_by: v.published_by ? (names[v.published_by] ?? null) : null,
+            rounds: v._count.rounds,
+          })),
+        };
+      });
   }
   /** One version for the workshop, with the names of who approved and published it. */
   async view(id: string) {
@@ -133,7 +136,7 @@ export class EditorService {
       where: { id },
       include: { template: true },
     });
-    if (!version) throw new NotFoundException('Versjonen finst ikkje.');
+    if (!version || version.deleted_at) throw new NotFoundException('Versjonen finst ikkje.');
     return version;
   }
   private audit(tx: Prisma.TransactionClient, who: string, what: string, id: string) {
@@ -237,7 +240,7 @@ export class EditorService {
         if (!template) throw new NotFoundException('Skjemaet finst ikkje.');
         // One draft per survey (decision 3 of 17.10): the open one is where work goes on.
         const open = await tx.templateVersion.findFirst({
-          where: { template_id: templateId, status: 'draft' },
+          where: { template_id: templateId, status: 'draft', deleted_at: null },
         });
         if (open)
           throw new ConflictException(
@@ -301,7 +304,7 @@ export class EditorService {
   ) {
     return this.prisma.$transaction(async (tx) => {
       const found = await tx.templateVersion.findUnique({ where: { id } });
-      if (!found) throw new NotFoundException('Versjonen finst ikkje.');
+      if (!found || found.deleted_at) throw new NotFoundException('Versjonen finst ikkje.');
       await tx.$queryRaw`SELECT id FROM survey_template WHERE id = ${found.template_id}::uuid FOR UPDATE`;
       await tx.$queryRaw`SELECT id FROM template_version WHERE id = ${id}::uuid FOR UPDATE`;
       const v = await tx.templateVersion.findUniqueOrThrow({
@@ -336,6 +339,100 @@ export class EditorService {
       });
       await this.audit(tx, who, 'save', id);
       return version;
+    });
+  }
+  /**
+   * Move a draft to the trash (2.19). Published versions stay (they hold the history); a survey whose
+   * only version is this draft disappears from the library with it and comes back on restore.
+   */
+  discard(id: string, hash: string, who: string) {
+    return this.locked(id, hash, async (tx, v) => {
+      const rounds = await tx.round.count({ where: { template_version_id: id } });
+      if (rounds > 0)
+        throw new ConflictException('Utkastet er brukt i ei runde og kan ikkje slettast.');
+      const siblings = await tx.templateVersion.count({
+        where: { template_id: v.template_id, id: { not: id }, deleted_at: null },
+      });
+      await tx.templateVersion.update({
+        where: { id },
+        data: { deleted_at: new Date(), deleted_by: who },
+      });
+      await this.audit(tx, who, 'trash', id);
+      return { id, template_id: v.template_id, survey_removed: siblings === 0 };
+    });
+  }
+  /** The trash (2.19): deleted drafts, newest first, and whether each can come back now. */
+  async trash() {
+    const rows = await this.prisma.templateVersion.findMany({
+      where: { deleted_at: { not: null } },
+      orderBy: { deleted_at: 'desc' },
+      include: { template: true },
+    });
+    const open = new Set(
+      (
+        await this.prisma.templateVersion.findMany({
+          where: {
+            template_id: { in: rows.map((r) => r.template_id) },
+            status: 'draft',
+            deleted_at: null,
+          },
+          select: { template_id: true },
+        })
+      ).map((r) => r.template_id),
+    );
+    const names = await namesOf(
+      this.prisma,
+      rows.map((r) => r.deleted_by),
+    );
+    return rows.map((r) => {
+      const content = r.content as Partial<TemplateContent>;
+      return {
+        id: r.id,
+        template_id: r.template_id,
+        version_no: r.version_no,
+        audience: r.template.audience,
+        title: content.intro?.title?.nn?.trim() || r.template.key,
+        question_count: content.questions?.length ?? 0,
+        deleted_at: r.deleted_at,
+        deleted_by: r.deleted_by ? (names[r.deleted_by] ?? null) : null,
+        can_restore: !open.has(r.template_id),
+      };
+    });
+  }
+  /** Bring a draft back from the trash, unless the survey has got another open draft since. */
+  restore(id: string, who: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const found = await tx.templateVersion.findUnique({ where: { id } });
+      if (!found || !found.deleted_at)
+        throw new NotFoundException('Utkastet ligg ikkje i papirkorga.');
+      await tx.$queryRaw`SELECT id FROM survey_template WHERE id = ${found.template_id}::uuid FOR UPDATE`;
+      const open = await tx.templateVersion.findFirst({
+        where: { template_id: found.template_id, status: 'draft', deleted_at: null },
+      });
+      if (open)
+        throw new ConflictException(
+          `Skjemaet har alt eit utkast (v${open.version_no}). Slett eller publiser det først.`,
+        );
+      await tx.templateVersion.update({
+        where: { id },
+        data: { deleted_at: null, deleted_by: null },
+      });
+      await this.audit(tx, who, 'restore', id);
+      return { id, template_id: found.template_id };
+    });
+  }
+  /** Remove a draft from the trash for good; a survey with nothing left goes with it. */
+  purge(id: string, who: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const found = await tx.templateVersion.findUnique({ where: { id } });
+      if (!found || !found.deleted_at)
+        throw new NotFoundException('Utkastet ligg ikkje i papirkorga.');
+      await tx.$queryRaw`SELECT id FROM survey_template WHERE id = ${found.template_id}::uuid FOR UPDATE`;
+      await tx.templateVersion.delete({ where: { id } });
+      const left = await tx.templateVersion.count({ where: { template_id: found.template_id } });
+      if (left === 0) await tx.surveyTemplate.delete({ where: { id: found.template_id } });
+      await this.audit(tx, who, 'purge', id);
+      return { id, survey_removed: left === 0 };
     });
   }
   accept(id: string, hash: string, lang: 'nn' | 'en' | 'nb', who: string) {

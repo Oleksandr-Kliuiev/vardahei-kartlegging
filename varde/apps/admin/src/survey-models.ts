@@ -20,6 +20,18 @@ export interface EditorVersion {
   /** Every question id any version of the survey has used (2.18). */
   used_ids?: string[];
 }
+/** A deleted draft in «Papirkorg» (2.19). */
+export interface TrashedDraft {
+  id: string;
+  template_id: string;
+  version_no: number;
+  audience: string;
+  title: string;
+  question_count: number;
+  deleted_at: string;
+  deleted_by: string | null;
+  can_restore: boolean;
+}
 export interface ApprovalBasis {
   at: string;
   by: string;

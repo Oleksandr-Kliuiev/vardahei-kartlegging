@@ -1,9 +1,29 @@
 /* Skjema (2.16): biblioteket med kort, «Nytt skjema» og «Innstillingar». */
 .bib-topp { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.bib-topp-handlingar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.bib-korg { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.bib-korg-rad { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 16px; padding: 14px 18px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1), var(--edge); }
+.bib-korg-tekst { display: grid; gap: 4px; min-width: 0; }
+.bib-korg-tekst .chip { margin-right: 6px; vertical-align: 1px; }
+.bib-korg-handling { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.bib-korg-sporsmal { grid-column: 1 / -1; margin: 0; font-size: 13.5px; color: var(--danger-fg); font-weight: 600; }
+.bib-korg-note, .bib-korg-feil { grid-column: 1 / -1; margin: 0; font-size: 13px; color: var(--ink-muted); }
+.bib-korg-feil { color: var(--danger-fg); font-weight: 600; }
+.bib-tom { margin: 24px 0; max-width: 56ch; color: var(--ink-muted); font-size: 14.5px; }
+@media (max-width: 560px) { .bib-korg-rad { grid-template-columns: 1fr; } .bib-korg-handling { justify-content: flex-start; } }
 .bib-tal { margin: 0; color: var(--ink-muted); font-size: 14px; }
 .bib-rutenett { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; align-items: stretch; }
 .bib-rutenett > li { display: grid; }
 .bib-kort { display: grid; align-content: start; gap: 8px; padding: 18px 20px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1), var(--edge); color: var(--ink); text-decoration: none; transition: border-color var(--t-base), box-shadow var(--t-base); }
+.bib-kortvegg { position: relative; display: grid; min-height: 148px; } /* rommar sporsmalet om sletting utan at rutenettet hoppar */
+.bib-kortvegg > .bib-kort { min-width: 0; }
+.bib-kort.har-utkast .bib-type, .bib-kort.har-utkast .bib-namn { padding-right: 36px; }
+.bib-slett { position: absolute; top: 10px; right: 10px; color: var(--ink-muted); }
+.bib-slett:hover, .bib-slett:focus-visible { color: var(--danger-fg); background: var(--danger-bg); }
+.bib-sporsmal { position: absolute; inset: 0; display: grid; align-content: center; gap: 10px; padding: 12px 20px; overflow: auto; border-radius: var(--r-lg); background: var(--danger-bg); border: 1px solid var(--danger-line); }
+.bib-sporsmal p { margin: 0; font-size: 13.5px; color: var(--ink); }
+.bib-sporsmal .bib-feil { color: var(--danger-fg); font-weight: 600; }
+.bib-sporsmal-knappar { display: flex; gap: 8px; flex-wrap: wrap; }
 .bib-kort:hover { border-color: var(--accent); box-shadow: var(--shadow-2), var(--edge); }
 .bib-kort:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .bib-type { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent-text); }

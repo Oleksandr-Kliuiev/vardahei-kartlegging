@@ -346,6 +346,32 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
       setBusy(false);
     }
   };
+  const discard = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      const current = await save.flush();
+      if (!current) throw new Error('Utkastet må vere lagra før det kan sletast.');
+      const done = await mutate<{ survey_removed: boolean }>(
+        `/api/admin/surveys/versions/${current.id}`,
+        'DELETE',
+        { content_hash: current.content_hash },
+      );
+      forget();
+      void queries.invalidateQueries({ queryKey: ['surveys'] });
+      toast(
+        done.survey_removed ? 'Skjemaet er sletta.' : `Utkastet v${saved.version_no} er sletta.`,
+      );
+      const last = versions
+        .filter((v) => v.status === 'published' && v.id !== current.id)
+        .sort((a, b) => b.version_no - a.version_no)[0];
+      goTo(done.survey_removed || !last ? '/admin/surveys' : `/admin/surveys/${last.id}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Kunne ikkje slette utkastet.');
+    } finally {
+      setBusy(false);
+    }
+  };
   const newDraft = async () => {
     if (draftRef) return goTo(`/admin/surveys/${draftRef.id}`);
     setBusy(true);
@@ -637,6 +663,8 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
           onMark={markQuestion}
           onAccept={(l) => void accept(l)}
           onPublish={() => void publish()}
+          onlyVersion={versions.every((v) => v.id === saved.id)}
+          onDiscard={() => void discard()}
           onRound={() => {
             // The new version must be in the wizard's list: read the published versions again.
             void queries.invalidateQueries({ queryKey: ['rounds', 'versions'] });

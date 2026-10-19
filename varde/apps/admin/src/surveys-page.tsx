@@ -8,7 +8,13 @@ import { Icon, type IconName } from './icons.js';
 import { goTo } from './nav.js';
 import { longDate } from './overview.js';
 import { ErrorMessage } from './queries.js';
-import { AUDIENCE, type EditorVersion, type SurveySummary } from './survey-models.js';
+import { useToast } from './shell.js';
+import {
+  AUDIENCE,
+  type EditorVersion,
+  type SurveySummary,
+  type TrashedDraft,
+} from './survey-models.js';
 import './bibliotek.css';
 
 const LANGS: Record<string, string> = { nn: 'Nynorsk', en: 'English', nb: 'Bokmål' };
@@ -23,65 +29,297 @@ export function SurveysPage() {
     queryKey: ['surveys'],
     queryFn: () => api<SurveySummary[]>('/api/admin/surveys'),
   });
+  const trash = useQuery({
+    queryKey: ['surveys', 'trash'],
+    queryFn: () => api<TrashedDraft[]>('/api/admin/surveys/trash'),
+  });
   const [making, setMaking] = useState(false);
+  const [view, setView] = useState<'skjema' | 'papirkorg'>('skjema');
   const list = [...(surveys.data ?? [])].sort((a, b) =>
     (a.title ?? a.key).localeCompare(b.title ?? b.key, 'nn'),
   );
+  const trashed = trash.data ?? [];
   return (
     <>
       <div className="bib-topp">
         <p className="bib-tal" role="status">
-          {surveys.data ? `${list.length} skjema` : 'Hentar skjema …'}
+          {view === 'papirkorg'
+            ? trash.data
+              ? `${trashed.length} sletta utkast`
+              : 'Hentar papirkorga …'
+            : surveys.data
+              ? `${list.length} skjema`
+              : 'Hentar skjema …'}
         </p>
-        {!making && (
-          <button type="button" className="btn primary" onClick={() => setMaking(true)}>
-            <Icon name="pluss" small />
-            Nytt skjema
-          </button>
-        )}
+        <div className="bib-topp-handlingar">
+          {view === 'papirkorg' ? (
+            <button type="button" className="btn" onClick={() => setView('skjema')}>
+              Tilbake til skjema
+            </button>
+          ) : (
+            <>
+              {trashed.length > 0 && (
+                <button type="button" className="btn ghost" onClick={() => setView('papirkorg')}>
+                  <Icon name="slett" small />
+                  Papirkorg ({trashed.length})
+                </button>
+              )}
+              {!making && (
+                <button type="button" className="btn primary" onClick={() => setMaking(true)}>
+                  <Icon name="pluss" small />
+                  Nytt skjema
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
-      {making && <NyttSkjema surveys={list} onClose={() => setMaking(false)} />}
-      <ErrorMessage error={surveys.error} />
-      <ul className="bib-rutenett">
-        {list.map((s) => (
-          <li key={s.id}>
-            <Kort s={s} />
-          </li>
-        ))}
-      </ul>
+      {view === 'skjema' && making && (
+        <NyttSkjema surveys={list} onClose={() => setMaking(false)} />
+      )}
+      <ErrorMessage error={view === 'papirkorg' ? trash.error : surveys.error} />
+      {view === 'skjema' ? (
+        <ul className="bib-rutenett">
+          {list.map((s) => (
+            <li key={s.id}>
+              <Kort s={s} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <Papirkorg items={trashed} loaded={!!trash.data} />
+      )}
     </>
   );
 }
 
+function Papirkorg({ items, loaded }: { items: TrashedDraft[]; loaded: boolean }) {
+  if (loaded && !items.length)
+    return (
+      <p className="bib-tom">
+        Papirkorga er tom. Utkast du slettar, ligg her til du hentar dei attende eller slettar dei
+        for godt.
+      </p>
+    );
+  return (
+    <ul className="bib-korg">
+      {items.map((t) => (
+        <li key={t.id}>
+          <KorgRad t={t} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function KorgRad({ t }: { t: TrashedDraft }) {
+  const queries = useQueryClient();
+  const toast = useToast();
+  const [asking, setAsking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  async function run(work: () => Promise<unknown>, done: string) {
+    setBusy(true);
+    setError('');
+    try {
+      await work();
+      void queries.invalidateQueries({ queryKey: ['surveys'] });
+      toast(done);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Noko gjekk gale. Prøv igjen.');
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="bib-korg-rad">
+      <div className="bib-korg-tekst">
+        <span className="bib-type">{AUDIENCE[t.audience] ?? t.audience}</span>
+        <span className="bib-namn">{t.title}</span>
+        <span className="bib-meta">
+          <span className="chip warn">Utkast v{t.version_no}</span> {t.question_count} spørsmål ·
+          sletta {longDate(new Date(t.deleted_at))}
+          {t.deleted_by ? ` av ${t.deleted_by}` : ''}
+        </span>
+      </div>
+      <div className="bib-korg-handling">
+        {asking ? (
+          <>
+            <button
+              type="button"
+              className="btn sm fare"
+              disabled={busy}
+              onClick={() =>
+                void run(
+                  () => mutate(`/api/admin/surveys/trash/${t.id}`, 'DELETE'),
+                  `«${t.title}» er sletta for godt.`,
+                )
+              }
+            >
+              <Icon name="slett" small />
+              Slett for godt
+            </button>
+            <button
+              type="button"
+              className="btn sm ghost"
+              disabled={busy}
+              onClick={() => setAsking(false)}
+            >
+              Avbryt
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              className="btn sm"
+              disabled={busy || !t.can_restore}
+              onClick={() =>
+                void run(
+                  () => mutate(`/api/admin/surveys/versions/${t.id}/restore`),
+                  `«${t.title}» er henta attende.`,
+                )
+              }
+            >
+              <Icon name="angre" small />
+              Hent attende
+            </button>
+            <button
+              type="button"
+              className="btn sm ghost fare"
+              disabled={busy}
+              onClick={() => setAsking(true)}
+            >
+              <Icon name="slett" small />
+              Slett for godt
+            </button>
+          </>
+        )}
+      </div>
+      {asking && (
+        <p className="bib-korg-sporsmal" role="status">
+          Slette for godt? Utkastet blir borte for alltid.
+        </p>
+      )}
+      {!t.can_restore && !asking && (
+        <p className="bib-korg-note">
+          Skjemaet har alt eit anna utkast. Slett eller publiser det for å hente dette attende.
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="bib-korg-feil">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function Kort({ s }: { s: SurveySummary }) {
+  const queries = useQueryClient();
+  const toast = useToast();
+  const [asking, setAsking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
   const newest = s.versions.find((v) => v.status === 'published');
   const target = s.draft?.id ?? s.versions[0]?.id;
   if (!target) return null;
   const rounds = s.rounds ?? 0;
+  const only = s.versions.length === 1;
+  const title = s.title ?? s.key;
+  async function discard(id: string) {
+    setBusy(true);
+    setError('');
+    try {
+      // The server wants the hash of the saved draft, so nobody deletes one that was changed meanwhile.
+      const v = await api<EditorVersion>(`/api/admin/surveys/versions/${id}`);
+      await mutate(`/api/admin/surveys/versions/${id}`, 'DELETE', { content_hash: v.content_hash });
+      void queries.invalidateQueries({ queryKey: ['surveys'] });
+      toast(`«${title}» er flytta til papirkorga.`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Kunne ikkje slette utkastet.');
+      setBusy(false);
+    }
+  }
   return (
-    <a className="bib-kort" href={`/admin/surveys/${target}`} onClick={(e) => open(e, target)}>
-      <span className="bib-type">{AUDIENCE[s.audience] ?? s.audience}</span>
-      <span className="bib-namn">{s.title ?? s.key}</span>
-      <span className="bib-meta">
-        {s.question_count ?? 0} spørsmål ·{' '}
-        {(s.languages ?? []).map((l) => LANGS[l] ?? l).join(', ')}
-        {' · '}
-        {rounds ? `Brukt i ${rounds} ${rounds === 1 ? 'runde' : 'rundar'}` : 'Ikkje brukt i rundar'}
-      </span>
-      <span className="bib-status">
-        {s.draft ? (
-          <>
-            <span className="chip warn">Utkast v{s.draft.version_no}</span>
-            {s.draft.left ? `${s.draft.left} ting att før publisering` : 'Klar til publisering'}
-          </>
-        ) : newest ? (
-          <>
-            <span className="chip ok">Publisert v{newest.version_no}</span>
-            {newest.published_at ? longDate(new Date(newest.published_at)) : ''}
-          </>
-        ) : null}
-      </span>
-    </a>
+    <div className="bib-kortvegg">
+      <a
+        className={s.draft ? 'bib-kort har-utkast' : 'bib-kort'}
+        href={`/admin/surveys/${target}`}
+        onClick={(e) => open(e, target)}
+      >
+        <span className="bib-type">{AUDIENCE[s.audience] ?? s.audience}</span>
+        <span className="bib-namn">{title}</span>
+        <span className="bib-meta">
+          {s.question_count ?? 0} spørsmål ·{' '}
+          {(s.languages ?? []).map((l) => LANGS[l] ?? l).join(', ')}
+          {' · '}
+          {rounds
+            ? `Brukt i ${rounds} ${rounds === 1 ? 'runde' : 'rundar'}`
+            : 'Ikkje brukt i rundar'}
+        </span>
+        <span className="bib-status">
+          {s.draft ? (
+            <>
+              <span className="chip warn">Utkast v{s.draft.version_no}</span>
+              {s.draft.left ? `${s.draft.left} ting att før publisering` : 'Klar til publisering'}
+            </>
+          ) : newest ? (
+            <>
+              <span className="chip ok">Publisert v{newest.version_no}</span>
+              {newest.published_at ? longDate(new Date(newest.published_at)) : ''}
+            </>
+          ) : null}
+        </span>
+      </a>
+      {s.draft && !asking && (
+        <button
+          type="button"
+          className="ikonknapp bib-slett"
+          aria-label={`Slett utkastet til ${title}`}
+          title="Slett utkastet"
+          onClick={() => setAsking(true)}
+        >
+          <Icon name="slett" small />
+        </button>
+      )}
+      {s.draft && asking && (
+        <div className="bib-sporsmal" role="group" aria-label={`Stadfest sletting for ${title}`}>
+          <p>
+            {only
+              ? 'Utkastet er den einaste versjonen, så heile skjemaet blir borte frå lista.'
+              : `Utkastet v${s.draft.version_no} blir sletta. Publiserte versjonar og rundar blir ikkje rørt.`}{' '}
+            Du finn det att i papirkorga.
+          </p>
+          {error && (
+            <p role="alert" className="bib-feil">
+              {error}
+            </p>
+          )}
+          <div className="bib-sporsmal-knappar">
+            <button
+              type="button"
+              className="btn sm fare"
+              disabled={busy}
+              onClick={() => void discard(s.draft!.id)}
+            >
+              <Icon name="slett" small />
+              {only ? 'Slett skjemaet' : `Slett utkastet v${s.draft.version_no}`}
+            </button>
+            <button
+              type="button"
+              className="btn sm ghost"
+              disabled={busy}
+              onClick={() => {
+                setAsking(false);
+                setError('');
+              }}
+            >
+              Avbryt
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
