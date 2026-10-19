@@ -33,6 +33,9 @@ export interface SavedFinding {
     changed_by: string;
     changed_at: Date;
   } | null;
+  /** Not in the round's current release any more, but followed up on an older one: its status
+   * can still change. `text` is the rule's own text, null for a computed rule (it needs numbers). */
+  dropped?: { text: string | null };
 }
 interface Numbers {
   n: number;
@@ -214,7 +217,8 @@ export class FindingsService {
    * page): per round the set computed last for the client — its current release — and per rule
    * the newest status of any release of that round. A release made again saves new rows (above),
    * so the follow-up done on an older row is kept, and a new status goes to the row that holds it:
-   * a rule keeps one status (the seminar lists the findings it takes up by these rows).
+   * a rule keeps one status (the seminar lists the findings it takes up by these rows). A rule the
+   * current release no longer has is listed (`dropped`) while its newest status is not `open`.
    */
   async ofClient(client: string): Promise<SavedFinding[]> {
     const sets = await this.prisma.findingSet.findMany({
@@ -232,24 +236,52 @@ export class FindingsService {
         id: true,
         round_id: true,
         rule_key: true,
+        rule_version: true,
         release_id: true,
         status: { select: { status: true, seminar_id: true, changed_by: true, changed_at: true } },
       },
     });
-    const out = new Map<string, SavedFinding>();
-    for (const r of rows)
-      if (r.release_id === current.get(r.round_id) && !out.has(`${r.round_id}:${r.rule_key}`))
-        out.set(`${r.round_id}:${r.rule_key}`, {
-          id: r.id,
-          round: r.round_id,
-          rule_key: r.rule_key,
-          status: null,
-        });
+    type Row = (typeof rows)[number];
+    const key = (r: Row) => `${r.round_id}:${r.rule_key}`;
+    const inCurrent = new Set(rows.filter((r) => r.release_id === current.get(r.round_id)).map(key));
+    // Per round and rule: the current set's row, and the row with the newest status of any release
+    // (`holder`, where a new status goes).
+    const out = new Map<string, { row: Row; holder: Row | null }>();
     for (const r of rows) {
-      const saved = out.get(`${r.round_id}:${r.rule_key}`);
-      if (saved && r.status && !(saved.status && saved.status.changed_at >= r.status.changed_at))
-        Object.assign(saved, { id: r.id, status: r.status });
+      const k = key(r);
+      if (!out.has(k) && (inCurrent.has(k) ? r.release_id === current.get(r.round_id) : !!r.status))
+        out.set(k, { row: r, holder: null });
     }
-    return [...out.values()];
+    for (const r of rows) {
+      const v = out.get(key(r));
+      if (v && r.status && !(v.holder && v.holder.status!.changed_at >= r.status.changed_at))
+        v.holder = r;
+    }
+    // A rule that dropped out of the current release keeps the status an older release gave it.
+    // It stays listed while that status is not `open`, so «I seminar» can still end (2.17).
+    for (const [k, v] of out)
+      if (!inCurrent.has(k) && v.holder!.status!.status === 'open') out.delete(k);
+    const gone = [...out].filter(([k]) => !inCurrent.has(k)).map(([, v]) => v.holder!);
+    const rules = gone.length
+      ? await this.prisma.findingRule.findMany({
+          where: { OR: gone.map((r) => ({ key: r.rule_key, version: r.rule_version })) },
+          select: { key: true, version: true, definition: true },
+        })
+      : [];
+    return [...out].map(([k, { row, holder }]): SavedFinding => {
+      const saved = {
+        id: (holder ?? row).id,
+        round: row.round_id,
+        rule_key: row.rule_key,
+        status: holder?.status ?? null,
+      };
+      if (inCurrent.has(k)) return saved;
+      const rule = rules.find((r) => r.key === holder!.rule_key && r.version === holder!.rule_version);
+      const parsed = rule ? FindingRule.safeParse(rule.definition) : undefined;
+      return {
+        ...saved,
+        dropped: { text: parsed?.success && !parsed.data.computed ? parsed.data.text.nn : null },
+      };
+    });
   }
 }

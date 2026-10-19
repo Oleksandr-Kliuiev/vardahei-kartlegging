@@ -7,6 +7,8 @@ import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { EventsService } from '../../src/modules/events/events.service.js';
+import { FindingsService } from '../../src/modules/findings/findings.service.js';
+import { SEED_DIR } from '../support/seed-dir.js';
 import { withPg } from '../support/rounds.js';
 import {
   createSeminar,
@@ -319,5 +321,76 @@ describe('follow-up of the saved findings of one client (2.17)', () => {
     expect((await list(b!.id)).map((r) => r.rule_key)).toEqual(['tryggleik.f12']);
     expect(await list(clients[2]!.id)).toEqual([]);
     events.mockRestore();
+  });
+
+  it('a finding that a new release no longer has keeps its status and can still change; reopened, it is gone', async () => {
+    const [a] = clients;
+    // The rule texts of a dropped finding come from its rule version (immutable seed versions).
+    await t.app.get(FindingsService).seed(SEED_DIR);
+    const round = randomUUID();
+    rounds.push(round);
+    const now = Date.now();
+    const first = await saveSet(
+      round,
+      { client: a!.id },
+      ['tryggleik.f12', 'tryggleik.f8', 'tryggleik.f14'],
+      new Date(now - 7200_000),
+    );
+    const s = await createSeminar(t, { clients: [a!.id] });
+    for (const key of ['tryggleik.f12', 'tryggleik.f14'] as const)
+      expect(
+        (
+          await t.call('PUT', `/api/admin/findings/${first[key]}/status`, {
+            status: 'in_seminar',
+            seminar: s.id,
+          })
+        ).statusCode,
+      ).toBe(200);
+    // The new release has f8 only: f12 and f14 dropped out, both «I seminar».
+    const second = await saveSet(round, { client: a!.id }, ['tryggleik.f8'], new Date(now - 3600_000));
+    const list = async () => {
+      const res = await t.call('GET', `/api/admin/clients/${a!.id}/finding-status`);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).not.toMatch(/numbers|share|"n"|"count"/);
+      return res
+        .json<{ rows: { id: string; round: string; rule_key: string; status: string }[] }>()
+        .rows.filter((r) => r.round === round);
+    };
+    const rows = await list();
+    expect(rows).toHaveLength(3);
+    expect(rows.find((r) => r.rule_key === 'tryggleik.f8')).toEqual(
+      expect.not.objectContaining({ dropped: expect.anything() as unknown }),
+    );
+    expect(rows.find((r) => r.rule_key === 'tryggleik.f8')).toMatchObject({
+      id: second['tryggleik.f8'],
+      status: 'open',
+    });
+    expect(rows.find((r) => r.rule_key === 'tryggleik.f12')).toMatchObject({
+      id: first['tryggleik.f12'],
+      status: 'in_seminar',
+      seminar: { id: s.id },
+      // The rule's own text (seed version 1), never numbers.
+      dropped: { text: 'veit ikkje korleis eller til kven dei skal melde frå om mistenkelege e-postar' },
+    });
+    // Done at the seminar: still listed with its new status.
+    expect(
+      (
+        await t.call('PUT', `/api/admin/findings/${first['tryggleik.f12']}/status`, {
+          status: 'closed',
+          seminar: s.id,
+        })
+      ).statusCode,
+    ).toBe(200);
+    // Taken out of the seminar: open, so no longer followed up and no longer listed.
+    expect(
+      (await t.call('PUT', `/api/admin/findings/${first['tryggleik.f14']}/status`, { status: 'open' }))
+        .statusCode,
+    ).toBe(200);
+    const after = await list();
+    expect(after.map((r) => r.rule_key).sort()).toEqual(['tryggleik.f12', 'tryggleik.f8']);
+    expect(after.find((r) => r.rule_key === 'tryggleik.f12')).toMatchObject({
+      status: 'closed',
+      dropped: { text: expect.any(String) as unknown },
+    });
   });
 });

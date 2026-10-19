@@ -77,6 +77,7 @@ const follow: FindingFollowUp[] = [
     changed_at: null,
   },
 ];
+let extra: FindingFollowUp[] = [];
 let rounds = [round('ki', 'KI 2026-10-12'), round('r2', 'Runde 2')];
 let counted = { total: 2, review: 1 };
 const fetcher = vi.fn((path: string, init?: RequestInit) => {
@@ -125,7 +126,7 @@ const fetcher = vi.fn((path: string, init?: RequestInit) => {
                       ],
                     }
                   : path === `/api/admin/clients/${C}/finding-status`
-                    ? { rows: follow }
+                    ? { rows: [...follow, ...extra] }
                     : { ok: true };
   return Promise.resolve(new Response(JSON.stringify(body)));
 });
@@ -140,6 +141,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   rounds = [round('ki', 'KI 2026-10-12'), round('r2', 'Runde 2')];
   counted = { total: 2, review: 1 };
+  extra = [];
 });
 const calls = (match: string) => fetcher.mock.calls.filter(([p]) => p === match);
 const region = (name: string) =>
@@ -293,6 +295,55 @@ describe('the client page: follow-up of the findings (2.17)', () => {
     // Saved: the editor closes and the focus is back on «Endre status».
     expect(item.querySelector('select')).toBeNull();
     expect(document.activeElement).toBe(button(item, 'Endre status'));
+  });
+
+  it('a finding the new release no longer has keeps its status and its own editor', async () => {
+    extra = [
+      {
+        id: 'f-5',
+        round: 'r2',
+        rule_key: 'tryggleik.f5',
+        status: 'in_seminar',
+        seminar: { id: 's1', topic: seminar.topic_nn, starts_at: seminar.starts_at },
+        changed_by: 'Syntetisk admin',
+        changed_at: '2026-10-17T12:00:00.000Z',
+        dropped: { text: 'kjenner ingen rutine for å stoppe ei IT-hending' },
+      },
+      {
+        id: 'f-x',
+        round: 'ki',
+        rule_key: 'ki.f1',
+        status: 'in_seminar',
+        seminar: null,
+        changed_by: null,
+        changed_at: null,
+        dropped: { text: 'ein annan runde' },
+      },
+    ];
+    await open();
+    const card = region('Funn');
+    // The current findings are as before; the dropped one is apart, under its own heading.
+    expect(card.querySelectorAll('.funn li')).toHaveLength(2);
+    const gone = card.querySelector<HTMLElement>('.kunde-funn-utfalne')!;
+    expect(gone.querySelector('h3')?.textContent).toBe('Ikkje lenger med i resultatet');
+    const items = [...gone.querySelectorAll<HTMLElement>('li')];
+    expect(items).toHaveLength(1);
+    expect(items[0]!.textContent).toContain('kjenner ingen rutine for å stoppe ei IT-hending');
+    expect(items[0]!.querySelector('.chip')?.textContent).toBe('I seminar');
+    act(() => {
+      button(items[0]!, 'Endre status').click();
+    });
+    await settle();
+    choose(items[0]!.querySelector<HTMLSelectElement>('select')!, 'closed');
+    act(() => {
+      button(items[0]!, 'Lagre').click();
+    });
+    await settle();
+    await settle();
+    const put = fetcher.mock.calls.find(
+      ([p, i]) => p === '/api/admin/findings/f-5/status' && i?.method === 'PUT',
+    );
+    expect(JSON.parse(put![1]!.body as string)).toEqual({ status: 'closed', seminar: 's1' });
   });
 
   it('«Avbryt» closes the editor and gives the focus back to «Endre status»', async () => {

@@ -100,6 +100,14 @@ a.ting:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .oppfolging-endre select { flex: 1 1 100%; min-width: 0; max-width: 100%; min-height: 34px; padding-top: 4px; padding-bottom: 4px; font-size: 13.5px; }
 .oppfolging-endre small { flex-basis: 100%; }
 .kunde-funn-open { margin: 0 0 4px; }
+/* Funn som ei ny utgåve ikkje har lenger, men som framleis har ein status (2.17) */
+.kunde-funn-utfalne { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.kunde-funn-utfalne h3 { font-size: 15px; margin: 0 0 4px; }
+.kunde-funn-utfalne .forklaring { margin: 0 0 4px; }
+.kunde-funn-utfalne ul { list-style: none; padding: 0; margin: 0; }
+.kunde-funn-utfalne li { display: grid; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+.kunde-funn-utfalne li:last-child { border-bottom: 0; padding-bottom: 0; }
+.kunde-funn-utfalne li > p { margin: 0; overflow-wrap: anywhere; }
 .kort-hovud .kunde-funn-runde { flex: 0 1 auto; min-width: 0; max-width: 100%; min-height: 34px; padding-top: 4px; padding-bottom: 4px; font-size: 13.5px; }
 /* Opened from a seminar (?runde=): the card takes the focus below the sticky top bar, keeping its corners */
 .kunde-funn { scroll-margin-top: 76px; }

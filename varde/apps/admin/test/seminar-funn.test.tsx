@@ -223,7 +223,7 @@ describe('findings of a seminar', () => {
     // A finding that dropped out of the result has no editor anywhere: no link that leads nowhere.
     expect([...a1!.querySelectorAll('li')].map(parts)).toEqual([
       [
-        'Funnet er ikkje lenger med i resultatet for runden, så statusen kan ikkje endrast.',
+        'Funnet er ikkje lenger med i resultatet for runden. Statusen endrar du på sida til kunden.',
         'I seminar',
       ],
     ]);

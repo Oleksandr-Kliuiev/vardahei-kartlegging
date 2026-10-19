@@ -1,6 +1,25 @@
 # Varde site block (task 0.6), appended to /etc/atlas-edge/Caddyfile after the DNS record exists.
 # No `log` directive: Varde has no Caddy access log (stage-0 §9 p. 8); errors of reverse_proxy
 # go to the default logger, filtered by global-log.caddy.
+# Improvement plan 0.5: compression and HSTS. The encode list leaves text/event-stream out, so the
+# live poll and the admin events (SSE) are never buffered by a compressor. HSTS has no
+# includeSubDomains: other *.vardahei.tech hosts are not ours to pin. Test: test/caddy-edge.test.sh.
 varde.vardahei.tech {
+	encode {
+		zstd
+		gzip
+		minimum_length 512
+		match {
+			header Content-Type text/html*
+			header Content-Type text/css*
+			header Content-Type text/plain*
+			header Content-Type text/csv*
+			header Content-Type application/javascript*
+			header Content-Type text/javascript*
+			header Content-Type application/json*
+			header Content-Type image/svg+xml*
+		}
+	}
+	header Strict-Transport-Security "max-age=31536000"
 	reverse_proxy varde-app:3000
 }

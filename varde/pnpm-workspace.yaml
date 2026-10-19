@@ -14,3 +14,8 @@ allowBuilds:
   '@prisma/client': true
   # tsx -> esbuild: its postinstall only verifies the platform binary (optional dependency).
   esbuild: false
+
+# @nestjs/platform-fastify 11.2.7 pins fastify 5.11.3, which has known advisories fixed in 5.12.x
+# (improvement plan 0.4). Drop this once Nest moves to 12.
+overrides:
+  fastify: 5.12.7

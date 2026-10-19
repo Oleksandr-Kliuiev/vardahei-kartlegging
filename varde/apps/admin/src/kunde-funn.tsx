@@ -29,6 +29,9 @@ export interface FindingFollowUp {
   seminar: { id: string; topic: string; starts_at: string } | null;
   changed_by: string | null;
   changed_at: string | null;
+  /** Not in the round's current release any more, but still followed up from an older one; the
+   * rule's text, null for a computed rule. */
+  dropped?: { text: string | null };
 }
 
 export const FOLLOW_UP: Record<string, readonly [string, string]> = {
@@ -174,6 +177,30 @@ function Oppfolging({
   );
 }
 
+/** Findings that a new release of the round no longer has, but that an older one put into a
+ * seminar: their status can still change here, so «I seminar» can end. */
+function Utfalne({ rows, seminars }: { rows: FindingFollowUp[]; seminars: Seminar[] }) {
+  return (
+    <div className="kunde-funn-utfalne">
+      <h3>Ikkje lenger med i resultatet</h3>
+      <p className="forklaring">
+        Ei ny utgåve av resultatet har ikkje desse funna lenger, men dei har framleis ein status.
+      </p>
+      <ul>
+        {rows.map((r) => {
+          const text = r.dropped?.text ?? 'Funn rekna ut frå tala i runden';
+          return (
+            <li key={r.id}>
+              <p>{text}</p>
+              <Oppfolging row={r} text={text} seminars={seminars} />
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 type Result = Pick<UseQueryResult<Dashboard>, 'data' | 'dataUpdatedAt' | 'isPending' | 'error'>;
 
 export function KundeFunn({
@@ -226,9 +253,9 @@ export function KundeFunn({
     enabled: closed && !!found,
     placeholderData: keepPreviousData,
   });
-  const rows = new Map(
-    (status.data?.rows ?? []).filter((r) => r.round === round?.id).map((r) => [r.rule_key, r]),
-  );
+  const ofRound = (status.data?.rows ?? []).filter((r) => r.round === round?.id);
+  const rows = new Map(ofRound.filter((r) => !r.dropped).map((r) => [r.rule_key, r]));
+  const dropped = ofRound.filter((r) => r.dropped);
   // Opened from a seminar's findings: once the round's findings are there the card takes the focus,
   // so the page opens where the status is changed — unless the person has moved the focus meanwhile
   // (the search palette) or the round asked for is not the client's. On a phone the card is far
@@ -307,6 +334,7 @@ export function KundeFunn({
             ) : (
               <p className="under">Ingen tydelege funn i denne runden.</p>
             )}
+            {closed && dropped.length > 0 && <Utfalne rows={dropped} seminars={seminars} />}
             <ErrorMessage error={status.error} />
             <a
               className="lenkje"

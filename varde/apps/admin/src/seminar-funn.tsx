@@ -121,7 +121,7 @@ function Gruppe({
                         <b>{shown.tal}</b> {shown.text}
                       </>
                     ) : (
-                      'Funnet er ikkje lenger med i resultatet for runden, så statusen kan ikkje endrast.'
+                      'Funnet er ikkje lenger med i resultatet for runden. Statusen endrar du på sida til kunden.'
                     )}{' '}
                     <span className={chip}>{label}</span>
                   </div>

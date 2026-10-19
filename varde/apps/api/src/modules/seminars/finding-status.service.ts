@@ -84,7 +84,8 @@ export class FindingStatusService {
 
   /** The follow-up of one client's saved findings (2.17, the client page): per round and rule the
    * row a new status goes to, its status (without one a finding is `open`), the seminar that
-   * takes it up and who changed it last, by name as in the journal. No numbers of the finding. */
+   * takes it up and who changed it last, by name as in the journal. No numbers of the finding.
+   * A finding the round's current release no longer has comes with `dropped` (its rule text). */
   async ofClient(client: string) {
     const found = await this.prisma.client.findUnique({
       where: { id: client },
@@ -115,6 +116,7 @@ export class FindingStatusService {
           seminar: s ? { id: s.id, topic: s.topic_nn, starts_at: s.starts_at.toISOString() } : null,
           changed_by: f.status ? (names[f.status.changed_by] ?? f.status.changed_by) : null,
           changed_at: f.status?.changed_at.toISOString() ?? null,
+          ...(f.dropped ? { dropped: f.dropped } : {}),
         };
       }),
     };

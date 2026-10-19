@@ -61,8 +61,9 @@ export async function registerRunnerStatic(app: NestFastifyApplication): Promise
     immutable: true,
     maxAge: '1y',
     index: false,
-    setHeaders(res, path) {
-      res.setHeader(
+    // @fastify/static 10 passes the reply itself (before: the raw response).
+    setHeaders(reply, path) {
+      void reply.header(
         'cache-control',
         path === resolve(root, 'index.html') ? 'no-store' : 'public, max-age=31536000, immutable',
       );
