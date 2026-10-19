@@ -105,7 +105,8 @@ a.ting:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .kunde-funn-utfalne h3 { font-size: 15px; margin: 0 0 4px; }
 .kunde-funn-utfalne .forklaring { margin: 0 0 4px; }
 .kunde-funn-utfalne ul { list-style: none; padding: 0; margin: 0; }
-.kunde-funn-utfalne li { display: grid; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+.kunde-funn-utfalne li { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+.kunde-funn-utfalne .oppfolging { display: grid; gap: 8px; min-width: 0; }
 .kunde-funn-utfalne li:last-child { border-bottom: 0; padding-bottom: 0; }
 .kunde-funn-utfalne li > p { margin: 0; overflow-wrap: anywhere; }
 .kort-hovud .kunde-funn-runde { flex: 0 1 auto; min-width: 0; max-width: 100%; min-height: 34px; padding-top: 4px; padding-bottom: 4px; font-size: 13.5px; }
