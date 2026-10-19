@@ -142,7 +142,7 @@ docker start varde-app
 
 ### 5.1 Замена блока сайта (сжатие и HSTS, план улучшений 0.5, 19.10)
 
-`deploy.sh` Caddy не трогает: блок `varde.vardahei.tech { … }` в общем `/etc/atlas-edge/Caddyfile` меняется руками. Новый `varde.caddy` сначала копируется на VPS (`scp varde/infra/caddy/varde.caddy root@<vps>:/opt/varde/caddy/varde.caddy`), затем:
+`deploy.sh` копирует `infra/caddy/` в `/opt/varde/caddy/` (rsync `infra/`), но общий `/etc/atlas-edge/Caddyfile` не трогает: блок `varde.vardahei.tech { … }` в нём меняется руками после деплоя. Новый файл до записи проверяется `docker cp $W atlas-edge-caddy-1:/tmp/Caddyfile.new` и `caddy validate --config /tmp/Caddyfile.new`. Сделано так 19.10:
 
 ```bash
 CF=/etc/atlas-edge/Caddyfile

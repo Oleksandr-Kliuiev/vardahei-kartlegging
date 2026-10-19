@@ -1,6 +1,6 @@
 # Волна 0, часть A: fastify, Caddy, выпавший funn (19.10.2026)
 
-Ветка `varde/volna0-a` от main `ce96191`, worktree `~/vardahei-kartlegging-volna0`. Пункты 0.4 и 0.5 плана улучшений (`IMPROVEMENT-PLAN.md`) и ограничение 2.17 «funn, выпавший из результата, остаётся «I seminar» без редактора» (`stage-2/2c-evidence.md`). Миграций нет. На прод не выкачено.
+Ветка `varde/volna0-a` от main `ce96191`, worktree `~/vardahei-kartlegging-volna0`. Пункты 0.4 и 0.5 плана улучшений (`IMPROVEMENT-PLAN.md`) и ограничение 2.17 «funn, выпавший из результата, остаётся «I seminar» без редактора» (`stage-2/2c-evidence.md`). Миграций нет. Выкачено 19.10 как `25e407dae1d6` (ниже «Выкатка»).
 
 ## 0.4 — fastify и @fastify/static
 
@@ -26,7 +26,15 @@
 
 Полный локальный прогон шагов `varde.yml` на `302bf67` (Actions заблокирован; Node 22.22.2; свежие базы `varde_v0_*` в `varde-dev-postgres-1`; `VARDE_RESTORE_DOCKER=1` в integration): **44 из 44**. Integration — 470 тестов (8 skipped), e2e admin 53/53, runner 66/66, invariants 0a–3c, golden, secrets, образ со всеми проверками image-job, caddy-log и caddy-edge. Шаг `image-health` в первый раз упал: порт 3999 на Mac занят посторонним процессом. Повтор на порту 3998 — `{"status":"ok","version":"ci","db":"ok"}`. После прогона изменился только CSS (`4c21411`), и e2e admin прогнан заново: 53/53. Секреты после этого — 0 (dir-скан находил скриншоты в игнорируемых `test-results/` локальных e2e; в чистом checkout CI их нет).
 
+## Выкатка (19.10, OK Oleksandr на локальный прогон 44 из 44)
+
+- main fast-forward до `varde/volna0-a`, push: origin/main = `25e407d`. `ship-image.sh` и `deploy.sh 25e407dae1d6`: миграций нет, `{"status":"ok","version":"25e407dae1d6","db":"ok"}`. Копия данных: `/root/deploy-20261019-1830` (57 ответов, 5429 снимков). Откат приложения: `bash infra/ops/rollback.sh 1d5d5effefbe`, без down.sql.
+- Прод после деплоя: `/r/`, `/s`, `/p` — `cache-control: no-store`; `/admin` → 302 с `no-store`; `/r/assets/*.js` — `public, max-age=31536000, immutable`. Ошибок в логе `varde-app` нет.
+- Caddy по §5.1: копия `/etc/atlas-edge/Caddyfile.bak-20261019T183058Z`. В diff убран только старый трёхстрочный блок, новый добавлен в конец. Сначала `validate` нового файла в контейнере, затем запись, `validate`, `reload`. Предупреждение «not formatted» про строку 2 было и раньше.
+- Проверки: `strict-transport-security: max-age=31536000`; `/r/` → `content-encoding: zstd`; `main-*.js` 158 533 → 51 745 байт; маленький `/health` не сжат. Остальные хосты atlas-edge отвечают (atera 200, ai 200, muligheter 401, kartlegging 404, admin 302). Сжатие SSE на проде не проверено, потому что потоки под входом; проверено тестом caddy-edge.
+- Откат Caddy: `cat /etc/atlas-edge/Caddyfile.bak-20261019T183058Z > /etc/atlas-edge/Caddyfile` и `caddy reload`.
+
 ## Не сделано и риски
 
-- На прод не выкачено: нужен отдельный OK Oleksandr на локальный прогон. Caddy меняется отдельным шагом по §5.1.
+- Под входом на проде блок не проверен: «Ikkje lenger med i resultatet» появляется только у funn, который выпал после нового выпуска закрытого раунда.
 - Тексты на нюношке для проверки Oleksandr: «Ikkje lenger med i resultatet», «Ei ny utgåve av resultatet har ikkje desse funna lenger, men dei har framleis ein status.», «Funn rekna ut frå tala i runden», «Funnet er ikkje lenger med i resultatet for runden. Statusen endrar du på sida til kunden.»
