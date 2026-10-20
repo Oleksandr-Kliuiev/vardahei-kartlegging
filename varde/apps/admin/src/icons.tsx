@@ -16,6 +16,10 @@ const P = {
   slett: [<path key="a" d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />],
   ned: [<path key="a" d="M12 4v12M7 11l5 5 5-5M5 20h14" />],
   sok: [<circle key="a" cx="11" cy="11" r="7" />, <path key="b" d="M20 20l-3.5-3.5" />],
+  sidepanel: [
+    <rect key="a" x="3" y="4" width="18" height="16" rx="2" />,
+    <path key="b" d="M9 4v16" />,
+  ],
   meny: [<path key="a" d="M4 7h16M4 12h16M4 17h16" />],
   lukk: [<path key="a" d="M6 6l12 12M18 6L6 18" />],
   loggut: [<path key="a" d="M15 4h4v16h-4" />, <path key="b" d="M10 8l-4 4 4 4M6 12h10" />],
@@ -114,7 +118,12 @@ const P = {
     />,
   ],
   // Notes on questions in the workshop (2.18).
-  prat: [<path key="a" d="M5 5h14a2 2 0 012 2v8a2 2 0 01-2 2h-7l-4.5 3.5V17H5a2 2 0 01-2-2V7a2 2 0 012-2z" />],
+  prat: [
+    <path
+      key="a"
+      d="M5 5h14a2 2 0 012 2v8a2 2 0 01-2 2h-7l-4.5 3.5V17H5a2 2 0 01-2-2V7a2 2 0 012-2z"
+    />,
+  ],
   // «Kundar» and «Personvern» in the menu (2.17).
   bygg: [
     <path key="a" d="M4 21V5.5L12 3v18M12 9l8 2.5V21M2 21h20" />,

@@ -225,9 +225,10 @@ function OpenRound({ round, progress }: { round: Round; progress: Progress[] | u
   );
 }
 
-function HaldFram() {
+/** Only a version that still exists: one in the trash (or removed for good) is not offered. */
+function HaldFram({ surveys }: { surveys: SurveySummary[] }) {
   const s = lastPlace();
-  if (!s) return null;
+  if (!s || !surveys.some((t) => t.versions.some((v) => v.id === s.id))) return null;
   const to = `/admin/surveys/${s.id}`;
   return (
     <section className="kort idag-hald" aria-labelledby="idag-hald">
@@ -317,7 +318,7 @@ export function IdagPage() {
           </div>
         </section>
         <div className="s5 idag-side">
-          <HaldFram />
+          <HaldFram surveys={Array.isArray(surveys.data) ? surveys.data : []} />
           {open.map((r, i) => (
             <OpenRound key={r.id} round={r} progress={progress[i]?.data?.clients} />
           ))}

@@ -205,6 +205,7 @@ export function Sidebar({
   connected,
   open,
   onClose,
+  onCollapse,
   onSearch,
   onLogout,
 }: {
@@ -215,6 +216,8 @@ export function Sidebar({
   open: boolean;
   /** Closes the drawer on a narrow screen; the menu button is covered by the drawer then. */
   onClose: () => void;
+  /** Hides the sidebar on a wide screen; the button to bring it back is in the top line then. */
+  onCollapse: () => void;
   onSearch: () => void;
   onLogout: () => void;
 }) {
@@ -254,6 +257,15 @@ export function Sidebar({
             <img className="logo" src={logo} alt="Vardahei IT" />
           </span>
         </a>
+        <button
+          type="button"
+          className="ikonknapp sidemeny-skjul"
+          aria-label="Skjul menyen"
+          title="Skjul menyen"
+          onClick={onCollapse}
+        >
+          <Icon name="sidepanel" />
+        </button>
         <button
           type="button"
           className="ikonknapp sidemeny-lukk"
@@ -317,11 +329,19 @@ export function Sidebar({
 /* ---------- Top line ---------- */
 export function Topbar({
   section,
+  wide,
   open,
+  canBack,
+  onBack,
   onMenu,
 }: {
   section: string;
+  /** A wide screen has the sidebar next to the page; a narrow one has a drawer. */
+  wide: boolean;
+  /** The sidebar is shown (wide) or the drawer is open (narrow). */
   open: boolean;
+  canBack: boolean;
+  onBack: () => void;
   onMenu: () => void;
 }) {
   const [shadow, setShadow] = useState(false);
@@ -332,15 +352,28 @@ export function Topbar({
   }, []);
   return (
     <header className={shadow ? 'topplinje skuggar' : 'topplinje'}>
+      {(!wide || !open) && (
+        <button
+          type="button"
+          className="ikonknapp menyknapp"
+          aria-label={open ? 'Lukk menyen' : 'Opne menyen'}
+          title={open ? 'Lukk menyen' : 'Opne menyen'}
+          aria-expanded={open}
+          aria-controls="sidemeny"
+          onClick={onMenu}
+        >
+          <Icon name={wide ? 'sidepanel' : 'meny'} />
+        </button>
+      )}
       <button
         type="button"
-        className="ikonknapp menyknapp"
-        aria-label={open ? 'Lukk menyen' : 'Opne menyen'}
-        aria-expanded={open}
-        aria-controls="sidemeny"
-        onClick={onMenu}
+        className="ikonknapp tilbakeknapp"
+        aria-label="Tilbake"
+        title="Tilbake"
+        disabled={!canBack}
+        onClick={onBack}
       >
-        <Icon name="meny" />
+        <Icon name="tilbake" />
       </button>
       <div className="smular">
         <span>Varde</span>

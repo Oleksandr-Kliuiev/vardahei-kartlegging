@@ -71,6 +71,9 @@ kbd { font-family: var(--font-mono); font-size: 12px; padding: 1px 6px; border-r
 /* Menyknappen: på brei skjerm gøymer ho sidemenyen, på smal opnar ho skuffa. */
 .sidemeny-topp { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .ikonknapp.sidemeny-lukk { display: none; }
+.ikonknapp.sidemeny-skjul { margin-top: -2px; }
+.ikonknapp:disabled { opacity: 0.4; cursor: default; }
+.ikonknapp:disabled:hover { background: transparent; color: var(--ink-muted); }
 @media (min-width: 861px) {
   .skal[data-nav="closed"] { grid-template-columns: minmax(0, 1fr); background: none; }
   .skal[data-nav="closed"] .sidemeny { display: none; }
@@ -105,6 +108,7 @@ kbd { font-family: var(--font-mono); font-size: 12px; padding: 1px 6px; border-r
   .sidemeny { position: fixed; top: 0; left: 0; bottom: 0; width: min(300px, 86vw); height: auto; transform: translateX(-104%); visibility: hidden; transition: transform var(--t-move) var(--ease-sti), visibility 0s linear var(--t-move); }
   .sidemeny[data-open="true"] { transform: none; visibility: visible; box-shadow: var(--shadow-3); transition: transform var(--t-move) var(--ease-sti), visibility 0s; }
   .ikonknapp.sidemeny-lukk { display: grid; }
+  .ikonknapp.sidemeny-skjul { display: none; }
   .topplinje { padding: 10px 16px; }
   .side { padding: 6px 16px 64px; }
 }

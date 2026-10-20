@@ -115,6 +115,12 @@ function Shell({ name }: { name: string | null }) {
     );
     window.scrollTo({ top: 0, behavior: 'auto' });
   }, [place]);
+  // «Tilbake» follows the browser history; a page opened straight from a link goes to «I dag».
+  const canBack = window.history.length > 1 || path !== '/admin';
+  const back = () => {
+    if (window.history.length > 1) window.history.back();
+    else goTo('/admin');
+  };
   const goTo = (to: string) => {
     window.history.pushState(null, '', to);
     setWhere(where());
@@ -148,6 +154,7 @@ function Shell({ name }: { name: string | null }) {
         connected={connected}
         open={menu}
         onClose={() => setMenu(false)}
+        onCollapse={toggleMenu}
         onSearch={() => setPalette(true)}
         onLogout={() => {
           void logout();
@@ -157,7 +164,10 @@ function Shell({ name }: { name: string | null }) {
       <div className="hovud">
         <Topbar
           section={section?.label ?? 'Sida finst ikkje'}
+          wide={wide}
           open={wide ? !collapsed : menu}
+          canBack={canBack}
+          onBack={back}
           onMenu={toggleMenu}
         />
         <main className={page.wide ? 'side side-vid' : 'side'} id="innhald" ref={main}>
