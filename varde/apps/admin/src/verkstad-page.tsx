@@ -360,7 +360,9 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
       forget();
       void queries.invalidateQueries({ queryKey: ['surveys'] });
       toast(
-        done.survey_removed ? 'Skjemaet er sletta.' : `Utkastet v${saved.version_no} er sletta.`,
+        done.survey_removed
+          ? 'Skjemaet er flytta til papirkorga.'
+          : `Utkastet v${saved.version_no} er flytta til papirkorga.`,
       );
       const last = versions
         .filter((v) => v.status === 'published' && v.id !== current.id)

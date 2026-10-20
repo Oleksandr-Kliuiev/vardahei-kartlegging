@@ -255,6 +255,8 @@ export function IdagPage() {
   const surveys = useQuery({
     queryKey: ['surveys'],
     queryFn: () => api<SurveySummary[]>('/api/admin/surveys'),
+    // Drafts come and go (also in the trash): never start from a copy of the list.
+    refetchOnMount: 'always',
   });
   const seminars = useQuery({
     queryKey: ['seminars', 'list'],

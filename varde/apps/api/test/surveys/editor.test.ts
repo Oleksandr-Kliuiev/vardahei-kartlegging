@@ -571,6 +571,12 @@ describe('admin survey editor and launch (1d)', () => {
     ).json<Version>();
     const kept = await call('DELETE', path(next.id), { content_hash: next.content_hash });
     expect(kept.json()).toMatchObject({ survey_removed: false });
+    const after = (await call('GET', '/api/admin/surveys')).json<
+      { id: string; draft: unknown; versions: { id: string }[] }[]
+    >();
+    const mine = after.find((t) => t.id === version.template_id)!;
+    expect(mine.draft).toBeNull();
+    expect(mine.versions.some((v) => v.id === next.id)).toBe(false);
     expect((await call('GET', path(version.id))).statusCode).toBe(200);
     const again = (
       await call('POST', `/api/admin/surveys/${version.template_id}/drafts`, { label: 'second' })

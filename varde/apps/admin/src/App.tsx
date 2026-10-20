@@ -8,6 +8,22 @@ import { resolve } from './routes.js';
 import { Palette, Sidebar, Toasts, Topbar, sectionOf } from './shell.js';
 import './rom.css';
 
+const NAV_KEY = 'varde:meny';
+function storedNavClosed(): boolean {
+  try {
+    return localStorage.getItem(NAV_KEY) === 'closed';
+  } catch {
+    return false;
+  }
+}
+function storeNavClosed(closed: boolean) {
+  try {
+    localStorage.setItem(NAV_KEY, closed ? 'closed' : 'open');
+  } catch {
+    /* The choice still holds for this visit. */
+  }
+}
+
 export function createQueryClient() {
   return new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: 30_000, refetchOnWindowFocus: false } },
@@ -22,14 +38,31 @@ function Shell({ name }: { name: string | null }) {
     search: window.location.search,
   });
   const [{ path, search }, setWhere] = useState(where);
+  // Narrow screen: the menu is a drawer. Wide screen: the same button hides and shows the sidebar.
   const [menu, setMenu] = useState(false);
+  const [wide, setWide] = useState(() => window.matchMedia?.('(min-width: 861px)').matches ?? true);
+  const [collapsed, setCollapsed] = useState(storedNavClosed);
   useEffect(() => {
-    const wide = window.matchMedia?.('(min-width: 861px)');
-    if (!wide) return;
-    const close = () => wide.matches && setMenu(false);
-    wide.addEventListener('change', close);
-    return () => wide.removeEventListener('change', close);
+    const query = window.matchMedia?.('(min-width: 861px)');
+    if (!query) return;
+    const change = () => {
+      setWide(query.matches);
+      if (query.matches) setMenu(false);
+    };
+    query.addEventListener('change', change);
+    return () => query.removeEventListener('change', change);
   }, []);
+  useEffect(() => {
+    if (!menu) return;
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setMenu(false);
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, [menu]);
+  const toggleMenu = () => {
+    if (!wide) return setMenu(!menu);
+    setCollapsed(!collapsed);
+    storeNavClosed(!collapsed);
+  };
   const [palette, setPalette] = useState(false);
   const main = useRef<HTMLElement>(null);
   // A layout effect, so the listener is there before any page's effect moves an old address on.
@@ -104,7 +137,7 @@ function Shell({ name }: { name: string | null }) {
     if (page.heading) document.title = `${page.heading.doc ?? page.heading.title} – Varde`;
   }, [path, page.heading?.title, page.heading?.doc]);
   return (
-    <div className="skal">
+    <div className="skal" data-nav={wide && collapsed ? 'closed' : 'open'}>
       <a className="hopp" href="#innhald">
         Hopp til innhald
       </a>
@@ -114,6 +147,7 @@ function Shell({ name }: { name: string | null }) {
         name={name}
         connected={connected}
         open={menu}
+        onClose={() => setMenu(false)}
         onSearch={() => setPalette(true)}
         onLogout={() => {
           void logout();
@@ -123,8 +157,8 @@ function Shell({ name }: { name: string | null }) {
       <div className="hovud">
         <Topbar
           section={section?.label ?? 'Sida finst ikkje'}
-          open={menu}
-          onMenu={() => setMenu(!menu)}
+          open={wide ? !collapsed : menu}
+          onMenu={toggleMenu}
         />
         <main className={page.wide ? 'side side-vid' : 'side'} id="innhald" ref={main}>
           {page.heading && (

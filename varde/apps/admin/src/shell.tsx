@@ -36,14 +36,16 @@ export const SECTIONS: Section[] = [
     url: '/admin/surveys',
     label: 'Skjema',
     icon: 'skjema',
-    intro: 'Skjema og reglane for funn. Eit skjema opnar utkastet om det finst, elles den nyaste versjonen.',
+    intro:
+      'Skjema og reglane for funn. Eit skjema opnar utkastet om det finst, elles den nyaste versjonen.',
     sub: true,
   },
   {
     url: '/admin/rounds',
     label: 'Rundar',
     icon: 'flagg',
-    intro: 'Ei runde er eitt skjema hos ein eller fleire kundar. Opne ei runde for framdrift, utsending, resultat og rapportar.',
+    intro:
+      'Ei runde er eitt skjema hos ein eller fleire kundar. Opne ei runde for framdrift, utsending, resultat og rapportar.',
     sub: true,
   },
   {
@@ -65,7 +67,8 @@ export const SECTIONS: Section[] = [
     label: 'Personvern',
     icon: 'skjold',
     bottom: true,
-    intro: 'Eksport, sletting, kontaktar som ventar på den årlege sjekken, og loggen over kven som gjorde kva.',
+    intro:
+      'Eksport, sletting, kontaktar som ventar på den årlege sjekken, og loggen over kven som gjorde kva.',
     sub: true,
   },
   {
@@ -201,6 +204,7 @@ export function Sidebar({
   name,
   connected,
   open,
+  onClose,
   onSearch,
   onLogout,
 }: {
@@ -209,6 +213,8 @@ export function Sidebar({
   name: string | null;
   connected: boolean;
   open: boolean;
+  /** Closes the drawer on a narrow screen; the menu button is covered by the drawer then. */
+  onClose: () => void;
   onSearch: () => void;
   onLogout: () => void;
 }) {
@@ -242,11 +248,21 @@ export function Sidebar({
     .toUpperCase();
   return (
     <aside className="sidemeny" id="sidemeny" data-open={open ? 'true' : 'false'}>
-      <a className="merke" href="/" aria-label="Varde, heim">
-        <span className="logo-plate">
-          <img className="logo" src={logo} alt="Vardahei IT" />
-        </span>
-      </a>
+      <div className="sidemeny-topp">
+        <a className="merke" href="/" aria-label="Varde, heim">
+          <span className="logo-plate">
+            <img className="logo" src={logo} alt="Vardahei IT" />
+          </span>
+        </a>
+        <button
+          type="button"
+          className="ikonknapp sidemeny-lukk"
+          aria-label="Lukk menyen"
+          onClick={onClose}
+        >
+          <Icon name="lukk" />
+        </button>
+      </div>
       <div className="produkt">
         <span className="produkt-sub">Kartlegging · seminar · oppfølging</span>
       </div>
@@ -324,7 +340,7 @@ export function Topbar({
         aria-controls="sidemeny"
         onClick={onMenu}
       >
-        <Icon name={open ? 'lukk' : 'meny'} />
+        <Icon name="meny" />
       </button>
       <div className="smular">
         <span>Varde</span>
