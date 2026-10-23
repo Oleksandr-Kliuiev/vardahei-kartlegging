@@ -14,6 +14,7 @@ import {
   makeClients,
   PUBLIC_URL,
   register,
+  registrationsOf,
   seminarApp,
   seminarBody,
   type SeminarApp,
@@ -37,26 +38,24 @@ afterAll(async () => {
 });
 
 const fks = (table: string) =>
-  withPg(
-    async (c) =>
-      (
-        await c.query<{ ref: string }>(
-          `SELECT ccu.table_name AS ref FROM information_schema.table_constraints tc
+  withPg(async (c) =>
+    (
+      await c.query<{ ref: string }>(
+        `SELECT ccu.table_name AS ref FROM information_schema.table_constraints tc
              JOIN information_schema.constraint_column_usage ccu ON ccu.constraint_name = tc.constraint_name
             WHERE tc.table_name = $1 AND tc.constraint_type = 'FOREIGN KEY' ORDER BY 1`,
-          [table],
-        )
-      ).rows.map((r) => r.ref),
+        [table],
+      )
+    ).rows.map((r) => r.ref),
   );
 const columns = (table: string) =>
-  withPg(
-    async (c) =>
-      (
-        await c.query<{ column_name: string }>(
-          'SELECT column_name FROM information_schema.columns WHERE table_name = $1',
-          [table],
-        )
-      ).rows.map((r) => r.column_name),
+  withPg(async (c) =>
+    (
+      await c.query<{ column_name: string }>(
+        'SELECT column_name FROM information_schema.columns WHERE table_name = $1',
+        [table],
+      )
+    ).rows.map((r) => r.column_name),
   );
 
 describe('ADR-021: Response never refers to Contact or Registration', () => {
@@ -77,9 +76,9 @@ describe('admin API (3.1)', () => {
   it('without a session every seminar route is 401', async () => {
     const none = { cookie: '' };
     expect((await t.call('GET', '/api/admin/seminars', undefined, none)).statusCode).toBe(401);
-    expect(
-      (await t.call('POST', '/api/admin/seminars', seminarBody(t), none)).statusCode,
-    ).toBe(401);
+    expect((await t.call('POST', '/api/admin/seminars', seminarBody(t), none)).statusCode).toBe(
+      401,
+    );
   });
 
   it('creates a seminar with an unguessable code, Oslo times, link and AuditLog without the code', async () => {
@@ -88,7 +87,9 @@ describe('admin API (3.1)', () => {
     const row = await t.prisma.seminar.findUniqueOrThrow({ where: { id: s.id } });
     expect(row.starts_at.toISOString()).toBe('2099-11-05T08:00:00.000Z');
     expect(row.ends_at.toISOString()).toBe('2099-11-05T10:30:00.000Z');
-    const view = (await t.call('GET', `/api/admin/seminars/${s.id}`)).json<Record<string, unknown>>();
+    const view = (await t.call('GET', `/api/admin/seminars/${s.id}`)).json<
+      Record<string, unknown>
+    >();
     expect(view).toMatchObject({
       date: '2099-11-05',
       start: '09:00',
@@ -119,7 +120,9 @@ describe('admin API (3.1)', () => {
       t.call('POST', '/api/admin/seminars', { ...seminarBody(t), ...over });
     const end = await bad({ start: '12:00', end: '11:00' });
     expect(end.statusCode).toBe(400);
-    expect(end.json<{ message: string }>().message).toBe('Seminaret må slutte etter at det byrjar.');
+    expect(end.json<{ message: string }>().message).toBe(
+      'Seminaret må slutte etter at det byrjar.',
+    );
     const en = await bad({ topic_en: '' });
     expect(en.json<{ message: string }>().message).toBe(
       'Skriv temaet på engelsk òg, eller ta bort engelsk.',
@@ -143,22 +146,34 @@ describe('admin API (3.1)', () => {
     });
     expect(row.sequence).toBe(1);
     expect(row.clients.map((c) => c.client_id)).toEqual([clients[1]!.id]);
+    expect((await put({ languages: ['nn'], topic_en: undefined, clients: [] })).statusCode).toBe(
+      200,
+    );
     expect(
-      (await put({ languages: ['nn'], topic_en: undefined, clients: [] })).statusCode,
-    ).toBe(200);
-    expect((await t.call('PUT', `/api/admin/seminars/${randomUUID()}`, seminarBody(t))).statusCode).toBe(404);
+      (await t.call('PUT', `/api/admin/seminars/${randomUUID()}`, seminarBody(t))).statusCode,
+    ).toBe(404);
   });
 
   it('the list counts registrations per company, without names, and puts coming seminars first', async () => {
     const past = await createSeminar(t, { date: '2020-01-10' });
     const next = await createSeminar(t, { clients: clients.map((c) => c.id) });
-    await register(t, next.id, email(t, 'list-1'), { company: clients[0]!.name, client: clients[0]!.id });
-    await register(t, next.id, email(t, 'list-2'), { company: clients[0]!.name, client: clients[0]!.id });
+    await register(t, next.id, email(t, 'list-1'), {
+      company: clients[0]!.name,
+      client: clients[0]!.id,
+    });
+    await register(t, next.id, email(t, 'list-2'), {
+      company: clients[0]!.name,
+      client: clients[0]!.id,
+    });
     await register(t, next.id, email(t, 'list-3'), { company: 'Eige firma' });
     const res = await t.call('GET', '/api/admin/seminars');
     expect(res.statusCode).toBe(200);
     const body = res.json<{
-      seminars: { id: string; status: string; registrations: { total: number; companies: unknown[] } }[];
+      seminars: {
+        id: string;
+        status: string;
+        registrations: { total: number; companies: unknown[] };
+      }[];
     }>();
     const mine = body.seminars.filter((s) => [past.id, next.id].includes(s.id));
     expect(mine.map((s) => s.id)).toEqual([next.id, past.id]);
@@ -179,19 +194,23 @@ describe('database constraints (3.1)', () => {
   it('rejects a bad format, languages without nn, a non-normalized e-mail and in_seminar without a seminar', async () => {
     const s = await createSeminar(t);
     await withPg(async (c) => {
-      await expect(c.query(`UPDATE seminar SET format = 'hybrid' WHERE id = $1`, [s.id])).rejects.toThrow(
-        /seminar_format_check/,
-      );
+      await expect(
+        c.query(`UPDATE seminar SET format = 'hybrid' WHERE id = $1`, [s.id]),
+      ).rejects.toThrow(/seminar_format_check/);
       await expect(
         c.query(`UPDATE seminar SET required_languages = '{en}' WHERE id = $1`, [s.id]),
       ).rejects.toThrow(/seminar_languages_check/);
       await expect(
-        c.query(
-          `INSERT INTO contact (name, email, company) VALUES ('ZZ', 'ZZ@Example.test', 'x')`,
-        ),
+        c.query(`INSERT INTO contact (name, email, company) VALUES ('ZZ', 'ZZ@Example.test', 'x')`),
       ).rejects.toThrow(/contact_email_check/);
       const f = await t.prisma.finding.create({
-        data: { round_id: randomUUID(), rule_key: 'zz.rule', rule_version: 1, numbers: {}, release_id: randomUUID() },
+        data: {
+          round_id: randomUUID(),
+          rule_key: 'zz.rule',
+          rule_version: 1,
+          numbers: {},
+          release_id: randomUUID(),
+        },
       });
       findings.push(f.id);
       await expect(
@@ -208,35 +227,152 @@ describe('FindingStatus (3.1 acceptance: attaching a finding to a seminar change
   it('open → in_seminar on attach (AuditLog), visible on the seminar; open again; closed keeps the seminar', async () => {
     const s = await createSeminar(t);
     const f = await t.prisma.finding.create({
-      data: { round_id: randomUUID(), rule_key: 'tryggleik.f12', rule_version: 1, numbers: { n: 9 }, release_id: randomUUID() },
+      data: {
+        round_id: randomUUID(),
+        rule_key: 'tryggleik.f12',
+        rule_version: 1,
+        numbers: { n: 9 },
+        release_id: randomUUID(),
+      },
     });
     findings.push(f.id);
     expect(await t.prisma.findingStatus.findUnique({ where: { finding_id: f.id } })).toBeNull();
-    const attach = await t.call('POST', `/api/admin/seminars/${s.id}/findings`, { findings: [f.id] });
+    const attach = await t.call('POST', `/api/admin/seminars/${s.id}/findings`, {
+      findings: [f.id],
+    });
     expect(attach.statusCode).toBe(201);
-    expect(await t.prisma.findingStatus.findUniqueOrThrow({ where: { finding_id: f.id } })).toMatchObject({
+    expect(
+      await t.prisma.findingStatus.findUniqueOrThrow({ where: { finding_id: f.id } }),
+    ).toMatchObject({
       status: 'in_seminar',
       seminar_id: s.id,
       changed_by: 'entra:test:seminar-admin',
     });
-    const view = (await t.call('GET', `/api/admin/seminars/${s.id}`)).json<{ findings: { id: string; status: string; rule_key: string }[] }>();
-    expect(view.findings).toEqual([expect.objectContaining({ id: f.id, status: 'in_seminar', rule_key: 'tryggleik.f12' })]);
+    const view = (await t.call('GET', `/api/admin/seminars/${s.id}`)).json<{
+      findings: { id: string; status: string; rule_key: string }[];
+    }>();
+    expect(view.findings).toEqual([
+      expect.objectContaining({ id: f.id, status: 'in_seminar', rule_key: 'tryggleik.f12' }),
+    ]);
     expect(
-      await t.prisma.auditLog.count({ where: { what: 'findings.status', target: `finding:${f.id}` } }),
+      await t.prisma.auditLog.count({
+        where: { what: 'findings.status', target: `finding:${f.id}` },
+      }),
     ).toBe(1);
     const open = await t.call('PUT', `/api/admin/findings/${f.id}/status`, { status: 'open' });
     expect(open.json()).toMatchObject({ status: 'open', seminar: null });
-    const closed = await t.call('PUT', `/api/admin/findings/${f.id}/status`, { status: 'closed', seminar: s.id });
+    const closed = await t.call('PUT', `/api/admin/findings/${f.id}/status`, {
+      status: 'closed',
+      seminar: s.id,
+    });
     expect(closed.json()).toMatchObject({ status: 'closed', seminar: s.id });
     expect(
-      (await t.call('PUT', `/api/admin/findings/${f.id}/status`, { status: 'in_seminar' })).statusCode,
+      (await t.call('PUT', `/api/admin/findings/${f.id}/status`, { status: 'in_seminar' }))
+        .statusCode,
     ).toBe(400);
     expect(
-      (await t.call('PUT', `/api/admin/findings/${randomUUID()}/status`, { status: 'open' })).statusCode,
+      (await t.call('PUT', `/api/admin/findings/${randomUUID()}/status`, { status: 'open' }))
+        .statusCode,
     ).toBe(404);
     expect(
-      (await t.call('POST', `/api/admin/seminars/${randomUUID()}/findings`, { findings: [f.id] })).statusCode,
+      (await t.call('POST', `/api/admin/seminars/${randomUUID()}/findings`, { findings: [f.id] }))
+        .statusCode,
     ).toBe(404);
+  });
+});
+
+describe('deleting a seminar', () => {
+  it('removes a coming seminar with registrations and links; findings are freed; AuditLog has no names', async () => {
+    const s = await createSeminar(t, { clients: clients.map((c) => c.id) });
+    await register(t, s.id, email(t, 'del-1'));
+    await register(t, s.id, email(t, 'del-2'));
+    await t.prisma.seminarMaterial.create({
+      data: {
+        seminar_id: s.id,
+        title: 'Lysark',
+        url: 'https://example.test/x',
+        created_by: 'test',
+      },
+    });
+    const f1 = await t.prisma.finding.create({
+      data: {
+        round_id: randomUUID(),
+        rule_key: 'tryggleik.f12',
+        rule_version: 1,
+        numbers: { n: 1 },
+        release_id: randomUUID(),
+      },
+    });
+    const f2 = await t.prisma.finding.create({
+      data: {
+        round_id: randomUUID(),
+        rule_key: 'tryggleik.f12',
+        rule_version: 1,
+        numbers: { n: 2 },
+        release_id: randomUUID(),
+      },
+    });
+    findings.push(f1.id, f2.id);
+    await t.call('POST', `/api/admin/seminars/${s.id}/findings`, { findings: [f1.id, f2.id] });
+    await t.call('PUT', `/api/admin/findings/${f2.id}/status`, { status: 'closed', seminar: s.id });
+    const res = await t.call('DELETE', `/api/admin/seminars/${s.id}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ registrations: 2, findings_reopened: 1 });
+    expect(await t.prisma.seminar.count({ where: { id: s.id } })).toBe(0);
+    expect(await registrationsOf(s.id)).toHaveLength(0);
+    expect(await t.prisma.seminarMaterial.count({ where: { seminar_id: s.id } })).toBe(0);
+    expect(
+      await t.prisma.findingStatus.findUniqueOrThrow({ where: { finding_id: f1.id } }),
+    ).toMatchObject({ status: 'open', seminar_id: null });
+    expect(
+      await t.prisma.findingStatus.findUniqueOrThrow({ where: { finding_id: f2.id } }),
+    ).toMatchObject({ status: 'closed', seminar_id: null });
+    const audit = await t.prisma.auditLog.findFirstOrThrow({
+      where: { what: 'seminars.delete', target: `seminar:${s.id}` },
+    });
+    expect(audit.details).toMatchObject({ registrations: 2, findings_reopened: 1 });
+    expect(JSON.stringify(audit)).not.toContain('zz-');
+    expect((await t.call('GET', `/api/admin/seminars/${s.id}`)).statusCode).toBe(404);
+    expect((await t.call('DELETE', `/api/admin/seminars/${s.id}`)).statusCode).toBe(404);
+  });
+  it('a held seminar or one with an opened round stays; a draft round is left alone', async () => {
+    const held = await createSeminar(t);
+    await t.prisma.seminar.update({
+      where: { id: held.id },
+      data: {
+        starts_at: new Date('2020-01-01T08:00:00Z'),
+        ends_at: new Date('2020-01-01T10:00:00Z'),
+      },
+    });
+    expect((await t.call('DELETE', `/api/admin/seminars/${held.id}`)).statusCode).toBe(409);
+    expect(await t.prisma.seminar.count({ where: { id: held.id } })).toBe(1);
+    const planned = await createSeminar(t);
+    const version = await t.prisma.templateVersion.findFirstOrThrow({
+      where: { status: 'published' },
+    });
+    const round = await t.prisma.round.create({
+      data: {
+        name: `zz-${t.mark}-runde`,
+        type: 'regular',
+        status: 'open',
+        template_version_id: version.id,
+        identification: 'none',
+        opened_at: new Date(),
+      },
+    });
+    await t.prisma.seminar.update({
+      where: { id: planned.id },
+      data: { round_before_id: round.id },
+    });
+    expect((await t.call('DELETE', `/api/admin/seminars/${planned.id}`)).statusCode).toBe(409);
+    await t.prisma.round.update({ where: { id: round.id }, data: { status: 'draft' } });
+    expect((await t.call('DELETE', `/api/admin/seminars/${planned.id}`)).statusCode).toBe(200);
+    expect(await t.prisma.round.count({ where: { id: round.id } })).toBe(1);
+    await t.prisma.round.delete({ where: { id: round.id } });
+    expect(
+      (await t.call('DELETE', `/api/admin/seminars/${planned.id}`, undefined, { cookie: '' }))
+        .statusCode,
+    ).toBe(401);
   });
 });
 
@@ -251,18 +387,31 @@ describe('FindingRule → Action by rule key (3.1)', () => {
     const { id } = created.json<{ id: string }>();
     actions.push(id);
     const versions = await t.prisma.findingRule.count({ where: { key: 'tryggleik.f12' } });
-    const link = await t.call('PUT', '/api/admin/finding-rules/tryggleik.f12/action', { action: id });
+    const link = await t.call('PUT', '/api/admin/finding-rules/tryggleik.f12/action', {
+      action: id,
+    });
     expect(link.statusCode).toBe(200);
     expect(await t.prisma.findingRule.count({ where: { key: 'tryggleik.f12' } })).toBe(versions);
-    const list = (await t.call('GET', '/api/admin/actions')).json<{ id: string; rules: string[] }[]>();
+    const list = (await t.call('GET', '/api/admin/actions')).json<
+      { id: string; rules: string[] }[]
+    >();
     expect(list.find((a) => a.id === id)?.rules).toEqual(['tryggleik.f12']);
     expect(
-      (await t.call('PUT', '/api/admin/finding-rules/zz.missing/action', { action: id })).statusCode,
+      (await t.call('PUT', '/api/admin/finding-rules/zz.missing/action', { action: id }))
+        .statusCode,
     ).toBe(404);
     expect(
-      (await t.call('POST', '/api/admin/actions', { name: `Kurs i passord ${t.mark}`, description: 'x', seminar_topic: 'y' })).statusCode,
+      (
+        await t.call('POST', '/api/admin/actions', {
+          name: `Kurs i passord ${t.mark}`,
+          description: 'x',
+          seminar_topic: 'y',
+        })
+      ).statusCode,
     ).toBe(409);
     await t.call('PUT', '/api/admin/finding-rules/tryggleik.f12/action', { action: null });
-    expect(await t.prisma.findingRuleAction.count({ where: { rule_key: 'tryggleik.f12' } })).toBe(0);
+    expect(await t.prisma.findingRuleAction.count({ where: { rule_key: 'tryggleik.f12' } })).toBe(
+      0,
+    );
   });
 });

@@ -26,6 +26,7 @@ import {
   type SeminarDetail,
 } from './seminar-models.js';
 import { useToast } from './shell.js';
+import { SlettSeminar } from './seminar-delete.js';
 import { Seg } from './widgets.js';
 
 type Tab = 'pamelding' | 'materiell' | 'invitasjon' | 'live' | 'etter';
@@ -99,21 +100,32 @@ function Registrations({ seminar }: { seminar: SeminarDetail }) {
           </span>
           {r.total > 0 && <span className="under">{perCompany(r)}</span>}
           <p className="forklaring">
-            Påmeldinga blir sletta 90 dagar etter seminaret. Namn og e-post blir sletta samstundes, med
-            mindre personen vil ha invitasjonar eller er påmeld eit anna seminar.
+            Påmeldinga blir sletta 90 dagar etter seminaret. Namn og e-post blir sletta samstundes,
+            med mindre personen vil ha invitasjonar eller er påmeld eit anna seminar.
           </p>
           {seminar.link ? (
             <div className="handlingar">
-              <button type="button" className="btn sm" onClick={() => copy(seminar.link!, toast, 'Lenkja er kopiert')}>
+              <button
+                type="button"
+                className="btn sm"
+                onClick={() => copy(seminar.link!, toast, 'Lenkja er kopiert')}
+              >
                 <Icon name="kopi" small />
                 Kopier lenkje til påmelding
               </button>
-              <a className="btn sm ghost" href={seminar.link} target="_blank" rel="noopener noreferrer">
+              <a
+                className="btn sm ghost"
+                href={seminar.link}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Opne påmeldingssida
               </a>
             </div>
           ) : (
-            <p className="forklaring">Adressa til Varde (PUBLIC_URL) er ikkje sett opp, så det finst inga lenkje enno.</p>
+            <p className="forklaring">
+              Adressa til Varde (PUBLIC_URL) er ikkje sett opp, så det finst inga lenkje enno.
+            </p>
           )}
           {seminar.link && <NewLink seminar={seminar} />}
         </div>
@@ -136,7 +148,11 @@ export function SeminarView({ id }: { id: string }) {
   useTitle(s?.topic_nn ?? (failed ? 'Seminar' : undefined));
   return (
     <>
-      <a className="linkbtn sem-tilbake" href="/admin/seminars" onClick={(e) => go(e, '/admin/seminars')}>
+      <a
+        className="linkbtn sem-tilbake"
+        href="/admin/seminars"
+        onClick={(e) => go(e, '/admin/seminars')}
+      >
         <Icon name="tilbake" small />
         Alle seminar
       </a>
@@ -146,17 +162,21 @@ export function SeminarView({ id }: { id: string }) {
         <>
           <section className="kort sem-topp">
             <div className="kort-innhald">
-              <div className="eyebrow">Seminar · {s.status === 'planned' ? 'planlagt' : 'gjennomført'}</div>
+              <div className="eyebrow">
+                Seminar · {s.status === 'planned' ? 'planlagt' : 'gjennomført'}
+              </div>
               <h1 className="sem-tittel">{s.topic_nn}</h1>
               <p className="sem-meta">
                 {s.when} · {s.format === 'digital' ? `Digitalt, ${s.place}` : s.place}
-                {s.clients.length > 0 && ` · ${names(s.clients.map((c) => c.name))}`} · {registered(s.registrations.total)}
+                {s.clients.length > 0 && ` · ${names(s.clients.map((c) => c.name))}`} ·{' '}
+                {registered(s.registrations.total)}
               </p>
               {!editing && (
                 <div className="handlingar">
                   <button type="button" className="btn sm" onClick={() => setEditing(true)}>
                     Endre
                   </button>
+                  {s.status === 'planned' && <SlettSeminar s={s} />}
                 </div>
               )}
               {editing && (

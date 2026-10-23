@@ -5,6 +5,13 @@
   border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none;
   transition: border-color var(--t-quick) var(--ease-sti), transform var(--t-spring) var(--ease-fjor);
 }
+.sem-rad { position: relative; display: grid; }
+.sem-liste a { padding-right: 56px; } /* same room on every row, so the chips line up with and without the trash can */
+.sem-slett { position: absolute; top: 50%; right: 10px; margin-top: -17px; }
+.sem-sporsmal { display: grid; gap: 10px; padding: 14px 16px; border-radius: var(--r-lg); background: var(--danger-bg); border: 1px solid var(--danger-line); }
+.sem-sporsmal p { margin: 0; font-size: 14px; color: var(--ink); }
+.sem-sporsmal .sem-sporsmal-feil { color: var(--danger-fg); font-weight: 600; }
+.sem-topp .sem-sporsmal { margin-top: 12px; }
 .sem-liste a:hover { border-color: var(--accent); }
 .sem-liste a:active { transform: scale(.99); }
 .sem-dato { display: grid; place-items: center; width: 52px; height: 52px; border-radius: var(--r-md); background: var(--accent-soft); color: var(--accent-text); line-height: 1; }
@@ -16,6 +23,9 @@
 .sem-tal { display: grid; justify-items: end; gap: 6px; text-align: right; }
 @media (max-width: 560px) {
   .sem-liste a { grid-template-columns: 44px minmax(0, 1fr); }
+  .sem-liste a { padding-right: 14px; }
+  .sem-liste a.har-slett { padding-right: 48px; }
+  .sem-slett { top: 8px; margin-top: 0; right: 8px; }
   .sem-dato { width: 44px; height: 44px; }
   .sem-tal { grid-column: 2; justify-items: start; text-align: left; grid-auto-flow: column; align-items: center; justify-content: start; }
 }

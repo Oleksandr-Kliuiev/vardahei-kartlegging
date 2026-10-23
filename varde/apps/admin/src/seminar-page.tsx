@@ -6,6 +6,7 @@ import { api } from './api.js';
 import { Icon } from './icons.js';
 import { follow } from './nav.js';
 import { ErrorMessage } from './queries.js';
+import { SlettSporsmal } from './seminar-delete.js';
 import { SeminarForm } from './seminar-form.js';
 import {
   emptyDraft,
@@ -13,12 +14,26 @@ import {
   names,
   perCompany,
   registered,
+  type Seminar,
   type SeminarList,
 } from './seminar-models.js';
 import { SeminarView } from './seminar-view.js';
 import './seminar.css';
 
-const MONTHS = ['jan.', 'feb.', 'mars', 'apr.', 'mai', 'juni', 'juli', 'aug.', 'sep.', 'okt.', 'nov.', 'des.'];
+const MONTHS = [
+  'jan.',
+  'feb.',
+  'mars',
+  'apr.',
+  'mai',
+  'juni',
+  'juli',
+  'aug.',
+  'sep.',
+  'okt.',
+  'nov.',
+  'des.',
+];
 
 /** The yearly check of contacts lives under «Personvern» (2.17); the seminars show how many wait. */
 function Contacts({ count }: { count: number }) {
@@ -40,6 +55,51 @@ function Contacts({ count }: { count: number }) {
         </a>
       </div>
     </section>
+  );
+}
+
+function SeminarRow({ s }: { s: Seminar }) {
+  const [asking, setAsking] = useState(false);
+  const [, m = '1', d = '1'] = s.date.split('-');
+  const planned = s.status === 'planned';
+  if (asking) return <SlettSporsmal s={s} onCancel={() => setAsking(false)} />;
+  return (
+    <div className="sem-rad">
+      <a
+        className={planned ? 'har-slett' : undefined}
+        href={`/admin/seminars/${s.id}`}
+        onClick={(e) => go(e, `/admin/seminars/${s.id}`)}
+      >
+        <span className="sem-dato" aria-hidden="true">
+          <b>{Number(d)}</b>
+          <small>{MONTHS[Number(m) - 1]}</small>
+        </span>
+        <span className="sem-namn">
+          <b>{s.topic_nn}</b>
+          <small>
+            {s.when} · {s.place}
+          </small>
+          {s.clients.length > 0 && <small>For {names(s.clients.map((c) => c.name))}</small>}
+        </span>
+        <span className="sem-tal">
+          <span className={planned ? 'chip accent' : 'chip'}>
+            {planned ? 'Planlagt' : 'Gjennomført'}
+          </span>
+          <small title={perCompany(s.registrations)}>{registered(s.registrations.total)}</small>
+        </span>
+      </a>
+      {planned && (
+        <button
+          type="button"
+          className="ikonknapp sem-slett"
+          aria-label={`Slett seminaret ${s.topic_nn}`}
+          title="Slett seminaret"
+          onClick={() => setAsking(true)}
+        >
+          <Icon name="slett" small />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -83,32 +143,11 @@ function SeminarListPage() {
           <ErrorMessage error={list.error} />
           {list.isSuccess && seminars.length === 0 && <p className="tom">Ingen seminar enno.</p>}
           <ul className="sem-liste">
-            {seminars.map((s) => {
-              const [, m = '1', d = '1'] = s.date.split('-');
-              return (
-                <li key={s.id}>
-                  <a href={`/admin/seminars/${s.id}`} onClick={(e) => go(e, `/admin/seminars/${s.id}`)}>
-                    <span className="sem-dato" aria-hidden="true">
-                      <b>{Number(d)}</b>
-                      <small>{MONTHS[Number(m) - 1]}</small>
-                    </span>
-                    <span className="sem-namn">
-                      <b>{s.topic_nn}</b>
-                      <small>
-                        {s.when} · {s.place}
-                      </small>
-                      {s.clients.length > 0 && <small>For {names(s.clients.map((c) => c.name))}</small>}
-                    </span>
-                    <span className="sem-tal">
-                      <span className={s.status === 'planned' ? 'chip accent' : 'chip'}>
-                        {s.status === 'planned' ? 'Planlagt' : 'Gjennomført'}
-                      </span>
-                      <small title={perCompany(s.registrations)}>{registered(s.registrations.total)}</small>
-                    </span>
-                  </a>
-                </li>
-              );
-            })}
+            {seminars.map((s) => (
+              <li key={s.id}>
+                <SeminarRow s={s} />
+              </li>
+            ))}
           </ul>
         </div>
       </section>

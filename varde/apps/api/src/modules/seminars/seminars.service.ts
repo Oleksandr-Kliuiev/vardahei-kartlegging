@@ -3,6 +3,7 @@
 // change is in AuditLog, the registration code only as a hash prefix (ADR-009).
 import {
   BadRequestException,
+  ConflictException,
   HttpException,
   Injectable,
   NotFoundException,
@@ -275,6 +276,49 @@ export class SeminarsService {
           },
         });
         return { id, link: registrationLink(code) };
+      }),
+    );
+  }
+
+  /**
+   * «Slett seminaret»: a seminar that has not ended is removed with its registrations, materials and
+   * links (AuditLog keeps the topic and the number registered, never a name). Findings taken up in it
+   * become open again. A held seminar, or one whose rounds were opened, stays: its answers belong
+   * to the rounds. Rounds still in draft are left as they are.
+   */
+  remove(id: string, who: string, now = new Date()) {
+    return this.guarded(() =>
+      this.prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM seminar WHERE id = ${id}::uuid FOR UPDATE`;
+        const s = await tx.seminar.findUnique({
+          where: { id },
+          include: { round_before: true, round_live: true, round_after: true },
+        });
+        if (!s) throw new NotFoundException('Seminaret finst ikkje.');
+        if (s.ends_at <= now)
+          throw new ConflictException('Seminaret er halde og kan ikkje sletast.');
+        if ([s.round_before, s.round_live, s.round_after].some((r) => r && r.status !== 'draft'))
+          throw new ConflictException('Ei runde til seminaret er opna og kan ikkje sletast.');
+        const registrations = (await this.privacy.participants.counts(tx, [id]))[id]?.total ?? 0;
+        // «In seminar» goes back to open; a finding closed in it stays closed, without the link.
+        const reopened = await tx.findingStatus.updateMany({
+          where: { seminar_id: id, status: 'in_seminar' },
+          data: { status: 'open', seminar_id: null, changed_by: who, changed_at: now },
+        });
+        await tx.findingStatus.updateMany({
+          where: { seminar_id: id },
+          data: { seminar_id: null, changed_by: who, changed_at: now },
+        });
+        await tx.seminar.delete({ where: { id } });
+        await tx.auditLog.create({
+          data: {
+            who,
+            what: 'seminars.delete',
+            target: `seminar:${id}`,
+            details: { topic: s.topic_nn, registrations, findings_reopened: reopened.count },
+          },
+        });
+        return { id, registrations, findings_reopened: reopened.count };
       }),
     );
   }
