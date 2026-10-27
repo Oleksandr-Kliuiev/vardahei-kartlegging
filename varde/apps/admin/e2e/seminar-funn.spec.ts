@@ -119,9 +119,14 @@ test('a seminar shows the findings it takes up; the status is changed on the cli
       () =>
         Math.ceil(window.scrollY + window.innerHeight) >= document.documentElement.scrollHeight - 1,
     );
-  await expect
-    .poll(async () => ((await atEnd()) ? 0 : Math.round((await card.boundingBox())!.y)))
-    .toBeLessThanOrEqual(92);
+  try {
+    await expect
+      .poll(async () => ((await atEnd()) ? 0 : Math.round((await card.boundingBox())!.y)))
+      .toBeLessThanOrEqual(92);
+  } catch (e) {
+    console.log('DIAG', JSON.stringify(await page.evaluate(() => ({ y: window.scrollY, h: document.documentElement.scrollHeight, ih: window.innerHeight, url: location.href, active: document.activeElement?.tagName + '.' + document.activeElement?.className, card: document.querySelector('.kunde-funn')?.getBoundingClientRect().top, kids: [...document.querySelectorAll('main > *, .innhald > *')].map((n) => n.className + ':' + Math.round(n.getBoundingClientRect().height)).slice(0, 14) }))));
+    throw e;
+  }
   expect(Math.round((await card.boundingBox())!.y)).toBeGreaterThanOrEqual(60);
   await page.screenshot({ path: info.outputPath('kunde-frå-seminar-telefon.png') });
 
