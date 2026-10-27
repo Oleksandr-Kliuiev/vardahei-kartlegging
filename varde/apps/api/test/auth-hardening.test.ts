@@ -167,6 +167,16 @@ describe('idle window of an Entra session (1.3)', () => {
     vi.advanceTimersByTime(minutes(60));
     expect(await sessions.resolve(request)).toBeNull();
   });
+  it('a check that is not use (the ping of an open stream) does not slide the window', async () => {
+    vi.useFakeTimers({ now: new Date('2026-10-27T08:00:00Z') });
+    const { sessions, request, store } = await setup();
+    const extend = vi.spyOn(store, 'extend');
+    vi.advanceTimersByTime(minutes(30));
+    expect(await sessions.resolve(request, false)).not.toBeNull();
+    expect(extend).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(minutes(31));
+    expect(await sessions.resolve(request, false)).toBeNull();
+  });
   it('writes at most once in five minutes; break-glass sessions are not slid', async () => {
     vi.useFakeTimers({ now: new Date('2026-10-27T08:00:00Z') });
     const { sessions, request, store } = await setup();

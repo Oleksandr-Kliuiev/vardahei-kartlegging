@@ -112,7 +112,16 @@ test('a seminar shows the findings it takes up; the status is changed on the cli
   await block.getByRole('link', { name: `Endre status hos ${NAME}` }).click();
   const card = page.getByRole('region', { name: 'Funn' });
   await expect(card).toBeFocused();
-  await expect.poll(async () => Math.round((await card.boundingBox())!.y)).toBeLessThanOrEqual(92);
+  // Top first under the bar, unless the page ends before it can come that far up (a short page on a
+  // wider-font runner: CI showed 122 px at the end of the page).
+  const atEnd = () =>
+    page.evaluate(
+      () =>
+        Math.ceil(window.scrollY + window.innerHeight) >= document.documentElement.scrollHeight - 1,
+    );
+  await expect
+    .poll(async () => ((await atEnd()) ? 0 : Math.round((await card.boundingBox())!.y)))
+    .toBeLessThanOrEqual(92);
   expect(Math.round((await card.boundingBox())!.y)).toBeGreaterThanOrEqual(60);
   await page.screenshot({ path: info.outputPath('kunde-frå-seminar-telefon.png') });
 

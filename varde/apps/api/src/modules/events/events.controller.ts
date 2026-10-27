@@ -30,7 +30,7 @@ export class EventsController {
     );
     const ping = setInterval(() => {
       void this.sessions
-        .resolve(request)
+        .resolve(request, false)
         .then((session) => {
           if (!session) response.end();
           else response.write(': ping\n\n');

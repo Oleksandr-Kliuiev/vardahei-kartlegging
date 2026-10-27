@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { randomBytes } from 'node:crypto';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { EventsService } from '../../src/modules/events/events.service.js';
 import { SessionStore } from '../../src/modules/auth/session.store.js';
 import {
@@ -144,6 +144,13 @@ describe('admin changed stream (1.25)', () => {
     reconnected.controller.abort();
   });
   it('session expiry ends an already authenticated stream', async () => {
+    // The absolute lifetime is what is about to end; a session near the end of its idle window would slide.
+    const ttl = process.env.SESSION_TTL_SECONDS;
+    process.env.SESSION_TTL_SECONDS = '1';
+    onTestFinished(() => {
+      if (ttl === undefined) delete process.env.SESSION_TTL_SECONDS;
+      else process.env.SESSION_TTL_SECONDS = ttl;
+    });
     const s = await t.app.get(SessionStore).create({
       oid: 'test.expiry',
       name: 'test',

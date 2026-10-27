@@ -40,8 +40,12 @@ export class SessionService {
     return stored;
   }
 
-  /** Valid session of this listener, or null: bad signature, unknown, revoked, expired, other via. */
-  async resolve(request: FastifyRequest): Promise<StoredSession | null> {
+  /**
+   * Valid session of this listener, or null: bad signature, unknown, revoked, expired, other via. A request
+   * is use and slides the idle window; a check that is not (`touch` false: the ping of an open event stream)
+   * must not, or a tab left open would keep the session alive for the whole absolute lifetime.
+   */
+  async resolve(request: FastifyRequest, touch = true): Promise<StoredSession | null> {
     const raw = request.cookies[SESSION_COOKIE];
     if (raw === undefined) return null;
     const unsigned = request.unsignCookie(raw);
@@ -50,7 +54,7 @@ export class SessionService {
     if (session === null || session.revokedAt !== null) return null;
     if (session.expiresAt.getTime() <= Date.now()) return null;
     if (session.via !== VIA_FOR_LISTENER[this.listener]) return null;
-    return this.slide(session);
+    return touch ? this.slide(session) : session;
   }
 
   /** An Entra session ends after SESSION_IDLE_SECONDS without a request, and in any case at its absolute lifetime. */
