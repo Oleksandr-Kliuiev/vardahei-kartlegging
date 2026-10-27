@@ -7,6 +7,7 @@ on:
     paths: ['varde/**', 'docs/varde/**', '.github/workflows/varde.yml', 'kartlegging/**']
   pull_request:
     paths: ['varde/**', 'docs/varde/**', '.github/workflows/varde.yml', 'kartlegging/**']
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -20,6 +21,24 @@ defaults:
     working-directory: varde
 
 jobs:
+  # What the change touches (0.7): a change of documents only runs `check` and `secrets`; the golden check and
+  # the runner's paths.spec run only when the old dashboard, parity, rules, schema, runner or seeds changed.
+  changes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.scope.outputs.code }}
+      golden: ${{ steps.scope.outputs.golden }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - id: scope
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: bash infra/ops/ci-scope.sh "$BASE" "$HEAD_SHA" | tee -a "$GITHUB_OUTPUT"
+
   check:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -42,8 +61,12 @@ jobs:
       - run: pnpm budget
       - run: pnpm budget:selfcheck
       - run: pnpm lint:privacy:selfcheck
+      - run: bash infra/ops/test/ci-scope.test.sh
+      - run: bash infra/ops/test/local-ci.test.sh
 
   integration:
+    needs: [check, changes]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     services:
@@ -96,6 +119,8 @@ jobs:
       - run: pnpm invariants:3c
 
   image:
+    needs: [check, changes]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     services:
@@ -154,6 +179,8 @@ jobs:
         run: bash tools/metrics/test/vps-sample.test.sh
 
   e2e:
+    needs: [check, changes]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     # Admin and runner suites take 13-15 min on a runner since 2.5 and 5 (report, archive, Funn).
     timeout-minutes: 30
@@ -184,14 +211,22 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @varde/api db:migrate
       - run: pnpm --filter "@varde/api..." build
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('varde/pnpm-lock.yaml') }}
       - run: pnpm --filter @varde/admin exec playwright install --with-deps chromium
       - run: pnpm --filter @varde/admin e2e
       - name: runner e2e on its own database (admin e2e leaves rounds behind)
+        env:
+          # paths.spec (the runner's paths against the golden) only when the golden is in scope
+          VARDE_SKIP_PATHS: ${{ needs.changes.outputs.golden == 'true' && ' ' || '1' }}
         run: |
           PGPASSWORD=varde-ci psql -h 127.0.0.1 -U varde -d varde_ci -c 'create database varde_e2e_runner'
           DATABASE_URL=postgresql://varde:varde-ci@127.0.0.1:5432/varde_e2e_runner pnpm --filter @varde/runner exec playwright test
-      - name: Golden of the old dashboard on synthetic fixtures (1.2c)
-        run: pnpm parity:golden --check && pnpm --filter @varde/tools-parity test:golden
+      - name: Golden of the old dashboard on synthetic fixtures (1.2c; one pass, --check also compares the file list)
+        if: needs.changes.outputs.golden == 'true'
+        run: pnpm parity:golden --check
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:

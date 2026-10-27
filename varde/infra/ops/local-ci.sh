@@ -60,6 +60,7 @@ step "build" pnpm -r build
 step "budget" pnpm budget
 step "budget:selfcheck" pnpm budget:selfcheck
 step "lint:privacy:selfcheck" pnpm lint:privacy:selfcheck
+step "ops tests" bash -c 'bash infra/ops/test/ci-scope.test.sh && bash infra/ops/test/local-ci.test.sh'
 
 # job integration (VARDE_RESTORE_DOCKER=1 or the forget-restore test is skipped)
 mkdb varde_ci
@@ -111,7 +112,7 @@ step "e2e api build" pnpm --filter "@varde/api..." build
 step "playwright install" pnpm --filter @varde/admin exec playwright install chromium
 step "admin e2e" pnpm --filter @varde/admin e2e
 step "runner e2e" env DATABASE_URL="$URL/varde_e2e_runner" pnpm --filter @varde/runner exec playwright test
-step "golden" bash -c 'pnpm parity:golden --check && pnpm --filter @varde/tools-parity test:golden'
+step "golden" pnpm parity:golden --check
 
 # job secrets
 step "secrets" pnpm secrets

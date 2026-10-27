@@ -23,7 +23,7 @@ done < <(sed -n 's/^ *- run: \([^>|].*\)$/\1/p' "$WF" | grep -vE "^(PGPASSWORD|D
 # multi-line steps
 for key in "migrate deploy" "break-glass-env.test.sh" "compose-config.test.sh" "caddy-log.test.sh" "caddy-edge.test.sh" \
   "vps-sample.test.sh" "db-budget.json" "static/runner/index.html" "@varde/schema/metrics/populations" \
-  "parity:golden --check" "test:golden" "playwright test" "varde_e2e_runner" "VARDE_RESTORE_DOCKER" \
+  "parity:golden --check" "playwright test" "varde_e2e_runner" "VARDE_RESTORE_DOCKER" \
   "backup.test.sh" "pnpm secrets" "secrets:selfcheck" '"status\":\"ok\",\"version\":\"ci\"'; do
   grep -qF -- "$key" "$CI" || { echo "FAIL local-ci.sh misses: $key"; fail=1; }
   case "$key" in
