@@ -124,7 +124,21 @@ test('a seminar shows the findings it takes up; the status is changed on the cli
       .poll(async () => ((await atEnd()) ? 0 : Math.round((await card.boundingBox())!.y)))
       .toBeLessThanOrEqual(92);
   } catch (e) {
-    console.log('DIAG', JSON.stringify(await page.evaluate(() => ({ y: window.scrollY, h: document.documentElement.scrollHeight, ih: window.innerHeight, url: location.href, active: document.activeElement?.tagName + '.' + document.activeElement?.className, card: document.querySelector('.kunde-funn')?.getBoundingClientRect().top, kids: [...document.querySelectorAll('main > *, .innhald > *')].map((n) => n.className + ':' + Math.round(n.getBoundingClientRect().height)).slice(0, 14) }))));
+    console.log(
+      'DIAG',
+      JSON.stringify(
+        await page.evaluate(() => {
+          const kids = [...document.querySelectorAll<HTMLElement>('main > *, .innhald > *')];
+          return {
+            y: window.scrollY,
+            h: document.documentElement.scrollHeight,
+            ih: window.innerHeight,
+            card: document.querySelector('.kunde-funn')?.getBoundingClientRect().top,
+            kids: kids.slice(0, 14).map((n) => `${n.className}:${Math.round(n.getBoundingClientRect().height)}`),
+          };
+        }),
+      ),
+    );
     throw e;
   }
   expect(Math.round((await card.boundingBox())!.y)).toBeGreaterThanOrEqual(60);
