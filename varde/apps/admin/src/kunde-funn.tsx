@@ -262,7 +262,8 @@ export function KundeFunn({
   // down and comes up, top first (a long card centred by the focus would hide its first findings);
   // a page that already shows it stays still.
   const card = useRef<HTMLElement>(null),
-    arrived = useRef(false);
+    arrived = useRef(false),
+    settle = useRef<() => void>(undefined);
   useEffect(() => {
     const el = card.current;
     if (!focus || !found || !round || arrived.current || !el) return;
@@ -271,8 +272,27 @@ export function KundeFunn({
     if (document.activeElement && document.activeElement !== document.body) return;
     el.focus({ preventScroll: true });
     const top = el.getBoundingClientRect().top;
-    if (top < 0 || top > window.innerHeight * 0.6) el.scrollIntoView({ block: 'start' });
+    if (top < 0 || top > window.innerHeight * 0.6) {
+      el.scrollIntoView({ block: 'start' });
+      // What lies above the card can still change height after the scroll (fonts, other cards arriving; CI
+      // showed the card 46 px too low). Until the person scrolls or 1.5 s pass, the card is kept at the top.
+      if (typeof ResizeObserver !== 'undefined') {
+        const observer = new ResizeObserver(() => el.scrollIntoView({ block: 'start' }));
+        const events = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const;
+        const stop = () => {
+          observer.disconnect();
+          clearTimeout(timer);
+          for (const e of events) window.removeEventListener(e, stop);
+          settle.current = undefined;
+        };
+        const timer = setTimeout(stop, 1500);
+        for (const e of events) window.addEventListener(e, stop, { passive: true });
+        observer.observe(document.body);
+        settle.current = stop;
+      }
+    }
   }, [focus, asked, found, round]);
+  useEffect(() => () => settle.current?.(), []);
   return (
     <section
       ref={card}
