@@ -155,7 +155,9 @@ describe('invariants 1a: completeness of snapshots', () => {
       before.set(r.id, now);
     }
     expect(checked).toBeGreaterThan(6000);
-  });
+    // Releases every fixture round three times; 60 s (the suite default) is too tight on a loaded machine,
+    // and a timeout here leaves the rounds half-changed for the TRUNCATE test that follows.
+  }, 240_000);
 
   it('after TRUNCATE response the snapshots are unchanged and rows are empty with an AuditLog entry', async () => {
     await withPg((c) => c.query('TRUNCATE response'));

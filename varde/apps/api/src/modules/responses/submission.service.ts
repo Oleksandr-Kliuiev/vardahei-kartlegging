@@ -16,6 +16,13 @@ import { checkLiveAnswer } from './live-answer.js';
 import { QuotaService } from './quota.service.js';
 import { Submission } from './submission.schema.js';
 
+/**
+ * Every answer of a round client takes the same row lock, so a hall of phones behind one NAT queues in the
+ * pool (8 connections). With Prisma's defaults (2 s to get a connection, 5 s per transaction) the tail of
+ * 60 simultaneous answers got 503 on a loaded machine (local run 27.10, runner-live.test.ts).
+ */
+const SUBMIT_TX = { maxWait: 15_000, timeout: 20_000 };
+
 @Injectable()
 export class SubmissionService {
   constructor(
@@ -136,7 +143,7 @@ export class SubmissionService {
           },
         ]);
         inserted = true;
-      });
+      }, SUBMIT_TX);
     } catch (error) {
       undo?.(); // process-window reservations are rolled back when the insert fails
       if (error instanceof HttpException) throw error;

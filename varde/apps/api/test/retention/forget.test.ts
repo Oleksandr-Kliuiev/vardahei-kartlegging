@@ -207,7 +207,8 @@ it('released snapshots remain byte-for-byte identical after identified deletion'
   expect(await snapshots()).toEqual(before);
   const rows = await f.app.get(PrivacyService).rows({ round: f.tryggleik }, f.session);
   expect(rows.rows.some((x) => x.submission_id === r.submission_id)).toBe(false);
-});
+  // Forget on the full fixture set recomputes; the suite default of 60 s timed out on a loaded machine.
+}, 240_000);
 it('repeat is idempotent with no extra request or tombstone', async () => {
   const r = await first(f.ki);
   const scope = { scope: 'submissions' as const, submission_ids: [r.submission_id] };
