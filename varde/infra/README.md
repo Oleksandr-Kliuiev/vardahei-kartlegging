@@ -25,7 +25,7 @@ install -d -m 0700 /etc/varde
 getent passwd 1000 || echo 'uid 1000: нет пользователя на хосте'
 # socket break-glass (0.8): uid 1000 — пользователь образа; setgid — socket получает группу docker
 install -d -m 2770 /var/lib/varde/run && chown 1000:docker /var/lib/varde/run && chmod 2770 /var/lib/varde/run   # install -o не принимает uid без пользователя на хосте
-# экспорт журнала удалений (0.10e, отложен): короткая форма bind создала бы root 0755
+# экспорт журнала удалений из приложения (0.10e, не используется: журнал выгружает backup.sh ledger, §9)
 install -d -m 0750 /var/lib/varde/ledger-out && chown 1000:0 /var/lib/varde/ledger-out
 # публичные ключи age (0.10, отложен): до получения ключей — заглушка без ключей
 test -e /etc/varde/recipients.txt || printf '# age recipients: pending (backup deferred 13.10)\n' > /etc/varde/recipients.txt
@@ -47,12 +47,12 @@ docker buildx build --platform linux/amd64 -f infra/Dockerfile . \
   --build-arg VARDE_VERSION=$SHA -t varde-api:$SHA --load
 docker save varde-api:$SHA | gzip | ssh vardahei-vps "cat > /opt/varde/images/varde-api-$SHA.tar.gz"
 ssh -T vardahei-vps "gunzip -c /opt/varde/images/varde-api-$SHA.tar.gz | docker load"
-# varde-backup:<sha> (infra/backup/Dockerfile.backup) — с 0.10, отложен 13.10; собирается и переносится так же
+# varde-backup не переносится с Mac: образ инструментов собирается на VPS (§9.2)
 rsync -a infra/ vardahei-vps:/opt/varde/                  # всё ещё из <checkout>/varde
 rsync -a config/ vardahei-vps:/opt/varde/config/
 rsync -a tools/metrics/ vardahei-vps:/opt/varde/metrics/
 ssh -T vardahei-vps "printf 'VARDE_SHA=%s\n' $SHA > /opt/varde/.env && echo $SHA > /opt/varde/VERSION"
-ssh -T vardahei-vps 'docker compose -f /opt/varde/compose.yml config --images'   # → varde-api:<sha>, varde-backup:<sha>
+ssh -T vardahei-vps 'docker compose -f /opt/varde/compose.yml config --images'   # → varde-api:<sha>, varde-backup:pg17-1
 ```
 
 `rsync` без `--delete`: `.env` и `VERSION` на VPS остаются.
@@ -206,6 +206,77 @@ SESSION_TTL_SECONDS=28800
 ## 8. Метрики (0.12)
 
 Неделя метрик — `tools/metrics/README.md` (cron на 7 дней, сводка `sort`/`awk`). Стенд нагрузки и stub удалены в 1.0 (решение 13.10: нагрузочных тестов нет); после деплоя 1a `curl -s -o /dev/null -w '%{http_code}\n' -X POST https://varde.vardahei.tech/stub/submit` → `404`, `to_regclass('stub_submission')` → пусто.
+
+## 9. Бэкап (план улучшений 0.1, ADR-016)
+
+Ночная копия базы `varde` и экспорт журнала удалений — в SharePoint-сайт `VardeBackup` (вариант A, решение Oleksandr 27.10). Скрипты, образ инструментов, systemd-юниты и тест — `infra/backup/` (на VPS — `/opt/varde/backup`, приходит rsync деплоя). Runbook восстановления для Oleksandr, Asbjørn и Bjarte — `infra/backup/RESTORE.nn.md` (лежит и в каждой копии, в `kit.tar.gz`). Тест без VPS и SharePoint: `bash infra/backup/test/backup.test.sh`.
+
+Что лежит в SharePoint (`<remote>` — `VARDE_BACKUP_REMOTE`):
+- `nightly/<UTC-время>/` — `varde.dump.age` (`pg_dump -Fc` ролью `varde_backup`, age на все ключи `recipients.txt`), `canary.age`, `kit.tar.gz` (скрипты и runbook, без секретов), `meta.json` (образ, последняя миграция, sha256 дампа, число строк каждой таблицы из того же snapshot). `meta.json` пишется последним: каталог без него — незаконченный прогон. Ротация — 35 дней, но не меньше 7 последних законченных копий;
+- `images/varde-api-<sha>.tar.gz` — образ api каждой версии, которую называет хотя бы одна копия;
+- `ledger/<UTC-время>.tar.age` — `deletion_request`, `deletion_tombstone`, `participant_tombstone` (CSV, один snapshot). Раз в 15 минут, только если журнал изменился. Не ротируется (ADR-017).
+
+### 9.1 Шаги Oleksandr (админ тенанта; секрет в чат не попадает)
+
+1. Сайт SharePoint `VardeBackup`, приватный. Участники с чтением — Oleksandr, Asbjørn, Bjarte.
+2. Регистрация приложения в Entra `varde-backup`: Microsoft Graph, Application, `Sites.Selected`, admin consent. Право `write` только на сайт `VardeBackup` — Graph `POST /sites/{site-id}/permissions` (`roles: ["write"]`, `grantedToIdentities` с app id) или PnP `Grant-PnPAzureADAppSitePermission`. Client secret на 12 месяцев, дату окончания — в evidence (её проверяет ежемесячный ритм §8 плана).
+3. Каждый держатель ключа (Oleksandr, Asbjørn, Bjarte) на своём устройстве с шифрованным диском: `age-keygen -o ~/varde-age.key`. Публичный ключ (`age1…`, строка `Public key` в выводе) присылает оркестратору. Приватный ключ никуда не копируется.
+4. На VPS сам создаёт `/etc/varde/rclone/rclone.conf` (после шага 9.2.1):
+
+   ```ini
+   [vardebackup]
+   type = onedrive
+   client_id = <app id varde-backup>
+   client_secret = <secret>
+   tenant = <tenant id>
+   client_credentials = true
+   drive_type = documentLibrary
+   drive_id = <id библиотеки «Documents» сайта VardeBackup: Graph GET /sites/{site-id}/drive → id>
+   ```
+
+   `chmod 0600 /etc/varde/rclone/rclone.conf`.
+
+### 9.2 Шаги хостинг-оператора
+
+```bash
+# 1. каталоги и файлы; recipients.txt — три строки age1… (Oleksandr, Asbjørn, Bjarte), без секретов
+install -d -m 0700 /etc/varde/rclone /var/lib/varde/backup-state
+printf '%s\n' '# Oleksandr' 'age1…' '# Asbjørn' 'age1…' '# Bjarte' 'age1…' > /etc/varde/recipients.txt && chmod 0644 /etc/varde/recipients.txt
+grep -c '^age1' /etc/varde/recipients.txt            # → 3
+grep -q '^VARDE_BACKUP_REMOTE=' /etc/varde/backup.env || echo 'VARDE_BACKUP_REMOTE=vardebackup:varde' >> /etc/varde/backup.env
+# 2. образ инструментов (после деплоя с infra/backup); новый тег — при изменении infra/backup/Dockerfile
+docker build -t varde-backup:pg17-1 /opt/varde/backup
+# 3. доступ к SharePoint (после 9.1.4): листинг, запись, удаление тестового файла
+C="docker compose -f /opt/varde/compose.yml --profile backup run --rm -T backup"
+$C rclone lsd vardebackup:
+echo probe | $C sh -c 'rclone rcat vardebackup:varde/probe.txt && rclone lsf vardebackup:varde && rclone deletefile vardebackup:varde/probe.txt'
+# 4. первый прогон вручную
+install -m 0644 /opt/varde/backup/systemd/varde-backup.* /opt/varde/backup/systemd/varde-ledger.* /etc/systemd/system/
+systemctl daemon-reload
+systemctl start varde-backup.service varde-ledger.service
+journalctl -u varde-backup -u varde-ledger --since '-15 min' --no-pager | tail -20   # → done: nightly/<ts> …; ledger: …
+$C rclone lsf -R vardebackup:varde | head -20
+# 5. таймеры
+systemctl enable --now varde-backup.timer varde-ledger.timer
+systemctl list-timers 'varde-*' --no-pager
+```
+
+Проверка восстановления (первая — сразу после шага 4, дальше после каждой выкатки с миграцией или раз в месяц): на Mac держателя ключа скачать последний каталог `nightly/<ts>/` и каталог `ledger/` из SharePoint, затем
+
+```bash
+docker build -t varde-backup:pg17-1 varde/infra/backup
+docker run --rm -v <каталог nightly>:/in:ro -v ~/varde-age.key:/key:ro -v <каталог ledger>:/ledger:ro \
+  -v "$PWD/varde/infra/backup:/kit:ro" varde-backup:pg17-1 /kit/restore-check.sh /in /key /ledger
+# → ok … restore check passed: copy is N h old, check took N s
+```
+
+Вывод (без ключа и данных) — в evidence. Расхождение числа строк, sha256 или canary — копия не годится: разобраться до следующей ночи.
+
+Миграции и выкатки — не между 03:15 и 04:00 по Осло: ночной дамп держит AccessShare на всех таблицах, `ALTER TABLE` миграции ждёт его. Дамп ждёт блокировку не больше 60 с (`lock_timeout`, `--lock-wait-timeout`) и тогда падает с `/fail`, а не вешает приложение за собой. Прогоны `nightly` и `ledger` идут по одному (flock в `/var/lib/varde/backup-state`), так что у `varde_backup` (CONNECTION LIMIT 3) от бэкапа не больше двух подключений.
+
+Восстановление — `RESTORE.nn.md` §4–§5: `restore.sh` в образе бэкапа с примонтированным docker socket и `VARDE_RESTORE_CONTAINER=atlas-db-1`, суперпользователем через socket внутри контейнера (TCP суперпользователя к `varde` отвергает pg_hba). Таймеры на время восстановления останавливаются.
+
+Откат: `systemctl disable --now varde-backup.timer varde-ledger.timer`, удалить юниты из `/etc/systemd/system/`, `daemon-reload`. Копии в SharePoint остаются до решения Oleksandr.
 
 ## Откат деплоя
 

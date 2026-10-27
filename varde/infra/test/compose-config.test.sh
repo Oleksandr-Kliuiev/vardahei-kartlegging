@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Test of infra/compose.yml (task 0.6): config is valid without /etc/varde files, app has its
-# bind mounts in the long form without create_host_path, backup has no entrypoint.
+# Test of infra/compose.yml (task 0.6, backup binds 0.1): config is valid without /etc/varde files, app and
+# backup have their bind mounts in the long form without create_host_path, backup has no entrypoint.
 set -euo pipefail
 infra=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 json=$(docker compose -f "$infra/compose.yml" --env-file "$infra/ci.env" --profile backup config --format json)
@@ -26,6 +26,16 @@ for (const n of ["atlas_edge", "atlas_internal"]) if (!c.networks[n].external) f
 if (app.logging.driver !== "json-file" || app.logging.options["max-size"] !== "10m" || app.logging.options["max-file"] !== "3") fail("logging");
 if (backup.entrypoint != null) fail("backup must not set entrypoint");
 if (JSON.stringify(backup.profiles) !== JSON.stringify(["backup"])) fail("backup profile");
+if (JSON.stringify(backup.networks ? Object.keys(backup.networks) : []) !== JSON.stringify(["atlas_internal"])) fail("backup networks");
+const bb = (backup.volumes || []).filter((v) => v.type === "bind");
+const bneed = { "/kit": ["/opt/varde/backup", true], "/run/varde/recipients.txt": ["/etc/varde/recipients.txt", true], "/run/varde/rclone": ["/etc/varde/rclone", false], "/run/varde/VERSION": ["/opt/varde/VERSION", true], "/run/varde/images": ["/opt/varde/images", true], "/var/lib/varde-backup": ["/var/lib/varde/backup-state", false] };
+for (const [target, [source, ro]] of Object.entries(bneed)) {
+  const b = bb.find((v) => v.target === target);
+  if (!b || b.source !== source) fail("backup bind " + target);
+  if (!!b.read_only !== ro) fail("backup bind " + target + (ro ? " must be ro" : " must be rw"));
+}
+if (bb.length !== Object.keys(bneed).length) fail("backup has unexpected binds");
+for (const b of bb) if (b.bind && b.bind.create_host_path === true) fail("create_host_path on backup " + b.target);
 '
 # The source states it explicitly for every app bind (a missing directory is a loud error).
 [[ $(grep -c 'create_host_path: false' "$infra/compose.yml") -ge 4 ]] || { echo "compose test FAILED: create_host_path: false not explicit" >&2; exit 1; }

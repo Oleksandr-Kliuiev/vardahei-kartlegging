@@ -1,0 +1,11 @@
+# Export of the deletion ledger when it changed (IMPROVEMENT-PLAN 0.1, ADR-016 delta 12.10). README §5.2.
+[Unit]
+Description=Varde deletion ledger export (age, rclone to SharePoint VardeBackup)
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker compose -f /opt/varde/compose.yml --profile backup run --rm -T backup /kit/backup.sh ledger
+TimeoutStartSec=15min

@@ -43,15 +43,49 @@ services:
       options: { max-size: 10m, max-file: '3' }
     mem_limit: 512m
 
-  # Backup (0.10, deferred 13.10): not started by `up -d`; CMD (not ENTRYPOINT) is backup.sh,
-  # so `docker compose run --rm backup psql …` runs psql. Volumes come with 0.10.
+  # Backup (IMPROVEMENT-PLAN 0.1, infra/backup/): not started by `up -d`; systemd runs
+  #   docker compose -f /opt/varde/compose.yml --profile backup run --rm -T backup /kit/backup.sh nightly|ledger
+  # CMD (not ENTRYPOINT) is backup.sh nightly, so `run --rm backup psql …` runs psql. The image holds only
+  # the tools; it is built on the VPS from infra/backup/Dockerfile (README §5.2), not per commit.
   backup:
-    image: varde-backup:${VARDE_SHA:-unset}
+    image: varde-backup:${VARDE_BACKUP_TAG:-pg17-1}
     profiles: [backup]
     env_file:
       - path: /etc/varde/backup.env
         required: false
     networks: [atlas_internal]
+    volumes:
+      - type: bind
+        source: /opt/varde/backup
+        target: /kit
+        read_only: true
+        bind: { create_host_path: false }
+      - type: bind
+        source: /etc/varde/recipients.txt
+        target: /run/varde/recipients.txt
+        read_only: true
+        bind: { create_host_path: false }
+      # rclone.conf with the SharePoint app secret: a writable directory, because rclone saves a refreshed
+      # token by renaming a temp file next to the config (a single-file bind cannot be renamed over).
+      - type: bind
+        source: /etc/varde/rclone
+        target: /run/varde/rclone
+        bind: { create_host_path: false }
+      - type: bind
+        source: /opt/varde/VERSION
+        target: /run/varde/VERSION
+        read_only: true
+        bind: { create_host_path: false }
+      - type: bind
+        source: /opt/varde/images
+        target: /run/varde/images
+        read_only: true
+        bind: { create_host_path: false }
+      # Hash of the last uploaded ledger export (backup.sh ledger skips an unchanged one).
+      - type: bind
+        source: /var/lib/varde/backup-state
+        target: /var/lib/varde-backup
+        bind: { create_host_path: false }
     logging:
       driver: json-file
       options: { max-size: 10m, max-file: '3' }

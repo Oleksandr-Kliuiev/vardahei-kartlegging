@@ -1,0 +1,10 @@
+[Unit]
+Description=Varde nightly backup, 03:15 Oslo time
+
+[Timer]
+OnCalendar=*-*-* 03:15:00 Europe/Oslo
+RandomizedDelaySec=10m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

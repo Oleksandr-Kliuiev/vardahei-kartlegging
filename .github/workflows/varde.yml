@@ -146,6 +146,8 @@ jobs:
         run: VARDE_IMAGE=varde-api:ci bash infra/test/break-glass-env.test.sh
       - name: compose config (prod compose without /etc/varde files)
         run: bash infra/test/compose-config.test.sh
+      - name: Backup roundtrip (pg_dump, age, rclone local, restore-check, restore; IMPROVEMENT-PLAN 0.1)
+        run: bash infra/backup/test/backup.test.sh
       - name: Caddy fragments validate; error log has no query; compression and HSTS
         run: bash infra/caddy/test/caddy-log.test.sh && bash infra/caddy/test/caddy-edge.test.sh
       - name: VPS metrics sampler on fixtures

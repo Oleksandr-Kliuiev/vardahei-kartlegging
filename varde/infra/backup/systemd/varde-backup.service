@@ -1,0 +1,12 @@
+# Nightly backup of the varde database (IMPROVEMENT-PLAN 0.1). Installed by README §5.2:
+#   install -m 0644 /opt/varde/backup/systemd/varde-backup.* /etc/systemd/system/
+[Unit]
+Description=Varde nightly backup (pg_dump, age, rclone to SharePoint VardeBackup)
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker compose -f /opt/varde/compose.yml --profile backup run --rm -T backup /kit/backup.sh nightly
+TimeoutStartSec=2h
