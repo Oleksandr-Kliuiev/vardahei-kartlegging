@@ -48,6 +48,8 @@ Oleksandr попросил сделать репозиторий публичн�
 - Новые тесты: `auth-hardening.test.ts` (Origin, `__Host-`, idle-окно, ping, issuer), `sliding-window.test.ts` (IPv6 /64, конфиг), `quotas.test.ts` (окно ссылки, IPv6), `ci-scope.test.sh`, `local-ci.test.sh`.
 - Не проверено: работа `__Host-` cookie и Origin-проверки за настоящим Caddy на VPS (в тестах хост берётся из заголовка Host; Caddy его не меняет по умолчанию); вход через настоящий Entra после переименования cookie.
 
-## Выкатка
+## Выкатка 27.10 (`1f71c99db687`)
 
-Не выполнена. Нужен OK Oleksandr. Миграций нет; при выкатке все администраторы входят заново один раз. Откат: `rollback.sh 888398b1f780`.
+По OK Oleksandr и зелёному CI на GitHub (main, все шесть job). Дамп перед выкаткой `/root/deploy-20261027-1838` (57 ответов, 5429 snapshots), «No pending migrations», `varde-app` healthy, `/health` — `1f71c99db687`. Откат: `rollback.sh 888398b1f780`.
+
+Проверено на проде снаружи: POST `/api/admin/rounds` с `Origin: https://evil.vardahei.tech` — 403, без Origin — 401 (Origin-проверка работает за настоящим Caddy); `/auth/login` отдаёт 302 на Microsoft. **Не проверено:** вход живым администратором с новым cookie `__Host-varde_session` — после выкатки все администраторы входят заново один раз, это первая проверка.
