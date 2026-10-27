@@ -45,7 +45,7 @@ const call = (
       method,
       url,
       ...(payload ? { payload } : {}),
-      headers: auth ? { cookie: `varde_session=${encodeURIComponent(cookie)}` } : {},
+      headers: auth ? { cookie: `__Host-varde_session=${encodeURIComponent(cookie)}` } : {},
     });
 const path = (id: string) => `/api/admin/surveys/versions/${id}`;
 let version: Version, open: Version;

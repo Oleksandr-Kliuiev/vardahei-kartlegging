@@ -93,6 +93,34 @@ describe('insertion quotas (1.17)', () => {
       await isolated.app.close();
     }
   });
+  it('a leaked link spends only its own window, not the window of the other clients (1.4)', async () => {
+    const leaked = await fresh(),
+      other = await fresh();
+    t.app.get(QuotaService).limits.per_round_client_per_10min = 3;
+    for (let i = 0; i < 3; i++)
+      expect(
+        (await postSubmission(t, leaked.code, submissionBody(), `192.0.2.${100 + i}`)).statusCode,
+      ).toBe(201);
+    expect((await postSubmission(t, leaked.code, submissionBody(), '192.0.2.110')).statusCode).toBe(
+      429,
+    );
+    expect((await postSubmission(t, other.code, submissionBody(), '192.0.2.111')).statusCode).toBe(
+      201,
+    );
+  });
+  it('an IPv6 peer is counted by its /64, so changing the address inside it does not help (1.4)', async () => {
+    const f = await fresh();
+    t.app.get(QuotaService).limits.per_ip_per_10min = 1;
+    expect((await postSubmission(t, f.code, submissionBody(), '2001:db8:7:1::1')).statusCode).toBe(
+      201,
+    );
+    expect(
+      (await postSubmission(t, f.code, submissionBody(), '2001:db8:7:1:dead:beef::2')).statusCode,
+    ).toBe(429);
+    expect((await postSubmission(t, f.code, submissionBody(), '2001:db8:7:2::1')).statusCode).toBe(
+      201,
+    );
+  });
   it('failed insert rolls back process quota reservation', async () => {
     const f = await fresh();
     t.app.get(QuotaService).limits.per_ip_per_10min = 1;

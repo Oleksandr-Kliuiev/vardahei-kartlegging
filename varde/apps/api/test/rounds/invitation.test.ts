@@ -35,7 +35,7 @@ const get = (url: string, authenticated = true) =>
     .inject({
       method: 'GET',
       url,
-      headers: authenticated ? { cookie: `varde_session=${encodeURIComponent(cookie)}` } : {},
+      headers: authenticated ? { cookie: `__Host-varde_session=${encodeURIComponent(cookie)}` } : {},
     });
 
 describe('invitations and poster (1.21)', () => {

@@ -102,12 +102,13 @@ export class PublicSeminarService {
     throw new ForbiddenException('Lenkja er ikkje gyldig.');
   }
 
-  /** Windows of 10 minutes per IP and in total; the IP lives only in process memory. */
-  private reserve(ip: string, now: Date): () => void {
+  /** Windows of 10 minutes per IP, per seminar and in total; the IP lives only in process memory. */
+  private reserve(ip: string, seminar: string, now: Date): () => void {
     try {
       return this.window.reserve(
         [
           { key: 'seminar:global', max: this.limits.seminar_global_per_10min },
+          { key: `seminar:s:${seminar}`, max: this.limits.seminar_per_seminar_per_10min },
           { key: `seminar:ip:${ip}`, max: this.limits.seminar_per_ip_per_10min },
         ],
         now.getTime(),
@@ -151,7 +152,7 @@ export class PublicSeminarService {
   async register(code: string, body: unknown, ip: string, now = new Date()) {
     const input = parseRegistration(body);
     const initial = await this.resolve(code);
-    const undo = this.reserve(ip, now);
+    const undo = this.reserve(ip, initial.id, now);
     if (input.website) return REGISTERED;
     let inserted = false;
     try {

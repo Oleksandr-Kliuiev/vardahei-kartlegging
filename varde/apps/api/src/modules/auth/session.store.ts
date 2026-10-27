@@ -33,6 +33,8 @@ export abstract class SessionStore {
   /** Creates the session; with `audit`, both rows are written in one transaction or neither. */
   abstract create(session: NewSession, audit?: AuditEntry): Promise<StoredSession>;
   abstract find(sid: string): Promise<StoredSession | null>;
+  /** Moves the end of a session later (never earlier): the idle window slides with use (1.3). */
+  abstract extend(sid: string, expiresAt: Date): Promise<void>;
   abstract revoke(sid: string, at: Date): Promise<void>;
   /** Revokes every open session of one kind (break-glass window closed). */
   abstract revokeVia(via: SessionVia, at: Date): Promise<number>;
@@ -88,6 +90,14 @@ export class PrismaSessionStore extends SessionStore {
     if (!UUID.test(sid)) return null;
     const row = await this.prisma.adminSession.findUnique({ where: { sid } });
     return row === null ? null : toSession(row);
+  }
+
+  async extend(sid: string, expiresAt: Date): Promise<void> {
+    if (!UUID.test(sid)) return;
+    await this.prisma.adminSession.updateMany({
+      where: { sid, revoked_at: null, expires_at: { lt: expiresAt } },
+      data: { expires_at: expiresAt },
+    });
   }
 
   async revoke(sid: string, at: Date): Promise<void> {

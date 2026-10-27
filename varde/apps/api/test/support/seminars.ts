@@ -38,7 +38,7 @@ export async function seminarApp(
     via: 'entra',
     expiresAt: new Date(Date.now() + 3600_000),
   });
-  const cookie = { varde_session: t.app.getHttpAdapter().getInstance().signCookie(session.sid) };
+  const cookie = { '__Host-varde_session': t.app.getHttpAdapter().getInstance().signCookie(session.sid) };
   const mark = `zz${randomUUID().slice(0, 8)}`;
   const call: SeminarApp['call'] = (method, url, payload, headers = {}) =>
     t.app

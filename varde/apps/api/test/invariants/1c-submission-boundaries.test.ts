@@ -121,7 +121,7 @@ it('runner and admin CSP are complete, assets cannot serve their parent director
     via: 'entra',
     expiresAt: new Date(Date.now() + 3600_000),
   });
-  const cookie = { varde_session: t.app.getHttpAdapter().getInstance().signCookie(session.sid) };
+  const cookie = { '__Host-varde_session': t.app.getHttpAdapter().getInstance().signCookie(session.sid) };
   for (const path of ['/r', '/admin']) {
     const r = await t.get(path, cookie);
     expect(r.statusCode).toBe(200);

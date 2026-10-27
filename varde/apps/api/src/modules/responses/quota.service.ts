@@ -26,6 +26,7 @@ export class QuotaService {
       throw new HttpException(QUOTA_MESSAGE, 429);
     return this.window.reserve([
       { key: 'global', max: this.limits.global_per_10min },
+      { key: `rc:${roundClient.id}`, max: this.limits.per_round_client_per_10min },
       { key: `ip:${ip}`, max: this.limits.per_ip_per_10min },
     ]);
   }
@@ -50,6 +51,7 @@ export class QuotaService {
       throw new HttpException(QUOTA_MESSAGE, 429);
     return this.window.reserve([
       { key: 'live:global', max: this.limits.live_global_per_10min },
+      { key: `live:rc:${roundClient.id}`, max: this.limits.live_per_round_client_per_10min },
       { key: `live:ip:${ip}`, max: this.limits.live_per_ip_per_10min },
     ]);
   }

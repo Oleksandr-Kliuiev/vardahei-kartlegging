@@ -114,7 +114,7 @@ beforeAll(async () => {
     via: 'entra',
     expiresAt: new Date(Date.now() + 3600_000),
   });
-  cookie = { varde_session: t.app.getHttpAdapter().getInstance().signCookie(session.sid) };
+  cookie = { '__Host-varde_session': t.app.getHttpAdapter().getInstance().signCookie(session.sid) };
 }, 180_000);
 
 afterAll(async () => {
@@ -179,7 +179,7 @@ async function adminOf(app: TestApp) {
     via: 'entra',
     expiresAt: new Date(Date.now() + 3600_000),
   });
-  return { varde_session: app.app.getHttpAdapter().getInstance().signCookie(session.sid) };
+  return { '__Host-varde_session': app.app.getHttpAdapter().getInstance().signCookie(session.sid) };
 }
 /** A refusal that needs a rule in the database, in a fresh database of its own: rule versions
  * are never deleted (2.5). */

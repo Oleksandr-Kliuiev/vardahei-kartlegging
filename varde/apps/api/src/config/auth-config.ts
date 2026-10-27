@@ -21,6 +21,9 @@ const value = (env: NodeJS.ProcessEnv, key: string): string => (env[key] ?? '').
 /** Entra issuer of the tenant; VARDE_OIDC_ISSUER replaces it only for the mock issuer in tests. */
 export function issuerUrl(env: NodeJS.ProcessEnv, tenantId: string): string {
   const override = value(env, 'VARDE_OIDC_ISSUER');
+  // A mock issuer in production would let whoever runs it sign in as an administrator (1.3).
+  if (override !== '' && value(env, 'NODE_ENV') === 'production')
+    throw new Error('VARDE_OIDC_ISSUER is for tests and must not be set when NODE_ENV=production');
   return override !== '' ? override : `https://login.microsoftonline.com/${tenantId}/v2.0`;
 }
 
@@ -55,6 +58,17 @@ export function readEntraSettings(env: NodeJS.ProcessEnv = process.env): EntraSe
 export function sessionSecret(env: NodeJS.ProcessEnv = process.env): string | undefined {
   const secret = value(env, 'SESSION_SECRET');
   return secret === '' ? undefined : secret;
+}
+
+/** An Entra session ends after this long without a request (SESSION_IDLE_SECONDS, default 1 h; 1.3). */
+export const DEFAULT_SESSION_IDLE_SECONDS = 3600;
+export function sessionIdleSeconds(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = value(env, 'SESSION_IDLE_SECONDS');
+  if (raw === '') return DEFAULT_SESSION_IDLE_SECONDS;
+  const idle = Number(raw);
+  if (!Number.isInteger(idle) || idle <= 0)
+    throw new Error('SESSION_IDLE_SECONDS must be a positive integer');
+  return idle;
 }
 
 /** Absolute session lifetime (SESSION_TTL_SECONDS, default 8 h). */

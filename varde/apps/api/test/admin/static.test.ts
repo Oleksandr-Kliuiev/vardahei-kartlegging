@@ -23,7 +23,7 @@ beforeAll(async () => {
     via: 'entra',
     expiresAt: new Date(Date.now() + 3600_000),
   });
-  cookies = { varde_session: t.app.getHttpAdapter().getInstance().signCookie(session.sid) };
+  cookies = { '__Host-varde_session': t.app.getHttpAdapter().getInstance().signCookie(session.sid) };
 });
 afterAll(async () => {
   await t.app?.close();
@@ -93,7 +93,7 @@ describe('protected admin SPA (1.23)', () => {
       via: 'entra',
       expiresAt: new Date(Date.now() + 3600_000),
     });
-    const signed = { varde_session: t.app.getHttpAdapter().getInstance().signCookie(session.sid) };
+    const signed = { '__Host-varde_session': t.app.getHttpAdapter().getInstance().signCookie(session.sid) };
     expect((await t.get('/admin', signed)).statusCode).toBe(200);
     await t.store.revoke(session.sid, new Date());
     expect((await t.get('/admin', signed)).statusCode).toBe(302);

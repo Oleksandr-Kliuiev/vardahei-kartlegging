@@ -48,7 +48,7 @@ it('manual endpoint carries a single new answer; automatic close shares its issu
         .inject({
           method: 'POST',
           url: `/api/admin/rounds/${f.round.id}/${action}`,
-          headers: { cookie: `varde_session=${encodeURIComponent(cookie)}` },
+          headers: { cookie: `__Host-varde_session=${encodeURIComponent(cookie)}` },
         });
     const values = () =>
       withPg(
@@ -77,7 +77,7 @@ it('manual endpoint carries a single new answer; automatic close shares its issu
     expect(first.length).toBeGreaterThan(0);
     const clientCsv = () =>
       t.get(`/api/admin/exports/client.csv?round=${f.round.id}&client=${client.id}`, {
-        varde_session: cookie,
+        '__Host-varde_session': cookie,
       });
     const issuedCsv = await clientCsv();
     expect(issuedCsv.statusCode).toBe(200);

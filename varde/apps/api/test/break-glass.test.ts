@@ -96,14 +96,14 @@ describe('break-glass (0.8)', () => {
     const app = await start(on());
     const res = await login(password);
     expect(res.status).toBe(200);
-    expect(cookiePair(res.setCookie, 'varde_session')).not.toBe('');
+    expect(cookiePair(res.setCookie, '__Host-varde_session')).not.toBe('');
     expect(res.setCookie.join(';')).toMatch(/HttpOnly/);
     expect(what(app)).toContain('break_glass.login');
     expect(app.store.audits.find((a) => a.what === 'break_glass.login')?.who).toBe(
       'break-glass:tester',
     );
     const me = await socketRequest(SOCKET, 'GET', '/auth/me', {
-      cookie: cookiePair(res.setCookie, 'varde_session'),
+      cookie: cookiePair(res.setCookie, '__Host-varde_session'),
     });
     expect(me.status).toBe(200);
     expect(JSON.parse(me.body)).toMatchObject({ via: 'break_glass' });
@@ -119,7 +119,7 @@ describe('break-glass (0.8)', () => {
 
   it('the session ends after 1 h (fake clock) → 401', async () => {
     await start(on());
-    const cookie = cookiePair((await login(password)).setCookie, 'varde_session');
+    const cookie = cookiePair((await login(password)).setCookie, '__Host-varde_session');
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(Date.now() + 3600_000 + 1000);
     expect((await socketRequest(SOCKET, 'GET', '/auth/me', { cookie })).status).toBe(401);
@@ -178,7 +178,7 @@ describe('break-glass (0.8)', () => {
 
   it('a break-glass cookie on the main listener → 401', async () => {
     const app = await start(on());
-    const cookie = cookiePair((await login(password)).setCookie, 'varde_session');
+    const cookie = cookiePair((await login(password)).setCookie, '__Host-varde_session');
     const [name, value] = cookie.split('=');
     expect(
       (await app.get('/auth/me', { [name ?? '']: decodeURIComponent(value ?? '') })).statusCode,

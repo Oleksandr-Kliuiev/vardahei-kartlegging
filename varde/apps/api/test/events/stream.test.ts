@@ -42,7 +42,7 @@ async function stream(session = cookie) {
   const controller = new AbortController();
   controllers.push(controller);
   const res = await fetch(`${origin}/api/admin/events`, {
-    headers: { cookie: `varde_session=${encodeURIComponent(session)}` },
+    headers: { cookie: `__Host-varde_session=${encodeURIComponent(session)}` },
     signal: controller.signal,
   });
   expect(res.status).toBe(200);

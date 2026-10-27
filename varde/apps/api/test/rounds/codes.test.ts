@@ -104,7 +104,7 @@ describe('access codes (1.18)', () => {
     try {
       const result = await app.getHttpAdapter().getInstance().inject({
         method: 'POST', url: `/api/admin/round-clients/${rc.id}/reissue`,
-        headers: { cookie: `varde_session=${encodeURIComponent(cookie)}` },
+        headers: { cookie: `__Host-varde_session=${encodeURIComponent(cookie)}` },
       });
       expect(result.statusCode).toBe(503);
       expect(result.json()).toMatchObject({ message: 'Lenkja kunne ikkje lagast. Prøv igjen.' });

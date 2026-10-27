@@ -37,7 +37,9 @@ describe('.github/workflows/varde.yml', () => {
   });
 
   it('has a timeout on every job', () => {
-    for (const [name, job] of Object.entries(workflow.jobs)) expect(job['timeout-minutes']).toBe(name === 'integration' ? 60 : name === 'e2e' ? 30 : 15);
+    const minutes: Record<string, number> = { integration: 60, e2e: 30, changes: 5 };
+    for (const [name, job] of Object.entries(workflow.jobs))
+      expect(job['timeout-minutes'], name).toBe(minutes[name] ?? 15);
   });
 
   it.each(['secrets', 'integration'])('checks out full history in the %s job', (job) => {

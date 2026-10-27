@@ -62,7 +62,7 @@ async function login(scenario: Scenario) {
 async function memberSession(): Promise<string> {
   const res = await login({ groups: [GROUP] });
   expect(res.statusCode).toBe(302);
-  return setCookie(res, 'varde_session') ?? '';
+  return setCookie(res, '__Host-varde_session') ?? '';
 }
 
 describe('Entra login (0.7)', () => {
@@ -71,7 +71,7 @@ describe('Entra login (0.7)', () => {
     const res = await login({ groups: ['other', GROUP] });
     expect(res.statusCode).toBe(302);
     expect(res.headers.location).toBe('/');
-    const cookie = rawSetCookie(res, 'varde_session');
+    const cookie = rawSetCookie(res, '__Host-varde_session');
     expect(cookie).toMatch(/HttpOnly/);
     expect(cookie).toMatch(/Secure/);
     expect(cookie).toMatch(/SameSite=Lax/);
@@ -81,7 +81,7 @@ describe('Entra login (0.7)', () => {
     expect(a?.header.alg).toBe('RS256');
     expect(typeof a?.header['x5t#S256']).toBe('string');
     expect(a?.payload.aud).toBe(mock.tokenEndpoint);
-    const me = await t.get('/auth/me', { varde_session: setCookie(res, 'varde_session') ?? '' });
+    const me = await t.get('/auth/me', { '__Host-varde_session': setCookie(res, '__Host-varde_session') ?? '' });
     expect(me.statusCode).toBe(200);
     expect(me.json()).toMatchObject({ name: 'Test Admin', via: 'entra' });
   });
@@ -90,7 +90,7 @@ describe('Entra login (0.7)', () => {
     const res = await login({ groups: ['someone-else'] });
     expect(res.statusCode).toBe(403);
     expect(res.body).toBe(NOT_MEMBER_TEXT);
-    expect(setCookie(res, 'varde_session')).toBeUndefined();
+    expect(setCookie(res, '__Host-varde_session')).toBeUndefined();
   });
 
   it('token without groups (overage, _claim_names) → 403', async () => {
@@ -115,7 +115,7 @@ describe('Entra login (0.7)', () => {
   ])('%s → 401', async (_label, scenario: Scenario) => {
     const res = await login({ groups: [GROUP], ...scenario });
     expect(res.statusCode).toBe(401);
-    expect(setCookie(res, 'varde_session')).toBeUndefined();
+    expect(setCookie(res, '__Host-varde_session')).toBeUndefined();
   });
 
   it('protected route without cookie → 401', async () => {
@@ -124,26 +124,26 @@ describe('Entra login (0.7)', () => {
 
   it('the saved cookie after logout → 401 (same value replayed)', async () => {
     const cookie = await memberSession();
-    expect((await t.get('/auth/me', { varde_session: cookie })).statusCode).toBe(200);
-    const out = await t.post('/auth/logout', { varde_session: cookie });
+    expect((await t.get('/auth/me', { '__Host-varde_session': cookie })).statusCode).toBe(200);
+    const out = await t.post('/auth/logout', { '__Host-varde_session': cookie });
     expect(out.statusCode).toBe(302);
     expect(String(out.headers.location)).toContain('/oauth2/v2.0/logout');
-    expect(rawSetCookie(out, 'varde_session')).toMatch(/varde_session=;/);
-    expect((await t.get('/auth/me', { varde_session: cookie })).statusCode).toBe(401);
+    expect(rawSetCookie(out, '__Host-varde_session')).toMatch(/__Host-varde_session=;/);
+    expect((await t.get('/auth/me', { '__Host-varde_session': cookie })).statusCode).toBe(401);
   });
 
   it('a tampered cookie signature → 401', async () => {
     const cookie = await memberSession();
     const [sid] = cookie.split('.');
-    expect((await t.get('/auth/me', { varde_session: `${sid}.forged` })).statusCode).toBe(401);
-    expect((await t.get('/auth/me', { varde_session: sid ?? '' })).statusCode).toBe(401);
+    expect((await t.get('/auth/me', { '__Host-varde_session': `${sid}.forged` })).statusCode).toBe(401);
+    expect((await t.get('/auth/me', { '__Host-varde_session': sid ?? '' })).statusCode).toBe(401);
   });
 
   it('session expires after 8 h (fake clock) → 401', async () => {
     const cookie = await memberSession();
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(Date.now() + 8 * 3600 * 1000 + 1000);
-    expect((await t.get('/auth/me', { varde_session: cookie })).statusCode).toBe(401);
+    expect((await t.get('/auth/me', { '__Host-varde_session': cookie })).statusCode).toBe(401);
   });
 
   it('reusing varde_oidc → 400', async () => {

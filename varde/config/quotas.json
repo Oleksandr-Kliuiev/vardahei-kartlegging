@@ -2,11 +2,14 @@
   "round_client_factor": 3,
   "round_client_min": 30,
   "global_per_10min": 600,
+  "per_round_client_per_10min": 150,
   "per_ip_per_10min": 300,
   "seminar_registrations_max": 300,
   "seminar_global_per_10min": 300,
+  "seminar_per_seminar_per_10min": 100,
   "seminar_per_ip_per_10min": 20,
   "live_participants_max": 300,
   "live_global_per_10min": 3000,
+  "live_per_round_client_per_10min": 1500,
   "live_per_ip_per_10min": 1500
 }

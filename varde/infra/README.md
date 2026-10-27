@@ -195,6 +195,8 @@ SESSION_TTL_SECONDS=28800
 
 `SESSION_SECRET` уже записал `bootstrap.sh`. Затем `docker compose -f /opt/varde/compose.yml up -d`.
 
+`SESSION_IDLE_SECONDS` (по умолчанию 3600) — сколько Entra-сессия живёт без запросов; `SESSION_TTL_SECONDS` остаётся абсолютным пределом. Cookie сессии называется `__Host-varde_session` (1.3): при первой выкатке с ним все администраторы входят заново один раз. `VARDE_OIDC_ISSUER` при `NODE_ENV=production` приложение не принимает.
+
 Проверки: без DNS — `docker run --rm --network atlas_edge curlimages/curl:8.17.0 -sI http://varde-app:3000/auth/login` → `302`, `Location: https://login.microsoftonline.com/<tenant>/oauth2/v2.0/authorize?…`; после DNS — `curl -sI https://varde.vardahei.tech/auth/login` → то же; после реального входа Oleksandr-а — `docker exec -i atlas-db-1 sh -c 'psql -X -U "${POSTGRES_USER:-postgres}" -d varde -tAc "select via, count(*) from admin_session group by 1"'` → `entra|1` (без имён).
 
 Откат: удалить строки `ENTRA_*` из `app.env`, `up -d` → `/auth/login` отвечает `503 auth not configured`, `/health` — 200.

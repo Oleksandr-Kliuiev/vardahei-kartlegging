@@ -33,7 +33,7 @@ const call = (method: 'GET' | 'POST' | 'PUT', url: string, payload?: object) =>
       method,
       url,
       ...(payload ? { payload } : {}),
-      headers: { cookie: `varde_session=${encodeURIComponent(cookie)}` },
+      headers: { cookie: `__Host-varde_session=${encodeURIComponent(cookie)}` },
     });
 const path = (id: string) => `/api/admin/surveys/versions/${id}`;
 const defaults = {

@@ -42,7 +42,7 @@ describe('GET / (home placeholder)', () => {
   });
 
   it('with a valid session → the name from the session and the logout form', async () => {
-    const res = await t.get('/', { varde_session: await sessionCookie('Test Admin') });
+    const res = await t.get('/', { '__Host-varde_session': await sessionCookie('Test Admin') });
     expect(res.statusCode).toBe(200);
     expect(res.body).toContain('Du er logga inn som <strong>Test Admin</strong>.');
     expect(res.body).toMatch(/<form method="post" action="\/auth\/logout">/);
@@ -52,7 +52,7 @@ describe('GET / (home placeholder)', () => {
 
   it('escapes the name', async () => {
     const res = await t.get('/', {
-      varde_session: await sessionCookie(`<script>alert("x")</script> & 'b'`),
+      '__Host-varde_session': await sessionCookie(`<script>alert("x")</script> & 'b'`),
     });
     expect(res.body).not.toContain('<script>');
     expect(res.body).toContain(
@@ -61,14 +61,14 @@ describe('GET / (home placeholder)', () => {
   });
 
   it('a forged, revoked or break-glass session counts as no session', async () => {
-    const forged = await t.get('/', { varde_session: 'not-signed' });
+    const forged = await t.get('/', { '__Host-varde_session': 'not-signed' });
     expect(forged.body).toContain('Logg inn med Microsoft');
-    const bg = await t.get('/', { varde_session: await sessionCookie('BG', 'break_glass') });
+    const bg = await t.get('/', { '__Host-varde_session': await sessionCookie('BG', 'break_glass') });
     expect(bg.body).toContain('Logg inn med Microsoft');
     const sid = await sessionCookie('Gone');
     const unsigned = t.app.getHttpAdapter().getInstance().unsignCookie(sid).value ?? '';
     await t.store.revoke(unsigned, new Date());
-    expect((await t.get('/', { varde_session: sid })).body).toContain('Logg inn med Microsoft');
+    expect((await t.get('/', { '__Host-varde_session': sid })).body).toContain('Logg inn med Microsoft');
   });
 
   it('strict CSP and security headers; no external URLs in the page', async () => {

@@ -70,7 +70,7 @@ describe('privacy over HTTP (0.15)', () => {
     });
     const signed = app.getHttpAdapter().getInstance().signCookie(s.sid);
     const res = await inject(`/test/per-employee?round=${ROUND_ANONYMOUS}`, {
-      varde_session: signed,
+      '__Host-varde_session': signed,
     });
     expect(res.statusCode).toBe(404);
     expect(res.body).not.toMatch(/respondent_key|answers/);

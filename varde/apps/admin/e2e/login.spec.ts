@@ -21,7 +21,7 @@ async function login(page: Page): Promise<void> {
 test('a member logs in and gets a session', async ({ page }) => {
   await login(page);
   const cookies = await page.context().cookies();
-  const session = cookies.find((c) => c.name === 'varde_session');
+  const session = cookies.find((c) => c.name === '__Host-varde_session');
   expect(session).toMatchObject({ httpOnly: true, secure: true, sameSite: 'Lax' });
   const me = await page.request.get('/auth/me');
   expect(me.status()).toBe(200);

@@ -46,7 +46,7 @@ export async function dashboardFixture(onRoute?: (route: RouteOptions) => void) 
     via: 'entra',
     expiresAt: new Date(Date.now() + 3600_000),
   });
-  const cookie = { varde_session: t.app.getHttpAdapter().getInstance().signCookie(session.sid) };
+  const cookie = { '__Host-varde_session': t.app.getHttpAdapter().getInstance().signCookie(session.sid) };
   return {
     ...t,
     prisma,

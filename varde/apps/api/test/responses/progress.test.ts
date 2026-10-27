@@ -54,7 +54,7 @@ const get = (id: string, auth = true) =>
     .inject({
       method: 'GET',
       url: `/api/admin/rounds/${id}/progress`,
-      headers: auth ? { cookie: `varde_session=${encodeURIComponent(cookie)}` } : {},
+      headers: auth ? { cookie: `__Host-varde_session=${encodeURIComponent(cookie)}` } : {},
     });
 type Cell = { suppressed: boolean; value?: number };
 type View = {

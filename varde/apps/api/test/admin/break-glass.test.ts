@@ -40,7 +40,7 @@ beforeAll(async () => {
         json: { password: generated.password },
       })
     ).setCookie,
-    'varde_session',
+    '__Host-varde_session',
   );
 });
 afterAll(async () => {

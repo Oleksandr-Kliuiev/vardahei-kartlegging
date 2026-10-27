@@ -32,6 +32,12 @@ export class MemorySessionStore extends SessionStore {
     return Promise.resolve(this.sessions.get(sid) ?? null);
   }
 
+  extend(sid: string, expiresAt: Date): Promise<void> {
+    const s = this.sessions.get(sid);
+    if (s !== undefined && s.revokedAt === null && s.expiresAt < expiresAt) s.expiresAt = expiresAt;
+    return Promise.resolve();
+  }
+
   revoke(sid: string, at: Date): Promise<void> {
     const s = this.sessions.get(sid);
     if (s !== undefined && s.revokedAt === null) s.revokedAt = at;

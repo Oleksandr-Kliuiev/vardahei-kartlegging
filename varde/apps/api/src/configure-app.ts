@@ -6,6 +6,7 @@ import { registerRunnerStatic } from './runner/static.js';
 import { sessionSecret } from './config/auth-config.js';
 import { QuerySafeExceptionFilter } from './logging/query-safe-exception.filter.js';
 import { registerRequestLog } from './logging/request-log.js';
+import { registerOriginGuard } from './modules/auth/origin-guard.js';
 
 /**
  * Every listener: request log without query (0.6), query-safe exception filter, signed cookies
@@ -16,6 +17,7 @@ const fallbackSecret = randomBytes(32).toString('hex');
 
 export async function configureApp<T extends NestFastifyApplication>(app: T): Promise<T> {
   registerRequestLog(app.getHttpAdapter().getInstance());
+  registerOriginGuard(app.getHttpAdapter().getInstance());
   app.useGlobalFilters(new QuerySafeExceptionFilter());
   await app.register(fastifyCookie, {
     secret: sessionSecret() ?? fallbackSecret,

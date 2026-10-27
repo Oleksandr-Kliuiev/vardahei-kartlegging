@@ -20,7 +20,7 @@ const mark = `test.lifecycle.${Date.now()}`;
 const saved = { ...process.env };
 const call = (method: 'POST' | 'PATCH', url: string, payload?: object, authenticated = true) =>
   t.app.getHttpAdapter().getInstance().inject({ method, url, ...(payload === undefined ? {} : { payload }),
-    headers: authenticated ? { cookie: `varde_session=${encodeURIComponent(cookie)}` } : {},
+    headers: authenticated ? { cookie: `__Host-varde_session=${encodeURIComponent(cookie)}` } : {},
   });
 const runner = (code: string) => t.app.getHttpAdapter().getInstance().inject({
   method: 'GET', url: '/api/runner/round', headers: { authorization: `Bearer ${code}` },

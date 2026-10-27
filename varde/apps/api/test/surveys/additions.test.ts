@@ -29,7 +29,7 @@ const call = (method: 'GET' | 'POST' | 'PUT', url: string, payload?: object, sig
       method,
       url,
       ...(payload ? { payload } : {}),
-      ...(signed ? { headers: { cookie: `varde_session=${encodeURIComponent(cookie)}` } } : {}),
+      ...(signed ? { headers: { cookie: `__Host-varde_session=${encodeURIComponent(cookie)}` } } : {}),
     });
 const path = (id: string) => `/api/admin/surveys/versions/${id}`;
 

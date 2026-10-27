@@ -18,7 +18,7 @@ const call = (method: 'GET' | 'PATCH' | 'POST', url: string, payload?: object, a
       method,
       url,
       ...(payload ? { payload } : {}),
-      headers: auth ? { cookie: `varde_session=${encodeURIComponent(cookie)}` } : {},
+      headers: auth ? { cookie: `__Host-varde_session=${encodeURIComponent(cookie)}` } : {},
     });
 beforeAll(async () => {
   t = await startApp({});
