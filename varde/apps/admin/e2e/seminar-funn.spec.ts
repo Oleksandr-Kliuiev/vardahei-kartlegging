@@ -126,17 +126,11 @@ test('a seminar shows the findings it takes up; the status is changed on the cli
   } catch (e) {
     console.log(
       'DIAG',
-      JSON.stringify(
-        await page.evaluate(() => {
-          const kids = [...document.querySelectorAll<HTMLElement>('main > *, .innhald > *')];
-          return {
-            y: window.scrollY,
-            h: document.documentElement.scrollHeight,
-            ih: window.innerHeight,
-            card: document.querySelector('.kunde-funn')?.getBoundingClientRect().top,
-            kids: kids.slice(0, 14).map((n) => `${n.className}:${Math.round(n.getBoundingClientRect().height)}`),
-          };
-        }),
+      await page.evaluate(
+        `JSON.stringify({ y: scrollY, h: document.documentElement.scrollHeight, ih: innerHeight,
+          card: document.querySelector('.kunde-funn')?.getBoundingClientRect().top,
+          kids: [...document.querySelectorAll('main > *, .innhald > *')].slice(0, 14)
+            .map((n) => n.className + ':' + Math.round(n.getBoundingClientRect().height)) })`,
       ),
     );
     throw e;
