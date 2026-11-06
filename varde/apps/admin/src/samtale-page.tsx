@@ -94,6 +94,25 @@ export function Utlogga({ store }: { store: Lagring }) {
   );
 }
 
+/** A conversation still loading or not found. Focus mode has no menu, so the way back is on the page;
+ * while loading it shows only after a moment, so a quick load does not flash it. */
+export function TomSide({ error }: { error: Error | null }) {
+  return (
+    <div className="sm-tom-side">
+      <ErrorMessage error={error} />
+      {!error && <p role="status">Hentar samtalen …</p>}
+      <a
+        className={error ? 'lenkje' : 'lenkje sm-seinare'}
+        href="/admin/samtalar"
+        onClick={(e) => follow(e, '/admin/samtalar')}
+      >
+        <Icon name="tilbake" small />
+        Til Samtalar
+      </a>
+    </div>
+  );
+}
+
 /** «Fullført» in the bar of a finished conversation, where the minutes or «Fullfør» stood. */
 export const Fullfort = () => (
   <span className="sm-status sm-status-ok">
@@ -181,13 +200,7 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
   const { reopen, error } = useReopen(i, store);
   const minutes = useMinutes(i?.started_at ?? null, i?.status === 'in_progress');
 
-  if (!i || !store)
-    return (
-      <div className="sm-tom-side">
-        <ErrorMessage error={q.error} />
-        {!q.error && <p role="status">Hentar samtalen …</p>}
-      </div>
-    );
+  if (!i || !store) return <TomSide error={q.error} />;
   if (i.status === 'planned')
     return (
       <div className="sm-tom-side">

@@ -71,23 +71,6 @@ test('a conversation at the table is saved field by field, through a reload and 
   await expect(page.locator('.topplinje')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Samtalar' })).toBeVisible();
 
-  // «Endre» in the bar corrects who is at the table, until the conversation is finished.
-  await page.getByRole('button', { name: 'Endre kven som er med og dato' }).click();
-  const fix = page.getByRole('dialog', { name: 'Endre samtalen med Syntetisk admin kunde' });
-  await expect(fix.getByLabel('Namn (valfritt)')).toHaveValue('Kari Nordmann');
-  await fix.getByRole('button', { name: 'Legg til person' }).click();
-  await fix.getByLabel('Rolle, person 2').fill('økonomi');
-  await fix.getByRole('button', { name: 'Lagre' }).click();
-  await expect(fix).toHaveCount(0);
-  await expect(page.locator('.sm-kven p')).toContainText('Kari Nordmann, dagleg leiar · økonomi');
-  const people = (await (await page.request.get(`/api/admin/interviews/${id}`)).json()) as {
-    interviewees: unknown;
-  };
-  expect(people.interviewees).toEqual([
-    { role: 'dagleg leiar', name: 'Kari Nordmann' },
-    { role: 'økonomi' },
-  ]);
-
   // Question 1: what the client says, the rating by keyboard while typing, the conclusion.
   const answer = page.getByLabel('Kva seier kunden?');
   await answer.fill('Ingen definert ansvarleg, men det går naturleg til dagleg leiar.');
@@ -105,6 +88,34 @@ test('a conversation at the table is saved field by field, through a reload and 
   await page.getByRole('button', { name: 'Eige notat' }).click();
   await page.getByLabel('Eige notat').fill('Kandidat for beredskapspakken.');
   await expect(saved(page)).toBeVisible();
+
+  // «Endre» in the bar corrects who is at the table, until the conversation is finished; what was
+  // typed stays, and the focus comes back to «Endre».
+  const endre = page.getByRole('button', { name: 'Endre kven som er med og dato' });
+  await endre.click();
+  const fix = page.getByRole('dialog', { name: 'Endre samtalen med Syntetisk admin kunde' });
+  await expect(fix.getByLabel('Namn (valfritt)')).toHaveValue('Kari Nordmann');
+  await fix.getByRole('button', { name: 'Legg til person' }).click();
+  await fix.getByLabel('Rolle, person 2').fill('økonomi');
+  await fix.getByRole('button', { name: 'Lagre' }).click();
+  await expect(fix).toHaveCount(0);
+  await expect(endre).toBeFocused();
+  await expect(page.locator('.sm-kven p')).toContainText('Kari Nordmann, dagleg leiar · økonomi');
+  await expect(page.getByLabel('Kva seier kunden?')).toHaveValue(
+    'Ingen definert ansvarleg, men det går naturleg til dagleg leiar.',
+  );
+  await expect(page.getByLabel('Eige notat')).toHaveValue('Kandidat for beredskapspakken.');
+  const people = (await (await page.request.get(`/api/admin/interviews/${id}`)).json()) as {
+    interviewees: unknown;
+    answers: Record<string, { answer: string }>;
+  };
+  expect(people.interviewees).toEqual([
+    { role: 'dagleg leiar', name: 'Kari Nordmann' },
+    { role: 'økonomi' },
+  ]);
+  expect(people.answers.N2?.answer).toBe(
+    'Ingen definert ansvarleg, men det går naturleg til dagleg leiar.',
+  );
 
   // A reload keeps everything, and the list shows the rating and the note.
   await page.reload();

@@ -24,7 +24,7 @@ import {
   scoreOf,
   useInterview,
 } from './samtale-models.js';
-import { doneText, Fullfort, Topp, Utlogga, useReopen } from './samtale-page.js';
+import { doneText, Fullfort, TomSide, Topp, Utlogga, useReopen } from './samtale-page.js';
 import './samtale.css';
 
 /** The fields of the whole conversation, with the id of their box on this page. */
@@ -109,13 +109,7 @@ export function OppsummeringPage({ id }: { id: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const reopened = useReopen(i, store);
-  if (!i || !store)
-    return (
-      <div className="sm-tom-side">
-        <ErrorMessage error={q.error} />
-        {!q.error && <p role="status">Hentar samtalen …</p>}
-      </div>
-    );
+  if (!i || !store) return <TomSide error={q.error} />;
   const questions = i.guide.questions;
   const counts = countOf(questions, store.rating);
   const score = scoreOf(counts);
@@ -257,7 +251,7 @@ export function OppsummeringPage({ id }: { id: string }) {
           <section className="kort sm-sjaa">
             <div className="kort-hovud">
               <h2>Dette bør de sjå på</h2>
-              <p>Med tiltaka som går i referatet</p>
+              <p>{counts.manglar + counts.forbetring} punkt, med tiltaka som går i referatet</p>
             </div>
             <div className="kort-innhald">
               {(['manglar', 'forbetring'] as Rating[]).map((r) => {

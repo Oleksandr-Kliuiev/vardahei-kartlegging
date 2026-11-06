@@ -7,7 +7,7 @@ import type { Client } from './models.js';
 import { ErrorMessage } from './queries.js';
 import type { Guide } from './samtale-models.js';
 
-/** A panel from the right; Escape and the veil close it. */
+/** A panel from the right; Escape and the veil close it (not an Escape the ⌘K palette has used). */
 export function Skuff(p: {
   title: string;
   onClose: () => void;
@@ -17,7 +17,7 @@ export function Skuff(p: {
 }) {
   const id = useId();
   useEffect(() => {
-    const key = (e: KeyboardEvent) => e.key === 'Escape' && p.onClose();
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && !e.defaultPrevented && p.onClose();
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
   }, [p.onClose]);

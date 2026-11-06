@@ -1,6 +1,7 @@
 // The start of a conversation (2.20) as in the concept: a dialog in the middle of the screen with the
 // guide, the people from the client (a role, a name if they want), names from Vardahei to tick and the
-// day. «Avbryt», Escape and the veil close it; «Endre» corrects the same fields. What reaches the API is
+// day. «Avbryt», Escape and the veil close it, but not while it sends, not an Escape another layer used
+// and not a press on the veil's scrollbar; «Endre» corrects the same fields. What reaches the API is
 // exactly what was chosen, and a name typed without «Legg til» is not lost.
 import { afterEach, expect, it, vi } from 'vitest';
 import { act } from 'react';
@@ -16,12 +17,12 @@ const row: StartRow = {
   interviewers: [],
 };
 const guide = { title: 'Kartlegging nøkkelpersonar', label: 'v1', question_count: 27 };
-const today = new Date().toLocaleDateString('sv-SE');
 let view: ReturnType<typeof mount> | undefined;
 afterEach(() => {
   view?.close();
   view = undefined;
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 function input(el: HTMLInputElement, value: string) {
   act(() => {
@@ -29,23 +30,36 @@ function input(el: HTMLInputElement, value: string) {
     el.dispatchEvent(new Event('input', { bubbles: true }));
   });
 }
+const key = (el: EventTarget, name: string, used = false) => {
+  const e = new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true });
+  if (used) e.preventDefault();
+  act(() => {
+    el.dispatchEvent(e);
+  });
+};
 const field = (label: string) =>
   view!.div.querySelector<HTMLInputElement>(`input[aria-label="${label}"]`)!;
+const day = () => view!.div.querySelector<HTMLInputElement>('input[type="date"]')!;
 const boxes = () =>
   [...view!.div.querySelectorAll<HTMLLabelElement>('.sm-vi-namn')].map((l) => [
     l.textContent,
     l.querySelector('input')!.checked,
   ]);
-function server() {
+function server(hold = false) {
   const sent: { url: string; body: unknown }[] = [];
+  let release: () => void = () => undefined;
   vi.stubGlobal(
     'fetch',
     vi.fn((url: string, init?: RequestInit) => {
       sent.push({ url, body: JSON.parse(init!.body as string) as unknown });
-      return Promise.resolve(new Response(JSON.stringify({ id: 'iv1' }), { status: 201 }));
+      const answer = () => new Response(JSON.stringify({ id: 'iv1' }), { status: 201 });
+      if (!hold) return Promise.resolve(answer());
+      return new Promise<Response>((done) => {
+        release = () => done(answer());
+      });
     }),
   );
-  return sent;
+  return { sent, release: () => release() };
 }
 
 it('opens in the middle with the guide, a «dagleg leiar», the one signed in ticked and today', () => {
@@ -74,18 +88,18 @@ it('opens in the middle with the guide, a «dagleg leiar», the one signed in ti
     ['Asbjørn', true],
     ['Oleksandr', false],
   ]);
-  expect(view.div.querySelector<HTMLInputElement>('input[type="date"]')!.value).toBe(today);
+  expect(day().value).toBe(todayOf());
   expect(button(view.div, 'Avbryt').type).toBe('button');
 });
 
 it('sends the people, the ticked names and a name typed but not yet added', async () => {
-  const sent = server();
+  const { sent } = server();
   const done = vi.fn();
   view = mount(
     <StartSamtale
       row={row}
       guide={guide}
-      names={['Oleksandr']}
+      names={['Oleksandr', 'Bjarte']}
       me="Asbjørn"
       onClose={() => undefined}
       onDone={done}
@@ -95,34 +109,33 @@ it('sends the people, the ticked names and a name typed but not yet added', asyn
   act(() => button(view!.div, 'Legg til person').click());
   expect(document.activeElement).toBe(field('Rolle, person 2'));
   input(field('Rolle, person 2'), ' økonomi ');
-  act(() => view!.div.querySelectorAll<HTMLInputElement>('.sm-vi-namn input')[1]!.click());
+  act(() => view!.div.querySelectorAll<HTMLInputElement>('.sm-vi-namn input')[2]!.click());
   act(() => button(view!.div, 'Legg til namn').click());
-  input(field('Namn frå Vardahei'), 'Bjarte');
-  act(() => {
-    field('Namn frå Vardahei').dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
-    );
-  });
+  input(field('Namn frå Vardahei'), 'Silje');
+  key(field('Namn frå Vardahei'), 'Enter');
+  // Enter adds a ticked box and leaves the focus in the field for the next name.
   expect(boxes()).toEqual([
     ['Asbjørn', true],
+    ['Bjarte', false],
     ['Oleksandr', true],
-    ['Bjarte', true],
+    ['Silje', true],
   ]);
-  // Typed, not added, then «Start samtalen»: it still goes with the others.
-  input(field('Namn frå Vardahei'), 'Silje');
+  expect(document.activeElement).toBe(field('Namn frå Vardahei'));
+  // Typed, not added, then «Start samtalen»: it still goes, in the spelling already offered.
+  input(field('Namn frå Vardahei'), 'bjarte');
   act(() => button(view!.div, 'Start samtalen').click());
   await settle();
   const body = {
-    held_on: today,
+    held_on: todayOf(),
     interviewees: [{ role: 'dagleg leiar', name: 'Kari Nordmann' }, { role: 'økonomi' }],
-    interviewers: ['Asbjørn', 'Oleksandr', 'Bjarte', 'Silje'],
+    interviewers: ['Asbjørn', 'Oleksandr', 'Silje', 'Bjarte'],
   };
   expect(sent).toEqual([{ url: '/api/admin/interviews/iv1/start', body }]);
   expect(done).toHaveBeenCalledWith(body);
 });
 
-it('will not start while a name has no role or the day is empty, and a person can go again', () => {
-  const sent = server();
+it('will not start while a name has no role or the day is empty, and says why', () => {
+  const { sent } = server();
   view = mount(
     <StartSamtale
       row={row}
@@ -137,20 +150,51 @@ it('will not start while a name has no role or the day is empty, and a person ca
   expect(field('Namn frå Vardahei')).not.toBeNull();
   act(() => button(view!.div, 'Legg til person').click());
   input(field('Namn, person 2 (valfritt)'), 'Per');
-  expect(view.div.querySelector('.sm-dlg-feil')!.textContent).toBe(
-    'Skriv rolla til alle som er med.',
-  );
+  const why = view.div.querySelector('.sm-dlg-feil')!;
+  expect(why.textContent).toBe('Skriv rolla til alle som er med.');
+  expect(why.getAttribute('role')).toBe('alert');
   expect(field('Rolle, person 2').getAttribute('aria-invalid')).toBe('true');
+  expect(field('Rolle, person 2').getAttribute('aria-describedby')).toBe(why.id);
   expect(button(view.div, 'Start samtalen').disabled).toBe(true);
+  // «Fjern» takes the person away and gives the focus to the one above.
   act(() => view!.div.querySelector<HTMLButtonElement>('[aria-label="Fjern person 2"]')!.click());
+  expect(document.activeElement).toBe(field('Rolle'));
   expect(button(view.div, 'Start samtalen').disabled).toBe(false);
-  input(view.div.querySelector<HTMLInputElement>('input[type="date"]')!, '');
+  input(day(), '');
   expect(button(view.div, 'Start samtalen').disabled).toBe(true);
+  expect(day().getAttribute('aria-describedby')).toBe(
+    view.div.querySelector('.sm-dato .sm-dlg-feil')!.id,
+  );
   expect(sent).toEqual([]);
 });
 
-it('«Endre» opens with what was saved and says «Lagre»; Escape, the veil and «Avbryt» close it', () => {
-  const close = vi.fn();
+it('takes six names from Vardahei and says so instead of dropping the seventh', () => {
+  view = mount(
+    <StartSamtale
+      row={row}
+      guide={null}
+      names={['A1', 'A2', 'A3', 'A4', 'A5', 'A6']}
+      me="A0"
+      onClose={() => undefined}
+      onDone={() => undefined}
+    />,
+  );
+  const tick = (n: number) =>
+    act(() => view!.div.querySelectorAll<HTMLInputElement>('.sm-vi-namn input')[n]!.click());
+  for (const n of [1, 2, 3, 4]) tick(n);
+  act(() => button(view!.div, 'Legg til namn').click());
+  input(field('Namn frå Vardahei'), 'a5');
+  key(field('Namn frå Vardahei'), 'Enter');
+  // The sixth came from the field in the offered spelling; the field gives way to the hint.
+  expect(boxes().filter(([, on]) => on)).toHaveLength(6);
+  expect(boxes()).toContainEqual(['A5', true]);
+  expect(view.div.querySelector('input[aria-label="Namn frå Vardahei"]')).toBeNull();
+  expect(view.div.querySelector('.sm-dlg-hint')!.textContent).toContain('Høgst seks');
+  expect(document.activeElement).toBe(view.div.querySelectorAll('.sm-vi-namn input')[5]);
+  expect(view.div.querySelectorAll<HTMLInputElement>('.sm-vi-namn input')[6]!.disabled).toBe(true);
+});
+
+it('«Endre» opens with what was saved, says «Lagre» and ticks no one who was not saved', () => {
   view = mount(
     <StartSamtale
       edit
@@ -158,12 +202,12 @@ it('«Endre» opens with what was saved and says «Lagre»; Escape, the veil and
         ...row,
         held_on: '2026-11-10',
         interviewees: [{ role: 'dagleg leiar', name: 'Kari Nordmann' }, { role: 'økonomi' }],
-        interviewers: ['Oleksandr'],
+        interviewers: [],
       }}
       guide={guide}
-      names={['Asbjørn', 'Oleksandr']}
+      names={['Oleksandr']}
       me="Asbjørn"
-      onClose={close}
+      onClose={() => undefined}
       onDone={() => undefined}
     />,
   );
@@ -171,35 +215,101 @@ it('«Endre» opens with what was saved and says «Lagre»; Escape, the veil and
   expect(field('Namn (valfritt)').value).toBe('Kari Nordmann');
   expect(field('Rolle, person 2').value).toBe('økonomi');
   expect(boxes()).toEqual([
-    ['Oleksandr', true],
     ['Asbjørn', false],
+    ['Oleksandr', false],
   ]);
-  expect(view.div.querySelector<HTMLInputElement>('input[type="date"]')!.value).toBe('2026-11-10');
+  expect(day().value).toBe('2026-11-10');
   expect(button(view.div, 'Lagre').disabled).toBe(false);
-  act(() => {
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-  });
+});
+
+it('closes on Escape, the veil and «Avbryt», but not on an Escape used elsewhere or the scrollbar', () => {
+  const close = vi.fn();
+  view = mount(
+    <StartSamtale
+      row={row}
+      guide={guide}
+      names={['Oleksandr']}
+      me="Asbjørn"
+      onClose={close}
+      onDone={() => undefined}
+    />,
+  );
+  // An Escape the ⌘K palette has used is not ours.
+  key(window, 'Escape', true);
+  // A first Escape in «Namn frå Vardahei» empties the field; the next one closes.
+  act(() => button(view!.div, 'Legg til namn').click());
+  input(field('Namn frå Vardahei'), 'Silje');
+  key(field('Namn frå Vardahei'), 'Escape');
+  expect(field('Namn frå Vardahei').value).toBe('');
+  expect(close).not.toHaveBeenCalled();
+  key(field('Namn frå Vardahei'), 'Escape');
+  expect(close).toHaveBeenCalledTimes(1);
+  // The veil: a press on it closes, on its scrollbar (past clientWidth) or inside the dialog not.
+  const veil = view.div.querySelector<HTMLElement>('.sm-dlg-slor')!;
+  Object.defineProperty(veil, 'clientWidth', { value: 985 });
+  const press = (target: Element, clientX: number) =>
+    act(() => {
+      target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX }));
+    });
+  press(veil, 997);
+  press(view.div.querySelector('h2')!, 500);
+  expect(close).toHaveBeenCalledTimes(1);
+  press(veil, 500);
+  expect(close).toHaveBeenCalledTimes(2);
+  act(() => button(view!.div, 'Avbryt').click());
+  expect(close).toHaveBeenCalledTimes(3);
+});
+
+it('stays open while it sends: no Escape, no veil, no «Avbryt»', async () => {
+  const { sent, release } = server(true);
+  const close = vi.fn();
+  const done = vi.fn();
+  view = mount(
+    <StartSamtale row={row} guide={guide} names={[]} me="Asbjørn" onClose={close} onDone={done} />,
+  );
+  act(() => button(view!.div, 'Start samtalen').click());
+  expect(sent).toHaveLength(1);
+  expect(button(view.div, 'Avbryt').disabled).toBe(true);
+  key(window, 'Escape');
   act(() => {
     view!.div
       .querySelector('.sm-dlg-slor')!
       .dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
   });
-  // A press inside the dialog is not a press on the veil.
-  act(() => {
-    view!.div.querySelector('h2')!.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-  });
-  act(() => button(view!.div, 'Avbryt').click());
-  expect(close).toHaveBeenCalledTimes(3);
+  // A second press of «Start samtalen» sends nothing more.
+  act(() => button(view!.div, 'Start samtalen').click());
+  expect(sent).toHaveLength(1);
+  expect(close).not.toHaveBeenCalled();
+  release();
+  await settle();
+  expect(done).toHaveBeenCalledTimes(1);
 });
 
-it('writes days and times in Nynorsk whatever the browser carries', () => {
+it('writes days and times in Nynorsk on the 24-hour clock, whatever the browser carries', () => {
+  // A browser without Nynorsk answers in English: the helpers must not ask it.
+  vi.spyOn(Date.prototype, 'toLocaleTimeString').mockReturnValue('09:53 PM');
+  vi.spyOn(Date.prototype, 'toLocaleDateString').mockReturnValue('November 10, 2026');
+  vi.spyOn(Date.prototype, 'toLocaleString').mockReturnValue('11/10/2026, 9:53:00 PM');
   const year = new Date().getFullYear();
   expect(longDate(`${year}-11-25`)).toBe('25. november');
   expect(longDate('2025-05-04')).toBe('4. mai 2025');
   expect(longDate(null)).toBe('');
   expect(clock(new Date(2026, 10, 6, 21, 53))).toBe('21:53');
   expect(clock(new Date(2026, 10, 6, 9, 5))).toBe('09:05');
-  expect(todayOf(new Date(2026, 0, 5, 23, 59))).toBe('2026-01-05');
+});
+
+it('takes today in the browser’s own time zone, not in UTC', () => {
+  const zone = process.env.TZ;
+  process.env.TZ = 'Europe/Oslo';
+  try {
+    // 00:30 in Oslo is still the day before in UTC.
+    const night = new Date(2026, 0, 5, 0, 30);
+    expect(night.toISOString().slice(0, 10)).toBe('2026-01-04');
+    expect(todayOf(night)).toBe('2026-01-05');
+  } finally {
+    if (zone === undefined) delete process.env.TZ;
+    else process.env.TZ = zone;
+  }
 });
 
 it('keeps each name once, whatever its case and spaces', () => {
