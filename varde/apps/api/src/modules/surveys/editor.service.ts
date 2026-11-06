@@ -201,6 +201,7 @@ export class EditorService {
               required_languages: langs,
               contact,
               sender,
+              with_role_question: input.with_role_question,
             }),
             key,
           };

@@ -185,14 +185,27 @@ describe('TemplateVersion schema (1.1)', () => {
     );
   });
 
-  it('no role question or a leader role outside its options → rejected', () => {
+  it('no role question when leader_roles is set, or a leader role outside its options → rejected', () => {
     rejected(
       edit((t) => delete q(t, 'Q2').role),
-      /exactly one role/,
+      /a role question is required/,
     );
     rejected(
       edit((t) => (t.leader_roles = ['sjef'])),
       /leader role sjef/,
+    );
+  });
+  it('no role question and no leader_roles → ok; two role questions → rejected', () => {
+    const r = ok(
+      edit((t) => {
+        delete q(t, 'Q2').role;
+        t.leader_roles = [];
+      }),
+    );
+    expect(r.success, JSON.stringify(r.error?.issues)).toBe(true);
+    rejected(
+      edit((t) => (q(t, 'Q3').role = true)),
+      /at most one role question/,
     );
   });
 

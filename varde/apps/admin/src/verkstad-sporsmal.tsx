@@ -115,7 +115,7 @@ export function Sporsmal(p: SporsmalProps) {
       {q.role && (
         <p className="vk-info">
           <Icon name="info" small />
-          Svaret her avgjer kven som får leiardelen. Kvart skjema har nøyaktig eitt rollespørsmål.
+          Svaret her avgjer kven som får leiardelen. Eit skjema har høgst eitt rollespørsmål.
         </p>
       )}
       <div className="vk-blokk">

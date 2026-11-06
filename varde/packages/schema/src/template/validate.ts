@@ -179,7 +179,9 @@ export function validateTemplate(c: TemplateContent): TemplateIssue[] {
   }
 
   const roles = c.questions.filter((q) => q.role);
-  if (roles.length !== 1) issue('exactly one role question', ['questions']);
+  if (roles.length > 1) issue('at most one role question', ['questions']);
+  if (roles.length === 0 && c.leader_roles.length > 0)
+    issue('a role question is required when leader_roles is set', ['leader_roles']);
   const roleOptions = new Set(roles[0] === undefined ? [] : optionIds(roles[0]));
   c.leader_roles.forEach((r, n) => {
     if (!roleOptions.has(r))

@@ -356,6 +356,7 @@ function NyttSkjema({ surveys, onClose }: { surveys: SurveySummary[]; onClose: (
   const [start, setStart] = useState<Start>('client_survey');
   const [initials, setInitials] = useState(true);
   const [english, setEnglish] = useState(false);
+  const [withRole, setWithRole] = useState(true);
   const copies = surveys.filter((s) => s.versions.some((v) => v.status === 'published'));
   const [copyOf, setCopyOf] = useState(copies[0]?.id ?? '');
   const [busy, setBusy] = useState(false);
@@ -380,6 +381,7 @@ function NyttSkjema({ surveys, onClose }: { surveys: SurveySummary[]; onClose: (
             audience: start,
             identification: start === 'client_survey' && initials ? 'initials' : 'none',
             required_languages: start === 'client_survey' || english ? ['nn', 'en'] : ['nn'],
+            with_role_question: withRole,
           };
     setBusy(true);
     setError(null);
@@ -458,6 +460,16 @@ function NyttSkjema({ surveys, onClose }: { surveys: SurveySummary[]; onClose: (
                 Utan namn
               </label>
             </fieldset>
+          )}
+          {start !== 'copy' && (
+            <label className="bib-sjekk" title="Av, om ingen her skal skiljast etter rolle (til dømes eit intervju med éin nøkkelperson).">
+              <input
+                type="checkbox"
+                checked={withRole}
+                onChange={(e) => setWithRole(e.target.checked)}
+              />
+              Rollespørsmål
+            </label>
           )}
           {(start === 'seminar_live' || start === 'seminar_after') && (
             <label className="bib-sjekk">

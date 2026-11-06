@@ -1,8 +1,9 @@
-// How a new survey starts (2.16, decisions 5 and 6 of 17.10). The draft gets the structure questions
-// (initials, role), the contact and sender of «Innstillingar», plain words where a respondent meets the
-// survey first and one empty question of its own: it saves and shows in the phone at once, and only
-// that question is left to write. Sentences come from the approved seeded surveys where they fit; the
-// few new ones are listed in docs/varde/evidence/stage-2/2c-evidence.md for review.
+// How a new survey starts (2.16, decisions 5 and 6 of 17.10). The draft gets its structure questions
+// (initials when chosen, role unless switched off), the contact and sender of «Innstillingar», plain
+// words where a respondent meets the survey first and one empty question of its own: it saves and
+// shows in the phone at once, and only that question is left to write. Sentences come from the
+// approved seeded surveys where they fit; the few new ones are listed in
+// docs/varde/evidence/stage-2/2c-evidence.md for review.
 import type { TemplateContent } from '@varde/schema/template/template';
 import { initialsQuestion, roleQuestion } from '@varde/schema/template/structure';
 
@@ -17,6 +18,8 @@ export interface Starter {
   required_languages: Lang[];
   contact: TemplateContent['intro']['contact'];
   sender: TemplateContent['intro']['sender'];
+  /** Off for a survey with no roles to tell respondents apart (2.16): no role question at all. */
+  with_role_question: boolean;
 }
 
 const MINUTES: Record<Audience, number> = { client_survey: 5, seminar_live: 2, seminar_after: 3 };
@@ -55,11 +58,11 @@ export function starterContent(s: Starter): TemplateContent {
     ...(langs.includes('nb') ? { nb: t.nb ?? '' } : {}),
   });
   const initials = s.identification === 'initials';
-  const own = initials ? [initialsQuestion('Q1', langs)] : [];
-  const role = roleQuestion(`Q${own.length + 1}`, langs);
-  const first = { ...(own[0] ?? role) };
-  first.texts = { ...first.texts, section_title: say({ nn: 'Om deg', en: 'About you' }) };
-  const n = own.length + 2;
+  const structural = [
+    ...(initials ? [initialsQuestion('Q1', langs)] : []),
+    ...(s.with_role_question ? [roleQuestion(`Q${(initials ? 1 : 0) + 1}`, langs)] : []),
+  ];
+  const n = structural.length + 1;
   const empty = (text = '') => ({ texts: { text: say(text) } });
   const question = {
     id: `Q${n}`,
@@ -71,7 +74,18 @@ export function starterContent(s: Starter): TemplateContent {
       { id: 'a2', ...empty() },
     ],
   };
-  const questions = [first, ...(initials ? [role] : []), question] as TemplateContent['questions'];
+  // The first question of the survey carries «Om deg»; with neither initials nor role, there is
+  // none, and the one example question keeps its own section title instead.
+  const [head, ...rest] = structural;
+  const questions = (
+    head === undefined
+      ? [question]
+      : [
+          { ...head, texts: { ...head.texts, section_title: say({ nn: 'Om deg', en: 'About you' }) } },
+          ...rest,
+          question,
+        ]
+  ) as TemplateContent['questions'];
   const content: TemplateContent = {
     key: '',
     audience: s.audience,

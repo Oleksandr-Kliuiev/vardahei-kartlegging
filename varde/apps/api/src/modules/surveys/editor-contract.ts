@@ -26,6 +26,8 @@ export const TemplateInput = z
     identification: Identification,
     required_languages: z.array(Lang).min(1).max(3),
     copy_from: z.uuid().optional(),
+    // Off only skips the role question on a brand-new survey (2.16): a copy keeps the source's.
+    with_role_question: z.boolean().default(true),
   })
   .refine((v) => v.key !== undefined || v.title !== undefined, {
     message: 'Gi skjemaet eit namn.',
@@ -56,7 +58,8 @@ export function parse<T>(schema: z.ZodType<T>, input: unknown): T {
 const INCOMPLETE = [
   /^missing (nn|en|nb)$/,
   /requires (nn|en)$/,
-  /^exactly one role question$/,
+  /^at most one role question$/,
+  /^a role question is required when leader_roles is set$/,
   /^identification initials needs exactly one identifier$/,
   /^leader role .+ is not an option of the role question$/,
 ];

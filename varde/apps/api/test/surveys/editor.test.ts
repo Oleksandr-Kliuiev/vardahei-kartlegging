@@ -179,10 +179,12 @@ describe('admin survey editor and launch (1d)', () => {
   it('saves and previews an unfinished draft, never a broken reference; accept still needs a complete version', async () => {
     const c = content();
     delete c.questions[1]!.texts.text.en;
+    // leader_roles is empty here, so dropping the role question is a valid final state, not just
+    // a draft-in-progress one (validate.ts: a role question is only required when leader_roles is set).
     c.questions[0]!.role = undefined;
     const validation = await call('POST', '/api/admin/surveys/validate', c);
     const found = validation.json<{ issues: { message: string; blocking: boolean }[] }>().issues;
-    expect(found.map((i) => i.message).sort()).toEqual(['exactly one role question', 'missing en']);
+    expect(found.map((i) => i.message).sort()).toEqual(['missing en']);
     expect(found.every((i) => !i.blocking)).toBe(true);
     const saved = await call('PUT', path(version.id), {
       content_hash: version.content_hash,
