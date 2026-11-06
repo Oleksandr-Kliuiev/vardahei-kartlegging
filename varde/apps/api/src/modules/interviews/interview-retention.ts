@@ -8,19 +8,22 @@ import { guideQuestions } from './interview-view.js';
 
 type Db = Pick<Prisma.TransactionClient, 'interview' | 'deletionRequest'>;
 
-/** Deletes every conversation of the client (answers go with them); a dry run only counts. */
+/** Deletes every conversation of the client (answers go with them), with its own `retention.forget` row
+ * in AuditLog (counts only, as for answers); a dry run only counts. */
 export async function forgetInterviews(
-  tx: Db,
+  tx: Db & Pick<Prisma.TransactionClient, 'auditLog'>,
   client: string,
   who: string,
   reason: string,
   dryRun: boolean,
 ): Promise<number> {
+  // Without a client, Prisma would read `client_id: undefined` as no filter at all.
+  if (!client) throw new Error('forgetInterviews needs a client');
   const ids = (
     await tx.interview.findMany({ where: { client_id: client }, select: { id: true } })
   ).map((i) => i.id);
   if (dryRun || ids.length === 0) return ids.length;
-  await tx.deletionRequest.create({
+  const request = await tx.deletionRequest.create({
     data: {
       requested_by: who,
       reason,
@@ -29,6 +32,14 @@ export async function forgetInterviews(
     },
   });
   await tx.interview.deleteMany({ where: { id: { in: ids } } });
+  await tx.auditLog.create({
+    data: {
+      who,
+      what: 'retention.forget',
+      target: request.id,
+      details: { scope: 'client', reason, interviews: ids.length },
+    },
+  });
   return ids.length;
 }
 
@@ -53,8 +64,21 @@ const RATING: Record<string, string> = {
   ikkje_aktuelt: 'Ikkje aktuelt',
 };
 
-/** `samtalar.csv` of a handover: every answer of every conversation, internal notes included, since
- * they are the client's data too; plus the overall impression, what was agreed and the conversation note. */
+/** «Kari Nordmann, dagleg leiar · eigar» from the stored list of who sat at the table. */
+function people(list: Prisma.JsonValue): string {
+  if (!Array.isArray(list)) return '';
+  return list
+    .map((p) => {
+      const o = (p ?? {}) as { name?: unknown; role?: unknown };
+      return [o.name, o.role].filter((x) => typeof x === 'string' && x).join(', ');
+    })
+    .filter(Boolean)
+    .join(' · ');
+}
+
+/** `samtalar.csv` of a handover: who took part, every answer of every conversation, internal notes
+ * included, since they are the client's data too; plus the overall impression, what was agreed and the
+ * conversation note. */
 export async function interviewsCsv(db: Pick<Db, 'interview'>, client: string): Promise<string> {
   const rows = await db.interview.findMany({
     where: { client_id: client },
@@ -67,6 +91,11 @@ export async function interviewsCsv(db: Pick<Db, 'interview'>, client: string): 
   const lines: unknown[][] = [];
   for (const i of rows) {
     const day = i.held_on?.toISOString().slice(0, 10) ?? '';
+    for (const [label, text] of [
+      ['Kven var med frå kunden', people(i.interviewees)],
+      ['Frå Vardahei', i.interviewers.join(', ')],
+    ] as const)
+      if (text) lines.push([i.round.name, day, '', label, text, '', '', '']);
     const byId = new Map(i.answers.map((a) => [a.question_id, a]));
     guideQuestions(i.round.template_version.content).forEach((q, n) => {
       const a = byId.get(q.id);

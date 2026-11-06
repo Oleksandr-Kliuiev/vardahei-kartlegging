@@ -1,12 +1,11 @@
 // 2.20 Samtalar on Postgres: a guide from «Nytt skjema → Samtale», a round of conversations, the start,
 // field-by-field saves against the value last seen (409), «Fullfør» / «Opne for endring» in AuditLog,
-// typed text never in AuditLog, and the data class `samtale` in forget, the ledger and handover.
+// typed text never in AuditLog, two saves at once (the row lock), and the data class `samtale` in forget,
+// the ledger and handover.
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import {
-  applyInterviewLedger,
-  interviewsCsv,
-} from '../../src/modules/interviews/interview-retention.js';
+import { interviewsCsv } from '../../src/modules/interviews/interview-retention.js';
+import { DeletionLedger } from '../../src/modules/retention/ledger.js';
 import { makeClients, seminarApp, type SeminarApp } from '../support/seminars.js';
 
 let t: SeminarApp;
@@ -254,22 +253,75 @@ describe('one conversation', () => {
   });
 
   it('never writes what was typed to AuditLog', async () => {
-    const logs = await t.prisma.auditLog.findMany({
-      where: { what: { startsWith: 'interviews.' } },
+    const logs = JSON.stringify(
+      await t.prisma.auditLog.findMany({
+        where: {
+          what: { startsWith: 'interviews.' },
+          target: {
+            in: [`interview:${interviewA}`, `interview:${interviewB}`, `interview_round:${round}`],
+          },
+        },
+      }),
+    );
+    expect(logs).toContain('interviews.done');
+    for (const typed of [
+      t.mark,
+      'Kandidat for pakken',
+      'Kari Nordmann',
+      'Peik ut ein ansvarleg',
+      'God merksemd',
+      'Tilbod innan 2. desember',
+    ])
+      expect(logs).not.toContain(typed);
+  });
+
+  it('two saves of one field at once: the row lock lets one through and gives the other 409', async () => {
+    let held!: () => void;
+    const locked = new Promise<void>((r) => (held = r));
+    const other = t.prisma.$transaction(async (db) => {
+      await db.$queryRaw`SELECT id FROM interview WHERE id = ${interviewA}::uuid FOR UPDATE`;
+      held();
+      await new Promise((r) => setTimeout(r, 400));
     });
-    expect(JSON.stringify(logs)).not.toContain(t.mark + '');
-    expect(JSON.stringify(logs)).not.toContain('Kandidat for pakken');
-    expect(JSON.stringify(logs)).not.toContain('Kari Nordmann');
+    await locked;
+    const both = await Promise.all(
+      ['Første skjerm', 'Andre skjerm'].map((value) =>
+        answer(interviewA, 'N5', { field: 'answer', value, expect: '' }),
+      ),
+    );
+    await other;
+    expect(both.map((r) => r.statusCode).sort()).toEqual([200, 409]);
+  });
+
+  it('refuses half of a character with 400 (Postgres cannot store it)', async () => {
+    const r = await answer(interviewA, 'N6', {
+      field: 'answer',
+      value: 'Halv \ud83d emoji',
+      expect: '',
+    });
+    expect(r.statusCode).toBe(400);
   });
 });
 
 describe('data class samtale: handover, forget and the ledger', () => {
-  it('the handover lists every answer with notes, the summary and what was agreed', async () => {
+  it('the handover lists who took part, every answer with notes, the summary and what was agreed, of this client only', async () => {
+    await t.prisma.interviewAnswer.create({
+      data: {
+        interview_id: interviewB,
+        question_id: 'N2',
+        answer: `Berre for B ${t.mark}`,
+        updated_by: 'test',
+      },
+    });
     const text = await interviewsCsv(t.prisma, clientA);
     expect(text).toContain(`Ingen definert ansvarleg ${t.mark}`);
     expect(text).toContain('Manglar');
     expect(text).toContain('Kandidat for pakken');
     expect(text).toContain('Tilbod innan 2. desember');
+    expect(text).toContain('Kari Nordmann, dagleg leiar');
+    expect(text).toContain('Asbjørn, Oleksandr');
+    expect(text).not.toContain(`Berre for B ${t.mark}`);
+    expect(await interviewsCsv(t.prisma, clientB)).toContain(`Berre for B ${t.mark}`);
   });
 
   it('forget by client: a dry run counts, the real run deletes and the ledger deletes a restored copy again', async () => {
@@ -279,6 +331,14 @@ describe('data class samtale: handover, forget and the ledger', () => {
         reason: 'Kunden ba om sletting (test)',
         dry_run,
       });
+    // A scope without a client never reaches the conversations.
+    const bySubmission = await t.call('POST', '/api/admin/retention/forget', {
+      scope: { scope: 'submissions', submission_ids: [randomUUID()] },
+      reason: 'Test',
+      dry_run: true,
+    });
+    expect(bySubmission.statusCode, bySubmission.body).toBe(201);
+    expect(json<{ interviews: number }>(bySubmission).interviews).toBe(0);
     const preview = await forget(true);
     expect(preview.statusCode, preview.body).toBe(201);
     expect(json<{ interviews: number; total: number }>(preview)).toMatchObject({
@@ -294,11 +354,16 @@ describe('data class samtale: handover, forget and the ledger', () => {
       where: { scope: 'client', scope_ref: { path: ['client'], equals: clientA } },
     });
     expect(request?.scope_ref).toMatchObject({ interviews: [interviewA] });
-    // A restore brings the row back; the ledger takes it away again.
+    // AuditLog has the deletion: counts, never the client's text.
+    const logged = await t.prisma.auditLog.findFirst({
+      where: { what: 'retention.forget', target: request!.id },
+    });
+    expect(logged?.details).toMatchObject({ scope: 'client', interviews: 1 });
+    // A restore brings the row back; the ledger (as `ledger apply-db` runs it) takes it away again.
     await t.prisma.interview.create({
       data: { id: interviewA, interview_round_id: round, client_id: clientA },
     });
-    const gone = await t.prisma.$transaction((tx) => applyInterviewLedger(tx));
+    const gone = await t.app.get(DeletionLedger).apply();
     expect(gone).toBeGreaterThanOrEqual(1);
     expect(await t.prisma.interview.count({ where: { id: interviewA } })).toBe(0);
     // The other client's conversation is untouched.

@@ -17,9 +17,18 @@ function sources(dir: string): string[] {
 }
 const files = sources(SRC).map((f) => ({ path: relative(SRC, f), text: readFileSync(f, 'utf8') }));
 
-/** A Prisma call on a conversation table, or SQL naming one. */
-const TABLES =
-  /\.(?:interview|interviewAnswer|interviewRound)\s*\.\s*(?:find|create|update|upsert|delete|count|aggregate|groupBy)|\binterview_(?:answer|round)\b|\bFROM\s+"?interview"?\b/i;
+/** A Prisma call on a conversation table (`db.interview.findMany`, `db['interviewAnswer']`), the
+ * relation from a client or a round (`include: { interviews: true }`), or SQL naming one. */
+const TABLES = new RegExp(
+  [
+    /\.(?:interview|interviewAnswer|interviewRound)\s*\.\s*(?:find|create|update|upsert|delete|count|aggregate|groupBy)/
+      .source,
+    /\[\s*['"`](?:interview|interviewAnswer|interviewRound)['"`]\s*\]/.source,
+    /\binterviews\s*:\s*(?:true|\{)/.source,
+    /\binterview_(?:answer|round)\b/.source,
+    /\b(?:FROM|JOIN|INTO|UPDATE)\s+"?interview"?\b/.source,
+  ].join('|'),
+);
 
 describe('conversations stay in their own module (2.20)', () => {
   it('only the interviews module touches the conversation tables', () => {

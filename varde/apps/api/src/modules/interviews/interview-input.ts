@@ -1,5 +1,6 @@
 // Input of «Samtalar» (2.20): rounds of conversations, the start of one conversation and the saving of
-// one field. Texts keep their line breaks; other control characters are refused.
+// one field. Texts keep their line breaks; other control characters are refused, and so is half of a
+// character (a lone surrogate, which Postgres cannot store: it would be a 500, not a 400).
 import { BadRequestException } from '@nestjs/common';
 import { z } from 'zod';
 
@@ -7,7 +8,7 @@ const text = (max: number, multiline = false) =>
   z
     .string()
     .max(max, { message: 'Teksten er for lang.' })
-    .refine((s) => !(multiline ? /[^\P{Cc}\n\t]/u : /\p{Cc}/u).test(s), {
+    .refine((s) => !(multiline ? /[^\P{Cc}\n\t]|\p{Cs}/u : /\p{Cc}|\p{Cs}/u).test(s), {
       message: 'Teksten har teikn som ikkje kan brukast. Skriv han på nytt.',
     });
 const line = (max: number) => text(max).transform((s) => s.trim());
