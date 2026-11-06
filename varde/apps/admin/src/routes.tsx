@@ -11,6 +11,9 @@ import { PERSONVERN, PersonvernPage, personvernTab } from './personvern-page.js'
 import { useRounds } from './queries.js';
 import { RundarPage } from './rundar-page.js';
 import { RundePage } from './runde-page.js';
+import { SamtalarPage } from './samtalar-page.js';
+import { OppsummeringPage } from './samtale-oppsummering.js';
+import { SamtalePage } from './samtale-page.js';
 import { SeminarPage } from './seminar-page.js';
 import { SettingsPage } from './settings-page.js';
 import { sectionOf } from './shell.js';
@@ -137,6 +140,19 @@ export function resolve(path: string, search: string): Page {
   const seminar = match(path, `/admin/seminars(?:/${ID})?`);
   // One seminar has its own heading and tab title, the topic, as a round and a client have.
   if (seminar) return page(<SeminarPage id={seminar[1]} />, seminar[1] ? null : undefined);
+  // Samtalar (2.20): the rounds; one conversation and its summary write their own heading.
+  if (path === '/admin/samtalar') return page(<SamtalarPage key={search} search={search} />);
+  const samtale = match(path, `/admin/samtalar/${ID}(/oppsummering)?`);
+  if (samtale)
+    return {
+      element: samtale[2] ? (
+        <OppsummeringPage key={samtale[1]} id={samtale[1]!} />
+      ) : (
+        <SamtalePage key={samtale[1]} id={samtale[1]!} search={search} />
+      ),
+      heading: null,
+      wide: true,
+    };
   const personvern = match(path, '/admin/personvern(?:/([a-z]+))?');
   if (personvern) {
     const tab = personvernTab(personvern[1]);

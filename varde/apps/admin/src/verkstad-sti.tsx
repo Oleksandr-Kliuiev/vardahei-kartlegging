@@ -52,6 +52,7 @@ export function Sti(p: StiProps) {
   const activeSection = (i: number) =>
     p.selected === sectionKey(i) || sections[i]?.questions.some((x) => x.id === p.selected);
   const inLeader = p.selected === NODE.leader || leader.some((x) => x.id === p.selected);
+  const interview = p.content.audience === 'interview';
   // The chosen stop stays in sight (chosen in the phone, by «Gå til» or on the keyboard). Only the
   // trail scrolls, never the page, and the row never hides under the search at the top.
   const nav = useRef<HTMLElement>(null);
@@ -194,7 +195,12 @@ export function Sti(p: StiProps) {
     </div>
   );
   return (
-    <nav className="vk-sti" aria-label="Innhaldet i skjemaet" ref={nav}>
+    <nav
+      // A conversation guide (2.20) has no welcome, end or phone: the class lets the workshop drop them.
+      className={interview ? 'vk-sti vk-sti-samtale' : 'vk-sti'}
+      aria-label="Innhaldet i skjemaet"
+      ref={nav}
+    >
       <div className="vk-sti-topp">
         <input
           type="search"
@@ -205,7 +211,9 @@ export function Sti(p: StiProps) {
           onChange={(e) => setQuery(e.target.value)}
         />
         <p className="vk-sti-tal">
-          {p.content.questions.length - leader.length} felles · {leader.length} for leiarar ·{' '}
+          {interview
+            ? `${p.content.questions.length} spørsmål · `
+            : `${p.content.questions.length - leader.length} felles · ${leader.length} for leiarar · `}
           {sections.length} {sections.length === 1 ? 'seksjon' : 'seksjonar'}
         </p>
       </div>
@@ -213,7 +221,7 @@ export function Sti(p: StiProps) {
         {!q && (
           <>
             <li>{row(NODE.settings, 'tannhjul', 'Om skjemaet')}</li>
-            <li>{row(NODE.intro, 'flagg', 'Velkomen')}</li>
+            {!interview && <li>{row(NODE.intro, 'flagg', 'Velkomen')}</li>}
             {p.content.invitation && (
               <li>{row(NODE.invitation, 'send', 'Invitasjon og plakat')}</li>
             )}
@@ -248,7 +256,7 @@ export function Sti(p: StiProps) {
                     <Icon name="pluss" small />
                     Spørsmål
                   </button>
-                  {p.onBank && (
+                  {p.onBank && !interview && (
                     <button type="button" className="vk-legg" onClick={() => p.onBank?.(i)}>
                       <Icon name="kopi" small />
                       Hent
@@ -271,7 +279,7 @@ export function Sti(p: StiProps) {
             )}
           </li>
         )}
-        {!q && <li>{row(NODE.end, 'topp', 'Råd på slutten')}</li>}
+        {!q && !interview && <li>{row(NODE.end, 'topp', 'Råd på slutten')}</li>}
       </ul>
       {!p.readOnly && (
         <div className="vk-sti-fot">

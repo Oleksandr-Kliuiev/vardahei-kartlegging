@@ -1,0 +1,170 @@
+// «Samtalar» (2.20): the shapes the API gives, the rating scale and small helpers shared by the pages.
+import { useQuery } from '@tanstack/react-query';
+import { api } from './api.js';
+
+export type Rating = 'ivaretatt' | 'forbetring' | 'manglar' | 'ikkje_aktuelt';
+export type Status = 'planned' | 'in_progress' | 'done';
+
+/** The scale of decision 2 of 06.11: always a word and a glyph beside the colour. */
+export const RATING: Record<Rating, { word: string; glyph: string; key: string; cls: string }> = {
+  ivaretatt: { word: 'Ivaretatt', glyph: '✓', key: '1', cls: 'iv' },
+  forbetring: { word: 'Forbetringspotensial', glyph: '!', key: '2', cls: 'fb' },
+  manglar: { word: 'Manglar', glyph: '✕', key: '3', cls: 'mg' },
+  ikkje_aktuelt: { word: 'Ikkje aktuelt', glyph: '·', key: '0', cls: 'na' },
+};
+export const SCALE: readonly Rating[] = ['ivaretatt', 'forbetring', 'manglar'];
+
+export interface Counts {
+  ivaretatt: number;
+  forbetring: number;
+  manglar: number;
+  ikkje_aktuelt: number;
+  none: number;
+}
+export interface Person {
+  role: string;
+  name?: string;
+}
+export interface Guide {
+  id: string;
+  label: string;
+  version_no: number;
+  published_at: string | null;
+  title: string;
+  question_count: number;
+}
+export interface RoundSummary {
+  id: string;
+  name: string;
+  status: string;
+  created_at: string;
+  guide: { id: string; label: string; title: string };
+  counts: { planned: number; in_progress: number; done: number; total: number };
+}
+export interface InterviewRow {
+  id: string;
+  client: { id: string; name: string };
+  status: Status;
+  held_on: string | null;
+  interviewees: Person[];
+  done_at: string | null;
+  updated_at: string;
+  counts: Counts;
+  score: number | null;
+}
+export interface RoundView {
+  id: string;
+  name: string;
+  status: string;
+  guide: { id: string; label: string; title: string; question_count: number };
+  interviews: InterviewRow[];
+}
+export interface GuideQuestion {
+  id: string;
+  section: string;
+  short: string;
+  text: string;
+  help: string | null;
+}
+export interface AnswerRow {
+  answer: string;
+  rating: Rating | null;
+  action: string;
+  note: string;
+  updated_at: string;
+  updated_by: string;
+}
+export interface Interview {
+  id: string;
+  status: Status;
+  held_on: string | null;
+  interviewees: Person[];
+  interviewers: string[];
+  summary: string;
+  agreed: string;
+  note: string;
+  started_at: string | null;
+  done_at: string | null;
+  done_by: string | null;
+  client: { id: string; name: string };
+  round: { id: string; name: string };
+  guide: { title: string; label: string; questions: GuideQuestion[] };
+  answers: Record<string, AnswerRow>;
+}
+export interface ClientInterview {
+  id: string;
+  status: Status;
+  held_on: string | null;
+  done_at: string | null;
+  round: { id: string; name: string };
+  counts: Counts;
+  score: number | null;
+}
+
+export const STATUS: Record<Status, string> = {
+  planned: 'Ikkje starta',
+  in_progress: 'Pågår',
+  done: 'Fullført',
+};
+
+/** 2026-11-10 → 10.11.2026 */
+export const dmy = (iso: string | null | undefined) =>
+  iso ? `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(0, 4)}` : '';
+/** Today in the browser's own time zone, as the API takes a day. */
+export const today = () => new Date().toLocaleDateString('sv-SE');
+export const clock = (d: Date) =>
+  d.toLocaleTimeString('nn-NO', { hour: '2-digit', minute: '2-digit' });
+
+/** «Kari Nordmann, dagleg leiar · eigar» */
+export const peopleText = (people: readonly Person[]) =>
+  people.map((p) => [p.name, p.role].filter(Boolean).join(', ')).join(' · ');
+
+/** Counts of the scale from the answers on screen (the API counts the same way). */
+export function countOf(
+  questions: readonly { id: string }[],
+  rating: (id: string) => Rating | null,
+): Counts {
+  const c: Counts = { ivaretatt: 0, forbetring: 0, manglar: 0, ikkje_aktuelt: 0, none: 0 };
+  for (const q of questions) {
+    const r = rating(q.id);
+    if (r) c[r] += 1;
+    else c.none += 1;
+  }
+  return c;
+}
+/** Ivaretatt 2, Forbetringspotensial 1, Manglar 0; «Ikkje aktuelt» and unrated do not count. */
+export const scoreOf = (c: Counts) => {
+  const n = c.ivaretatt + c.forbetring + c.manglar;
+  return n ? Math.round(((2 * c.ivaretatt + c.forbetring) / (2 * n)) * 100) : null;
+};
+export const rated = (c: Counts) => c.ivaretatt + c.forbetring + c.manglar + c.ikkje_aktuelt;
+
+export const useInterviewRounds = () =>
+  useQuery({
+    queryKey: ['samtalar', 'rounds'],
+    queryFn: () => api<RoundSummary[]>('/api/admin/interview-rounds'),
+  });
+export const useInterviewRound = (id: string | undefined) =>
+  useQuery({
+    queryKey: ['samtalar', 'round', id],
+    queryFn: () => api<RoundView>(`/api/admin/interview-rounds/${id}`),
+    enabled: id !== undefined,
+  });
+export const useGuides = () =>
+  useQuery({
+    queryKey: ['samtalar', 'guides'],
+    queryFn: () => api<Guide[]>('/api/admin/interview-guides'),
+  });
+/** One conversation; read once per visit: what is typed lives in the save store afterwards. */
+export const useInterview = (id: string) =>
+  useQuery({
+    queryKey: ['samtalar', 'interview', id],
+    queryFn: () => api<Interview>(`/api/admin/interviews/${id}`),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+export const useClientInterviews = (client: string) =>
+  useQuery({
+    queryKey: ['samtalar', 'client', client],
+    queryFn: () => api<ClientInterview[]>(`/api/admin/clients/${client}/interviews`),
+  });

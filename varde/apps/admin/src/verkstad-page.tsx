@@ -28,7 +28,7 @@ import {
   moveBy,
   moveQuestion,
   moveSection,
-  newQuestion,
+  firstQuestion,
   nextId,
   ordered,
   removeQuestion,
@@ -217,7 +217,7 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
   };
   const add = (where: number | 'leader', from?: Question) => {
     const id = nextId(content, used());
-    const q = from ? { ...from, id } : newQuestion('single', id, languages);
+    const q = from ? { ...from, id } : firstQuestion(content.audience, id, languages);
     const current = content.questions.find((x) => x.id === sel);
     const list =
       where === 'leader' ? leaderOf(content) : (sectionsOf(content)[where]?.questions ?? []);
@@ -238,7 +238,7 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
         c,
         at < 0 ? sections.length - 1 : at,
         { ...Object.fromEntries(languages.map((l) => [l, ''])), nn: 'Ny seksjon' },
-        newQuestion('single', id, languages),
+        firstQuestion(content.audience, id, languages),
       ),
     );
     setSel(`:seksjon:${(at < 0 ? sections.length - 1 : at) + 1}`);

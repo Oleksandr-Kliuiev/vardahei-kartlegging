@@ -197,16 +197,21 @@ export function Topp(p: {
             {p.view === 'omsetjing' ? 'Tilbake til skjemaet' : 'Omsetjing'}
           </button>
         )}
-        <DelForhand id={p.saved.id} />
-        <button
-          type="button"
-          className="btn sm ghost vk-telefonknapp"
-          aria-pressed={p.phone}
-          onClick={p.onPhone}
-        >
-          <Icon name="telefon" small />
-          Telefon
-        </button>
+        {/* A conversation guide (2.20) is never answered on a phone: no preview, no phone. */}
+        {p.saved.content.audience !== 'interview' && (
+          <>
+            <DelForhand id={p.saved.id} />
+            <button
+              type="button"
+              className="btn sm ghost vk-telefonknapp"
+              aria-pressed={p.phone}
+              onClick={p.onPhone}
+            >
+              <Icon name="telefon" small />
+              Telefon
+            </button>
+          </>
+        )}
         {p.readOnly ? (
           <button type="button" className="btn sm primary" disabled={p.busy} onClick={p.onNewDraft}>
             <Icon name="pluss" small />

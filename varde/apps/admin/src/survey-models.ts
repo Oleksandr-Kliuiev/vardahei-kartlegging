@@ -68,4 +68,5 @@ export const AUDIENCE: Record<string, string> = {
   client_survey: 'Undersøking hos kundar',
   seminar_live: 'Spørsmål på seminaret',
   seminar_after: 'Etter seminaret',
+  interview: 'Samtale med nøkkelpersonar',
 };

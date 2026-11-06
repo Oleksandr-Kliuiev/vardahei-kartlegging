@@ -323,7 +323,7 @@ function Kort({ s }: { s: SurveySummary }) {
   );
 }
 
-type Start = 'client_survey' | 'seminar_live' | 'seminar_after' | 'copy';
+type Start = 'client_survey' | 'seminar_live' | 'seminar_after' | 'interview' | 'copy';
 const STARTS: { id: Start; title: string; text: string; icon: IconName }[] = [
   {
     id: 'client_survey',
@@ -342,6 +342,12 @@ const STARTS: { id: Start; title: string; text: string; icon: IconName }[] = [
     title: 'Etter seminaret',
     text: 'Kort og utan namn, etter seminaret.',
     icon: 'flagg',
+  },
+  {
+    id: 'interview',
+    title: 'Samtale med nøkkelpersonar',
+    text: 'Guide til samtalen hos kunden: dei 27 spørsmåla i Kartlegging nøkkelpersonar. Berre nynorsk.',
+    icon: 'prat',
   },
   {
     id: 'copy',
@@ -381,7 +387,7 @@ function NyttSkjema({ surveys, onClose }: { surveys: SurveySummary[]; onClose: (
             audience: start,
             identification: start === 'client_survey' && initials ? 'initials' : 'none',
             required_languages: start === 'client_survey' || english ? ['nn', 'en'] : ['nn'],
-            with_role_question: withRole,
+            with_role_question: withRole && start !== 'interview',
           };
     setBusy(true);
     setError(null);
@@ -461,8 +467,11 @@ function NyttSkjema({ surveys, onClose }: { surveys: SurveySummary[]; onClose: (
               </label>
             </fieldset>
           )}
-          {start !== 'copy' && (
-            <label className="bib-sjekk" title="Av, om ingen her skal skiljast etter rolle (til dømes eit intervju med éin nøkkelperson).">
+          {start !== 'copy' && start !== 'interview' && (
+            <label
+              className="bib-sjekk"
+              title="Av, om ingen her skal skiljast etter rolle (til dømes eit intervju med éin nøkkelperson)."
+            >
               <input
                 type="checkbox"
                 checked={withRole}

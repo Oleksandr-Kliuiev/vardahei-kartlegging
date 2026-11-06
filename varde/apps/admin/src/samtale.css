@@ -1,0 +1,209 @@
+/* Samtalar (2.20): the conversation at the table, its summary, the rounds and the client block.
+   The rating scale is a status scale: a glyph in a disc and a word, never the colour alone. In light mode
+   Ivaretatt takes green-600, so a white glyph reaches 4.5:1 (sone-gron gives 4.29). */
+:root {
+  --sm-iv: var(--green-600); --sm-iv-bg: var(--sone-gron-bg); --sm-on-iv: #ffffff;
+  --sm-fb: var(--sone-gul); --sm-fb-bg: var(--sone-gul-bg); --sm-on-fb: #0b0b0b;
+  --sm-mg: var(--sone-raud); --sm-mg-bg: var(--sone-raud-bg); --sm-on-mg: #ffffff;
+  --sm-na: var(--graa-400); --sm-on-na: #0b0b0b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --sm-iv: var(--sone-gron); --sm-on-iv: #0b0b0b; --sm-on-mg: #0b0b0b; --sm-na: var(--graa-600); --sm-on-na: #ffffff; }
+}
+:root[data-theme="dark"] { --sm-iv: var(--sone-gron); --sm-on-iv: #0b0b0b; --sm-on-mg: #0b0b0b; --sm-na: var(--graa-600); --sm-on-na: #ffffff; }
+
+/* Marks and the bar of the scale */
+.sm-mark { width: 18px; height: 18px; border-radius: 50%; display: inline-grid; place-items: center; flex: none; font-size: 12px; font-weight: 800; line-height: 1; }
+.sm-mark.sm-iv { background: var(--sm-iv); color: var(--sm-on-iv); }
+.sm-mark.sm-fb { background: var(--sm-fb); color: var(--sm-on-fb); }
+.sm-mark.sm-mg { background: var(--sm-mg); color: var(--sm-on-mg); }
+.sm-mark.sm-na { background: var(--sm-na); color: var(--sm-on-na); }
+.sm-mark.sm-tom { box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+.sm-mark.sm-skrive::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ink-muted); }
+.sm-bar { display: flex; gap: 2px; height: 8px; min-width: 64px; }
+.sm-bar > i { display: block; height: 100%; border-radius: 999px; flex-basis: 0; min-width: 4px; font-style: normal; }
+.sm-bar > .sm-iv { background: var(--sm-iv); } .sm-bar > .sm-fb { background: var(--sm-fb); }
+.sm-bar > .sm-mg { background: var(--sm-mg); } .sm-bar > .sm-na { background: var(--sm-na); }
+.sm-bar > .sm-ingen { background: var(--bg-sunken); box-shadow: inset 0 0 0 1px var(--line); }
+.sm-bar-hoy { height: 28px; }
+.sm-bar-hoy > i { border-radius: 4px; display: flex; align-items: center; padding: 0 8px; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.sm-bar-hoy > .sm-iv { color: var(--sm-on-iv); } .sm-bar-hoy > .sm-fb { color: var(--sm-on-fb); }
+.sm-bar-hoy > .sm-mg { color: var(--sm-on-mg); } .sm-bar-hoy > .sm-na { color: var(--sm-on-na); }
+.sm-bar-hoy > .sm-ingen { color: var(--ink); }
+
+/* What is saved */
+.sm-lagra { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 650; color: var(--ink-muted); }
+.sm-lagra > i { width: 8px; height: 8px; border-radius: 50%; background: var(--live); flex: none; }
+.sm-lagrar > i { background: var(--accent); }
+.sm-ventar, .sm-feil { color: var(--warning-fg); }
+.sm-ventar > i, .sm-feil > i { background: var(--warning-fg); }
+
+/* The conversation */
+.sm-samtale { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.sm-topp { position: sticky; top: calc(60px + env(safe-area-inset-top, 0px)); z-index: 15; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 10px 0; background: color-mix(in oklab, var(--bg) 92%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+.sm-kven { display: grid; gap: 1px; min-width: 0; }
+.sm-kven h1 { font-size: 20px; line-height: 1.2; font-weight: 780; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.sm-kven p { font-size: 13px; color: var(--ink-muted); }
+.sm-topp-hogre { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.sm-framdrift { display: grid; gap: 5px; width: 170px; font-size: 12.5px; color: var(--ink-muted); }
+.sm-framdrift b { color: var(--ink-strong); }
+.sm-tid { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-muted); white-space: nowrap; }
+.sm-melding { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; padding: 10px 14px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface-2); font-size: 14px; line-height: 1.5; }
+.sm-melding > span { display: inline-flex; align-items: flex-start; gap: 8px; margin: 0; min-width: 0; }
+/* A sentence stays a sentence: its links wrap with the words. */
+.sm-melding > p { display: block; flex: 1; margin: 0; min-width: 0; }
+.sm-melding .icon { margin-top: 3px; flex: none; }
+.sm-melding.sm-ok { background: var(--success-bg); color: var(--success-fg); border-color: var(--success-line); }
+.sm-melding.sm-varsel { background: var(--warning-bg); color: var(--warning-fg); border-color: var(--warning-line); justify-content: flex-start; align-items: flex-start; }
+.sm-melding.sm-varsel a { color: inherit; font-weight: 650; display: inline-block; padding: 2px 0; }
+.sm-melding.sm-info { color: var(--ink); }
+.sm-flate { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 24px; align-items: start; }
+.sm-liste { position: sticky; top: 150px; max-height: calc(100vh - 236px); overflow-y: auto; padding: 4px 6px 16px 0; border-right: 1px solid var(--line); scrollbar-width: thin;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 24px), transparent); }
+.sm-liste .sm-tema { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); font-weight: 600; padding: 12px 8px 4px; margin: 0; }
+/* Two classes: base.css makes every button:has(> .icon) a centred flex row, and the lock of «Eige notat» is one. */
+.sm-samtale .sm-rad { width: 100%; display: grid; grid-template-columns: 22px minmax(0, 1fr) 16px auto; justify-content: stretch; align-items: center; gap: 8px; min-height: 34px; padding: 5px 8px; border: 0; border-radius: 9px; background: none; text-align: left; font-size: 14px; color: var(--ink); }
+.sm-rad:hover { background: var(--surface-hover); color: var(--ink-strong); }
+.sm-rad.sm-no { background: var(--accent-soft); color: var(--accent-text); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 22%, transparent); font-weight: 650; }
+.sm-rad .icon { width: 14px; height: 14px; color: var(--ink-muted); }
+.sm-nr { font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted); text-align: right; }
+.sm-kort-namn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sm-stripe { display: none; }
+.sm-kort { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; max-width: 780px; min-width: 0; }
+.sm-q { font-size: clamp(21px, 2.4vw, 26px); line-height: 1.28; font-weight: 730; letter-spacing: -0.012em; color: var(--ink-strong); max-width: 42ch; margin: 0; }
+.sm-hjelp { border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-2); }
+.sm-hjelp summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; padding: 8px 12px; min-height: 40px; font-size: 14px; font-weight: 650; border-radius: var(--r-md); }
+.sm-hjelp summary::-webkit-details-marker { display: none; }
+.sm-hjelp summary .icon:first-child { color: var(--accent-text); }
+.sm-hjelp summary .icon:last-child { margin-left: auto; color: var(--ink-muted); transition: transform var(--t-base) var(--ease-sti); }
+.sm-hjelp[open] summary .icon:last-child { transform: rotate(90deg); }
+.sm-hjelp p { padding: 0 14px 12px 34px; font-size: 14.5px; line-height: 1.5; margin: 0; }
+.sm-label { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; font-weight: 700; font-size: 14.5px; color: var(--ink-strong); margin-top: 8px; }
+.sm-label .icon { align-self: center; color: var(--ink-muted); }
+.sm-hint { font-weight: 500; font-size: 13px; color: var(--ink-muted); }
+.sm-ta { display: block; width: 100%; resize: vertical; line-height: 1.5; font-size: 16px; field-sizing: content; }
+.sm-ta-svar { min-height: 112px; }
+.sm-ta-kort { min-height: 70px; }
+.sm-ta-notat { background: var(--surface-2); border-style: dashed; }
+.sm-ta[readonly] { background: var(--surface-2); border-color: var(--line); }
+.sm-passord { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13.5px; font-weight: 600; color: var(--warning-fg); background: var(--warning-bg); border: 1px solid var(--warning-line); border-radius: var(--r-sm); padding: 7px 10px; }
+.sm-skala { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sm-val { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 10px 12px 10px 14px; border-radius: var(--r-md); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-strong); font-weight: 700; font-size: 15px; text-align: left; min-width: 0; transition: background-color var(--t-quick) var(--ease-sti), border-color var(--t-quick) var(--ease-sti); }
+.sm-val:hover { background: var(--surface-hover); }
+.sm-val .sm-mark { width: 22px; height: 22px; font-size: 12.5px; }
+.sm-val span:not(.sm-mark) { min-width: 0; overflow-wrap: anywhere; line-height: 1.2; }
+.sm-val kbd { margin-left: auto; flex: none; }
+.sm-val-iv[aria-checked="true"] { background: var(--sm-iv-bg); border-color: var(--sm-iv); box-shadow: inset 0 0 0 1px var(--sm-iv); }
+.sm-val-fb[aria-checked="true"] { background: var(--sm-fb-bg); border-color: var(--sm-fb); box-shadow: inset 0 0 0 1px var(--sm-fb); }
+.sm-val-mg[aria-checked="true"] { background: var(--sm-mg-bg); border-color: var(--sm-mg); box-shadow: inset 0 0 0 1px var(--sm-mg); }
+.sm-val[aria-disabled="true"] { cursor: default; }
+.sm-val[aria-disabled="true"]:not([aria-checked="true"]) { opacity: .55; }
+.sm-skala-meir { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--ink-muted); }
+.sm-skala-meir .linkbtn { padding-left: 0; }
+.sm-skala-meir .linkbtn.on, .sm-kort .linkbtn.on { color: var(--ink-strong); text-decoration-color: currentColor; }
+.sm-nytt-notat { display: inline-flex; align-items: center; gap: 6px; padding-left: 0; justify-self: start; }
+.sm-konflikt { display: grid; gap: 8px; padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--warning-line); background: var(--warning-bg); color: var(--warning-fg); font-size: 14px; }
+.sm-konflikt p { margin: 0; }
+.sm-fot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--line); }
+.sm-snarveg { display: inline-flex; gap: 6px; align-items: center; font-size: 12.5px; color: var(--ink-muted); }
+/* A phone has no Alt key: the hints go, and «Førre» and «Neste» share one row. */
+@media (max-width: 640px) { .sm-snarveg, .sm-tast, .sm-val kbd { display: none; } }
+.sm-tom-side { display: grid; gap: 10px; padding: 24px 0; }
+@media (max-width: 1100px) { .sm-skala { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 860px) {
+  .sm-topp { position: static; }
+  .sm-topp-hogre { margin-left: 0; width: 100%; justify-content: space-between; }
+  .sm-flate { grid-template-columns: minmax(0, 1fr); }
+  .sm-liste { display: none; }
+  .sm-stripe { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0 10px; scrollbar-width: thin;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); }
+  .sm-stripe .sm-rad { width: auto; flex: none; grid-template-columns: auto auto; gap: 6px; padding: 4px 10px 4px 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+  .sm-stripe .sm-rad.sm-no { border-color: var(--accent); }
+}
+
+/* The summary */
+.sm-sum { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.sm-sum > .lenkje { justify-self: start; }
+.sm-sum-hovud { display: grid; gap: 10px; }
+.sm-sum-hovud h2 { font-size: 22px; font-weight: 760; margin: 0; }
+.sm-meta { font-size: 14px; color: var(--ink-muted); }
+.sm-meta b { color: var(--ink-strong); }
+.sm-forklaring { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--ink-muted); margin: 0; }
+.sm-forklaring span { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.sm-sum-flate { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.sm-sum-side { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; }
+.sm-gruppe + .sm-gruppe { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.sm-gruppe h3 { display: flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 720; margin: 0 0 4px; }
+.sm-gruppe ul, .sm-plass, .sm-notat, .sm-rundliste, .sm-kundesamtalar { list-style: none; margin: 0; padding: 0; display: grid; }
+.sm-gruppe li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 4px 10px; align-items: start; padding: 9px 0; border-top: 1px solid var(--line); }
+.sm-gruppe li:first-child { border-top: 0; }
+.sm-gruppe .sm-nr { padding-top: 2px; }
+.sm-punkt { display: grid; gap: 3px; min-width: 0; font-size: 14px; line-height: 1.45; }
+.sm-punkt b { font-size: 14.5px; color: var(--ink-strong); }
+.sm-punkt em { font-style: normal; font-size: 13px; color: var(--ink-muted); }
+.sm-gruppe .linkbtn { padding: 6px; margin: -6px -6px -6px 0; font-size: 13px; }
+.sm-plass { gap: 8px; }
+.sm-plass li { display: flex; gap: 10px; align-items: center; font-size: 14.5px; }
+.sm-plass .sm-nr { width: 22px; flex: none; }
+.kort-hovud h2 .sm-mark { width: 18px; height: 18px; }
+.sm-felt { display: grid; gap: 6px; }
+.sm-felt + .sm-felt { margin-top: 12px; }
+.sm-felt .sm-label { margin-top: 0; }
+.sm-intern { border-style: dashed; background: var(--surface-2); }
+.sm-notat { gap: 8px; margin-bottom: 12px; }
+.sm-notat li { font-size: 14px; line-height: 1.45; }
+.sm-sum-fot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+.sm-brytar { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 650; color: var(--ink-strong); cursor: pointer; min-height: 36px; }
+.sm-brytar input { appearance: none; -webkit-appearance: none; width: 42px; height: 24px; border-radius: 999px; background: var(--bg-sunken); border: 1px solid var(--line-strong); position: relative; margin: 0; cursor: pointer; flex: none; }
+.sm-brytar input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--surface); box-shadow: var(--shadow-1); transition: transform var(--t-base) var(--ease-fjor); }
+.sm-brytar input:checked { background: var(--accent); border-color: var(--accent); }
+.sm-brytar input:checked::after { transform: translateX(18px); }
+.sm-brytar input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+@media (max-width: 960px) { .sm-sum-flate { grid-template-columns: minmax(0, 1fr); } }
+
+/* The rounds */
+.sm-rundar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.sm-verktoy { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.sm-verktoy .seg { overflow-x: auto; }
+.sm-verktoy-hogre { margin-left: auto; display: flex; flex-wrap: wrap; gap: 8px; }
+.sm-guide { font-size: 13.5px; color: var(--ink-muted); margin: 0; }
+.sm-gruppekort .kort-hovud h2 .muted { font-weight: 600; }
+.sm-rundliste { margin-top: 6px; }
+.sm-rundrad { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; align-items: center; gap: 8px 16px; padding: 11px 18px; border-top: 1px solid var(--line); }
+.sm-rundrad:first-child { border-top: 0; }
+.sm-rundnamn { display: grid; gap: 2px; min-width: 0; }
+.sm-rundnamn b { color: var(--ink-strong); font-size: 15px; overflow-wrap: anywhere; }
+.sm-rundnamn span { font-size: 13px; color: var(--ink-muted); }
+.sm-rundtal { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sm-rundtal .sm-bar { flex: 1; max-width: 180px; }
+.sm-rundtal b { color: var(--ink-strong); font-size: 14px; }
+.sm-meir { padding: 10px 18px 14px; border-top: 1px solid var(--line); }
+.sm-tomt { display: grid; gap: 6px; }
+.sm-tomt h2 { font-size: 16px; margin: 0; }
+@media (max-width: 640px) {
+  .sm-rundrad { grid-template-columns: minmax(0, 1fr) auto; }
+  .sm-rundtal { grid-column: 1 / -1; grid-row: 2; }
+}
+
+/* Side panels */
+.sm-slor { position: fixed; inset: 0; z-index: 60; background: color-mix(in oklab, var(--graa-950) 38%, transparent); }
+.sm-skuff { position: fixed; z-index: 61; top: 0; right: 0; bottom: 0; width: min(480px, 100%); background: var(--surface); border-left: 1px solid var(--line); box-shadow: var(--shadow-3); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.sm-skuff form { height: 100%; display: flex; flex-direction: column; }
+.sm-skuff-topp { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+.sm-skuff-topp h2 { margin: 0; font-size: 18px; }
+.sm-skuff-innhald { flex: 1; overflow-y: auto; padding: 16px 18px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; }
+.sm-skuff-fot { padding: 14px 18px 18px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+.sm-kundeval, .sm-folk { border: 0; padding: 0; margin: 0; display: grid; gap: 10px; min-width: 0; }
+.sm-kundeval legend, .sm-folk legend { font-size: 13.5px; font-weight: 600; color: var(--ink); padding: 0; margin-bottom: 6px; }
+.sm-kundeliste { display: grid; gap: 2px; max-height: 340px; overflow-y: auto; border: 1px solid var(--line); border-radius: var(--r-md); padding: 6px; }
+.sm-kunde { display: flex; align-items: center; gap: 10px; min-height: 36px; padding: 4px 8px; border-radius: 8px; font-size: 14.5px; cursor: pointer; }
+.sm-kunde:hover { background: var(--surface-hover); }
+.sm-kunde input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; flex: none; }
+.sm-person { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+@media (max-width: 520px) { .sm-person { grid-template-columns: minmax(0, 1fr); } }
+
+/* The client page */
+.sm-kundesamtalar li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(80px, 140px) auto; align-items: center; gap: 8px 14px; padding: 10px 0; border-top: 1px solid var(--line); }
+.sm-kundesamtalar li:first-child { border-top: 0; padding-top: 0; }
+.sm-kundesamtalar .lenkje { margin-top: 0; }
+@media (max-width: 640px) { .sm-kundesamtalar li { grid-template-columns: minmax(0, 1fr) auto; } .sm-kundesamtalar .sm-bar { grid-column: 1 / -1; grid-row: 2; } }

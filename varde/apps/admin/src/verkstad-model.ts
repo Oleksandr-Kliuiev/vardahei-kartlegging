@@ -301,6 +301,16 @@ export function nextId(c: TemplateContent, used: Iterable<string> = [], prefix =
 export const localized = (languages: readonly string[], value = ''): Text =>
   Object.fromEntries(languages.map((l) => [l, value])) as Text;
 
+/** A new question: one choice, or (2.20) free text over several lines in a conversation guide. */
+export function firstQuestion(
+  audience: string,
+  id: string,
+  languages: readonly string[],
+): Question {
+  if (audience !== 'interview') return newQuestion('single', id, languages);
+  return { id, part: 'common', type: 'text', texts: { text: localized(languages) } };
+}
+
 export function newQuestion(
   type: QuestionType,
   id: string,

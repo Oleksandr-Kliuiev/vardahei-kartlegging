@@ -12,16 +12,27 @@ test('non-member → 403 and no protected API access', async ({ page }) => {
   await expect(page.locator('body')).toContainText('Du har ikkje tilgang');
   expect((await page.request.get('/api/admin/rounds')).status()).toBe(401);
 });
-test('seven places in menu order, back navigation and direct reload (2.17)', async ({ page }) => {
+// 2.20 (decision 1 of 06.11): «Samtalar» joins the places of the work, after «Seminar».
+test('eight places in menu order, back navigation and direct reload (2.17)', async ({ page }) => {
   await login(page);
   expect(
     await page.getByRole('navigation', { name: 'Hovudmeny' }).locator('a').allTextContents(),
-  ).toEqual(['I dag', 'Skjema', 'Rundar', 'Kundar', 'Seminar', 'Personvern', 'Innstillingar']);
+  ).toEqual([
+    'I dag',
+    'Skjema',
+    'Rundar',
+    'Kundar',
+    'Seminar',
+    'Samtalar',
+    'Personvern',
+    'Innstillingar',
+  ]);
   for (const label of [
     'Rundar',
     'Skjema',
     'Kundar',
     'Seminar',
+    'Samtalar',
     'Personvern',
     'Innstillingar',
     'I dag',

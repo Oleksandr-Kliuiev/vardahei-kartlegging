@@ -13,6 +13,7 @@ import { Icon } from './icons.js';
 import { roundsOf } from './kundar-page.js';
 import { KundeFunn } from './kunde-funn.js';
 import { KundeKontaktar } from './kunde-kontaktar.js';
+import { KundeSamtalar } from './kunde-samtalar.js';
 import type { Round } from './models.js';
 import { follow, useTitle } from './nav.js';
 import { ErrorMessage, useClients, useRounds } from './queries.js';
@@ -125,6 +126,7 @@ export function KundePage({ id, search = '' }: { id: string; search?: string }) 
               </ol>
             </div>
           </section>
+          <KundeSamtalar client={client.id} />
           <KundeKontaktar key={client.id} client={client} />
         </div>
         <div className="s5 rom-side">

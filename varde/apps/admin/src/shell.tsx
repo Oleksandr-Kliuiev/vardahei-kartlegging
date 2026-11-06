@@ -63,6 +63,14 @@ export const SECTIONS: Section[] = [
     sub: true,
   },
   {
+    // 2.20 (decision 1 of 06.11): conversations with key people at the client's table.
+    url: '/admin/samtalar',
+    label: 'Samtalar',
+    icon: 'prat',
+    intro: 'Samtalar med nøkkelpersonar hos kundane. Vel kunden de sit med, og start samtalen.',
+    sub: true,
+  },
+  {
     url: '/admin/personvern',
     label: 'Personvern',
     icon: 'skjold',

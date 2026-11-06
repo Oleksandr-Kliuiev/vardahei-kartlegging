@@ -59,6 +59,8 @@ export function Sporsmal(p: SporsmalProps) {
   const { q, content, lang } = p;
   const locked = p.readOnly || (!!q.frozen && !p.unlocked);
   const fixed = !!q.frozen || !!q.role || !!q.identifier;
+  // A conversation guide (2.20): text questions only, asked to everyone at the table, always shown.
+  const interview = content.audience === 'interview';
   const sections = sectionsOf(content);
   const leader = leaderOf(content);
   const s = sections.findIndex((x) => x.questions.includes(q));
@@ -118,26 +120,28 @@ export function Sporsmal(p: SporsmalProps) {
           Svaret her avgjer kven som får leiardelen. Eit skjema har høgst eitt rollespørsmål.
         </p>
       )}
-      <div className="vk-blokk">
-        <div className="vk-etikett" id={`vk-type-${q.id}`}>
-          Type
+      {!interview && (
+        <div className="vk-blokk">
+          <div className="vk-etikett" id={`vk-type-${q.id}`}>
+            Type
+          </div>
+          <div className="vk-typar" role="group" aria-labelledby={`vk-type-${q.id}`}>
+            {TYPES.map(([type, label, icon]) => (
+              <button
+                key={type}
+                type="button"
+                aria-pressed={q.type === type}
+                className="vk-type"
+                disabled={p.readOnly || fixed}
+                onClick={() => p.onChange(changeType(q, type, p.languages))}
+              >
+                <Icon name={icon} small />
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="vk-typar" role="group" aria-labelledby={`vk-type-${q.id}`}>
-          {TYPES.map(([type, label, icon]) => (
-            <button
-              key={type}
-              type="button"
-              aria-pressed={q.type === type}
-              className="vk-type"
-              disabled={p.readOnly || fixed}
-              onClick={() => p.onChange(changeType(q, type, p.languages))}
-            >
-              <Icon name={icon} small />
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+      )}
       <div className="vk-blokk">
         <TekstFelt
           label="Spørsmålet"
@@ -159,7 +163,7 @@ export function Sporsmal(p: SporsmalProps) {
         )}
         {q.texts.help !== undefined ? (
           <TekstFelt
-            label="Hjelpetekst"
+            label={interview ? 'Rettleiing' : 'Hjelpetekst'}
             text={q.texts.help}
             lang={lang}
             readOnly={locked}
@@ -173,20 +177,22 @@ export function Sporsmal(p: SporsmalProps) {
               onClick={() => setTexts({ help: { nn: '' } })}
             >
               <Icon name="pluss" small />
-              Legg til hjelpetekst
+              {interview ? 'Legg til rettleiing' : 'Legg til hjelpetekst'}
             </button>
           )
         )}
       </div>
-      <Svar
-        q={q}
-        lang={lang}
-        languages={p.languages}
-        locked={locked}
-        structureLocked={fixed}
-        scored={p.scored && q.part === 'common' && !q.role && q.type === 'single'}
-        onChange={p.onChange}
-      />
+      {!interview && (
+        <Svar
+          q={q}
+          lang={lang}
+          languages={p.languages}
+          locked={locked}
+          structureLocked={fixed}
+          scored={p.scored && q.part === 'common' && !q.role && q.type === 'single'}
+          onChange={p.onChange}
+        />
+      )}
       {other.length > 0 && (
         <ul className="vk-problemliste">
           {other.map((i, n) => (
@@ -201,57 +207,61 @@ export function Sporsmal(p: SporsmalProps) {
           ))}
         </ul>
       )}
-      <div className="vk-to">
-        <div className="vk-blokk">
-          <div className="vk-etikett">Kven får spørsmålet?</div>
-          {fixed || p.readOnly ? (
-            <p>{q.part === 'leader' ? 'Berre leiarar' : 'Alle tilsette'}</p>
-          ) : (
-            <Seg
-              label="Kven får spørsmålet"
-              value={q.part}
-              options={[
-                ['common', 'Alle tilsette'],
-                ['leader', 'Berre leiarar'],
-              ]}
-              onChange={(part) =>
-                p.onMove(part === 'leader' ? 'leader' : Math.max(0, sections.length - 1))
-              }
-            />
-          )}
+      {!interview && (
+        <div className="vk-to">
+          <div className="vk-blokk">
+            <div className="vk-etikett">Kven får spørsmålet?</div>
+            {fixed || p.readOnly ? (
+              <p>{q.part === 'leader' ? 'Berre leiarar' : 'Alle tilsette'}</p>
+            ) : (
+              <Seg
+                label="Kven får spørsmålet"
+                value={q.part}
+                options={[
+                  ['common', 'Alle tilsette'],
+                  ['leader', 'Berre leiarar'],
+                ]}
+                onChange={(part) =>
+                  p.onMove(part === 'leader' ? 'leader' : Math.max(0, sections.length - 1))
+                }
+              />
+            )}
+          </div>
+          <div className="vk-blokk">
+            <div className="vk-etikett">Svar</div>
+            <label className="vk-brytar">
+              <input
+                type="checkbox"
+                checked={!!q.required}
+                disabled={p.readOnly || fixed}
+                onChange={(e) => {
+                  const next = { ...q };
+                  if (e.target.checked) next.required = true;
+                  else delete next.required;
+                  p.onChange(next);
+                }}
+              />
+              Må svarast
+            </label>
+            <small className="vk-hint">
+              {q.required ? 'Ingen «Hopp over» på telefonen.' : 'Den som svarar kan hoppe over.'}
+            </small>
+          </div>
         </div>
-        <div className="vk-blokk">
-          <div className="vk-etikett">Svar</div>
-          <label className="vk-brytar">
-            <input
-              type="checkbox"
-              checked={!!q.required}
-              disabled={p.readOnly || fixed}
-              onChange={(e) => {
-                const next = { ...q };
-                if (e.target.checked) next.required = true;
-                else delete next.required;
-                p.onChange(next);
-              }}
-            />
-            Må svarast
-          </label>
-          <small className="vk-hint">
-            {q.required ? 'Ingen «Hopp over» på telefonen.' : 'Den som svarar kan hoppe over.'}
-          </small>
-        </div>
-      </div>
-      <VilkarFelt
-        content={content}
-        q={q}
-        locked={p.readOnly || fixed}
-        onChange={(visible_if) => {
-          const next = { ...q };
-          if (visible_if === undefined) delete next.visible_if;
-          else next.visible_if = visible_if;
-          p.onChange(next);
-        }}
-      />
+      )}
+      {!interview && (
+        <VilkarFelt
+          content={content}
+          q={q}
+          locked={p.readOnly || fixed}
+          onChange={(visible_if) => {
+            const next = { ...q };
+            if (visible_if === undefined) delete next.visible_if;
+            else next.visible_if = visible_if;
+            p.onChange(next);
+          }}
+        />
+      )}
       {p.more}
       <Teknisk q={q} readOnly={locked || fixed} onApply={p.onChange} />
       {!p.readOnly && (
@@ -279,7 +289,7 @@ export function Sporsmal(p: SporsmalProps) {
                   {x.title?.nn || `Seksjon ${i + 1}`}
                 </option>
               ))}
-              {!fixed && (
+              {!fixed && !interview && (
                 <option value="leader" disabled={q.part === 'leader'}>
                   Berre for leiarar
                 </option>
@@ -400,9 +410,8 @@ function Fast({
               onChange={() => onMark('semantic')}
             />
             <span>
-              <b>Ny meining.</b> Spørsmålet blir nytt i statistikken. Samanlikninga startar på
-              nytt, og sona og funna som byggjer på spørsmålet, blir ikkje rekna for denne
-              versjonen.
+              <b>Ny meining.</b> Spørsmålet blir nytt i statistikken. Samanlikninga startar på nytt,
+              og sona og funna som byggjer på spørsmålet, blir ikkje rekna for denne versjonen.
             </span>
           </label>
         </fieldset>
