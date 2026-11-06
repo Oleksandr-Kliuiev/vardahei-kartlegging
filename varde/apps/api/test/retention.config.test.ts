@@ -7,6 +7,7 @@ import { readRetentionConfig, RetentionConfig } from '../src/modules/retention/r
 const CLASSES = [
   'progress_event',
   'response',
+  'samtale',
   'aggregate_snapshot_released',
   'finding',
   'contact',

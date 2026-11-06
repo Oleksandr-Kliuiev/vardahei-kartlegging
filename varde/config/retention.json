@@ -6,6 +6,9 @@
     "response": {
       "kind": "on_request"
     },
+    "samtale": {
+      "kind": "on_request"
+    },
     "aggregate_snapshot_released": {
       "min_years": 3,
       "review": "yearly"

@@ -30,6 +30,8 @@ const Response = z.looseObject({ kind: z.literal('on_request') }).superRefine((r
 export const RetentionClasses = z.strictObject({
   progress_event: z.strictObject({ ttl_hours: z.literal(24) }),
   response: Response,
+  // 2.20: conversations with key people live like the client's answers and go only on request.
+  samtale: z.strictObject({ kind: z.literal('on_request') }),
   aggregate_snapshot_released: z.strictObject({
     min_years: z.number().int().min(3),
     review: z.literal('yearly'),
