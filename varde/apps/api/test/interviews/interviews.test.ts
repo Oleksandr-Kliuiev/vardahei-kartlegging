@@ -147,6 +147,42 @@ describe('one conversation', () => {
     );
     expect(v).toMatchObject({ status: 'in_progress', held_on: '2026-11-10' });
     expect(v.interviewees).toEqual([{ role: 'dagleg leiar', name: 'Kari Nordmann' }]);
+    // The round lists who from Vardahei was there: the start dialog offers the names to tick.
+    const listed = json<{ interviews: { id: string; interviewers: string[] }[] }>(
+      await t.call('GET', `/api/admin/interview-rounds/${round}`),
+    ).interviews.find((i) => i.id === interviewA);
+    expect(listed?.interviewers).toEqual(['Asbjørn', 'Oleksandr']);
+    // «Endre» in the header corrects the day and the people with the same call; it is no new start.
+    const correct = (held_on: string, interviewees: object[], interviewers: string[]) =>
+      t.call('POST', `/api/admin/interviews/${interviewA}/start`, {
+        held_on,
+        interviewees,
+        interviewers,
+      });
+    const fixed = await correct(
+      '2026-11-11',
+      [{ role: 'dagleg leiar', name: 'Kari Nordmann' }, { role: 'økonomi' }],
+      ['Asbjørn'],
+    );
+    expect(fixed.statusCode, fixed.body).toBe(201);
+    const after = json<{ held_on: string; interviewees: unknown; interviewers: string[] }>(
+      await t.call('GET', `/api/admin/interviews/${interviewA}`),
+    );
+    expect(after).toMatchObject({ held_on: '2026-11-11', interviewers: ['Asbjørn'] });
+    expect(after.interviewees).toEqual([
+      { role: 'dagleg leiar', name: 'Kari Nordmann' },
+      { role: 'økonomi' },
+    ]);
+    // Back to the start values: the handover test below reads them.
+    expect(
+      (
+        await correct(
+          '2026-11-10',
+          [{ role: 'dagleg leiar', name: 'Kari Nordmann' }],
+          ['Asbjørn', 'Oleksandr'],
+        )
+      ).statusCode,
+    ).toBe(201);
     expect(
       await t.prisma.auditLog.count({
         where: { target: `interview:${interviewA}`, what: 'interviews.start' },

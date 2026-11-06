@@ -190,6 +190,8 @@ export class InterviewsService {
             status: i.status,
             held_on: day(i.held_on),
             interviewees: i.interviewees,
+            // Who from Vardahei was there: the start dialog offers these names as boxes to tick.
+            interviewers: i.interviewers,
             done_at: i.done_at,
             updated_at: i.updated_at,
             counts,
