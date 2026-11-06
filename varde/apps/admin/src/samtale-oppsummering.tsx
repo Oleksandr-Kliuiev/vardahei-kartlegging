@@ -2,6 +2,7 @@
 // the conclusions, what is in place, the overall impression and what was agreed, and the own notes.
 // «Vis for kunden» hides the notes and the score, so the screen can be turned to the client.
 // «Fullfør samtalen» sends what is left, then locks the conversation; «Opne for endring» opens it again.
+// Its bar leads back to the questions; the client's name heads the page, as in the concept.
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { mutate } from './api.js';
@@ -15,6 +16,7 @@ import {
   dmy,
   type GuideQuestion,
   type Interview,
+  longDate,
   peopleText,
   plain,
   RATING,
@@ -22,7 +24,7 @@ import {
   scoreOf,
   useInterview,
 } from './samtale-models.js';
-import { doneText, Topp, Utlogga, useReopen } from './samtale-page.js';
+import { doneText, Fullfort, Topp, Utlogga, useReopen } from './samtale-page.js';
 import './samtale.css';
 
 /** The fields of the whole conversation, with the id of their box on this page. */
@@ -159,26 +161,32 @@ export function OppsummeringPage({ id }: { id: string }) {
       <Konflikt store={store} field={key} />
     </div>
   );
-  const finishButton = !done && (
-    <button type="button" className="btn primary" disabled={busy} onClick={() => void finish()}>
+  const finishButton = (size: string) => (
+    <button
+      type="button"
+      className={`btn primary ${size}`}
+      disabled={busy}
+      onClick={() => void finish()}
+    >
       <Icon name="hake" small />
       {busy ? 'Fullfører …' : 'Fullfør samtalen'}
     </button>
   );
   return (
     <div className="sm-samtale">
-      <Topp i={i} store={store}>
+      <Topp
+        back={{ to: at(0), label: 'Spørsmåla' }}
+        title="Oppsummering"
+        sub={[i.client.name, dmy(i.held_on)].filter(Boolean).join(' · ')}
+        store={store}
+        action={done ? <Fullfort /> : finishButton('sm')}
+      >
         <label className="sm-brytar">
           <input type="checkbox" checked={kunde} onChange={(e) => setKunde(e.target.checked)} />
           Vis for kunden
         </label>
-        {finishButton}
       </Topp>
       <div className="sm-sum">
-        <a className="lenkje" href={at(0)} onClick={(e) => follow(e, at(0))}>
-          <Icon name="tilbake" small />
-          Tilbake til spørsmåla
-        </a>
         {done && (
           <div className="sm-melding sm-ok" role="status">
             <span>
@@ -200,10 +208,10 @@ export function OppsummeringPage({ id }: { id: string }) {
         <Konfliktar store={store} questions={questions} at={at} />
         <ErrorMessage error={error ?? reopened.error} />
         <section className="sm-sum-hovud" aria-label="Fordeling">
-          <h2>Oppsummering</h2>
+          <h2>{i.client.name}</h2>
           <p className="sm-meta">
             {peopleText(i.interviewees)} · frå Vardahei: {i.interviewers.join(' og ') || '–'} ·{' '}
-            {dmy(i.held_on)}
+            {longDate(i.held_on)}
             {!kunde && score !== null && (
               <>
                 {' '}
@@ -362,12 +370,14 @@ export function OppsummeringPage({ id }: { id: string }) {
             )}
           </div>
         </div>
-        <div className="sm-sum-fot">
-          <button type="button" className="btn ghost" onClick={() => goTo(at(0))}>
-            Tilbake til spørsmåla
-          </button>
-          {finishButton}
-        </div>
+        {!done && (
+          <div className="sm-sum-fot">
+            <button type="button" className="btn ghost" onClick={() => goTo(at(0))}>
+              Tilbake til spørsmåla
+            </button>
+            {finishButton('')}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,11 +1,11 @@
-// The side panels of «Samtalar» (2.20): a new round of conversations, more clients for a round, and the
-// start of one conversation (who sits at the table and when).
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
+// The side panels of «Samtalar» (2.20): a new round of conversations and more clients for a round, each
+// with a long list of clients to tick. The start of one conversation is a dialog (samtale-start.tsx).
+import { useEffect, useId, useState, type FormEvent, type ReactNode } from 'react';
 import { mutate } from './api.js';
 import { Icon } from './icons.js';
 import type { Client } from './models.js';
 import { ErrorMessage } from './queries.js';
-import { type Guide, type InterviewRow, type Person, today } from './samtale-models.js';
+import type { Guide } from './samtale-models.js';
 
 /** A panel from the right; Escape and the veil close it. */
 export function Skuff(p: {
@@ -184,112 +184,6 @@ export function LeggTilKundar(p: {
       ) : (
         <p className="muted">Alle kundane er alt med i runda.</p>
       )}
-    </Skuff>
-  );
-}
-
-export function StartSamtale(p: {
-  row: InterviewRow;
-  me: string | null;
-  onClose: () => void;
-  onStarted: (id: string) => void;
-}) {
-  const [people, setPeople] = useState<Person[]>(
-    p.row.interviewees.length ? p.row.interviewees : [{ role: 'dagleg leiar', name: '' }],
-  );
-  const [ours, setOurs] = useState(p.me ?? '');
-  const [day, setDay] = useState(p.row.held_on ?? today());
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const first = useRef<HTMLInputElement>(null);
-  useEffect(() => first.current?.focus(), []);
-  const interviewers = useMemo(
-    () =>
-      ours
-        .split(/,| og /)
-        .map((s) => s.trim())
-        .filter(Boolean),
-    [ours],
-  );
-  const set = (n: number, patch: Partial<Person>) =>
-    setPeople(people.map((x, k) => (k === n ? { ...x, ...patch } : x)));
-  const submit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    mutate(`/api/admin/interviews/${p.row.id}/start`, 'POST', {
-      held_on: day,
-      interviewees: people
-        .filter((x) => x.role.trim())
-        .map((x) => (x.name?.trim() ? { role: x.role, name: x.name } : { role: x.role })),
-      interviewers,
-    })
-      .then(() => p.onStarted(p.row.id))
-      .catch((err: unknown) => setError(err instanceof Error ? err : new Error('Noko gjekk gale.')))
-      .finally(() => setBusy(false));
-  };
-  return (
-    <Skuff
-      title={`Start samtale med ${p.row.client.name}`}
-      onClose={p.onClose}
-      onSubmit={submit}
-      footer={
-        <>
-          <ErrorMessage error={error} />
-          <button className="btn primary" disabled={busy || !people.some((x) => x.role.trim())}>
-            Start samtalen
-            <Icon name="pil" small />
-          </button>
-        </>
-      }
-    >
-      <fieldset className="sm-folk">
-        <legend>Kven er med frå kunden?</legend>
-        {people.map((x, n) => (
-          <div key={n} className="sm-person">
-            <label className="field">
-              <span>Rolle</span>
-              <input
-                ref={n === 0 ? first : undefined}
-                className="input"
-                value={x.role}
-                onChange={(e) => set(n, { role: e.target.value })}
-              />
-            </label>
-            <label className="field">
-              <span>Namn (valfritt)</span>
-              <input
-                className="input"
-                value={x.name ?? ''}
-                onChange={(e) => set(n, { name: e.target.value })}
-              />
-            </label>
-          </div>
-        ))}
-        {people.length < 6 && (
-          <button
-            type="button"
-            className="linkbtn sm-nytt-notat"
-            onClick={() => setPeople([...people, { role: '', name: '' }])}
-          >
-            <Icon name="pluss" small />
-            Legg til person
-          </button>
-        )}
-      </fieldset>
-      <label className="field">
-        <span>Frå Vardahei</span>
-        <input
-          className="input"
-          value={ours}
-          placeholder="Namn, skilde med komma"
-          onChange={(e) => setOurs(e.target.value)}
-        />
-      </label>
-      <label className="field">
-        <span>Dato</span>
-        <input className="input" type="date" value={day} onChange={(e) => setDay(e.target.value)} />
-      </label>
     </Skuff>
   );
 }

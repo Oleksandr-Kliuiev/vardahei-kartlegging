@@ -51,9 +51,14 @@ test('a conversation at the table is saved field by field, through a reload and 
   await ny.getByRole('button', { name: 'Lag runda' }).click();
   await expect(page.getByRole('heading', { name: /Ikkje starta/ })).toBeVisible();
 
-  // The start: who sits at the table.
+  // The start (a dialog in the middle, as in the concept): who sits at the table. The one signed in is
+  // ticked under «Frå Vardahei».
   await page.getByRole('button', { name: 'Start samtale' }).click();
   const start = page.getByRole('dialog', { name: 'Start samtale med Syntetisk admin kunde' });
+  await expect(start.getByText(/· 27 spørsmål$/)).toBeVisible();
+  await expect(
+    start.getByRole('group', { name: 'Frå Vardahei' }).getByRole('checkbox').first(),
+  ).toBeChecked();
   await start.getByLabel('Namn (valfritt)').fill('Kari Nordmann');
   await start.getByRole('button', { name: 'Start samtalen' }).click();
   await expect(
@@ -61,6 +66,27 @@ test('a conversation at the table is saved field by field, through a reload and 
   ).toBeVisible();
   const id = new URL(page.url()).pathname.split('/').pop()!;
   await expect(page.locator('.sm-q')).toContainText('ansvaret for IT');
+  // Focus mode: no menu and no top line; the bar leads back to «Samtalar».
+  await expect(page.locator('#sidemeny')).toHaveCount(0);
+  await expect(page.locator('.topplinje')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Samtalar' })).toBeVisible();
+
+  // «Endre» in the bar corrects who is at the table, until the conversation is finished.
+  await page.getByRole('button', { name: 'Endre kven som er med og dato' }).click();
+  const fix = page.getByRole('dialog', { name: 'Endre samtalen med Syntetisk admin kunde' });
+  await expect(fix.getByLabel('Namn (valfritt)')).toHaveValue('Kari Nordmann');
+  await fix.getByRole('button', { name: 'Legg til person' }).click();
+  await fix.getByLabel('Rolle, person 2').fill('økonomi');
+  await fix.getByRole('button', { name: 'Lagre' }).click();
+  await expect(fix).toHaveCount(0);
+  await expect(page.locator('.sm-kven p')).toContainText('Kari Nordmann, dagleg leiar · økonomi');
+  const people = (await (await page.request.get(`/api/admin/interviews/${id}`)).json()) as {
+    interviewees: unknown;
+  };
+  expect(people.interviewees).toEqual([
+    { role: 'dagleg leiar', name: 'Kari Nordmann' },
+    { role: 'økonomi' },
+  ]);
 
   // Question 1: what the client says, the rating by keyboard while typing, the conclusion.
   const answer = page.getByLabel('Kva seier kunden?');

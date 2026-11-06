@@ -28,6 +28,9 @@ export interface Page {
   heading: { title: string; intro?: string | undefined; doc?: string } | null;
   /** The workshop: wider than the reading width of other pages. */
   wide?: boolean;
+  /** A conversation at the table and its summary (2.20): the whole window, without the menu and the
+   * top line; the page's own bar leads back. */
+  focus?: boolean;
 }
 
 const ID = '([0-9a-f-]{36})';
@@ -140,7 +143,8 @@ export function resolve(path: string, search: string): Page {
   const seminar = match(path, `/admin/seminars(?:/${ID})?`);
   // One seminar has its own heading and tab title, the topic, as a round and a client have.
   if (seminar) return page(<SeminarPage id={seminar[1]} />, seminar[1] ? null : undefined);
-  // Samtalar (2.20): the rounds; one conversation and its summary write their own heading.
+  // Samtalar (2.20): the rounds; one conversation and its summary write their own heading and fill
+  // the window (focus mode of the concept).
   if (path === '/admin/samtalar') return page(<SamtalarPage key={search} search={search} />);
   const samtale = match(path, `/admin/samtalar/${ID}(/oppsummering)?`);
   if (samtale)
@@ -152,6 +156,7 @@ export function resolve(path: string, search: string): Page {
       ),
       heading: null,
       wide: true,
+      focus: true,
     };
   const personvern = match(path, '/admin/personvern(?:/([a-z]+))?');
   if (personvern) {

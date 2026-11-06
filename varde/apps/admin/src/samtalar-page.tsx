@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Icon } from './icons.js';
 import { follow, goTo } from './nav.js';
 import { ErrorMessage, useClients } from './queries.js';
-import { LeggTilKundar, NyRunde, StartSamtale } from './samtale-dialogar.js';
+import { LeggTilKundar, NyRunde } from './samtale-dialogar.js';
 import { Fordeling } from './samtale-felt.js';
 import {
   dmy,
@@ -17,6 +17,7 @@ import {
   useInterviewRound,
   useInterviewRounds,
 } from './samtale-models.js';
+import { StartSamtale } from './samtale-start.js';
 import { Seg, useModal } from './widgets.js';
 import './samtale.css';
 
@@ -35,7 +36,7 @@ export function SamtalarPage({ search }: { search: string }) {
   const [panel, setPanel] = useState<Panel>(null);
   const [all, setAll] = useState(false);
   const opener = useRef<HTMLElement | null>(null);
-  useModal(panel !== null, opener, '.sm-rundar > :not(.sm-skuff, .sm-slor)');
+  useModal(panel !== null, opener, '.sm-rundar > :not(.sm-skuff, .sm-slor, .sm-dlg-slor)');
   const me = queries.getQueryData<{ name: string | null }>(['session'])?.name ?? null;
   const open = (p: Panel) => {
     opener.current = document.activeElement as HTMLElement | null;
@@ -198,12 +199,14 @@ export function SamtalarPage({ search }: { search: string }) {
       {panel !== null && typeof panel === 'object' && (
         <StartSamtale
           row={panel}
+          guide={round.data?.guide ?? null}
+          names={rows.flatMap((r) => r.interviewers ?? [])}
           me={me}
           onClose={() => setPanel(null)}
-          onStarted={(id) => {
+          onDone={() => {
             setPanel(null);
             void queries.invalidateQueries({ queryKey: ['samtalar'] });
-            goTo(`/admin/samtalar/${id}`);
+            goTo(`/admin/samtalar/${panel.id}`);
           }}
         />
       )}

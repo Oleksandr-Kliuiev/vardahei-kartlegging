@@ -1,6 +1,7 @@
 // «Samtalar» (2.20): the shapes the API gives, the rating scale and small helpers shared by the pages.
 import { useQuery } from '@tanstack/react-query';
 import { api } from './api.js';
+import { longDate as dayInYear } from './overview.js';
 
 export type Rating = 'ivaretatt' | 'forbetring' | 'manglar' | 'ikkje_aktuelt';
 export type Status = 'planned' | 'in_progress' | 'done';
@@ -47,6 +48,8 @@ export interface InterviewRow {
   status: Status;
   held_on: string | null;
   interviewees: Person[];
+  /** Who from Vardahei was there; the start dialog offers these names to tick. */
+  interviewers: string[];
   done_at: string | null;
   updated_at: string;
   counts: Counts;
@@ -107,13 +110,22 @@ export const STATUS: Record<Status, string> = {
   done: 'Fullført',
 };
 
+// Days and times are written out by hand, as elsewhere in the admin: not every browser carries
+// Nynorsk (a Chrome without it wrote «09:53 PM» and «November 10, 2026»).
+const two = (n: number) => String(n).padStart(2, '0');
+/** 2026-11-25 → «25. november», with the year when it is not this year (the admin's own long date). */
+export const longDate = (iso: string | null | undefined) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? '');
+  return m ? dayInYear(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))) : '';
+};
 /** 2026-11-10 → 10.11.2026 */
 export const dmy = (iso: string | null | undefined) =>
   iso ? `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(0, 4)}` : '';
 /** Today in the browser's own time zone, as the API takes a day. */
-export const today = () => new Date().toLocaleDateString('sv-SE');
-export const clock = (d: Date) =>
-  d.toLocaleTimeString('nn-NO', { hour: '2-digit', minute: '2-digit' });
+export const today = (d = new Date()) =>
+  `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}`;
+/** 21:53, on the 24-hour clock. */
+export const clock = (d: Date) => `${two(d.getHours())}:${two(d.getMinutes())}`;
 
 /** «Kari Nordmann, dagleg leiar · eigar» */
 export const peopleText = (people: readonly Person[]) =>

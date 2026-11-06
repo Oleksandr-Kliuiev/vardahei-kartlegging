@@ -142,34 +142,40 @@ function Shell({ name }: { name: string | null }) {
   useEffect(() => {
     if (page.heading) document.title = `${page.heading.doc ?? page.heading.title} – Varde`;
   }, [path, page.heading?.title, page.heading?.doc]);
+  // Focus mode: a conversation at the table and its summary fill the window; their own bar leads back.
+  const focus = page.focus === true;
   return (
-    <div className="skal" data-nav={wide && collapsed ? 'closed' : 'open'}>
+    <div className="skal" data-nav={focus ? 'fokus' : wide && collapsed ? 'closed' : 'open'}>
       <a className="hopp" href="#innhald">
         Hopp til innhald
       </a>
-      <Sidebar
-        path={path}
-        go={navigate}
-        name={name}
-        connected={connected}
-        open={menu}
-        onClose={() => setMenu(false)}
-        onCollapse={toggleMenu}
-        onSearch={() => setPalette(true)}
-        onLogout={() => {
-          void logout();
-        }}
-      />
-      {menu && <div className="slor" onClick={() => setMenu(false)} />}
-      <div className="hovud">
-        <Topbar
-          section={section?.label ?? 'Sida finst ikkje'}
-          wide={wide}
-          open={wide ? !collapsed : menu}
-          canBack={canBack}
-          onBack={back}
-          onMenu={toggleMenu}
+      {!focus && (
+        <Sidebar
+          path={path}
+          go={navigate}
+          name={name}
+          connected={connected}
+          open={menu}
+          onClose={() => setMenu(false)}
+          onCollapse={toggleMenu}
+          onSearch={() => setPalette(true)}
+          onLogout={() => {
+            void logout();
+          }}
         />
+      )}
+      {menu && !focus && <div className="slor" onClick={() => setMenu(false)} />}
+      <div className="hovud">
+        {!focus && (
+          <Topbar
+            section={section?.label ?? 'Sida finst ikkje'}
+            wide={wide}
+            open={wide ? !collapsed : menu}
+            canBack={canBack}
+            onBack={back}
+            onMenu={toggleMenu}
+          />
+        )}
         <main className={page.wide ? 'side side-vid' : 'side'} id="innhald" ref={main}>
           {page.heading && (
             <div className="sidetittel">

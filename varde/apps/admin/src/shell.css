@@ -78,6 +78,8 @@ kbd { font-family: var(--font-mono); font-size: 12px; padding: 1px 6px; border-r
   .skal[data-nav="closed"] { grid-template-columns: minmax(0, 1fr); background: none; }
   .skal[data-nav="closed"] .sidemeny { display: none; }
 }
+/* Focus mode (Samtalar 2.20): no menu and no top line at any width; the page's own bar leads back. */
+.skal[data-nav="fokus"] { grid-template-columns: minmax(0, 1fr); background: none; }
 .smular { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 13.5px; color: var(--ink-muted); }
 .smular b { color: var(--ink-strong); font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .merke { display: inline-flex; text-decoration: none; }

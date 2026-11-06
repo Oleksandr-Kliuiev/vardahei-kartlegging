@@ -1,7 +1,8 @@
 // A conversation at the client's table (2.20): the questions of the guide on the left, one question on
 // the right to read aloud and fill in. Everything is saved by itself, field by field; ⌥1–⌥3 rate,
-// ⌥0 marks «Ikkje aktuelt», ⌥↑/⌥↓ move between questions, also while typing.
-import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
+// ⌥0 marks «Ikkje aktuelt», ⌥↑/⌥↓ move between questions, also while typing. The page fills the
+// window (focus mode); until it is finished, «Endre» in its bar corrects the people and the day.
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { mutate } from './api.js';
 import { Icon } from './icons.js';
@@ -19,7 +20,10 @@ import {
   rated,
   type Rating,
   useInterview,
+  useInterviewRound,
 } from './samtale-models.js';
+import { StartSamtale } from './samtale-start.js';
+import { useModal } from './widgets.js';
 import './samtale.css';
 
 const FIELDS = ['answer', 'rating', 'action', 'note'] as const;
@@ -90,31 +94,66 @@ export function Utlogga({ store }: { store: Lagring }) {
   );
 }
 
-export function Topp({
-  i,
-  store,
-  children,
-}: {
-  i: Interview;
+/** «Fullført» in the bar of a finished conversation, where the minutes or «Fullfør» stood. */
+export const Fullfort = () => (
+  <span className="sm-status sm-status-ok">
+    <Icon name="hake" small />
+    Fullført
+  </span>
+);
+
+/** The bar on top of a conversation and of its summary (focus mode of the concept): the way back, what
+ * is on screen, and on the right how far it has come, what is saved and the next step. */
+export function Topp(p: {
+  back: { to: string; label: string };
+  title: string;
+  sub: string;
   store: Lagring;
-  children?: React.ReactNode;
+  onEdit?: (() => void) | undefined;
+  children?: ReactNode;
+  action?: ReactNode;
 }) {
-  const back = `/admin/samtalar?runde=${i.round.id}`;
+  const bar = useRef<HTMLElement>(null);
+  // The list of questions and a question scrolled to stay below the bar, however many lines it takes.
+  useEffect(() => {
+    const el = bar.current;
+    const page = el?.parentElement;
+    if (!el || !page || typeof ResizeObserver === 'undefined') return;
+    const watch = new ResizeObserver(() =>
+      page.style.setProperty('--sm-topp', `${el.offsetHeight}px`),
+    );
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, []);
   return (
-    <header className="sm-topp">
-      <a className="btn ghost sm" href={back} onClick={(e) => follow(e, back)}>
+    <header className="sm-topp" ref={bar}>
+      <a className="btn ghost sm" href={p.back.to} onClick={(e) => follow(e, p.back.to)}>
         <Icon name="tilbake" small />
-        Samtalar
+        {p.back.label}
       </a>
       <div className="sm-kven">
-        <h1>{i.client.name}</h1>
+        <h1>{p.title}</h1>
         <p>
-          {[peopleText(i.interviewees), dmy(i.held_on), i.round.name].filter(Boolean).join(' · ')}
+          {p.sub}
+          {p.onEdit && (
+            <>
+              {p.sub && ' · '}
+              <button
+                type="button"
+                className="linkbtn sm-endre"
+                aria-label="Endre kven som er med og dato"
+                onClick={p.onEdit}
+              >
+                Endre
+              </button>
+            </>
+          )}
         </p>
       </div>
       <div className="sm-topp-hogre">
-        {children}
-        <SaveLine store={store} />
+        {p.children}
+        <SaveLine store={p.store} />
+        {p.action}
       </div>
     </header>
   );
@@ -124,6 +163,12 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
   const q = useInterview(id);
   const i = q.data;
   const store = useLagring(i);
+  const queries = useQueryClient();
+  // The names from Vardahei in this round, for «Endre».
+  const round = useInterviewRound(i?.round.id);
+  const [editing, setEditing] = useState(false);
+  const opener = useRef<HTMLElement | null>(null);
+  useModal(editing, opener, '.sm-samtale');
   useTitle(i ? `${i.client.name} – samtale` : undefined);
   const questions = useMemo(() => i?.guide.questions ?? [], [i]);
   const [cur, setCur] = useState(0);
@@ -163,8 +208,11 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
     setCur(n);
     setMoved(true);
     replaceTo(`/admin/samtalar/${id}?q=${questions[n]!.id}`);
+    // A question scrolled up under the bar comes back to the top (its scroll margin clears the bar).
     const card = document.querySelector('.sm-kort');
-    if (card && card.getBoundingClientRect().top < 120) card.scrollIntoView({ block: 'start' });
+    const bar = document.querySelector('.sm-topp')?.getBoundingClientRect().bottom ?? 0;
+    if (card && card.getBoundingClientRect().top < Math.max(bar, 0) + 8)
+      card.scrollIntoView({ block: 'start' });
   };
   const counts = countOf(questions, store.rating);
   const question = questions[cur];
@@ -225,71 +273,110 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
       </button>
     );
   };
+  const summary = `/admin/samtalar/${id}/oppsummering`;
   return (
-    <div className="sm-samtale" onKeyDown={keys}>
-      <Topp i={i} store={store}>
-        <span className="sm-framdrift">
-          <span>
-            <b>
-              {rated(counts)} av {questions.length}
-            </b>{' '}
-            vurderte
-          </span>
-          <Fordeling counts={counts} label="Framdrift" />
-        </span>
-        {minutes !== null && (
-          <span className="sm-tid">
-            <Icon name="kalender" small />
-            {minutes} min
-          </span>
-        )}
-        <a
-          className="btn sm primary"
-          href={`/admin/samtalar/${id}/oppsummering`}
-          onClick={(e) => follow(e, `/admin/samtalar/${id}/oppsummering`)}
+    <>
+      <div className="sm-samtale" onKeyDown={keys}>
+        <Topp
+          back={{ to: `/admin/samtalar?runde=${i.round.id}`, label: 'Samtalar' }}
+          title={i.client.name}
+          sub={[peopleText(i.interviewees), dmy(i.held_on)].filter(Boolean).join(' · ')}
+          store={store}
+          onEdit={
+            store.locked
+              ? undefined
+              : () => {
+                  opener.current = document.activeElement as HTMLElement | null;
+                  setEditing(true);
+                }
+          }
+          action={
+            <a className="btn sm primary" href={summary} onClick={(e) => follow(e, summary)}>
+              Oppsummering
+            </a>
+          }
         >
-          Oppsummering
-        </a>
-      </Topp>
-      {store.locked && (
-        <div className="sm-melding sm-ok" role="status">
-          <span>
-            <Icon name="hake" small />
-            {doneText(i)} Felta er låste.
+          <span className="sm-framdrift">
+            <span>
+              <b>
+                {rated(counts)} av {questions.length}
+              </b>{' '}
+              vurderte
+            </span>
+            <Fordeling counts={counts} label="Framdrift" />
           </span>
-          <button type="button" className="btn sm" onClick={() => void reopen()}>
-            Opne for endring
-          </button>
-        </div>
-      )}
-      <Utlogga store={store} />
-      <ErrorMessage error={error} />
-      <nav className="sm-stripe" aria-label="Spørsmål">
-        {questions.map((q, n) => item(q, n, true))}
-      </nav>
-      <div className="sm-flate">
-        <nav className="sm-liste" aria-label="Spørsmål">
-          {sections.map((s) => (
-            <div key={`${s.title}-${s.items[0]!.n}`}>
-              {s.title && <p className="sm-tema">{s.title}</p>}
-              {s.items.map(({ q, n }) => item(q, n, false))}
-            </div>
-          ))}
-        </nav>
-        {question && (
-          <Sporsmalskort
-            key={question.id}
-            q={question}
-            n={cur + 1}
-            total={questions.length}
-            store={store}
-            readOnly={readOnly}
-            focusOnShow={moved}
-            onPrev={() => go(cur - 1)}
-            onNext={() => go(cur + 1)}
-          />
+          {store.locked ? (
+            <Fullfort />
+          ) : (
+            minutes !== null && (
+              <span className="sm-tid">
+                <Icon name="klokke" small />
+                {minutes} min
+              </span>
+            )
+          )}
+        </Topp>
+        {store.locked && (
+          <div className="sm-melding sm-ok" role="status">
+            <span>
+              <Icon name="hake" small />
+              {doneText(i)} Felta er låste.
+            </span>
+            <button type="button" className="btn sm" onClick={() => void reopen()}>
+              Opne for endring
+            </button>
+          </div>
         )}
+        <Utlogga store={store} />
+        <ErrorMessage error={error} />
+        <nav className="sm-stripe" aria-label="Spørsmål">
+          {questions.map((q, n) => item(q, n, true))}
+        </nav>
+        <div className="sm-flate">
+          <nav className="sm-liste" aria-label="Spørsmål">
+            {sections.map((s) => (
+              <div key={`${s.title}-${s.items[0]!.n}`}>
+                {s.title && <p className="sm-tema">{s.title}</p>}
+                {s.items.map(({ q, n }) => item(q, n, false))}
+              </div>
+            ))}
+          </nav>
+          {question && (
+            <Sporsmalskort
+              key={question.id}
+              q={question}
+              n={cur + 1}
+              total={questions.length}
+              store={store}
+              readOnly={readOnly}
+              focusOnShow={moved}
+              onPrev={() => go(cur - 1)}
+              onNext={() => go(cur + 1)}
+            />
+          )}
+        </div>
       </div>
-    </div>
+      {editing && (
+        <StartSamtale
+          edit
+          row={i}
+          guide={{
+            title: i.guide.title,
+            label: i.guide.label,
+            question_count: questions.length,
+          }}
+          names={round.data?.interviews.flatMap((r) => r.interviewers ?? []) ?? []}
+          me={queries.getQueryData<{ name: string | null }>(['session'])?.name ?? null}
+          onClose={() => setEditing(false)}
+          onDone={(sent) => {
+            setEditing(false);
+            queries.setQueryData<Interview>(['samtalar', 'interview', id], (old) =>
+              old ? { ...old, ...sent } : old,
+            );
+            void queries.invalidateQueries({ queryKey: ['samtalar'], refetchType: 'none' });
+          }}
+        />
+      )}
+    </>
   );
 }

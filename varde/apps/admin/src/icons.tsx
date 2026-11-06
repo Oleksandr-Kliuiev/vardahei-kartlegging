@@ -68,6 +68,9 @@ const P = {
     <rect key="a" x="3" y="5" width="18" height="16" rx="2" />,
     <path key="b" d="M3 10h18M8 3v4M16 3v4" />,
   ],
+  // Samtalar (2.20): the minutes of a conversation, and «Endre» of who sits at the table
+  klokke: [<circle key="a" cx="12" cy="12" r="9" />, <path key="b" d="M12 7v5l3 2" />],
+  blyant: [<path key="a" d="M4 20h4L19 9l-4-4L4 16v4z" />, <path key="b" d="M13.5 6.5l4 4" />],
   kopi: [
     <rect key="a" x="9" y="9" width="12" height="12" rx="2" />,
     <path key="b" d="M5 15V5a2 2 0 012-2h10" />,
