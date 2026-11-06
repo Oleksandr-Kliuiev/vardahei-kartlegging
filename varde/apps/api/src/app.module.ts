@@ -1,4 +1,5 @@
 import { CutoverModule } from './modules/cutover/cutover.module.js';
+import { InterviewsModule } from './modules/interviews/interviews.module.js';
 import { RetentionModule } from './modules/retention/retention.module.js';
 import { SeminarsModule } from './modules/seminars/seminars.module.js';
 import { LiveModule } from './modules/live/live.module.js';
@@ -46,6 +47,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     CutoverModule,
     SeminarsModule,
     LiveModule,
+    InterviewsModule,
   ],
 })
 export class AppModule {}

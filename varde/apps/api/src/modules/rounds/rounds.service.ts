@@ -46,9 +46,15 @@ export class RoundsService {
   }
 
   private async published(tx: Prisma.TransactionClient, id: string) {
-    const version = await tx.templateVersion.findUnique({ where: { id } });
+    const version = await tx.templateVersion.findUnique({
+      where: { id },
+      include: { template: { select: { audience: true } } },
+    });
     if (version?.status !== 'published')
       throw new BadRequestException('Vel ein publisert versjon.');
+    // A conversation guide (2.20) is filled in by Vardahei in «Samtalar»; no respondent gets it.
+    if (version.template.audience === 'interview')
+      throw new BadRequestException('Ein samtaleguide blir brukt i «Samtalar», ikkje i ei runde.');
     return version;
   }
 

@@ -28,6 +28,7 @@ const REQUIRED: Record<TemplateContent['audience'], Lang[]> = {
   client_survey: ['nn', 'en'],
   seminar_live: ['nn'],
   seminar_after: ['nn'],
+  interview: ['nn'],
 };
 
 function parseShape(content: unknown): TemplateContent {

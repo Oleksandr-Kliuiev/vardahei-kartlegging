@@ -1,0 +1,76 @@
+// Input of «Samtalar» (2.20): rounds of conversations, the start of one conversation and the saving of
+// one field. Texts keep their line breaks; other control characters are refused.
+import { BadRequestException } from '@nestjs/common';
+import { z } from 'zod';
+
+const text = (max: number, multiline = false) =>
+  z
+    .string()
+    .max(max, { message: 'Teksten er for lang.' })
+    .refine((s) => !(multiline ? /[^\P{Cc}\n\t]/u : /\p{Cc}/u).test(s), {
+      message: 'Teksten har teikn som ikkje kan brukast. Skriv han på nytt.',
+    });
+const line = (max: number) => text(max).transform((s) => s.trim());
+
+export const RATINGS = ['ivaretatt', 'forbetring', 'manglar', 'ikkje_aktuelt'] as const;
+export type Rating = (typeof RATINGS)[number];
+
+export const RoundInput = z.strictObject({
+  name: line(120).pipe(z.string().min(1, { message: 'Gi runda eit namn.' })),
+  template_version_id: z.uuid(),
+  clients: z.array(z.uuid()).max(200).default([]),
+});
+export type RoundInput = z.infer<typeof RoundInput>;
+
+export const ClientsInput = z.strictObject({ clients: z.array(z.uuid()).min(1).max(200) });
+
+/** The people at the table: from the client a role and, if they want, a name; from Vardahei names. */
+export const StartInput = z.strictObject({
+  held_on: z.iso.date(),
+  interviewees: z
+    .array(
+      z.strictObject({
+        role: line(80).pipe(z.string().min(1, { message: 'Skriv rolla til den du snakkar med.' })),
+        name: line(120).optional(),
+      }),
+    )
+    .min(1, { message: 'Skriv kven som er med frå kunden.' })
+    .max(6),
+  interviewers: z
+    .array(line(80).pipe(z.string().min(1)))
+    .max(6)
+    .default([]),
+});
+export type StartInput = z.infer<typeof StartInput>;
+
+/** One field of one answer. `expect` is the value the screen last saw from the server: the save goes
+ * through only while it still holds, so a change from another screen is never overwritten unseen. */
+export const AnswerFieldInput = z.discriminatedUnion('field', [
+  z.strictObject({
+    field: z.literal('rating'),
+    value: z.enum(RATINGS).nullable(),
+    expect: z.enum(RATINGS).nullable(),
+  }),
+  z.strictObject({
+    field: z.enum(['answer', 'action', 'note']),
+    value: text(20_000, true),
+    expect: z.string().max(20_000),
+  }),
+]);
+export type AnswerFieldInput = z.infer<typeof AnswerFieldInput>;
+
+/** A field of the whole conversation: overall impression, what was agreed, the internal note. */
+export const InterviewFieldInput = z.strictObject({
+  field: z.enum(['summary', 'agreed', 'note']),
+  value: text(20_000, true),
+  expect: z.string().max(20_000),
+});
+export type InterviewFieldInput = z.infer<typeof InterviewFieldInput>;
+
+/** Parse admin input; a rule with its own message says what is wrong. */
+export function parseWith<T>(schema: z.ZodType<T>, input: unknown): T {
+  const result = schema.safeParse(input);
+  if (result.success) return result.data;
+  const own = result.error.issues.find((i) => i.message && !i.message.startsWith('Invalid'));
+  throw new BadRequestException(own?.message ?? 'Kontroller opplysningane.');
+}

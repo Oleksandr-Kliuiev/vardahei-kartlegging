@@ -86,6 +86,7 @@ model TemplateVersion {
   deleted_at             DateTime?         @db.Timestamptz(6)
   deleted_by             String?
   comments               QuestionComment[]
+  interview_rounds       InterviewRound[]
 
   @@unique([template_id, version_no])
   @@unique([template_id, label])
@@ -141,6 +142,7 @@ model Client {
   round_clients     RoundClient[]
   seminars          SeminarClient[]
   contacts          Contact[]
+  interviews        Interview[]
 
   @@map("client")
 }
@@ -615,4 +617,66 @@ model FindingStatus {
 
   @@index([seminar_id])
   @@map("finding_status")
+}
+
+/// A tour of conversations with key people (2.20, Samtalar): one published interview guide for all, so
+/// answers compare; the clients to visit are its interviews. `status` ∈ {open, closed} (CHECK).
+model InterviewRound {
+  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String          @unique
+  template_version_id String          @db.Uuid
+  template_version    TemplateVersion @relation(fields: [template_version_id], references: [id], onDelete: Restrict)
+  status              String          @default("open")
+  created_at          DateTime        @default(now()) @db.Timestamptz(6)
+  created_by          String
+  closed_at           DateTime?       @db.Timestamptz(6)
+  interviews          Interview[]
+
+  @@map("interview_round")
+}
+
+/// One conversation with one client (2.20), filled in by Vardahei. Not anonymous: data class `samtale`
+/// (ADR-017), admins only, never in aggregates, snapshots, client channels, the assistant or Atlas.
+/// `status` ∈ {planned, in_progress, done} (CHECK); `interviewees` = [{role, name?}]; `note` is internal.
+model Interview {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  interview_round_id String            @db.Uuid
+  round              InterviewRound    @relation(fields: [interview_round_id], references: [id], onDelete: Restrict)
+  client_id          String            @db.Uuid
+  client             Client            @relation(fields: [client_id], references: [id], onDelete: Restrict)
+  status             String            @default("planned")
+  held_on            DateTime?         @db.Date
+  interviewees       Json              @default("[]") @db.JsonB
+  interviewers       String[]          @default([])
+  summary            String            @default("")
+  agreed             String            @default("")
+  note               String            @default("")
+  started_at         DateTime?         @db.Timestamptz(6)
+  done_at            DateTime?         @db.Timestamptz(6)
+  done_by            String?
+  updated_at         DateTime          @default(now()) @db.Timestamptz(6)
+  updated_by         String?
+  answers            InterviewAnswer[]
+
+  @@unique([interview_round_id, client_id])
+  @@index([client_id])
+  @@map("interview")
+}
+
+/// One question of the guide in one conversation (2.20), saved field by field: a save names the value
+/// it replaces, so a change made on another screen is never overwritten unseen (409).
+/// `rating` ∈ {ivaretatt, forbetring, manglar, ikkje_aktuelt} or empty (CHECK); `note` is internal.
+model InterviewAnswer {
+  interview_id String    @db.Uuid
+  interview    Interview @relation(fields: [interview_id], references: [id], onDelete: Cascade)
+  question_id  String
+  answer       String    @default("")
+  rating       String?
+  action       String    @default("")
+  note         String    @default("")
+  updated_at   DateTime  @default(now()) @db.Timestamptz(6)
+  updated_by   String
+
+  @@id([interview_id, question_id])
+  @@map("interview_answer")
 }

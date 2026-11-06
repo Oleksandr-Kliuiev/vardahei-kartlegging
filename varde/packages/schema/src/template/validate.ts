@@ -87,6 +87,26 @@ function hasCycle(edges: Map<string, string[]>): string | undefined {
   return undefined;
 }
 
+/** An interview guide (2.20) is read aloud and filled in by Vardahei: every question is free text in
+ * the common part, asked always (no condition), with no initials, role, leader part, tips or letter. */
+function interviewIssues(
+  c: TemplateContent,
+  issue: (message: string, path: (string | number)[]) => void,
+) {
+  c.questions.forEach((q, n) => {
+    const p = ['questions', n];
+    if (q.type !== 'text') issue(`interview question ${q.id} must be text`, [...p, 'type']);
+    if (q.part !== 'common') issue(`interview question ${q.id} must be common`, [...p, 'part']);
+    if (q.role || q.identifier) issue(`interview has no role or initials (${q.id})`, p);
+    if (q.visible_if !== undefined)
+      issue(`interview question ${q.id} has no condition`, [...p, 'visible_if']);
+  });
+  if (c.identification !== 'none') issue('interview has identification none', ['identification']);
+  if (c.leader_roles.length > 0) issue('interview has no leader part', ['leader_roles']);
+  if (c.tips.length > 0) issue('interview has no tips', ['tips']);
+  if (c.invitation !== undefined) issue('interview has no invitation', ['invitation']);
+}
+
 export function validateTemplate(c: TemplateContent): TemplateIssue[] {
   const issues: TemplateIssue[] = [];
   const issue = (message: string, path: (string | number)[]) => issues.push({ message, path });
@@ -187,6 +207,8 @@ export function validateTemplate(c: TemplateContent): TemplateIssue[] {
     if (!roleOptions.has(r))
       issue(`leader role ${r} is not an option of the role question`, ['leader_roles', n]);
   });
+
+  if (c.audience === 'interview') interviewIssues(c, issue);
 
   const langs = new Set(c.required_languages);
   if (langs.size !== c.required_languages.length)

@@ -25,10 +25,11 @@ export class AdminService {
     });
   }
 
-  /** Published versions to start a round from: when it was published and how many questions it asks. */
+  /** Published versions to start a round from: when it was published and how many questions it asks.
+   * Conversation guides (2.20) are never sent out in a round; «Samtalar» lists them itself. */
   async versions() {
     const rows = await this.prisma.templateVersion.findMany({
-      where: { status: 'published' },
+      where: { status: 'published', template: { audience: { not: 'interview' } } },
       orderBy: [{ template_id: 'asc' }, { version_no: 'desc' }],
       select: {
         id: true,

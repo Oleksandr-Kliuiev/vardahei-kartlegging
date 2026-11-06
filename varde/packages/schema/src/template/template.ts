@@ -5,7 +5,9 @@ import { Expression } from './expression.js';
 import { Question } from './question.js';
 import { Lang, LocalizedText } from './texts.js';
 
-export const Audience = z.enum(['client_survey', 'seminar_live', 'seminar_after']);
+/** `interview` (2.20): a guide for a conversation Vardahei leads at the client's table and fills in
+ * itself (Samtalar). No respondent ever sees it, so it has no runner, round, letter or English. */
+export const Audience = z.enum(['client_survey', 'seminar_live', 'seminar_after', 'interview']);
 export type Audience = z.infer<typeof Audience>;
 export const Identification = z.enum(['initials', 'none']);
 export type Identification = z.infer<typeof Identification>;

@@ -73,7 +73,15 @@ it('AES-256 ZIP contains all client common and leader rows, including anonymous 
   expect(result.password).toMatch(/^[A-Za-z0-9_-]{24}$/);
   const bytes = service.take(result.handover_id);
   const files = await read(bytes, result.password);
-  expect(Object.keys(files).sort()).toEqual(['LES-MEG.txt', 'leiar.csv', 'samla.csv', 'svar.csv']);
+  expect(Object.keys(files).sort()).toEqual([
+    'LES-MEG.txt',
+    'leiar.csv',
+    'samla.csv',
+    'samtalar.csv',
+    'svar.csv',
+  ]);
+  // 2.20: no conversations in this fixture, so samtalar.csv is the header alone.
+  expect(files['samtalar.csv']).toMatch(/^﻿Samtalerunde;Dato;Nr;Spørsmål;/);
   expect(files['svar.csv']).toMatch(/^\uFEFFInitialar;Kunde;/);
   expect(files['svar.csv']).toContain('2026-01-');
   expect(files['svar.csv']).toContain('Innsending utan svar');

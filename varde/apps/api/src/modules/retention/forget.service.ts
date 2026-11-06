@@ -10,10 +10,13 @@ import {
   UnauthorizedError,
 } from '../privacy/privacy.service.js';
 import { auditWho } from '../auth/audit-who.js';
+import { forgetInterviews } from '../interviews/interview-retention.js';
 import { EventsService } from '../events/events.service.js';
 
 /** Response scopes (1.31b) and, since 3.1, a seminar participant found by e-mail. */
 export type ForgetScope = DeleteScope | { scope: 'participant'; email: string };
+/** Response parts and (2.20) conversations; `total` counts both. */
+export type ClientCounts = DeleteCounts & { interviews: number };
 
 @Injectable()
 export class ForgetService {
@@ -27,13 +30,13 @@ export class ForgetService {
     reason: string,
     session: PrivacySession | undefined,
     dryRun?: boolean,
-  ): Promise<DeleteCounts & { dry_run: boolean }>;
+  ): Promise<ClientCounts & { dry_run: boolean }>;
   forget(
     scope: ForgetScope,
     reason: string,
     session: PrivacySession | undefined,
     dryRun?: boolean,
-  ): Promise<(DeleteCounts | ParticipantDeleteCounts) & { dry_run: boolean }>;
+  ): Promise<(ClientCounts | ParticipantDeleteCounts) & { dry_run: boolean }>;
   async forget(
     scope: ForgetScope,
     reason: string,
@@ -72,7 +75,13 @@ export class ForgetService {
       throw new BadRequestException('Kunden finst ikkje.');
     const counts = await this.prisma.$transaction(
       async (tx) => {
-        const found = await this.privacy.store.deleteScope(tx, scope, who, reason, dryRun);
+        const responses = await this.privacy.store.deleteScope(tx, scope, who, reason, dryRun);
+        // A client's conversations (2.20, class `samtale`) go with its answers; `total` counts both.
+        const interviews =
+          scope.scope === 'client'
+            ? await forgetInterviews(tx, scope.client, who, reason, dryRun)
+            : 0;
+        const found = { ...responses, interviews, total: responses.total + interviews };
         await preview(tx, found);
         return found;
       },

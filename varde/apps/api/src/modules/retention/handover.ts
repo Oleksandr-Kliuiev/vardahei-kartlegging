@@ -9,6 +9,8 @@ import { ZipWriter, TextReader, Uint8ArrayWriter } from '@zip.js/zip.js';
 import { PrivacyService, type PrivacySession } from '../privacy/privacy.service.js';
 import { analyseRows, analyseCsv } from '../exports/analyse.js';
 import { csv } from '../exports/csv.js';
+import { interviewsCsv } from '../interviews/interview-retention.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
 
 const TTL = 10 * 60_000;
 @Injectable()
@@ -17,7 +19,10 @@ export class HandoverService implements OnModuleDestroy {
     string,
     { bytes: Uint8Array; expires: number; timer: NodeJS.Timeout }
   >();
-  constructor(private readonly privacy: PrivacyService) {}
+  constructor(
+    private readonly privacy: PrivacyService,
+    private readonly prisma: PrismaService,
+  ) {}
   async create(
     client: string,
     reason: string,
@@ -86,10 +91,12 @@ export class HandoverService implements OnModuleDestroy {
           s.stale,
         ]),
       ),
+      // Conversations with key people (2.20) after the privacy read above, which is in AuditLog.
+      'samtalar.csv': await interviewsCsv(this.prisma, client),
       'LES-MEG.txt':
         'Data frå Vardahei IT til ' +
         data.client.name +
-        '.\r\nSvar frå alle rundar er i svar.csv; svar frå leiarane er i leiar.csv. Initialar er tomme i anonyme rundar.\r\nInnsending utan svar tyder at ingen spørsmålsvar vart sende inn.\r\nSamla publiserte tal for dykkar verksemd er i samla.csv. Tomme felt er undertrykte av omsyn til personvern.\r\nFila er kryptert med AES-256. Opne med 7-Zip og passordet som vart vist ved utleveringa.\r\nOppbevar data trygt og del dei berre med den godkjende mottakaren.\r\n',
+        '.\r\nSvar frå alle rundar er i svar.csv; svar frå leiarane er i leiar.csv. Initialar er tomme i anonyme rundar.\r\nInnsending utan svar tyder at ingen spørsmålsvar vart sende inn.\r\nSamtalar med nøkkelpersonar, med vurderingane og notata til Vardahei IT, er i samtalar.csv.\r\nSamla publiserte tal for dykkar verksemd er i samla.csv. Tomme felt er undertrykte av omsyn til personvern.\r\nFila er kryptert med AES-256. Opne med 7-Zip og passordet som vart vist ved utleveringa.\r\nOppbevar data trygt og del dei berre med den godkjende mottakaren.\r\n',
     };
     for (const [name, text] of Object.entries(files)) await zip.add(name, new TextReader(text));
     const bytes = await zip.close();

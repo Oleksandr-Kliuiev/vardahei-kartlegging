@@ -6,6 +6,7 @@
 // docs/varde/evidence/stage-2/2c-evidence.md for review.
 import type { TemplateContent } from '@varde/schema/template/template';
 import { initialsQuestion, roleQuestion } from '@varde/schema/template/structure';
+import { interviewGuideQuestions } from './interview-guide.js';
 
 type Audience = TemplateContent['audience'];
 type Lang = TemplateContent['required_languages'][number];
@@ -22,7 +23,12 @@ export interface Starter {
   with_role_question: boolean;
 }
 
-const MINUTES: Record<Audience, number> = { client_survey: 5, seminar_live: 2, seminar_after: 3 };
+const MINUTES: Record<Audience, number> = {
+  client_survey: 5,
+  seminar_live: 2,
+  seminar_after: 3,
+  interview: 45,
+};
 
 /** A key for a title: lower case letters and digits joined by dashes (æ, ø, å spelled out). */
 export function keyOf(title: string): string {
@@ -39,7 +45,41 @@ export function keyOf(title: string): string {
   return key || 'skjema';
 }
 
+/** A conversation guide (2.20) starts from the standard questions of «Kartlegging nøkkelpersonar»:
+ * free text in Nynorsk, no initials, role, letter or poster. No text is left empty, so the guide can
+ * be published as it is: no respondent reads the contact, so «Vardahei IT» stands in for an unset one. */
+function interviewStarter(s: Starter): TemplateContent {
+  const nn = (text: string) => ({ nn: text || 'Vardahei IT' });
+  const or = (value: string) => value.trim() || 'Vardahei IT';
+  return {
+    key: '',
+    audience: 'interview',
+    identification: 'none',
+    required_languages: ['nn'],
+    leader_roles: [],
+    max_tips: 0,
+    tips: [],
+    questions: interviewGuideQuestions(),
+    intro: {
+      title: nn(s.title),
+      short: nn(s.title),
+      minutes: MINUTES.interview,
+      letter: [],
+      sender: nn(s.sender.nn),
+      facts: [],
+      contact: {
+        name: or(s.contact.name),
+        phone: or(s.contact.phone),
+        email: or(s.contact.email),
+        hours: nn(s.contact.hours.nn),
+      },
+    },
+    leader_intro: { title: nn('Leiar'), text: nn('Ein samtale har ingen eigen del for leiarar.') },
+  };
+}
+
 export function starterContent(s: Starter): TemplateContent {
+  if (s.audience === 'interview') return interviewStarter(s);
   const langs = s.required_languages;
   // Approved English where it exists; a text without it is left empty for «Omsetjing».
   const say = (w: Words | string) => {
@@ -81,7 +121,10 @@ export function starterContent(s: Starter): TemplateContent {
     head === undefined
       ? [question]
       : [
-          { ...head, texts: { ...head.texts, section_title: say({ nn: 'Om deg', en: 'About you' }) } },
+          {
+            ...head,
+            texts: { ...head.texts, section_title: say({ nn: 'Om deg', en: 'About you' }) },
+          },
           ...rest,
           question,
         ]

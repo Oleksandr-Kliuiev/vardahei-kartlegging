@@ -74,10 +74,12 @@ it('dry-run shows both parts and makes no ledger entry', async () => {
     orderBy: { at: 'desc' },
     take: 1,
   });
+  // 2.20: a client's conversations are counted with its answers (none in this fixture).
   expect(looked?.details).toEqual({
     scope: 'client',
     common: preview.common,
     leader: preview.leader,
+    interviews: 0,
     total: preview.total,
   });
   expect(JSON.stringify(looked)).not.toContain(r.client_id);
