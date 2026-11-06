@@ -8,7 +8,7 @@ import { mutate } from './api.js';
 import { Icon } from './icons.js';
 import { follow, goTo, useTitle } from './nav.js';
 import { ErrorMessage } from './queries.js';
-import { Fordeling, Konflikt, Mark } from './samtale-felt.js';
+import { Fordeling, Konflikt, Mark, MAX } from './samtale-felt.js';
 import { type FieldKey, type Lagring, useLagring } from './samtale-lagring.js';
 import {
   countOf,
@@ -151,6 +151,7 @@ export function OppsummeringPage({ id }: { id: string }) {
         id={`sm${key.slice(1)}`}
         aria-describedby={`sm${key.slice(1)}-h`}
         className="input sm-ta sm-ta-kort"
+        maxLength={MAX}
         value={store.text(key)}
         readOnly={done}
         onChange={(e) => store.set(key, e.target.value)}
@@ -349,6 +350,7 @@ export function OppsummeringPage({ id }: { id: string }) {
                   <textarea
                     id="sm-notat-heile"
                     className="input sm-ta sm-ta-kort sm-ta-notat"
+                    maxLength={MAX}
                     value={store.text(':note')}
                     readOnly={done}
                     placeholder="Til dømes kven som bør følgje opp, og når."

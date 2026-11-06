@@ -14,6 +14,9 @@ import {
   SCALE,
 } from './samtale-models.js';
 
+/** The server takes up to 20 000 characters in a field; the box stops there instead of a refusal. */
+export const MAX = 20_000;
+
 export const MOD = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌥' : 'Alt+';
 
 /** A rating as a glyph in a disc; an empty ring when unrated, with a dot when something is written. */
@@ -84,6 +87,21 @@ export function SaveLine({ store }: { store: Lagring }) {
         {count === 1 ? 'Eitt felt' : `${count} felt`} er endra på ein annan skjerm ·{' '}
         <a href={to} onClick={(e) => follow(e, to)}>
           Vel kva som skal stå
+        </a>
+      </span>
+    );
+  }
+  // A field the server refused stays named until it is changed: the others may have been saved since.
+  const refused = store.refused.entries().next();
+  if (!refused.done) {
+    const [key, message] = refused.value;
+    const to = placeOf(store.id, key);
+    return (
+      <span className="sm-lagra sm-feil" role="status">
+        <i />
+        {message} ·{' '}
+        <a href={to} onClick={(e) => follow(e, to)}>
+          Vis feltet
         </a>
       </span>
     );
@@ -230,6 +248,7 @@ export function Sporsmalskort(p: {
         id={`${id}-svar`}
         ref={answerRef}
         className="input sm-ta sm-ta-svar"
+        maxLength={MAX}
         value={answer}
         readOnly={readOnly}
         placeholder="Skriv med eigne ord det kunden fortel …"
@@ -297,6 +316,7 @@ export function Sporsmalskort(p: {
         id={`${id}-tiltak`}
         aria-describedby={`${id}-tiltak-h`}
         className="input sm-ta sm-ta-kort"
+        maxLength={MAX}
         value={action}
         readOnly={readOnly}
         placeholder="Kva bør gjerast? Til dømes «Ta det inn i arbeidsavtalen»."
@@ -317,6 +337,7 @@ export function Sporsmalskort(p: {
             ref={noteRef}
             aria-describedby={`${id}-notat-h`}
             className="input sm-ta sm-ta-kort sm-ta-notat"
+            maxLength={MAX}
             value={note}
             readOnly={readOnly}
             placeholder="Inntrykk, ting å sjekke, idear til tilbod …"

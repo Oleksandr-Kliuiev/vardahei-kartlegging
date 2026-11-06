@@ -13,6 +13,7 @@ const BK = `varde:samtale:${ID}`;
 class FakeServer {
   values = new Map<string, V>();
   mode: 'ok' | 'offline' | 'auth' | 'done' | 'drop' = 'ok';
+  fail400 = new Set<string>();
   fail500 = new Set<string>();
   hold = false;
   pending: (() => void)[] = [];
@@ -21,11 +22,22 @@ class FakeServer {
     this.pending = [];
     p.forEach((r) => r());
   }
-  fetch = async (url: string, init: { body: string }) => {
+  fetch = async (url: string, init: { body: string; signal?: AbortSignal }) => {
     const body = JSON.parse(init.body) as { field: string; value: V; expect: V };
     const m = /interviews\/[^/]+\/(?:answers\/([^/]+)|fields)/.exec(url)!;
     const key = m[1] ? `${decodeURIComponent(m[1])}:${body.field}` : `:${body.field}`;
-    if (this.hold) await new Promise<void>((r) => this.pending.push(r));
+    // A held request waits for release() or, like a browser, gives up when the store aborts it.
+    if (this.hold)
+      await new Promise<void>((resolve, reject) => {
+        this.pending.push(resolve);
+        init.signal?.addEventListener('abort', () => reject(new TypeError('Load failed')));
+      });
+    if (this.fail400.has(key))
+      return {
+        ok: false,
+        status: 400,
+        json: () => Promise.resolve({ statusCode: 400, message: 'Teksten er for lang.' }),
+      };
     const res = (status: number, b: unknown) => ({
       ok: status < 300,
       status,
@@ -323,5 +335,134 @@ describe('the autosave of a conversation', () => {
       'Linje\nto\ntre\nfire � slutt\t😀',
     );
     expect(clean(null)).toBeNull();
+  });
+});
+
+// The second acceptance pass (N1–N7): more ways a screen could meet its own text, a refused field and a
+// request that never answers.
+describe('the autosave after the second review', () => {
+  it('a lost answer, the outage goes on while typing, then back: no conflict with itself', async () => {
+    const a = open(s);
+    s.mode = 'drop';
+    a.set('N2:answer', 'A');
+    await settle(700); // the server has «A», the answer was lost
+    s.mode = 'offline';
+    a.set('N2:answer', 'AB');
+    await settle(700); // this one never reaches the server
+    s.mode = 'ok';
+    await settle(4000);
+    expect({ conflict: a.conflicts.has('N2:answer'), server: s.values.get('N2:answer') }).toEqual({
+      conflict: false,
+      server: 'AB',
+    });
+  });
+
+  it('the same across a reload: the copy remembers every value sent without an answer', async () => {
+    const a = open(s);
+    s.mode = 'drop';
+    a.set('N2:answer', 'A');
+    await settle(700);
+    s.mode = 'offline';
+    a.set('N2:answer', 'AB');
+    await settle(700);
+    s.mode = 'ok';
+    const b = open(s); // the tab was closed while offline, and opened again
+    await settle();
+    expect({ conflict: b.conflicts.has('N2:answer'), server: s.values.get('N2:answer') }).toEqual({
+      conflict: false,
+      server: 'AB',
+    });
+  });
+
+  it('signed out in tab A, tab B sends A’s copy after signing in, A types on: no conflict with itself', async () => {
+    const a = open(s);
+    s.mode = 'auth';
+    a.set('N2:answer', 'Før');
+    await settle(700);
+    s.mode = 'ok';
+    open(s); // signed in again in a second tab: it sends A's kept text
+    await settle();
+    expect(s.values.get('N2:answer')).toBe('Før');
+    a.set('N2:answer', 'Før og etter');
+    await settle(700);
+    expect({ conflict: a.conflicts.has('N2:answer'), server: s.values.get('N2:answer') }).toEqual({
+      conflict: false,
+      server: 'Før og etter',
+    });
+  });
+
+  it('a conflict after a reload, typing on, «Behald mitt»: the newest text goes and the copy clears', async () => {
+    localStorage.setItem(
+      BK,
+      JSON.stringify({ kept: { 'N2:answer': { value: 'Mitt', expect: '' } } }),
+    );
+    s.values.set('N2:answer', 'Deira');
+    const a = open(s);
+    await settle();
+    expect(a.text('N2:answer')).toBe('Mitt');
+    a.set('N2:answer', 'Mitt og meir');
+    await settle(700);
+    a.resolve('N2:answer', 'mine');
+    await settle();
+    expect(s.values.get('N2:answer')).toBe('Mitt og meir');
+    expect(localStorage.getItem(BK)).toBeNull();
+  });
+
+  it('a refused field stays named on the save line after others are saved, and goes again when changed', async () => {
+    const a = open(s);
+    s.fail400.add('N2:note');
+    a.set('N2:note', 'For langt');
+    await settle(700);
+    a.set('N3:answer', 'kort');
+    await settle(700);
+    expect(s.values.get('N3:answer')).toBe('kort');
+    const ui = mount(<SaveLine store={a} />);
+    const line = ui.div.textContent;
+    const link = ui.div.querySelector('a')?.getAttribute('href');
+    ui.close();
+    expect(line).toContain('Teksten er for lang.');
+    expect(link).toBe(`/admin/samtalar/${ID}?q=N2`);
+    expect(await a.flush()).toBe(false);
+    s.fail400.clear();
+    a.set('N2:note', 'Kortare');
+    await settle(700);
+    expect({ server: s.values.get('N2:note'), refused: a.refused.size }).toEqual({
+      server: 'Kortare',
+      refused: 0,
+    });
+  });
+
+  it('a request that never answers is given up after 15 s: «Fullfør» gets an answer', async () => {
+    const a = open(s);
+    s.hold = true;
+    a.set('N2:answer', 'x');
+    await settle(700);
+    let finished: boolean | undefined;
+    void a.flush().then((r) => (finished = r));
+    await settle(40_000);
+    // «Fullfør» has its answer (not saved yet); the store keeps trying in the background.
+    expect({ finished, waiting: a.waiting() }).toEqual({ finished: false, waiting: 1 });
+    s.hold = false;
+    s.release();
+    await settle(4000);
+    expect(s.values.get('N2:answer')).toBe('x');
+  });
+
+  it('two tabs: the tab that loads adopts the other’s copy and deletes only what is unchanged', async () => {
+    const a = open(s);
+    s.mode = 'offline';
+    a.set('N2:answer', 'A1');
+    await settle(700);
+    s.mode = 'ok';
+    open(s); // sends A1 for A
+    await settle();
+    a.set('N2:answer', 'A1 A2'); // A goes on; its retry is still waiting
+    await settle(4000);
+    const c = open(s);
+    await settle();
+    expect({ server: s.values.get('N2:answer'), c: c.text('N2:answer') }).toEqual({
+      server: 'A1 A2',
+      c: 'A1 A2',
+    });
   });
 });

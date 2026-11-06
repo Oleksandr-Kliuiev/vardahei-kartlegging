@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { mutate } from './api.js';
 import { Icon } from './icons.js';
-import { follow, goTo, useTitle } from './nav.js';
+import { follow, goTo, replaceTo, useTitle } from './nav.js';
 import { ErrorMessage } from './queries.js';
 import { Fordeling, Mark, SaveLine, Sporsmalskort } from './samtale-felt.js';
 import { type Lagring, useLagring } from './samtale-lagring.js';
@@ -162,7 +162,7 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
     if (n >= questions.length) return goTo(`/admin/samtalar/${id}/oppsummering`);
     setCur(n);
     setMoved(true);
-    window.history.replaceState(null, '', `/admin/samtalar/${id}?q=${questions[n]!.id}`);
+    replaceTo(`/admin/samtalar/${id}?q=${questions[n]!.id}`);
     const card = document.querySelector('.sm-kort');
     if (card && card.getBoundingClientRect().top < 120) card.scrollIntoView({ block: 'start' });
   };

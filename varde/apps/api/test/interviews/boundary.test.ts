@@ -28,6 +28,7 @@ const TABLES = new RegExp(
     /\binterview_(?:answer|round)\b/.source,
     /\b(?:FROM|JOIN|INTO|UPDATE)\s+"?interview"?\b/.source,
   ].join('|'),
+  'i',
 );
 
 describe('conversations stay in their own module (2.20)', () => {

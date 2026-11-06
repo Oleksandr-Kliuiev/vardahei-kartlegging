@@ -29,16 +29,21 @@ export interface Conflict {
   base: Value;
 }
 
-/** One change kept in the browser: the text, the server value it was written on and, while a save of it
- * was on its way, what was sent: a reload that finds that on the server knows it as its own. */
+/** One change kept in the browser: the text, the server value it was written on and what was sent of it
+ * without an answer (on its way, the network gone, signed out): a reload that finds one of those on the
+ * server knows it as its own. */
 interface Kept {
   value: Value;
   expect: Value;
-  sent?: Value;
+  sent?: Value[];
 }
 
 const DELAY = 700;
 const RETRY = 4000;
+/** A request with no answer after this long counts as lost (a half-open connection, a captive portal). */
+const TIMEOUT = 15_000;
+/** How many unanswered values of one field are remembered. */
+const MAYBE = 10;
 const SERVER_FAILED = 'Tenaren tok ikkje imot alle endringane. Varde prøver igjen.';
 const backupKey = (id: string) => `varde:samtale:${id}`;
 
@@ -91,11 +96,16 @@ export class Lagring {
   private retry = 0;
   /** The save on its way; kept in the copy (see `Kept.sent`). */
   private inflight: { key: FieldKey; value: Value } | null = null;
-  /** Sent when the network went: it may have reached the server, so finding it there is no conflict. */
-  private maybe = new Map<FieldKey, Value>();
+  /** Values sent without an answer since the last confirmed one (the network went, signed out): any of
+   * them may be on the server (another tab sends the copy after signing in), so finding one there is no
+   * conflict. */
+  private maybe = new Map<FieldKey, Value[]>();
   /** Fields the server failed on: tried again after a pause while the others go on. */
   private failing = new Set<FieldKey>();
   private failTimer = 0;
+  /** Fields the server refused (too long, a sign it cannot store), with its words: tried again when the
+   * field is changed or at «Fullfør», and named on the save line until then. */
+  refused = new Map<FieldKey, string>();
   /** What this tab last wrote to the copy, per field: it removes only its own entries, so another tab of
    * the same browser keeps its changes. */
   private written = new Map<FieldKey, string>();
@@ -132,9 +142,11 @@ export class Lagring {
       const now = this.server.get(key) ?? null;
       if (kept.value === now) continue;
       this.local.set(key, kept.value);
-      if (kept.expect === now || (kept.sent !== undefined && kept.sent === now))
+      const sent = Array.isArray(kept.sent) ? kept.sent : [];
+      if (kept.expect === now || sent.includes(now)) {
+        if (sent.length) this.maybe.set(key, [...sent]);
         this.queue.push(key);
-      else this.conflicts.set(key, { key, theirs: now, by: null, base: kept.expect });
+      } else this.conflicts.set(key, { key, theirs: now, by: null, base: kept.expect });
     }
     this.writeBackup();
     this.bump();
@@ -151,6 +163,7 @@ export class Lagring {
     const value = clean(raw);
     if (this.locked || this.value(key) === value) return;
     this.local.set(key, value);
+    this.refused.delete(key);
     this.writeBackup();
     window.clearTimeout(this.timers.get(key));
     this.timers.set(
@@ -180,6 +193,7 @@ export class Lagring {
     for (const [k, v] of this.local)
       if (v !== (this.server.get(k) ?? null) || this.maybe.has(k)) this.enqueue(k, false);
     this.failing.clear();
+    this.refused.clear();
     while (this.running) await this.running;
     await this.run();
     return this.waiting() === 0 && this.conflicts.size === 0;
@@ -230,7 +244,8 @@ export class Lagring {
       const expect = this.server.get(key) ?? empty(key);
       // A value that may have reached the server is sent again even when it looks saved: the answer says.
       const settled = value === expect && !this.maybe.has(key);
-      if (settled || this.conflicts.has(key) || this.failing.has(key)) {
+      const waits = this.conflicts.has(key) || this.failing.has(key) || this.refused.has(key);
+      if (settled || waits) {
         this.queue.shift();
         continue;
       }
@@ -246,9 +261,7 @@ export class Lagring {
         // Typed on while this was on its way: the newer text goes next, against what was just saved.
         if ((this.local.get(key) ?? null) === value) this.queue.shift();
       } else if ('conflict' in sent) {
-        const ours =
-          sent.current === value ||
-          (this.maybe.has(key) && sent.current === (this.maybe.get(key) ?? null));
+        const ours = sent.current === value || (this.maybe.get(key) ?? []).includes(sent.current);
         this.maybe.delete(key);
         if (ours || sent.current === (this.local.get(key) ?? null)) {
           // The server has what this screen sent (its answer was lost on the way) or what it shows now:
@@ -260,12 +273,14 @@ export class Lagring {
           this.queue.shift();
         }
       } else if ('offline' in sent) {
-        this.maybe.set(key, value);
+        this.remember(key, value);
         this.state = { kind: 'offline' };
         this.retry = window.setTimeout(() => void this.run(), RETRY);
         this.writeBackup();
         return;
       } else if ('auth' in sent) {
+        // Not saved, but kept in the copy: another tab may send it after signing in.
+        this.remember(key, value);
         this.state = { kind: 'auth' };
         this.writeBackup();
         return;
@@ -276,8 +291,9 @@ export class Lagring {
         this.writeBackup();
         return;
       } else {
-        // This field failed (too long, the server failed on it); the others still go.
+        // This field failed (refused, or the server failed on it); the others still go.
         if (sent.server) this.failing.add(key);
+        else this.refused.set(key, sent.error);
         failed = sent.server ? SERVER_FAILED : sent.error;
         this.queue.shift();
       }
@@ -291,8 +307,13 @@ export class Lagring {
         for (const k of again) this.enqueue(k, false);
         void this.run();
       }, RETRY);
-    failed ??= this.failing.size ? SERVER_FAILED : null;
+    failed ??= this.failing.size ? SERVER_FAILED : (this.refused.values().next().value ?? null);
     this.state = failed ? { kind: 'error', message: failed } : { kind: 'saved', at: new Date() };
+  }
+
+  private remember(key: FieldKey, value: Value) {
+    const sent = (this.maybe.get(key) ?? []).filter((v) => v !== value);
+    this.maybe.set(key, [...sent, value].slice(-MAYBE));
   }
 
   private async send(key: FieldKey, value: Value, expect: Value): Promise<Sent> {
@@ -301,15 +322,20 @@ export class Lagring {
       ? `/api/admin/interviews/${this.id}/fields`
       : `/api/admin/interviews/${this.id}/answers/${encodeURIComponent(questionOf(key))}`;
     let response: Response;
+    const stop = new AbortController();
+    const timer = window.setTimeout(() => stop.abort(), TIMEOUT);
     try {
       response = await fetch(url, {
         method: 'PUT',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ field: fieldOf(key), value, expect }),
+        signal: stop.signal,
       });
     } catch {
       return { offline: true };
+    } finally {
+      window.clearTimeout(timer);
     }
     if (response.ok) return { ok: true };
     if (response.status === 401) return { auth: true };
@@ -338,8 +364,10 @@ export class Lagring {
     const c = this.conflicts.get(key);
     if (c) return { value: v, expect: c.base };
     const s = this.server.get(key) ?? null;
-    if (this.inflight?.key === key) return { value: v, expect: s, sent: this.inflight.value };
-    if (this.maybe.has(key)) return { value: v, expect: s, sent: this.maybe.get(key) ?? null };
+    const sent = [...(this.maybe.get(key) ?? [])];
+    if (this.inflight?.key === key && !sent.includes(this.inflight.value))
+      sent.push(this.inflight.value);
+    if (sent.length) return { value: v, expect: s, sent };
     return v === s ? null : { value: v, expect: s };
   }
 
