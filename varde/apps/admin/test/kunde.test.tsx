@@ -125,9 +125,11 @@ const fetcher = vi.fn((path: string, init?: RequestInit) => {
                         },
                       ],
                     }
-                  : path === `/api/admin/clients/${C}/finding-status`
-                    ? { rows: [...follow, ...extra] }
-                    : { ok: true };
+                  : path === `/api/admin/clients/${C}/interviews`
+                    ? []
+                    : path === `/api/admin/clients/${C}/finding-status`
+                      ? { rows: [...follow, ...extra] }
+                      : { ok: true };
   return Promise.resolve(new Response(JSON.stringify(body)));
 });
 let view: ReturnType<typeof mount> | undefined;

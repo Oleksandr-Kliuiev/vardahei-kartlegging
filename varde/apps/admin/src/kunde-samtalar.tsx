@@ -8,7 +8,7 @@ import './samtale.css';
 
 export function KundeSamtalar({ client }: { client: string }) {
   const q = useClientInterviews(client);
-  const list = q.data ?? [];
+  const list = Array.isArray(q.data) ? q.data : [];
   return (
     <section className="kort" aria-labelledby="kunde-samtalar">
       <div className="kort-hovud">

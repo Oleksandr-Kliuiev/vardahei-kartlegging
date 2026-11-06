@@ -15,11 +15,14 @@ import {
   type GuideQuestion,
   type Interview,
   peopleText,
+  plain,
   rated,
   type Rating,
   useInterview,
 } from './samtale-models.js';
 import './samtale.css';
+
+const FIELDS = ['answer', 'rating', 'action', 'note'] as const;
 
 const KEYS: Record<string, Rating> = {
   Digit1: 'ivaretatt',
@@ -59,10 +62,32 @@ export function useReopen(i: Interview | undefined, store: Lagring | null) {
       store?.setLocked(false);
       void queries.invalidateQueries({ queryKey: ['samtalar'], refetchType: 'none' });
     } catch (e) {
-      setError(e instanceof Error ? e : new Error('Noko gjekk gale.'));
+      setError(plain(e));
     }
   };
   return { reopen, error };
+}
+
+/** «Fullført 10.11.2026.», or without the day when another screen finished it. */
+export const doneText = (i: Interview) => {
+  const day = dmy(i.done_at?.slice(0, 10) ?? null);
+  return day ? `Fullført ${day}.` : 'Fullført.';
+};
+
+/** The session ran out: what was typed waits on this machine until the person signs in again. */
+export function Utlogga({ store }: { store: Lagring }) {
+  if (store.state.kind !== 'auth') return null;
+  return (
+    <div className="sm-melding sm-varsel" role="alert">
+      <span>
+        Du er logga ut. Det du har skrive, ligg trygt på denne maskina og blir lagra når du har
+        logga inn igjen.
+      </span>
+      <a className="btn sm" href="/auth/login">
+        Logg inn igjen
+      </a>
+    </div>
+  );
 }
 
 export function Topp({
@@ -107,7 +132,7 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
     const asked = new URLSearchParams(search).get('q');
     const n = questions.findIndex((x) => x.id === asked);
     if (n >= 0) setCur(n);
-  }, [questions]);
+  }, [questions, search]);
   const { reopen, error } = useReopen(i, store);
   const minutes = useMinutes(i?.started_at ?? null, i?.status === 'in_progress');
 
@@ -170,23 +195,31 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
   const item = (q: GuideQuestion, n: number, compact: boolean) => {
     const rating = store.rating(q.id);
     const written = !!(store.text(`${q.id}:answer`).trim() || store.text(`${q.id}:action`).trim());
-    const state = rating ? '' : written ? ', skrive, ikkje vurdert' : ', ikkje teke opp';
+    const conflict = FIELDS.some((f) => store.conflicts.has(`${q.id}:${f}`));
+    const state =
+      (rating ? '' : written ? ', skrive, ikkje vurdert' : ', ikkje teke opp') +
+      (conflict ? ', endra på ein annan skjerm' : '');
     return (
       <button
         key={q.id}
         type="button"
-        className={n === cur ? 'sm-rad sm-no' : 'sm-rad'}
+        className={['sm-rad', n === cur && 'sm-no', conflict && 'sm-rad-konflikt']
+          .filter(Boolean)
+          .join(' ')}
         aria-current={n === cur ? 'step' : undefined}
         onClick={() => go(n)}
         aria-label={compact ? `Spørsmål ${n + 1}, ${q.short}${state}` : undefined}
       >
         <span className="sm-nr">{n + 1}</span>
         {!compact && <span className="sm-kort-namn">{q.short}</span>}
-        {!compact && store.text(`${q.id}:note`).trim() ? (
-          <Icon name="las" small />
-        ) : (
-          !compact && <span />
-        )}
+        {!compact &&
+          (conflict ? (
+            <Icon name="varsel" small />
+          ) : store.text(`${q.id}:note`).trim() ? (
+            <Icon name="las" small />
+          ) : (
+            <span />
+          ))}
         <Mark rating={rating} written={written} />
         {!compact && <span className="sr-only">{rating ? `, ${rating}` : state}</span>}
       </button>
@@ -222,24 +255,14 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
         <div className="sm-melding sm-ok" role="status">
           <span>
             <Icon name="hake" small />
-            Fullført {dmy(i.done_at?.slice(0, 10) ?? null)}. Felta er låste.
+            {doneText(i)} Felta er låste.
           </span>
           <button type="button" className="btn sm" onClick={() => void reopen()}>
             Opne for endring
           </button>
         </div>
       )}
-      {store.state.kind === 'auth' && (
-        <div className="sm-melding sm-varsel" role="alert">
-          <span>
-            Du er logga ut. Det du har skrive, ligg trygt på denne maskina og blir lagra når du har
-            logga inn igjen.
-          </span>
-          <a className="btn sm" href="/auth/login">
-            Logg inn igjen
-          </a>
-        </div>
-      )}
+      <Utlogga store={store} />
       <ErrorMessage error={error} />
       <nav className="sm-stripe" aria-label="Spørsmål">
         {questions.map((q, n) => item(q, n, true))}

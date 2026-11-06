@@ -8,20 +8,94 @@ import { mutate } from './api.js';
 import { Icon } from './icons.js';
 import { follow, goTo, useTitle } from './nav.js';
 import { ErrorMessage } from './queries.js';
-import { Fordeling, Mark } from './samtale-felt.js';
-import { useLagring } from './samtale-lagring.js';
+import { Fordeling, Konflikt, Mark } from './samtale-felt.js';
+import { type FieldKey, type Lagring, useLagring } from './samtale-lagring.js';
 import {
   countOf,
   dmy,
+  type GuideQuestion,
   type Interview,
   peopleText,
+  plain,
   RATING,
   type Rating,
   scoreOf,
   useInterview,
 } from './samtale-models.js';
-import { Topp, useReopen } from './samtale-page.js';
+import { doneText, Topp, Utlogga, useReopen } from './samtale-page.js';
 import './samtale.css';
+
+/** The fields of the whole conversation, with the id of their box on this page. */
+const META: Record<string, [label: string, box: string]> = {
+  ':summary': ['Samla inntrykk', 'smsummary'],
+  ':agreed': ['Avtalt vidare', 'smagreed'],
+  ':note': ['Notat om heile samtalen', 'sm-notat-heile'],
+};
+const FIELD: Record<string, string> = {
+  answer: 'Kva seier kunden?',
+  rating: 'Vurdering',
+  action: 'Konklusjon og tiltak',
+  note: 'Eige notat',
+};
+
+/** Why «Fullfør» has to wait, in the words of the save line. */
+function notSaved(store: Lagring) {
+  if (store.conflicts.size)
+    return 'Nokre felt er endra på ein annan skjerm. Vel kva som skal stå i dei (sjå meldinga øvst), og fullfør etterpå.';
+  if (store.state.kind === 'offline')
+    return 'Nokre endringar ligg berre på denne maskina, fordi nettet er borte. Fullfør når dei er lagra.';
+  if (store.state.kind === 'auth')
+    return 'Du er logga ut. Logg inn igjen, så blir endringane lagra, og fullfør etterpå.';
+  if (store.state.kind === 'error') return `Nokre endringar er ikkje lagra: ${store.state.message}`;
+  return 'Nokre endringar er ikkje lagra enno. Prøv igjen om litt.';
+}
+
+/** Fields another screen changed, each with a link to where the choice is made. */
+function Konfliktar({
+  store,
+  questions,
+  at,
+}: {
+  store: Lagring;
+  questions: readonly GuideQuestion[];
+  at: (n: number) => string;
+}) {
+  const keys = [...store.conflicts.keys()];
+  if (!keys.length) return null;
+  const link = (key: FieldKey) => {
+    const meta = META[key];
+    if (meta) return { to: `#${meta[1]}`, label: meta[0] };
+    const q = key.slice(0, key.indexOf(':'));
+    const n = questions.findIndex((x) => x.id === q);
+    return {
+      to: at(n),
+      label: `${n + 1} ${questions[n]?.short ?? q} (${FIELD[key.slice(q.length + 1)]})`,
+    };
+  };
+  return (
+    <div className="sm-melding sm-varsel">
+      <Icon name="varsel" small />
+      <p>
+        <b>
+          {keys.length === 1 ? 'Eitt felt er endra' : `${keys.length} felt er endra`} på ein annan
+          skjerm:
+        </b>{' '}
+        {keys.map((key, k) => {
+          const { to, label } = link(key);
+          return (
+            <span key={key}>
+              {k > 0 && ', '}
+              <a href={to} onClick={(e) => !to.startsWith('#') && follow(e, to)}>
+                {label}
+              </a>
+            </span>
+          );
+        })}
+        . Vel kva som skal stå, så kan du fullføre.
+      </p>
+    </div>
+  );
+}
 
 export function OppsummeringPage({ id }: { id: string }) {
   const q = useInterview(id);
@@ -52,8 +126,7 @@ export function OppsummeringPage({ id }: { id: string }) {
     setBusy(true);
     setError(null);
     try {
-      if (!(await store.flush()))
-        throw new Error('Nokre endringar er ikkje lagra enno. Sjå meldinga øvst, og prøv igjen.');
+      if (!(await store.flush())) throw new Error(notSaved(store));
       const r = await mutate<{ done_at: string }>(`/api/admin/interviews/${id}/done`);
       queries.setQueryData<Interview>(['samtalar', 'interview', id], (old) =>
         old ? { ...old, status: 'done', done_at: r.done_at } : old,
@@ -61,7 +134,7 @@ export function OppsummeringPage({ id }: { id: string }) {
       store.setLocked(true);
       void queries.invalidateQueries({ queryKey: ['samtalar'], refetchType: 'none' });
     } catch (e) {
-      setError(e instanceof Error ? e : new Error('Noko gjekk gale.'));
+      setError(plain(e));
     } finally {
       setBusy(false);
     }
@@ -82,6 +155,7 @@ export function OppsummeringPage({ id }: { id: string }) {
         readOnly={done}
         onChange={(e) => store.set(key, e.target.value)}
       />
+      <Konflikt store={store} field={key} />
     </div>
   );
   const finishButton = !done && (
@@ -108,8 +182,7 @@ export function OppsummeringPage({ id }: { id: string }) {
           <div className="sm-melding sm-ok" role="status">
             <span>
               <Icon name="hake" small />
-              <b>Fullført {dmy(i.done_at?.slice(0, 10) ?? null)}.</b> Samtalen er låst og er no med
-              på kundesida.
+              <b>{doneText(i)}</b> Samtalen er låst og er no med på kundesida.
             </span>
             <button type="button" className="btn sm" onClick={() => void reopened.reopen()}>
               Opne for endring
@@ -122,6 +195,8 @@ export function OppsummeringPage({ id }: { id: string }) {
             kunden.
           </p>
         )}
+        <Utlogga store={store} />
+        <Konfliktar store={store} questions={questions} at={at} />
         <ErrorMessage error={error ?? reopened.error} />
         <section className="sm-sum-hovud" aria-label="Fordeling">
           <h2>Oppsummering</h2>
@@ -279,6 +354,7 @@ export function OppsummeringPage({ id }: { id: string }) {
                     placeholder="Til dømes kven som bør følgje opp, og når."
                     onChange={(e) => store.set(':note', e.target.value)}
                   />
+                  <Konflikt store={store} field=":note" />
                 </div>
               </section>
             )}

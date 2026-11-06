@@ -102,7 +102,8 @@ it('«Nytt skjema» makes a survey from a start, or a copy, and opens it', async
       .querySelector('input')!
       .click(),
   );
-  act(() => view!.div.querySelector<HTMLInputElement>('.bib-sjekk input')!.click());
+  // «Rollespørsmål» (1fc076a) comes first now: find the English box by its words.
+  act(() => byText(view!.div, 'Òg på engelsk').querySelector('input')!.click());
   const title = view.div.querySelector<HTMLInputElement>('input[name="title"]')!;
   act(() => {
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(
@@ -122,6 +123,7 @@ it('«Nytt skjema» makes a survey from a start, or a copy, and opens it', async
     audience: 'seminar_after',
     identification: 'none',
     required_languages: ['nn', 'en'],
+    with_role_question: true,
   });
   expect(location.pathname).toBe('/admin/surveys/ny-versjon');
   // A copy starts from the newest published version, under a title of its own.

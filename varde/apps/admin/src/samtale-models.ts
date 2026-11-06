@@ -139,6 +139,15 @@ export const scoreOf = (c: Counts) => {
 };
 export const rated = (c: Counts) => c.ivaretatt + c.forbetring + c.manglar + c.ikkje_aktuelt;
 
+/** An error in words people use: a request that never reached Varde says so (the browser's own text is
+ * «Failed to fetch», «Load failed» or «NetworkError …»). */
+export const plain = (e: unknown) =>
+  e instanceof TypeError && /fetch|network|load failed/i.test(e.message)
+    ? new Error('Fekk ikkje kontakt med Varde. Prøv igjen når nettet er tilbake.')
+    : e instanceof Error
+      ? e
+      : new Error('Noko gjekk gale.');
+
 export const useInterviewRounds = () =>
   useQuery({
     queryKey: ['samtalar', 'rounds'],

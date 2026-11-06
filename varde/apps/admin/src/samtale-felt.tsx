@@ -3,7 +3,8 @@
 // Shared pieces: the rating mark, the bar of the scale and the line that says what is saved.
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { Icon } from './icons.js';
-import type { FieldKey, Lagring } from './samtale-lagring.js';
+import { follow } from './nav.js';
+import { type FieldKey, type Lagring, placeOf } from './samtale-lagring.js';
 import {
   clock,
   type Counts,
@@ -67,11 +68,26 @@ export function Fordeling({
   );
 }
 
-/** What is saved, in words people use. */
+/** What is saved, in words people use. A field changed on another screen comes first: nothing is saved
+ * over it until the person has chosen, so the line says so and leads there. */
 export function SaveLine({ store }: { store: Lagring }) {
   const s = store.state,
     waiting = store.waiting();
   const n = `${waiting} ${waiting === 1 ? 'endring ligg' : 'endringar ligg'} på denne maskina`;
+  const first = store.conflicts.keys().next();
+  if (!first.done) {
+    const to = placeOf(store.id, first.value);
+    const count = store.conflicts.size;
+    return (
+      <span className="sm-lagra sm-feil" role="status">
+        <i />
+        {count === 1 ? 'Eitt felt' : `${count} felt`} er endra på ein annan skjerm ·{' '}
+        <a href={to} onClick={(e) => follow(e, to)}>
+          Vel kva som skal stå
+        </a>
+      </span>
+    );
+  }
   if (s.kind === 'offline')
     return (
       <span className="sm-lagra sm-ventar" role="status">
@@ -108,8 +124,9 @@ export function SaveLine({ store }: { store: Lagring }) {
   );
 }
 
-/** A field another screen changed while this one had it open: keep mine or take theirs. */
-function Konflikt({ store, field }: { store: Lagring; field: FieldKey }) {
+/** A field another screen changed while this one had it open: keep mine (what the field shows, typing
+ * included) or take theirs. */
+export function Konflikt({ store, field }: { store: Lagring; field: FieldKey }) {
   const c = store.conflicts.get(field);
   if (!c) return null;
   const theirs = field.endsWith(':rating')
@@ -121,7 +138,7 @@ function Konflikt({ store, field }: { store: Lagring; field: FieldKey }) {
     <div className="sm-konflikt" role="alert">
       <p>
         <b>{c.by ?? 'Nokon'} har endra dette feltet på ein annan skjerm.</b> Der står no: «{theirs}
-        ».
+        ». {field.endsWith(':rating') ? 'Vurderinga di' : 'Teksten din'} står her til du har valt.
       </p>
       <div className="knappar">
         <button type="button" className="btn sm" onClick={() => store.resolve(field, 'mine')}>
@@ -286,7 +303,7 @@ export function Sporsmalskort(p: {
         onChange={(e) => store.set(key('action'), e.target.value)}
       />
       <Konflikt store={store} field={key('action')} />
-      {note || noteOpen ? (
+      {note || noteOpen || store.conflicts.has(key('note')) ? (
         <>
           <div className="sm-label">
             <Icon name="las" small />

@@ -82,7 +82,7 @@ describe('admin shell', () => {
     await settle();
     expect(count()).toBe(before + 1);
   });
-  it('loads the member name with same-origin credentials and navigates seven places using history', async () => {
+  it('loads the member name with same-origin credentials and navigates eight places using history', async () => {
     view = mount(<App />);
     await settle();
     expect(view.div.textContent).toContain('Syntetisk admin');
@@ -97,6 +97,7 @@ describe('admin shell', () => {
       'Rundar',
       'Kundar',
       'Seminar',
+      'Samtalar',
       'Personvern',
       'Innstillingar',
     ]);
