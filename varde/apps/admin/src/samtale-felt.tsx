@@ -13,6 +13,7 @@ import {
   type Rating,
   SCALE,
 } from './samtale-models.js';
+import { TilsetteLinjer } from './samtale-tilsette.js';
 
 /** The server takes up to 20 000 characters in a field; the box stops there instead of a refusal. */
 export const MAX = 20_000;
@@ -261,6 +262,7 @@ export function Sporsmalskort(p: {
           Ser ut som eit passord. Ikkje skriv passord eller nøklar i Varde.
         </p>
       )}
+      <TilsetteLinjer interview={store.id} question={q.id} />
       <div className="sm-label" id={`${id}-vurdering`}>
         Vurdering
       </div>
