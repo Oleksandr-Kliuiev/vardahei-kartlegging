@@ -33,6 +33,7 @@ interface View {
   } | null;
 }
 
+const KEYS = ['criteria_ivaretatt', 'criteria_forbetring', 'criteria_manglar'];
 const json = <T>(r: { json: <U>() => U }) => r.json<T>();
 const surveyPath = (id: string) => `/api/admin/surveys/versions/${id}`;
 const version = async (id: string) =>
@@ -40,7 +41,7 @@ const version = async (id: string) =>
     await t.call('GET', surveyPath(id)),
   );
 const note = (what: string) => `NOTAT-${t.mark}-${what}`;
-const ok = (r: { statusCode: number; body: string }) => {
+const ok = <R extends { statusCode: number; body: string }>(r: R) => {
   expect(r.statusCode, r.body).toBeLessThan(300);
   return r;
 };
@@ -133,16 +134,14 @@ beforeAll(async () => {
     set(c, 'N2', 'criteria_ivaretatt', `v1 N2 ${t.mark}`);
     set(c, 'N3', 'criteria_ivaretatt', `v1 N3 ${t.mark}`);
     set(c, 'N5', 'criteria_ivaretatt', `v1 N5 ${t.mark}`);
-    for (const key of ['criteria_ivaretatt', 'criteria_forbetring', 'criteria_manglar'])
-      set(c, 'N4', key, undefined);
+    for (const key of KEYS) set(c, 'N4', key, undefined);
   });
   await publish(v1);
   // v2: new words for N2, none left on N3, N5 gone.
   v2 = await nextDraft(v1);
   await edit(v2, (c) => {
     set(c, 'N2', 'criteria_ivaretatt', `v2 N2 ${t.mark}`);
-    for (const key of ['criteria_ivaretatt', 'criteria_forbetring', 'criteria_manglar'])
-      set(c, 'N3', key, undefined);
+    for (const key of KEYS) set(c, 'N3', key, undefined);
     c.questions = c.questions.filter((q) => q.id !== 'N5');
   });
   await publish(v2);
@@ -150,7 +149,10 @@ beforeAll(async () => {
   const v3 = await nextDraft(v2);
   await edit(v3, (c) => set(c, 'N2', 'criteria_ivaretatt', `v3 N2 ${t.mark}`));
   other = await newGuide('Ein annan guide');
-  await edit(other, (c) => set(c, 'N2', 'criteria_ivaretatt', `anna N2 ${t.mark}`));
+  await edit(other, (c) => {
+    set(c, 'N2', 'criteria_ivaretatt', `anna N2 ${t.mark}`);
+    for (const key of KEYS) set(c, 'N4', key, undefined);
+  });
   await publish(other);
 
   // Client A: spring (done, on v1), autumn (going, on v2), summer (going), another guide (done) and
@@ -198,7 +200,7 @@ describe('criteria (3.1)', () => {
     v.guide.questions.find((q) => q.id === id)?.criteria?.ivaretatt ?? null;
 
   it('the standard guide has all three for each of its 27 questions', async () => {
-    const { content } = await version(other);
+    const { content } = await version(await newGuide('Standardguide'));
     expect(content.questions).toHaveLength(27);
     for (const q of content.questions)
       for (const key of ['criteria_ivaretatt', 'criteria_forbetring', 'criteria_manglar'])
@@ -220,6 +222,28 @@ describe('criteria (3.1)', () => {
     );
     // The round keeps its own questions: N5 is still asked.
     expect(v.guide.questions.map((q) => q.id)).toContain('N5');
+  });
+
+  it('a guide made before criteria gets the standard ones in its next draft; one with any keeps its own', async () => {
+    const old = await newGuide('Guide utan kriteria');
+    await edit(old, (c) => {
+      for (const q of c.questions) for (const key of KEYS) q.texts[key] = undefined;
+    });
+    await publish(old);
+    expect((await version(old)).content.questions.some((q) => q.texts.criteria_manglar)).toBe(
+      false,
+    );
+    const next = (await version(await nextDraft(old))).content;
+    for (const q of next.questions)
+      for (const key of KEYS) expect(q.texts[key]?.nn.trim(), `${q.id} ${key}`).toBeTruthy();
+    // The other guide had its own words for N2 and none for N4: its next draft keeps both so.
+    const kept = (await version(await nextDraft(other))).content.questions;
+    expect(kept.find((q) => q.id === 'N2')?.texts.criteria_ivaretatt?.nn).toBe(`anna N2 ${t.mark}`);
+    expect(KEYS.map((key) => kept.find((q) => q.id === 'N4')?.texts[key])).toEqual([
+      undefined,
+      undefined,
+      undefined,
+    ]);
   });
 
   it('another guide keeps its own criteria', async () => {

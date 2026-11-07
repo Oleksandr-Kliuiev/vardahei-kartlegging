@@ -4,6 +4,7 @@
 // Samtale» starts from it; the guide is then edited and published in the workshop like any survey.
 // Each question says when it is Ivaretatt, Forbetringspotensial or Manglar (3.1, decision 07.11; the
 // texts of 07.11, which Oleksandr reviews in the workshop).
+import { criterionEntries } from '@varde/schema/template/criteria';
 import type { TemplateContent } from '@varde/schema/template/template';
 
 type Question = TemplateContent['questions'][number];
@@ -311,4 +312,24 @@ export function interviewGuideQuestions(): Question[] {
       },
     };
   });
+}
+
+/** The next draft of a guide made before 3.1 (none of its questions has a criterion) takes the standard
+ * criteria for the questions it shares with the standard guide, by id, so the guide in use gets them to
+ * read and correct in the workshop and, once published, in its running rounds. A guide that has any
+ * criterion keeps exactly what it has: a criterion removed on purpose stays removed. */
+export function withStandardCriteria(content: TemplateContent): TemplateContent {
+  const entries = criterionEntries();
+  const has = content.questions.some((q) => entries.some(([, key]) => q.texts[key] !== undefined));
+  if (content.audience !== 'interview' || has) return content;
+  return {
+    ...content,
+    questions: content.questions.map((q) => {
+      const criteria = CRITERIA[q.id];
+      if (criteria === undefined) return q;
+      const texts = { ...q.texts };
+      entries.forEach(([, key], n) => (texts[key] = { nn: criteria[n]! }));
+      return { ...q, texts };
+    }),
+  };
 }
