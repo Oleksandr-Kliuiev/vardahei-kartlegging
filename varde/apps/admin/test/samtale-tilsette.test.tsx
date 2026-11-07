@@ -93,6 +93,12 @@ it('rounds each share as the dashboard does, with a space that does not break', 
   ]);
   // Rounded one by one: three thirds give 33 % each, not 100 % in all.
   expect([1, 1, 1].map((c) => share(c, 3))).toEqual(['33\u00a0%', '33\u00a0%', '33\u00a0%']);
+  // The very expression of the dashboard (`percent(count / n)`): where floating point puts the share
+  // just under a half, both say the same (23 of 40 is 57 % there, so it is here).
+  for (let n = 1; n <= 200; n += 1)
+    for (let count = 0; count <= n; count += 1)
+      expect(share(count, n)).toBe(`${Math.round((count / n) * 100)}\u00a0%`);
+  expect(share(23, 40)).toBe('57\u00a0%');
 });
 
 it('words a line in the labels of the template, a hidden one without numbers', () => {

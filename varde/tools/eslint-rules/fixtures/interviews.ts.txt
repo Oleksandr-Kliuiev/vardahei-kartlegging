@@ -1,0 +1,26 @@
+// Selfcheck fixture (decision 07.11; acceptance of 2.22c, I1): a file of the interviews module other
+// than the employees' controller takes a dashboard view, the employees' view and the shared numbers.
+// Kept as .txt so the build of tools/eslint-rules does not compile it (its imports resolve only in
+// apps/api); copied to apps/api/src/modules/interviews/__selfcheck__/interviews.ts at run time, then
+// removed. `questionViews` from the same file stays allowed: only the views' classes are banned.
+import { AggregateView, questionViews } from '../../dashboard/aggregate-view.js';
+import { EmployeeView } from '../employee-view.js';
+
+declare class PrivacyService {
+  viewCells(round: string, population: string, defs: unknown[]): Promise<unknown[]>;
+}
+
+export class InterviewsBypass {
+  constructor(
+    private readonly privacy: PrivacyService,
+    readonly aggregate: AggregateView,
+    readonly employees: EmployeeView,
+  ) {}
+
+  /** The round's total next to one client's numbers gives the other clients away. */
+  shared(): Promise<unknown[]> {
+    return this.privacy.viewCells('r', 'all_clients', []);
+  }
+
+  views = questionViews;
+}

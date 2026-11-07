@@ -399,6 +399,21 @@ describe('Leiar vs tilsette (2.22c)', () => {
     });
   });
 
+  it('takes an archived survey as well: archiving keeps its released numbers (acceptance m4)', async () => {
+    await f.prisma.round.update({ where: { id: rounds.import }, data: { status: 'archived' } });
+    try {
+      const m = (await employees('import')) as Model;
+      expect(m.round.id).toBe(rounds.import);
+      expect(m.questions.find((q) => q.question === 'N12')!.employees[0]).toMatchObject({
+        id: 'F14',
+        suppressed: false,
+        n: 3,
+      });
+    } finally {
+      await f.prisma.round.update({ where: { id: rounds.import }, data: { status: 'closed' } });
+    }
+  });
+
   it('follows the anchor across versions: a new anchor ends the F14 pair, T2 is found by id', async () => {
     const m = (await employees('haust')) as Model;
     expect(m.round.id).toBe(rounds.haust);

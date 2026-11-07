@@ -45,8 +45,10 @@ export const useTilsette = (interview: string) =>
 /** The dot between parts, kept on the part before it when the line breaks. */
 const DOT = '\u00a0· ';
 
-/** A share as the dashboard rounds it, «58 %», with a space that keeps the sign on the number. */
-export const share = (count: number, n: number) => `${Math.round((100 * count) / n)}\u00a0%`;
+/** A share as the dashboard rounds it (`percent(count / n)` in dashboard-models.ts: the same
+ * expression, so floating point rounds both alike), «58 %», with a space that keeps the sign on the
+ * number. */
+export const share = (count: number, n: number) => `${Math.round((count / n) * 100)}\u00a0%`;
 
 /** «Ja 58 % · Nei 33 % · Usikker 8 %» in the template's words, or why there are no numbers. A long
  * label wraps at its own spaces; its last word stays with the number. */

@@ -94,7 +94,7 @@ describe('allow-lists', () => {
       'apps/api/src/modules/reports/**',
       'apps/api/src/modules/exports/csv.service.ts',
       'apps/api/src/modules/retention/handover.ts',
-      'apps/api/src/modules/interviews/employee-view.ts',
+      'apps/api/src/modules/interviews/**',
     ]);
     expect(FINDING_ALLOW).toEqual([
       'apps/api/src/modules/findings/**',
@@ -259,6 +259,14 @@ typedRuleTester().run('round-client-exits', rule, {
       filename: interviews,
       code: call('adminClientCells'),
       errors: [{ messageId: 'exit' }],
+    },
+    {
+      name: 'no file of the interviews module puts shared numbers beside a conversation (I1)',
+      filename: interviews,
+      code: code(
+        `void privacy.viewCells('r', 'all_clients', defs);\nconst { clientGroup } = privacy;\nvoid clientGroup;`,
+      ),
+      errors: [{ messageId: 'mixed' }, { messageId: 'mixed' }],
     },
     {
       name: 'the conversation puts no shared numbers beside the client, destructured either',

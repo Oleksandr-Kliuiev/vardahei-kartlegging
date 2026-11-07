@@ -6,6 +6,8 @@
 // Since 1.10b also fixtures/cast.ts: `as ReleasedSnapshot` outside privacy → no-restricted-syntax.
 // Since 16.10 also fixtures/round-client.ts, copied into apps/api/src/modules/seminars: a client's
 // own round_client cells (ownCells, adminClientCells) and saved findings → varde/round-client-exits.
+// Since 07.11 also fixtures/interviews.ts.txt, copied into apps/api/src/modules/interviews: a dashboard
+// view and the employees' view (no-restricted-imports) and the shared numbers (round-client-exits).
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
@@ -23,12 +25,16 @@ const seminars = join(root, 'apps/api/src/modules/seminars');
 const seminarsExisted = existsSync(seminars);
 const roundClientDir = join(seminars, '__selfcheck__');
 const roundClient = join(roundClientDir, 'round-client.ts');
+const interviewsDir = join(root, 'apps/api/src/modules/interviews/__selfcheck__');
+const interviewsProbe = join(interviewsDir, 'interviews.ts');
 
 mkdirSync(dir, { recursive: true });
 copyFileSync(join(here, 'fixtures/bypass.ts'), target);
 copyFileSync(join(here, 'fixtures/cast.ts'), cast);
 mkdirSync(roundClientDir, { recursive: true });
 copyFileSync(join(here, 'fixtures/round-client.ts'), roundClient);
+mkdirSync(interviewsDir, { recursive: true });
+copyFileSync(join(here, 'fixtures/interviews.ts.txt'), interviewsProbe);
 let ok = false;
 try {
   const eslint = join(root, 'node_modules/eslint/bin/eslint.js');
@@ -90,13 +96,39 @@ try {
     );
   if (!rcOk)
     console.error(`selfcheck: FAILED (round-client): ${JSON.stringify(rcMessages, null, 2)}`);
+  // 07.11: no other file of the interviews module takes a dashboard view or the employees' view,
+  // and none reads the shared numbers; `questionViews` from the same import stays allowed.
+  const ivRun = spawnSync(process.execPath, [eslint, '--format', 'json', interviewsProbe], {
+    cwd: root,
+    encoding: 'utf8',
+  });
+  let ivMessages = [];
+  try {
+    ivMessages = JSON.parse(ivRun.stdout).flatMap((r) => r.messages);
+  } catch {
+    console.error(
+      `selfcheck: FAILED (interviews: eslint exit ${ivRun.status}, no JSON)\n${ivRun.stderr}`,
+    );
+  }
+  const imports = ivMessages.filter((m) => m.ruleId === 'no-restricted-imports');
+  const ivOk =
+    ivMessages.length === 3 &&
+    imports.length === 2 &&
+    imports.some((m) => m.message.includes("'AggregateView'")) &&
+    imports.some((m) => m.message.includes('employee-view')) &&
+    ivMessages.some(
+      (m) => m.ruleId === 'varde/round-client-exits' && m.message.includes('`viewCells`'),
+    );
+  if (!ivOk)
+    console.error(`selfcheck: FAILED (interviews): ${JSON.stringify(ivMessages, null, 2)}`);
   if (
     kinds.has('model') &&
     kinds.has('relation') &&
     participants &&
     others.length === 0 &&
     castOk &&
-    rcOk
+    rcOk &&
+    ivOk
   )
     ok = true;
   else if (results.length > 0) {
@@ -105,6 +137,7 @@ try {
 } finally {
   rmSync(dir, { recursive: true, force: true });
   rmSync(roundClientDir, { recursive: true, force: true });
+  rmSync(interviewsDir, { recursive: true, force: true });
   if (!seminarsExisted && existsSync(seminars) && readdirSync(seminars).length === 0) {
     rmSync(seminars, { recursive: true });
   }
@@ -114,6 +147,6 @@ try {
 }
 if (ok)
   console.log(
-    'selfcheck: bypass rejected (tx.response, include responses, registration, as ReleasedSnapshot, round_client exits, saved findings)',
+    'selfcheck: bypass rejected (tx.response, include responses, registration, as ReleasedSnapshot, round_client exits, saved findings, interviews imports)',
   );
 process.exit(ok ? 0 : 1);

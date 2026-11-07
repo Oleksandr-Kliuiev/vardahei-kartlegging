@@ -51,13 +51,16 @@ export const ROUND_CLIENT_EXITS = Object.freeze({
   archiveSnapshots: Object.freeze(['apps/api/src/modules/exports/round-archive.service.ts']),
 });
 
-/** The client's own channel: its own cells only, never the shared views next to them; so is the
- * conversation, which the client sees at the table (Samtalar, decision 07.11). */
+/** The client's own channel: its own cells only, never the shared views next to them; so is every
+ * file of the interviews module, not only the one that reads the client's cells: a conversation is
+ * shown at the client's table, and no file beside it may put shared numbers next to the client's own
+ * (Samtalar, decision 07.11; acceptance of 2.22c, I1). Which interviews files may take the dashboard's
+ * views or the employees' view at all is limited in boundaries.js. */
 export const OWN_CHANNEL = Object.freeze([
   'apps/api/src/modules/reports/**',
   'apps/api/src/modules/exports/csv.service.ts',
   'apps/api/src/modules/retention/handover.ts',
-  'apps/api/src/modules/interviews/employee-view.ts',
+  'apps/api/src/modules/interviews/**',
 ]);
 
 /** Saved findings: computed and shown by findings, the client's report, the round archive. */

@@ -54,6 +54,29 @@ const PRIVACY_INTERNAL = {
   message: 'Outside modules/privacy only modules/privacy/privacy.service may be imported.',
 };
 
+/** Samtalar (decision 07.11; acceptance of 2.22c, I1): one client's employee numbers reach a
+ * conversation only through interviews/employee-view.ts, which the employees' controller serves. No
+ * file of the interviews module takes a dashboard view (each reads one client's or one role's cells),
+ * and no file but that controller and the module that provides it takes the employees' view: so one
+ * client's cells never reach a summary over several clients (Oversikt, its CSV; decision 16.10). */
+const DASHBOARD_VIEWS = {
+  regex: '(^|/)dashboard/(aggregate|comparison|rows|leader|before-after)-view(\\.js)?$',
+  importNames: ['AggregateView', 'ComparisonView', 'RowsView', 'LeaderView', 'BeforeAfterView'],
+  message:
+    "The interviews module takes no dashboard view: one client's employee numbers come only through employee-view.ts (Samtalar 07.11, ADR-021).",
+};
+const EMPLOYEE_VIEW = {
+  regex: '(^|/)employee-view(\\.js)?$',
+  message:
+    "Only employees.controller.ts (and interviews.module.ts, which provides it) may use the employees' view: one client's cells never go into a summary over several clients (16.10, 07.11).",
+};
+const INTERVIEWS = 'apps/api/src/modules/interviews';
+const EMPLOYEE_VIEW_USERS = [
+  `${INTERVIEWS}/employee-view.ts`,
+  `${INTERVIEWS}/employees.controller.ts`,
+  `${INTERVIEWS}/interviews.module.ts`,
+];
+
 /** @type {import('eslint').Linter.Config[]} */
 export const boundaries = [
   {
@@ -138,6 +161,22 @@ export const boundaries = [
           ],
         },
       ],
+    },
+  },
+  {
+    files: [`${INTERVIEWS}/**/*.ts`],
+    ignores: EMPLOYEE_VIEW_USERS,
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [PRIVACY_INTERNAL, DASHBOARD_VIEWS, EMPLOYEE_VIEW] },
+      ],
+    },
+  },
+  {
+    files: EMPLOYEE_VIEW_USERS,
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [PRIVACY_INTERNAL, DASHBOARD_VIEWS] }],
     },
   },
 ];
