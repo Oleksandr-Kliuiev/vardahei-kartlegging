@@ -18,6 +18,7 @@ import type {
   RoundInput,
   StartInput,
 } from './interview-input.js';
+import { changeOf, previousOf, previousView, withNewestCriteria } from './interview-compare.js';
 import { countRatings, guideQuestions, guideTitle, score } from './interview-view.js';
 
 type Tx = Prisma.TransactionClient;
@@ -202,18 +203,50 @@ export class InterviewsService {
     };
   }
 
-  /** One conversation with its guide and every answer so far. */
+  /** One conversation with its guide and every answer so far, and the client's previous finished
+   * conversation with the same guide (3.2), without its notes. */
   async get(id: string) {
     const i = await this.prisma.interview.findUnique({
       where: { id },
       include: {
         client: { select: { id: true, name: true } },
-        round: { include: { template_version: { select: { label: true, content: true } } } },
+        round: {
+          include: {
+            template_version: { select: { label: true, content: true, template_id: true } },
+          },
+        },
         answers: true,
       },
     });
     if (i === null) throw new NotFoundException('Samtalen finst ikkje.');
-    const content = i.round.template_version.content;
+    const { content, template_id } = i.round.template_version;
+    // A round keeps the guide version it was made with, and the guide in use was published before it had
+    // criteria (3.1): they come from the newest published version of the same guide (same template) for
+    // the same question id, and from the round's own version where that one has none.
+    const newest = await this.prisma.templateVersion.findFirst({
+      where: { template_id, status: 'published' },
+      orderBy: [{ published_at: 'desc' }, { version_no: 'desc' }],
+      select: { content: true },
+    });
+    const done = await this.prisma.interview.findMany({
+      where: {
+        client_id: i.client_id,
+        status: 'done',
+        id: { not: id },
+        round: { template_version: { template_id } },
+      },
+      // Only what a repeat conversation shows of an earlier one: never its notes.
+      select: {
+        id: true,
+        held_on: true,
+        started_at: true,
+        round: {
+          select: { id: true, name: true, template_version: { select: { content: true } } },
+        },
+        answers: { select: { question_id: true, rating: true, answer: true, action: true } },
+      },
+    });
+    const previous = previousOf(i, done);
     return {
       id: i.id,
       status: i.status,
@@ -233,7 +266,7 @@ export class InterviewsService {
       guide: {
         title: guideTitle(content),
         label: i.round.template_version.label,
-        questions: guideQuestions(content),
+        questions: withNewestCriteria(guideQuestions(content), guideQuestions(newest?.content)),
       },
       answers: Object.fromEntries(
         i.answers.map((a) => [
@@ -248,6 +281,7 @@ export class InterviewsService {
           },
         ]),
       ),
+      previous: previous && previousView(previous),
     };
   }
 
@@ -376,28 +410,33 @@ export class InterviewsService {
     });
   }
 
-  /** The conversations of one client (the client page): newest round first. */
+  /** The conversations of one client (the client page): newest round first; a finished one says how it
+   * compares with the previous finished one with the same guide (3.2). */
   async ofClient(clientId: string) {
     const rows = await this.prisma.interview.findMany({
       where: { client_id: clientId },
       orderBy: { round: { created_at: 'desc' } },
       include: {
-        round: { include: { template_version: { select: { content: true } } } },
+        round: { include: { template_version: { select: { content: true, template_id: true } } } },
         answers: { select: { question_id: true, rating: true } },
       },
     });
-    return rows.map((i) => {
-      const counts = countRatings(guideQuestions(i.round.template_version.content), i.answers);
-      return {
-        id: i.id,
-        status: i.status,
-        held_on: day(i.held_on),
-        done_at: i.done_at,
-        round: { id: i.round.id, name: i.round.name },
-        counts,
-        score: score(counts),
-      };
+    const all = rows.map((i) => {
+      const questions = guideQuestions(i.round.template_version.content);
+      const counts = countRatings(questions, i.answers);
+      const template = i.round.template_version.template_id;
+      return { ...i, template, questions, counts, score: score(counts) };
     });
+    return all.map((i) => ({
+      id: i.id,
+      status: i.status,
+      held_on: day(i.held_on),
+      done_at: i.done_at,
+      round: { id: i.round.id, name: i.round.name },
+      counts: i.counts,
+      score: i.score,
+      change: changeOf(i, all),
+    }));
   }
 
   private async lock(tx: Tx, id: string) {

@@ -1,3 +1,8 @@
+import {
+  CRITERION_LABEL,
+  type CriterionRating,
+} from '../../../packages/schema/src/template/criteria.js';
+
 /** Presentation only: validation remains in @varde/schema/template/validate. */
 export function schemaMessage(message: string): string {
   const missing = /missing (nn|en|nb)/.exec(message);
@@ -7,6 +12,12 @@ export function schemaMessage(message: string): string {
   }
   if (/requires (nn|en)/.test(message))
     return 'Vel dei obligatoriske språka: nynorsk, og engelsk for kundeskjema.';
+  const criterion =
+    /^criterion (ivaretatt|forbetring|manglar) of .+ is over (\d+) characters$/.exec(message);
+  if (criterion)
+    return `Teksten i «${CRITERION_LABEL[criterion[1] as CriterionRating]}» er for lang: skriv høgst ${criterion[2]} teikn.`;
+  if (message.startsWith('criteria belong to a conversation guide'))
+    return 'Kriterium for vurderinga høyrer berre til ein samtaleguide.';
   if (message.includes('required_languages must be unique'))
     return 'Vel kvart språk berre éin gong.';
   if (message.includes('duplicate')) return 'ID-en er brukt fleire gonger. Vel ein unik ID.';

@@ -15,6 +15,7 @@ import { PublishService } from './publish.service.js';
 import { createEditorMetrics } from './editor-metrics.js';
 import { SettingsService } from './settings.service.js';
 import { keyOf, starterContent } from './starters.js';
+import { withStandardCriteria } from './interview-guide.js';
 import {
   emptyContent,
   issues,
@@ -262,7 +263,7 @@ export class EditorService {
         const content =
           (base
             ? {
-                ...validated(base.content),
+                ...withStandardCriteria(validated(base.content)),
                 required_languages: template.required_languages as z.infer<
                   typeof TemplateInput
                 >['required_languages'],

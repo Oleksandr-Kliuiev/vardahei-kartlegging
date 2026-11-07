@@ -1,5 +1,6 @@
 // One question of a conversation (2.20): the question to read aloud, the client's answer, the rating in
 // three buttons and a quiet «Ikkje aktuelt», the conclusion for the report and an own note for Vardahei.
+// Each button says when the rating applies (3.1); a repeat conversation shows last time's rating (3.2).
 // Shared pieces: the rating mark, the bar of the scale and the line that says what is saved.
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { Icon } from './icons.js';
@@ -8,7 +9,10 @@ import { type FieldKey, type Lagring, placeOf } from './samtale-lagring.js';
 import {
   clock,
   type Counts,
+  dmy,
   type GuideQuestion,
+  type Previous,
+  type PreviousAnswer,
   RATING,
   type Rating,
   SCALE,
@@ -194,6 +198,50 @@ export function looksSecret(s: string) {
   );
 }
 
+/** «Førre gong (04.05.2026): ! Forbetringspotensial» under the question of a repeat conversation (3.2),
+ * with what the client said then and the conclusion behind it; nothing when the question had no answer. */
+export function ForrigeGong({
+  day,
+  answer,
+}: {
+  day: string | null;
+  answer?: PreviousAnswer | undefined;
+}) {
+  if (!answer) return null;
+  const said = answer.answer.trim(),
+    action = answer.action.trim();
+  const line = (
+    <>
+      Førre gong{day ? ` (${dmy(day)})` : ''}:
+      <Mark rating={answer.rating} />
+      <b>{answer.rating ? RATING[answer.rating].word : 'ikkje vurdert'}</b>
+    </>
+  );
+  if (!said && !action) return <p className="sm-forre">{line}</p>;
+  return (
+    <details className="sm-forre">
+      <summary>
+        {line}
+        <Icon name="chev" small />
+      </summary>
+      <dl>
+        {said && (
+          <div>
+            <dt>Kunden sa</dt>
+            <dd>{said}</dd>
+          </div>
+        )}
+        {action && (
+          <div>
+            <dt>Konklusjon og tiltak</dt>
+            <dd>{action}</dd>
+          </div>
+        )}
+      </dl>
+    </details>
+  );
+}
+
 export function Sporsmalskort(p: {
   q: GuideQuestion;
   n: number;
@@ -201,6 +249,8 @@ export function Sporsmalskort(p: {
   store: Lagring;
   readOnly: boolean;
   focusOnShow: boolean;
+  /** The client's previous finished conversation with this guide, if any (3.2). */
+  previous?: Previous | null;
   onPrev: () => void;
   onNext: () => void;
 }) {
@@ -243,6 +293,7 @@ export function Sporsmalskort(p: {
       <h2 className="sm-q" id={`${id}-q`}>
         {q.text}
       </h2>
+      <ForrigeGong day={p.previous?.held_on ?? null} answer={p.previous?.answers[q.id]} />
       {q.help && (
         <details className="sm-hjelp">
           <summary>
@@ -282,26 +333,36 @@ export function Sporsmalskort(p: {
         aria-labelledby={`${id}-vurdering`}
         onKeyDown={arrows}
       >
-        {SCALE.map((r) => (
-          <button
-            key={r}
-            type="button"
-            role="radio"
-            data-r={r}
-            aria-checked={rating === r}
-            aria-disabled={readOnly || undefined}
-            tabIndex={r === focusR ? 0 : -1}
-            className={`sm-val sm-val-${RATING[r].cls}`}
-            onClick={() => rate(r)}
-          >
-            <Mark rating={r} />
-            <span>{RATING[r].word}</span>
-            <kbd>
-              {MOD}
-              {RATING[r].key}
-            </kbd>
-          </button>
-        ))}
+        {SCALE.map((r) => {
+          // The criterion (3.1) is a quieter second line: the name stays the word, the line describes it.
+          const criterion = r === 'ikkje_aktuelt' ? null : q.criteria?.[r];
+          return (
+            <button
+              key={r}
+              type="button"
+              role="radio"
+              data-r={r}
+              aria-checked={rating === r}
+              aria-disabled={readOnly || undefined}
+              aria-labelledby={`${id}-val-${r}`}
+              aria-describedby={criterion ? `${id}-val-${r}-kriterium` : undefined}
+              aria-keyshortcuts={`Alt+${RATING[r].key}`}
+              tabIndex={r === focusR ? 0 : -1}
+              className={`sm-val sm-val-${RATING[r].cls}`}
+              onClick={() => rate(r)}
+            >
+              <Mark rating={r} />
+              <span className="sm-val-ord">
+                <span id={`${id}-val-${r}`}>{RATING[r].word}</span>
+                {criterion && <small id={`${id}-val-${r}-kriterium`}>{criterion}</small>}
+              </span>
+              <kbd>
+                {MOD}
+                {RATING[r].key}
+              </kbd>
+            </button>
+          );
+        })}
       </div>
       <div className="sm-skala-meir">
         <button

@@ -95,6 +95,17 @@
 .sm-hjelp summary .icon:last-child { margin-left: auto; color: var(--ink-muted); transition: transform var(--t-base) var(--ease-sti); }
 .sm-hjelp[open] summary .icon:last-child { transform: rotate(90deg); }
 .sm-hjelp p { padding: 0 14px 12px 34px; font-size: 14.5px; line-height: 1.5; margin: 0; }
+/* «Førre gong» (3.2): one quiet line under the question; what the client said then opens under it. */
+.sm-forre { margin: -4px 0 0; font-size: 13.5px; color: var(--ink-muted); }
+p.sm-forre, .sm-forre > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: 24px; }
+.sm-forre > summary { width: fit-content; cursor: pointer; list-style: none; border-radius: 6px; }
+.sm-forre > summary::-webkit-details-marker { display: none; }
+.sm-forre b { color: var(--ink-strong); font-weight: 650; }
+.sm-forre > summary .icon { color: var(--ink-muted); transition: transform var(--t-base) var(--ease-sti); }
+.sm-forre[open] > summary .icon { transform: rotate(90deg); }
+.sm-forre dl { display: grid; gap: 8px; margin: 8px 0 0; padding: 10px 14px; border-left: 3px solid var(--line-strong); border-radius: 0 var(--r-md) var(--r-md) 0; background: var(--surface-2); }
+.sm-forre dt { font-size: 12.5px; font-weight: 700; color: var(--ink-muted); }
+.sm-forre dd { margin: 2px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
 .sm-label { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; font-weight: 700; font-size: 14.5px; color: var(--ink-strong); margin-top: 8px; }
 .sm-label .icon { align-self: center; color: var(--ink-muted); }
 .sm-hint { font-weight: 500; font-size: 13px; color: var(--ink-muted); }
@@ -111,6 +122,15 @@
 .sm-val .sm-mark { width: 22px; height: 22px; font-size: 12.5px; }
 .sm-val span:not(.sm-mark) { min-width: 0; overflow-wrap: anywhere; line-height: 1.2; }
 .sm-val kbd { margin-left: auto; flex: none; }
+/* A criterion (3.1): a quieter second line under the word, as wide as the word and the key together; the
+   mark and the key stay on the word's line. */
+.sm-val:has(.sm-val-ord small) { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; column-gap: 10px; row-gap: 2px; align-items: start; align-content: start; }
+.sm-val .sm-val-ord:has(small) { display: contents; }
+.sm-val .sm-val-ord > span { line-height: 22px; }
+.sm-val .sm-val-ord small { grid-column: 2 / -1; grid-row: 2; font-size: 13px; font-weight: 500; line-height: 1.4; color: var(--ink-muted); overflow-wrap: break-word; }
+.sm-val:has(.sm-val-ord small) kbd { grid-column: 3; grid-row: 1; margin-top: 1px; }
+/* The chosen rating's criterion reads in full ink: the tinted fill leaves the muted grey at the limit. */
+.sm-val[aria-checked="true"] .sm-val-ord small { color: var(--ink); }
 .sm-val-iv[aria-checked="true"] { background: var(--sm-iv-bg); border-color: var(--sm-iv); box-shadow: inset 0 0 0 1px var(--sm-iv); }
 .sm-val-fb[aria-checked="true"] { background: var(--sm-fb-bg); border-color: var(--sm-fb); box-shadow: inset 0 0 0 1px var(--sm-fb); }
 .sm-val-mg[aria-checked="true"] { background: var(--sm-mg-bg); border-color: var(--sm-mg); box-shadow: inset 0 0 0 1px var(--sm-mg); }
@@ -167,6 +187,22 @@
 .sm-plass { gap: 8px; }
 .sm-plass li { display: flex; gap: 10px; align-items: center; font-size: 14.5px; }
 .sm-plass .sm-nr { width: 22px; flex: none; }
+/* «Før og etter» (3.2): then and now in a small table that fits its card (the admin's tables are 900 px
+   wide at least), then the questions that moved. */
+.sm-fe-tabell { width: 100%; min-width: 0; border-collapse: collapse; font-size: 14px; }
+.sm-fe-tabell th, .sm-fe-tabell td { padding: 7px 0 7px 12px; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sm-fe-tabell thead th { padding-top: 0; font-size: 12.5px; font-weight: 700; color: var(--ink-muted); }
+.sm-fe-tabell tbody tr:last-child > * { border-bottom: 0; }
+.sm-fe-tabell th:first-child { padding-left: 0; text-align: left; white-space: normal; }
+.sm-fe-tabell td, .sm-fe-tabell thead th:not(:first-child) { width: 18%; }
+.sm-fe-tabell tbody th { font-weight: 600; color: var(--ink); }
+.sm-fe-rad { display: inline-flex; align-items: center; gap: 8px; }
+.sm-fe-tabell td { color: var(--ink-strong); font-weight: 650; }
+.sm-fe-poeng td, .sm-fe-poeng th { font-size: 15px; }
+@media (max-width: 420px) { .sm-fe-tabell { font-size: 13px; } .sm-fe-rad { gap: 6px; } .sm-fe-rad .sm-mark { width: 16px; height: 16px; font-size: 11px; } }
+.sm-foretter .sm-gruppe { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.sm-fe-steg { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-muted); font-size: 13px; padding-top: 1px; }
+.sm-foretter > .kort-innhald > .muted { margin: 12px 0 0; }
 .kort-hovud h2 .sm-mark { width: 18px; height: 18px; }
 .sm-felt { display: grid; gap: 6px; }
 .sm-felt + .sm-felt { margin-top: 12px; }
@@ -258,5 +294,8 @@
 .sm-kundesamtalar li:first-child { border-top: 0; padding-top: 0; }
 .sm-kunde-linje { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0; font-size: 14px; color: var(--ink-muted); }
 .sm-kunde-linje b { color: var(--ink-strong); font-size: 15px; overflow-wrap: anywhere; }
+/* «Før og etter» on the client page (3.2): one line for the latest two finished conversations. */
+.sm-kunde-fe { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin: 0 0 14px; padding: 9px 12px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--line); font-size: 13.5px; color: var(--ink-muted); }
+.sm-kunde-fe b { color: var(--ink-strong); font-variant-numeric: tabular-nums; }
 .sm-kunde-tal { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; font-size: 13.5px; color: var(--ink-muted); }
 .sm-kunde-tal b { color: var(--ink-strong); font-variant-numeric: tabular-nums; }

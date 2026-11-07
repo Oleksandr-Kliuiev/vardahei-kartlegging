@@ -54,6 +54,8 @@ function textAt(c: TemplateContent, key: string): Words | undefined {
   const q = c.questions.find((x) => x.id === a);
   if (head !== 'q' || !q) return undefined;
   if (b === 'text' || b === 'help' || b === 'placeholder') return q.texts[b];
+  if (b === 'criteria_ivaretatt' || b === 'criteria_forbetring' || b === 'criteria_manglar')
+    return q.texts[b];
   if (b === 'section') return q.texts.section_title;
   if (b === 'option' && 'options' in q) return q.options.find((o) => o.id === d)?.texts.text;
   if (b === 'scenario' && 'options' in q)

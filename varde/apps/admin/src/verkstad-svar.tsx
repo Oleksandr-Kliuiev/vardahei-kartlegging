@@ -1,10 +1,12 @@
 // The answers of a question in the workshop (2.15): rows that look like the runner's options, the risk
 // score as four buttons in zone colours, Enter for the next answer and pasting several lines at once.
 // Frozen questions keep their answers and scores; only the wording can change («Rett ordlyden»).
+// A question of a conversation guide is answered by Vardahei's rating: its criteria stand here (3.1).
 import { useEffect, useRef, useState } from 'react';
 import type { Question } from '../../../packages/schema/src/template/question.js';
 import { Icon } from './icons.js';
 import { TekstFelt } from './verkstad-felt.js';
+import { Kriteria } from './verkstad-kriteria.js';
 import { localized, nextOptionId, type Lang, type Text } from './verkstad-model.js';
 
 type Choice = Extract<Question, { type: 'single' | 'multi' }>;
@@ -12,6 +14,7 @@ type Scaled = Extract<Question, { type: 'scale' | 'nps' }>;
 
 export function Svar({
   q,
+  interview = false,
   lang,
   languages,
   locked,
@@ -20,6 +23,8 @@ export function Svar({
   onChange,
 }: {
   q: Question;
+  /** A conversation guide (2.20): no answers or answer field, the criteria of the rating instead. */
+  interview?: boolean;
   lang: Lang;
   languages: readonly Lang[];
   /** Nothing can change (published, or a frozen question before «Rett ordlyden»). */
@@ -30,6 +35,7 @@ export function Svar({
   scored: boolean;
   onChange: (q: Question) => void;
 }) {
+  if (interview) return <Kriteria q={q} lang={lang} locked={locked} onChange={onChange} />;
   if (q.type === 'single' || q.type === 'multi')
     return (
       <Valg

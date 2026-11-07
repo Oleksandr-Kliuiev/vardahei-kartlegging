@@ -1,6 +1,7 @@
 // Consistency of a template version (ADR-005, ADR-019, ADR-025): references, cycles,
 // choices_from, identifier/role, frozen anchors and languages. `TemplateVersionContent` is the
 // schema every consumer parses (converter 1.2, publication 1.5, runner, import).
+import { CRITERION_MAX_LENGTH, criterionEntries } from './criteria.js';
 import { expressionRefs, rowRefs, type Expression } from './expression.js';
 import { isChoice, type Question } from './question.js';
 import { TemplateContentShape, type TemplateContent } from './template.js';
@@ -107,6 +108,24 @@ function interviewIssues(
   if (c.invitation !== undefined) issue('interview has no invitation', ['invitation']);
 }
 
+/** The criteria of a rating (3.1) are short texts of a conversation guide; no other survey has them. */
+function criteriaIssues(
+  c: TemplateContent,
+  issue: (message: string, path: (string | number)[]) => void,
+) {
+  c.questions.forEach((q, n) => {
+    for (const [rating, key] of criterionEntries()) {
+      const text = q.texts[key];
+      if (text === undefined) continue;
+      const path = ['questions', n, 'texts', key];
+      if (c.audience !== 'interview')
+        issue(`criteria belong to a conversation guide (${q.id})`, path);
+      else if (Object.values(text).some((s) => (s ?? '').length > CRITERION_MAX_LENGTH))
+        issue(`criterion ${rating} of ${q.id} is over ${CRITERION_MAX_LENGTH} characters`, path);
+    }
+  });
+}
+
 export function validateTemplate(c: TemplateContent): TemplateIssue[] {
   const issues: TemplateIssue[] = [];
   const issue = (message: string, path: (string | number)[]) => issues.push({ message, path });
@@ -209,6 +228,7 @@ export function validateTemplate(c: TemplateContent): TemplateIssue[] {
   });
 
   if (c.audience === 'interview') interviewIssues(c, issue);
+  criteriaIssues(c, issue);
 
   const langs = new Set(c.required_languages);
   if (langs.size !== c.required_languages.length)

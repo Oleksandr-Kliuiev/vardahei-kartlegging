@@ -47,6 +47,11 @@
       "source": "./src/template/expression.ts",
       "default": "./dist/template/expression.js"
     },
+    "./template/criteria": {
+      "types": "./src/template/criteria.ts",
+      "source": "./src/template/criteria.ts",
+      "default": "./dist/template/criteria.js"
+    },
     "./template/question": {
       "types": "./src/template/question.ts",
       "source": "./src/template/question.ts",

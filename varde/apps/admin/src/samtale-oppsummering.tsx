@@ -3,6 +3,7 @@
 // «Vis for kunden» hides the notes and the score, so the screen can be turned to the client.
 // «Fullfør samtalen» sends what is left, then locks the conversation; «Opne for endring» opens it again.
 // Its bar leads back to the questions; the client's name heads the page, as in the concept.
+// A repeat conversation adds «Før og etter» against the previous one (3.2).
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { mutate } from './api.js';
@@ -10,6 +11,7 @@ import { Icon } from './icons.js';
 import { follow, goTo, useTitle } from './nav.js';
 import { ErrorMessage } from './queries.js';
 import { Fordeling, Konflikt, Mark, MAX } from './samtale-felt.js';
+import { ForOgEtter } from './samtale-for-etter.js';
 import { type FieldKey, type Lagring, useLagring } from './samtale-lagring.js';
 import {
   clock,
@@ -347,6 +349,16 @@ export function OppsummeringPage({ id }: { id: string }) {
                 {!counts.ivaretatt && <p className="muted">Ingenting enno.</p>}
               </div>
             </section>
+            {i.previous && (
+              <ForOgEtter
+                previous={i.previous}
+                questions={questions}
+                rating={store.rating}
+                counts={counts}
+                score={score}
+                kunde={kunde}
+              />
+            )}
             {!kunde && (
               <section className="kort sm-intern">
                 <div className="kort-hovud">

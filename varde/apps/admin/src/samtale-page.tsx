@@ -363,6 +363,7 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
               store={store}
               readOnly={readOnly}
               focusOnShow={moved}
+              previous={i.previous}
               onPrev={() => go(cur - 1)}
               onNext={() => go(cur + 1)}
             />

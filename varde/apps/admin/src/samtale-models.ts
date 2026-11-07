@@ -62,12 +62,15 @@ export interface RoundView {
   guide: { id: string; label: string; title: string; question_count: number };
   interviews: InterviewRow[];
 }
+/** When a question is Ivaretatt, Forbetringspotensial or Manglar (3.1); null where the guide is silent. */
+export type Criteria = Record<'ivaretatt' | 'forbetring' | 'manglar', string | null>;
 export interface GuideQuestion {
   id: string;
   section: string;
   short: string;
   text: string;
   help: string | null;
+  criteria: Criteria | null;
 }
 export interface AnswerRow {
   answer: string;
@@ -93,6 +96,22 @@ export interface Interview {
   round: { id: string; name: string };
   guide: { title: string; label: string; questions: GuideQuestion[] };
   answers: Record<string, AnswerRow>;
+  /** The client's previous finished conversation with the same guide (3.2); never its notes. */
+  previous: Previous | null;
+}
+/** What was said and rated last time, per question (only questions with something in them). */
+export interface PreviousAnswer {
+  rating: Rating | null;
+  answer: string;
+  action: string;
+}
+export interface Previous {
+  id: string;
+  held_on: string | null;
+  round: { id: string; name: string };
+  counts: Counts;
+  score: number | null;
+  answers: Record<string, PreviousAnswer>;
 }
 export interface ClientInterview {
   id: string;
@@ -102,6 +121,12 @@ export interface ClientInterview {
   round: { id: string; name: string };
   counts: Counts;
   score: number | null;
+  /** A finished conversation against the previous finished one with the same guide (3.2). */
+  change?: {
+    previous: { id: string; held_on: string | null; score: number | null };
+    better: number;
+    worse: number;
+  } | null;
 }
 
 /** One answer in the overview (2.21): never a note. */
@@ -110,7 +135,9 @@ export interface Cell {
   answer: string;
   action: string;
 }
-export interface OverviewQuestion extends GuideQuestion {
+/** A question of the overview: the guide's texts without the rating criteria (3.1), which the overview
+ * API does not send. */
+export interface OverviewQuestion extends Omit<GuideQuestion, 'criteria'> {
   no: number;
   counts: Counts;
   /** Conversations with a conclusion written to this question. */
