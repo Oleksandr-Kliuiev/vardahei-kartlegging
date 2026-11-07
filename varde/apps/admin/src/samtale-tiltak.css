@@ -5,7 +5,7 @@
 /* The choice in a question: chips that can be taken away, and the list to search. Chips that may wrap
    (long names at 320 px) take a radius of half a line, so two lines read as a box, not a blob. */
 .sm-katalog { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
-.sm-katalog-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.sm-katalog-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
 .sm-katalog-chip { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; min-height: 32px; padding: 3px 4px 3px 12px; border-radius: 16px; background: var(--accent-soft); color: var(--accent-text); font-size: 13.5px; font-weight: 650; line-height: 1.3; }
 .sm-katalog-chip > span { min-width: 0; overflow-wrap: anywhere; }
 /* A read-only chip has no button: the padding stays even on both sides. */
@@ -84,5 +84,5 @@
 .sm-ark-katalog.sm-ark-etter { margin-top: 3px; }
 
 /* The summary: the chosen actions under the conclusion of a point */
-.sm-punkt .sm-punkt-katalog { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 2px; }
+.sm-punkt .sm-punkt-katalog { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 .sm-punkt .sm-punkt-katalog > .chip { white-space: normal; max-width: 100%; overflow-wrap: anywhere; line-height: 1.3; border-radius: 12px; }

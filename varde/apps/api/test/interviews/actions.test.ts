@@ -4,7 +4,8 @@
 // follow-up. The client page lists the chosen actions with the statuses of findings and AuditLog; Oversikt
 // groups the recurring tiltak by action with its seminar topic; the CSV and the referat name them and
 // still carry no note; handover names them; forget by client takes them with the conversation.
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { EventsService } from '../../src/modules/events/events.service.js';
 import { interviewsCsv } from '../../src/modules/interviews/interview-retention.js';
 import { cookieHeader } from '../support/auth-app.js';
 import { parseCsv } from '../support/csv.js';
@@ -212,13 +213,27 @@ describe('the choice is one more field of the answer (2.22b)', () => {
     // Deleted by another admin: both rows name who deleted it, not who took them up (the foreign key
     // alone would have cleared the link under the old name), by name and never by Entra id, and the
     // seminar's AuditLog counts the one that went back to open.
+    // An action taken up in another seminar keeps it, with its name and time.
+    const other = await createSeminar(t, { clients: [clientB] });
+    expect((await choose(talkB, 'N3', first.id, '')).statusCode).toBe(200);
+    expect(
+      (await status(talkB, 'N3', first.id, { status: 'in_seminar', seminar: other.id })).statusCode,
+    ).toBe(200);
+    const otherKey = {
+      interview_id_question_id_action_id: {
+        interview_id: talkB,
+        question_id: 'N3',
+        action_id: first.id,
+      },
+    };
+    const elsewhere = await t.prisma.interviewAction.findUniqueOrThrow({ where: otherKey });
     const andre = { oid: 'test:seminar-admin-2', name: 'Andre admin', via: 'entra' };
-    const other = await t.store.create({ ...andre, expiresAt: new Date(Date.now() + 3600_000) });
+    const session = await t.store.create({ ...andre, expiresAt: new Date(Date.now() + 3600_000) });
     // Names come from the admin sessions in the database (the test app keeps its own in memory).
     await t.prisma.adminSession.create({
       data: { ...andre, expires_at: new Date(Date.now() + 3600_000) },
     });
-    const sid = t.app.getHttpAdapter().getInstance().signCookie(other.sid);
+    const sid = t.app.getHttpAdapter().getInstance().signCookie(session.sid);
     const removed = await t.call('DELETE', `/api/admin/seminars/${seminar.id}`, undefined, {
       cookie: cookieHeader({ '__Host-varde_session': sid }),
     });
@@ -242,6 +257,11 @@ describe('the choice is one more field of the answer (2.22b)', () => {
       who: 'entra:test:seminar-admin-2',
       details: { actions_reopened: 1 },
     });
+    expect(await t.prisma.interviewAction.findUniqueOrThrow({ where: otherKey })).toEqual(
+      elsewhere,
+    );
+    // Taken away again: client B has one choice only in the tests below.
+    expect((await choose(talkB, 'N3', '', first.id)).statusCode).toBe(200);
     await t.prisma.adminSession.deleteMany({ where: andre });
   });
 
@@ -286,7 +306,14 @@ describe('the follow-up on the client page (2.22b)', () => {
     // Never what was typed: no answer, conclusion or note.
     expect(body).not.toContain('Reglar for e-post');
     expect(body).not.toContain(`Kari ${t.mark}`);
-    expect((await rowsOf(clientB)).rows.map((r) => r.interview)).toEqual([talkB]);
+    // The note of an answer whose action is chosen is the one the list could reach (re-review of
+    // 2.22b: the notes above sit where the list never reads).
+    expect(
+      (await answer(talkB, 'N2', { field: 'note', value: `${NOTE} B2`, expect: '' })).statusCode,
+    ).toBe(200);
+    const b = await rowsOf(clientB);
+    expect(b.body).not.toContain(NOTE);
+    expect(b.rows.map((r) => r.interview)).toEqual([talkB]);
     expect(
       (
         await t.call(
@@ -299,8 +326,12 @@ describe('the follow-up on the client page (2.22b)', () => {
 
   it('changes the status as for findings, with AuditLog that holds no typed text', async () => {
     const seminar = await createSeminar(t, { clients: [clientA] });
+    // Other admins' client and seminar pages hear of it, as of a finding's status.
+    const changed = vi.spyOn(t.app.get(EventsService), 'changed');
     const r = await status(talkA, 'N4', first.id, { status: 'in_seminar', seminar: seminar.id });
     expect(r.statusCode, r.body).toBe(200);
+    expect(changed).toHaveBeenCalledWith('seminars');
+    changed.mockRestore();
     expect(json<{ status: string; seminar: string; changed_by: string }>(r)).toMatchObject({
       status: 'in_seminar',
       seminar: seminar.id,
@@ -329,6 +360,18 @@ describe('the follow-up on the client page (2.22b)', () => {
       changed_by: 'Syntetisk admin',
     });
     expect(row.changed_at).not.toBeNull();
+    // Ids in upper case reach the database and AuditLog in lower case, as a search by id expects.
+    const upper = await status(talkA.toUpperCase(), 'N4', first.id.toUpperCase(), {
+      status: 'closed',
+      seminar: seminar.id,
+    });
+    expect(upper.statusCode, upper.body).toBe(200);
+    expect(
+      await t.prisma.auditLog.findFirstOrThrow({
+        where: { what: 'interviews.action.status' },
+        orderBy: { at: 'desc' },
+      }),
+    ).toMatchObject({ target: `interview:${talkA}`, details: { action: first.id } });
     // Open again; refused: no such choice, a seminar that does not exist, a body findings refuse.
     expect((await status(talkA, 'N4', first.id, { status: 'open' })).statusCode).toBe(200);
     expect((await status(talkA, 'N6', first.id, { status: 'open' })).statusCode).toBe(404);

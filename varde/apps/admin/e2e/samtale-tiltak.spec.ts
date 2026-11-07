@@ -126,6 +126,25 @@ test('an action of the catalogue chosen in a conversation shows in Oversikt, the
   );
   expect(v.answers.N2).toMatchObject({ actions: ids.join(','), rating: 'manglar' });
 
+  // A question with only an action of the catalogue counts as taken up in the list (acceptance
+  // of 2.22b): chosen through the API on question 2, seen after a reload, then taken away again.
+  await api(page, 'put', `/api/admin/interviews/${id}/answers/N3`, {
+    field: 'actions',
+    value: ids[0],
+    expect: '',
+  });
+  await page.reload();
+  await expect(
+    page
+      .locator('nav.sm-liste')
+      .getByRole('button', { name: /Informasjon om endringar\s*, skrive, ikkje vurdert$/ }),
+  ).toBeVisible();
+  await api(page, 'put', `/api/admin/interviews/${id}/answers/N3`, {
+    field: 'actions',
+    value: '',
+    expect: ids[0],
+  });
+
   // A reload keeps the choice; the summary names it beside the conclusion; «Fullfør» locks it.
   await page.reload();
   await expect(chips).toHaveCount(2);
