@@ -2,8 +2,10 @@
 // go with them on the client's request (`retention.forget`, scope client) or are handed over with them
 // (`retention.handover`). A deletion is a DeletionRequest (scope client) whose `scope_ref` lists the
 // conversation ids: `deletion_request` is in the ledger export, so a restore deletes them again.
+// The actions of the catalogue chosen in a conversation (2.22b, `interview_action`) go with its answers.
 import type { Prisma } from '@prisma/client';
 import { csv } from '../exports/csv.js';
+import { namesOf } from './interview-overview.js';
 import { guideQuestions } from './interview-view.js';
 
 type Db = Pick<Prisma.TransactionClient, 'interview' | 'deletionRequest'>;
@@ -77,15 +79,15 @@ function people(list: Prisma.JsonValue): string {
 }
 
 /** `samtalar.csv` of a handover: who took part, every answer of every conversation, internal notes
- * included, since they are the client's data too; plus the overall impression, what was agreed and the
- * conversation note. */
+ * included, since they are the client's data too; the actions of the catalogue chosen for each answer
+ * (2.22b); plus the overall impression, what was agreed and the conversation note. */
 export async function interviewsCsv(db: Pick<Db, 'interview'>, client: string): Promise<string> {
   const rows = await db.interview.findMany({
     where: { client_id: client },
     orderBy: { round: { created_at: 'asc' } },
     include: {
       round: { include: { template_version: { select: { content: true } } } },
-      answers: true,
+      answers: { include: { actions: { select: { action: { select: { name: true } } } } } },
     },
   });
   const lines: unknown[][] = [];
@@ -95,7 +97,7 @@ export async function interviewsCsv(db: Pick<Db, 'interview'>, client: string): 
       ['Kven var med frå kunden', people(i.interviewees)],
       ['Frå Vardahei', i.interviewers.join(', ')],
     ] as const)
-      if (text) lines.push([i.round.name, day, '', label, text, '', '', '']);
+      if (text) lines.push([i.round.name, day, '', label, text, '', '', '', '']);
     const byId = new Map(i.answers.map((a) => [a.question_id, a]));
     guideQuestions(i.round.template_version.content).forEach((q, n) => {
       const a = byId.get(q.id);
@@ -108,6 +110,7 @@ export async function interviewsCsv(db: Pick<Db, 'interview'>, client: string): 
           a.answer,
           RATING[a.rating ?? ''] ?? '',
           a.action,
+          namesOf(a.actions.map((x) => x.action)),
           a.note,
         ]);
     });
@@ -116,7 +119,7 @@ export async function interviewsCsv(db: Pick<Db, 'interview'>, client: string): 
       ['Avtalt vidare', i.agreed],
       ['Notat om samtalen', i.note],
     ] as const)
-      if (text) lines.push([i.round.name, day, '', label, text, '', '', '']);
+      if (text) lines.push([i.round.name, day, '', label, text, '', '', '', '']);
   }
   return csv(
     [
@@ -127,6 +130,7 @@ export async function interviewsCsv(db: Pick<Db, 'interview'>, client: string): 
       'Kva kunden sa',
       'Vurdering',
       'Konklusjon og tiltak',
+      'Tiltak frå katalogen',
       'Eige notat',
     ],
     lines,

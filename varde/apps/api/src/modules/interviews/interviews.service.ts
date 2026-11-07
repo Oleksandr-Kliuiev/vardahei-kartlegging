@@ -18,6 +18,7 @@ import type {
   RoundInput,
   StartInput,
 } from './interview-input.js';
+import { actionsValue, saveActions } from './interview-actions.js';
 import { countRatings, guideQuestions, guideTitle, score } from './interview-view.js';
 
 type Tx = Prisma.TransactionClient;
@@ -209,7 +210,7 @@ export class InterviewsService {
       include: {
         client: { select: { id: true, name: true } },
         round: { include: { template_version: { select: { label: true, content: true } } } },
-        answers: true,
+        answers: { include: { actions: { select: { action_id: true } } } },
       },
     });
     if (i === null) throw new NotFoundException('Samtalen finst ikkje.');
@@ -242,6 +243,7 @@ export class InterviewsService {
             answer: a.answer,
             rating: a.rating,
             action: a.action,
+            actions: actionsValue(a.actions),
             note: a.note,
             updated_at: a.updated_at,
             updated_by: a.updated_by,
@@ -293,9 +295,19 @@ export class InterviewsService {
       if (!guideQuestions(round.template_version.content).some((q) => q.id === question))
         throw new NotFoundException('Spørsmålet finst ikkje i samtaleguiden.');
       const key = { interview_id: id, question_id: question };
-      const row = await tx.interviewAnswer.findUnique({ where: { interview_id_question_id: key } });
-      const current = input.field === 'rating' ? (row?.rating ?? null) : (row?.[input.field] ?? '');
+      const row = await tx.interviewAnswer.findUnique({
+        where: { interview_id_question_id: key },
+        include: { actions: { select: { action_id: true } } },
+      });
+      const current =
+        input.field === 'rating'
+          ? (row?.rating ?? null)
+          : input.field === 'actions'
+            ? actionsValue(row?.actions ?? [])
+            : (row?.[input.field] ?? '');
       if (current !== input.expect) throw changed(current, row?.updated_by, row?.updated_at);
+      // The actions of the catalogue (2.22b) are rows of their own; the rest is a column of the answer.
+      if (input.field === 'actions') return saveActions(tx, key, input.value, actor.name);
       const now = new Date();
       const data = { [input.field]: input.value, updated_at: now, updated_by: actor.name };
       await tx.interviewAnswer.upsert({

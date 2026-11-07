@@ -333,6 +333,7 @@ describe('the CSV of the overview (2.21)', () => {
       'Kva kunden sa',
       'Vurdering',
       'Konklusjon og tiltak',
+      'Tiltak frå katalogen',
     ]);
     expect(rows.slice(1)).toHaveLength(3 * 27);
     const a1n4 = rows.find((x) => x[1] === `Oversikt A1 ${t.mark}` && x[4] === '3');
@@ -347,6 +348,7 @@ describe('the CSV of the overview (2.21)', () => {
       `Svar N4 ${t.mark}`,
       'Manglar',
       'Reglar for privat e-post',
+      '',
     ]);
     expect(r.body).not.toContain(NOTE);
     expect(r.body).not.toContain(`Oversikt A4 ${t.mark}`);
@@ -443,6 +445,7 @@ describe('the referat (2.21)', () => {
       answer: `Svar N4 ${t.mark}`,
       rating: 'manglar',
       action: 'Reglar for privat e-post',
+      catalog: [],
     });
     expect(r.body).not.toContain(NOTE);
     expect(r.body).not.toMatch(/"note"\s*:/);

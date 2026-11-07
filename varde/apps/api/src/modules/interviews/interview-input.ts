@@ -44,6 +44,23 @@ export const StartInput = z.strictObject({
 });
 export type StartInput = z.infer<typeof StartInput>;
 
+/** The actions of the catalogue chosen for one answer (2.22b), as one field: their ids, lower case,
+ * sorted and each once, joined by commas; '' when none. One value per choice, so the choice is saved
+ * and compared like any other field. */
+export const MAX_ACTIONS = 20;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+export const actionIds = (value: string): string[] => (value === '' ? [] : value.split(','));
+const ACTIONS_MESSAGE = 'Vel tiltak frå katalogen.';
+const actionList = z
+  .string()
+  .max(MAX_ACTIONS * 37, { message: ACTIONS_MESSAGE })
+  .refine(
+    (s) =>
+      actionIds(s).length <= MAX_ACTIONS &&
+      actionIds(s).every((id, n, all) => UUID.test(id) && (n === 0 || all[n - 1]! < id)),
+    { message: ACTIONS_MESSAGE },
+  );
+
 /** One field of one answer. `expect` is the value the screen last saw from the server: the save goes
  * through only while it still holds, so a change from another screen is never overwritten unseen. */
 export const AnswerFieldInput = z.discriminatedUnion('field', [
@@ -56,6 +73,11 @@ export const AnswerFieldInput = z.discriminatedUnion('field', [
     field: z.enum(['answer', 'action', 'note']),
     value: text(20_000, true),
     expect: z.string().max(20_000),
+  }),
+  z.strictObject({
+    field: z.literal('actions'),
+    value: actionList,
+    expect: z.string().max(MAX_ACTIONS * 37, { message: ACTIONS_MESSAGE }),
   }),
 ]);
 export type AnswerFieldInput = z.infer<typeof AnswerFieldInput>;
