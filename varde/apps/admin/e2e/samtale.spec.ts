@@ -370,7 +370,8 @@ test('a repeat conversation: criteria under the buttons, last time under the que
   await expect(card.getByRole('row', { name: /^Poeng/ })).toHaveCount(0);
   await page.getByLabel('Vis for kunden').uncheck();
   await page.getByRole('button', { name: 'Fullfør samtalen' }).first().click();
-  await expect(page.getByText(/Samtalen er låst/)).toBeVisible();
+  // The done callout of 2.21 (the concept): saved, with the ways to the referat and Oversikt.
+  await expect(page.getByText(/^Fullført og lagra /)).toBeVisible();
 
   // The client page: one line for the latest two.
   await page.goto(`/admin/clients/${s.client}`);
