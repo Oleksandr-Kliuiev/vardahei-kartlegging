@@ -16,7 +16,7 @@ const GUIDE: [string, string | null, string, string, string?][] = [
     'Ansvar og rolle',
     'Kven har IT-ansvaret',
     'Er det definert kven som har ansvaret for IT hos dykk, eller «flyt» det litt rundt? Veit til dømes ein tilsett kven han skal gå til om han oppdagar eit IT-tryggleiksproblem?',
-    'Lytt etter eit namn og ein stadfortredar, og om dei tilsette veit det. Ivaretatt: éin ansvarleg som alle kjenner. Forbetringspotensial: «det blir vel dagleg leiar». Manglar: ingen veit.',
+    'Lytt etter eit namn og ein stadfortredar, og om dei tilsette veit det.',
   ],
   [
     'N3',
@@ -77,7 +77,7 @@ const GUIDE: [string, string | null, string, string, string?][] = [
     null,
     '2-faktorpålogging',
     'I system med bedriftsinformasjon eller personopplysningar: er det etablert 2-faktorpålogging?',
-    'Spør system for system: e-post, rekneskap, filer, bank. Ivaretatt: 2-faktor overalt der det ligg bedrifts- eller personopplysningar.',
+    'Spør system for system: e-post, rekneskap, filer, bank.',
   ],
   [
     'N13',
@@ -140,7 +140,7 @@ const GUIDE: [string, string | null, string, string, string?][] = [
     'Beredskap ved hending',
     'Beredskapsplan',
     'Har de ein beredskapsplan ved IT-tryggleikshendingar?',
-    'Kven gjer kva den første timen? Finst det ei kontaktliste på papir? Ivaretatt: skriftleg plan som er øvd. Forbetringspotensial: noko finst, men ikkje skrive ned. Manglar: ingen plan.',
+    'Kven gjer kva den første timen? Finst det ei kontaktliste på papir?',
   ],
   [
     'N28',
