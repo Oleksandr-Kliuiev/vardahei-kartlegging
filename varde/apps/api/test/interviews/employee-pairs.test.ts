@@ -4,8 +4,12 @@
 import 'reflect-metadata';
 import { describe, expect, it } from 'vitest';
 import type { Question } from '@varde/schema/template/question';
-import { EMPLOYEE_PAIRS, employeeQuestion } from '../../src/modules/interviews/employee-pairs.js';
-import { employeeLine } from '../../src/modules/interviews/employee-view.js';
+import {
+  EMPLOYEE_PAIRS,
+  employeeQuestion,
+  firstWordings,
+} from '../../src/modules/interviews/employee-pairs.js';
+import { after, employeeLine } from '../../src/modules/interviews/employee-view.js';
 import { interviewGuideQuestions } from '../../src/modules/surveys/interview-guide.js';
 import { seedContent } from '../support/seed-dir.js';
 
@@ -108,6 +112,29 @@ describe('a pair across versions', () => {
     expect(employeeQuestion(changed, { anchor: 'F14' })).toBeUndefined();
   });
 
+  it('holds a T pair only while the question keeps the wording it was first published with (m1)', () => {
+    const t2 = choice('T2', ['ja', 'nei']);
+    const rewritten = { ...t2, texts: text('Deler du skrivebordet ditt med kollegaer?') };
+    const respelt = { ...t2, texts: text('  SPØRSMÅL   T2? ') };
+    const pins = firstWordings([[t2], [rewritten]]);
+    expect(pins.get('T2')).toBe('spørsmål t2?');
+    expect(employeeQuestion([t2], { id: 'T2' }, pins)).toBe(t2);
+    // Case and spacing are no change of wording; new words are.
+    expect(employeeQuestion([respelt], { id: 'T2' }, pins)).toBe(respelt);
+    expect(employeeQuestion([rewritten], { id: 'T2' }, pins)).toBeUndefined();
+    // No version had it: no pair.
+    expect(employeeQuestion([t2], { id: 'T2' }, new Map())).toBeUndefined();
+    // The leader part never pins a question of the employees.
+    expect(firstWordings([[{ ...t2, part: 'leader' }], [rewritten]]).get('T2')).toBe(
+      'deler du skrivebordet ditt med kollegaer?',
+    );
+    // F questions follow their anchor, whatever their wording.
+    const f14 = seed.find((q) => q.anchor_key === 'F14')!;
+    expect(
+      employeeQuestion([{ ...f14, texts: text('Ny ordlyd?') }], { anchor: 'F14' }, pins)?.id,
+    ).toBe(f14.id);
+  });
+
   it('finds a T question by id, never a question that only carries the same anchor', () => {
     const t2 = choice('T2', ['ja', 'nei']);
     expect(employeeQuestion([t2], { id: 'T2' })).toBe(t2);
@@ -189,5 +216,14 @@ describe('a line of the employees', () => {
     expect(JSON.stringify(employeeLine(q, series([hidden, hidden, hidden])))).not.toMatch(
       /"(n|count|options)"/,
     );
+  });
+});
+
+describe('a survey after the conversation', () => {
+  it('is one that closed after the whole day of the conversation', () => {
+    expect(after(new Date('2026-11-10T21:00:00Z'), '2026-11-10')).toBe(false);
+    expect(after(new Date('2026-11-11T00:00:00Z'), '2026-11-10')).toBe(true);
+    expect(after(null, '2026-11-10')).toBe(false);
+    expect(after(new Date('2026-11-11T00:00:00Z'), null)).toBe(false);
   });
 });

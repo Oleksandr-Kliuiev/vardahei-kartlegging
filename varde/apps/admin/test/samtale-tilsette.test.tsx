@@ -36,7 +36,12 @@ const kvar: TilsetteLinje = {
   multi: true,
   suppressed: true,
 };
-const round = { id: 'r2', name: 'Runde 2 IT-tryggleik', closed_on: '2026-10-31' };
+const round = {
+  id: 'r2',
+  name: 'Runde 2 IT-tryggleik',
+  closed_on: '2026-10-31',
+  after_conversation: false,
+};
 const svar: TilsetteSvar = {
   round,
   questions: [
@@ -120,6 +125,9 @@ it('words a line in the labels of the template, a hidden one without numbers', (
     'Frå «Runde 2 IT-tryggleik», avslutta 1. desember 2025.',
   );
   expect(kjelde({ ...round, closed_on: null })).toBe('Frå «Runde 2 IT-tryggleik».');
+  expect(kjelde({ ...round, after_conversation: true })).toBe(
+    'Frå «Runde 2 IT-tryggleik», avslutta 31. oktober, etter samtalen.',
+  );
 });
 
 it('shows the lines of the question under the answer; the question and the survey open under each', async () => {

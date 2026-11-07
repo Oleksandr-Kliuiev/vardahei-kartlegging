@@ -163,6 +163,14 @@ export const boundaries = [
       ],
     },
   },
+  // The employees' view is out of reach of the rest of the API too (re-review of 2.22c): the module
+  // does not export it, and no other module may provide it. The blocks below replace this one's
+  // options for the interviews module.
+  {
+    files: ['apps/api/src/**/*.ts'],
+    ignores: ['apps/api/src/modules/privacy/**', ...EMPLOYEE_VIEW_USERS],
+    rules: { 'no-restricted-imports': ['error', { patterns: [PRIVACY_INTERNAL, EMPLOYEE_VIEW] }] },
+  },
   {
     files: [`${INTERVIEWS}/**/*.ts`],
     ignores: EMPLOYEE_VIEW_USERS,

@@ -399,8 +399,21 @@ describe('Leiar vs tilsette (2.22c)', () => {
     });
   });
 
+  it('says when the survey closed after the day of the conversation', async () => {
+    const start = (held_on: string) =>
+      ok('POST', `/api/admin/interviews/${conversation.gasta}/start`, {
+        held_on,
+        interviewees: [{ role: 'dagleg leiar' }],
+      });
+    expect(((await employees('gasta')) as Model).round.after_conversation).toBe(false);
+    await start('2020-01-01');
+    expect(((await employees('gasta')) as Model).round.after_conversation).toBe(true);
+    await start('2999-12-31');
+    expect(((await employees('gasta')) as Model).round.after_conversation).toBe(false);
+  });
+
   it('takes an archived survey as well: archiving keeps its released numbers (acceptance m4)', async () => {
-    await f.prisma.round.update({ where: { id: rounds.import }, data: { status: 'archived' } });
+    await f.prisma.round.update({ where: { id: rounds.import! }, data: { status: 'archived' } });
     try {
       const m = (await employees('import')) as Model;
       expect(m.round.id).toBe(rounds.import);
@@ -410,7 +423,7 @@ describe('Leiar vs tilsette (2.22c)', () => {
         n: 3,
       });
     } finally {
-      await f.prisma.round.update({ where: { id: rounds.import }, data: { status: 'closed' } });
+      await f.prisma.round.update({ where: { id: rounds.import! }, data: { status: 'closed' } });
     }
   });
 

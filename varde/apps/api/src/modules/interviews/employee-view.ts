@@ -10,12 +10,12 @@
 // released snapshots and never counted live. Only the client's total, never a role group, never a
 // shared view; a line with a hidden option comes back hidden, without numbers.
 import { Injectable } from '@nestjs/common';
-import type { ChoiceQuestion } from '@varde/schema/template/question';
+import type { ChoiceQuestion, Question as SurveyQuestion } from '@varde/schema/template/question';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { labelOf, questionViews } from '../dashboard/aggregate-view.js';
 import { DashboardContext, PREVIOUS_TYPES } from '../dashboard/dashboard-context.js';
 import { PrivacyService, type ViewCell } from '../privacy/privacy.service.js';
-import { EMPLOYEE_PAIRS, employeeQuestion } from './employee-pairs.js';
+import { EMPLOYEE_PAIRS, employeeQuestion, firstWordings } from './employee-pairs.js';
 import { InterviewsService } from './interviews.service.js';
 
 /** The employees' survey of decision 07.11. */
@@ -75,9 +75,15 @@ export class EmployeeView {
     const common = scope.defs.filter((d) => d.part === 'common');
     const cells = await this.privacy.adminClientCells(round.id, scope.client!, common);
     const views = questionViews(scope, cells, 'all', 'common');
+    // The wording each T question was first published with; the round's own version counts last,
+    // for a question no published version had before it.
+    const pins = await this.firstWordings(
+      round.template_version?.template_id,
+      scope.content.questions,
+    );
     const questions = conversation.guide.questions.flatMap((g) => {
       const employees = (EMPLOYEE_PAIRS.get(g.id) ?? []).flatMap((ref) => {
-        const q = employeeQuestion(scope.content.questions, ref);
+        const q = employeeQuestion(scope.content.questions, ref, pins);
         const series = q && views.find((v) => v.id === q.id)?.series[0];
         return q && series ? [employeeLine(q, series)] : [];
       });
@@ -89,6 +95,9 @@ export class EmployeeView {
         id: round.id,
         name: round.name,
         closed_on: round.closed_at?.toISOString().slice(0, 10) ?? null,
+        // The newest survey is shown even when it closed after the conversation (decided 07.11:
+        // in the autumn tour the employees answer after the leader); the line then says so.
+        after_conversation: after(round.closed_at, conversation.held_on),
       },
       questions,
     };
@@ -109,6 +118,7 @@ export class EmployeeView {
         id: true,
         name: true,
         closed_at: true,
+        template_version: { select: { template_id: true } },
         round_clients: { where: { client_id: client }, select: { id: true } },
       },
       orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
@@ -116,5 +126,28 @@ export class EmployeeView {
     const released = await this.privacy.releasedRoundClients(rounds.map((r) => r.id));
     return rounds.find((r) => r.round_clients.some((rc) => released.has(rc.id)));
   }
+
+  /** The wording of each question a pair names by id (T1–T5), as the first published version of the
+   * template had it, else as the round's own version has it: a later rewrite gives such a question no
+   * new anchor, so its pair ends there (employee-pairs.ts). */
+  private async firstWordings(template: string | undefined, own: readonly SurveyQuestion[]) {
+    const versions = template
+      ? await this.prisma.templateVersion.findMany({
+          where: { template_id: template, published_at: { not: null } },
+          orderBy: [{ published_at: 'asc' }, { version_no: 'asc' }],
+          select: { content: true },
+        })
+      : [];
+    return firstWordings([
+      ...versions.map(
+        (v) => (v.content as { questions?: SurveyQuestion[] } | null)?.questions ?? [],
+      ),
+      own,
+    ]);
+  }
 }
 export type EmployeeModel = Awaited<ReturnType<EmployeeView['load']>>;
+
+/** Whether the survey closed after the day of the conversation (that day counted whole). */
+export const after = (closed: Date | null, heldOn: string | null) =>
+  closed !== null && heldOn !== null && closed.getTime() > Date.parse(`${heldOn}T23:59:59.999Z`);

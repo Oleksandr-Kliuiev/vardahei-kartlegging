@@ -27,6 +27,8 @@ export interface Runde {
   id: string;
   name: string;
   closed_on: string | null;
+  /** The survey closed after the day of the conversation (the newest is shown all the same). */
+  after_conversation: boolean;
 }
 export interface TilsetteSvar {
   round: Runde | null;
@@ -61,9 +63,11 @@ export function tilsetteTal(line: TilsetteLinje): string[] {
 export const tilsetteKven = (line: TilsetteLinje) =>
   line.suppressed || line.n < 1 ? `${line.label}:` : `${line.label} (${line.n} svar):`;
 
-/** «Frå «Runde 2 IT-tryggleik», avslutta 31. oktober.» */
+/** «Frå «Runde 2 IT-tryggleik», avslutta 31. oktober.», with «etter samtalen» when it closed later. */
 export const kjelde = (round: Runde) =>
-  `Frå «${round.name}»${round.closed_on ? `, avslutta ${longDate(round.closed_on)}` : ''}.`;
+  `Frå «${round.name}»${round.closed_on ? `, avslutta ${longDate(round.closed_on)}` : ''}${
+    round.after_conversation ? ', etter samtalen' : ''
+  }.`;
 
 /** The lines of one question; each opens to the question the employees got and where it is from. */
 export function Linjer({ lines, round }: { lines: readonly TilsetteLinje[]; round: Runde }) {
