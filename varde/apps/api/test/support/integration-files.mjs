@@ -15,6 +15,7 @@ export const INTEGRATION_FILES = [
   'test/retention/jobs.test.ts',
   'test/retention/forget.test.ts',
   'test/interviews/interviews.test.ts',
+  'test/interviews/employees.test.ts',
   'test/exports/csv.test.ts',
   'test/exports/master-analyse.test.ts',
   'test/dashboard/aggregate-view.test.ts',
