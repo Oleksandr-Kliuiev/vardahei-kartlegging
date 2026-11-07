@@ -4,6 +4,8 @@
 // totals for the tiles. Also the CSV of the same choice. Pure functions over rows the service loads.
 // Rounds may use different published versions of the guide: questions are matched by their id.
 // The rows given here never carry an internal note, so nothing here can pass one on.
+// 2.22b: the actions of the catalogue chosen for an answer group the recurring tiltak first, by action
+// with its seminar topic; the written conclusions of answers without one are grouped as before.
 import { csv } from '../exports/csv.js';
 import type { Rating } from './interview-input.js';
 import {
@@ -14,12 +16,20 @@ import {
   score,
 } from './interview-view.js';
 
-/** One answer as the overview reads it: what the client said, the rating and the conclusion. */
+/** An action of the catalogue (3.1) as the overview names it. */
+export interface CatalogAction {
+  id: string;
+  name: string;
+  seminar_topic: string;
+}
+/** One answer as the overview reads it: what the client said, the rating, the conclusion and the actions
+ * of the catalogue chosen for it (2.22b). */
 export interface CellRow {
   question_id: string;
   rating: string | null;
   answer: string;
   action: string;
+  catalog?: readonly CatalogAction[];
 }
 export interface ConversationRow {
   id: string;
@@ -95,6 +105,7 @@ export function overviewOf(rounds: readonly RoundRow[], inProgress: boolean) {
   const no = new Map(questions.map((q, n) => [q.id, n + 1]));
   const perQuestion = new Map(questions.map((q) => [q.id, { counts: zero(), actions: 0 }]));
   const texts = new Map<string, Map<string, Wording>>();
+  const catalog = new Map<string, { action: CatalogAction; talks: Set<string>; qs: Set<string> }>();
   const totals = { counts: zero(), actions: 0 };
   const scores: number[] = [];
   const conversations = rounds
@@ -113,9 +124,17 @@ export function overviewOf(rounds: readonly RoundRow[], inProgress: boolean) {
         cells[q.id] = { rating, answer: a?.answer ?? '', action: a?.action ?? '' };
         const stats = perQuestion.get(q.id)!;
         stats.counts[rating ?? 'none'] += 1;
+        for (const x of a?.catalog ?? []) {
+          const g = catalog.get(x.id) ?? { action: x, talks: new Set(), qs: new Set() };
+          catalog.set(x.id, g);
+          g.talks.add(c.id);
+          g.qs.add(q.id);
+        }
         if (!action) continue;
         actions += 1;
         stats.actions += 1;
+        // A conclusion with an action of the catalogue counts under that action, not as a wording.
+        if (a?.catalog?.length) continue;
         const group = texts.get(q.id) ?? new Map<string, Wording>();
         texts.set(q.id, group);
         const key = sameText(action);
@@ -175,17 +194,29 @@ export function overviewOf(rounds: readonly RoundRow[], inProgress: boolean) {
       score: scores.length ? Math.round(scores.reduce((n, s) => n + s, 0) / scores.length) : null,
       actions: totals.actions,
     },
-    /** Conclusions per question, the question most clients have one for first; per question the
-     * wordings, the one most of them used first. */
-    actions: questions
-      .filter((q) => perQuestion.get(q.id)!.actions > 0)
-      .map((q) => ({
-        question: q.id,
-        clients: perQuestion.get(q.id)!.actions,
-        texts: [...texts.get(q.id)!.values()]
-          .map((w) => ({ text: textOf(w), clients: w.clients }))
-          .sort((a, b) => b.clients - a.clients || a.text.localeCompare(b.text, 'nn')),
+    /** The actions of the catalogue chosen (2.22b), the one most conversations have first: in how many
+     * conversations (one per client and round) and for which questions, in the order of the overview. */
+    catalog: [...catalog.values()]
+      .map((g) => ({
+        action: g.action,
+        clients: g.talks.size,
+        questions: [...g.qs].sort((a, b) => no.get(a)! - no.get(b)!),
       }))
+      .sort((a, b) => b.clients - a.clients || a.action.name.localeCompare(b.action.name, 'nn')),
+    /** Conclusions without an action of the catalogue, per question, the question most clients have one
+     * for first; per question the wordings, the one most of them used first. */
+    actions: questions
+      .filter((q) => texts.has(q.id))
+      .map((q) => {
+        const wordings = [...texts.get(q.id)!.values()];
+        return {
+          question: q.id,
+          clients: wordings.reduce((n, w) => n + w.clients, 0),
+          texts: wordings
+            .map((w) => ({ text: textOf(w), clients: w.clients }))
+            .sort((a, b) => b.clients - a.clients || a.text.localeCompare(b.text, 'nn')),
+        };
+      })
       .sort((a, b) => b.clients - a.clients || no.get(a.question)! - no.get(b.question)!),
   };
 }
@@ -198,9 +229,16 @@ export const RATING_WORD: Record<Rating, string> = {
   ikkje_aktuelt: 'Ikkje aktuelt',
 };
 const STATUS_WORD: Record<string, string> = { done: 'Fullført', in_progress: 'Pågår' };
+/** «Passordhandterar; Phishing-øving»: the names of the chosen actions, in alphabetical order. */
+export const namesOf = (list: readonly { name: string }[] | undefined) =>
+  (list ?? [])
+    .map((x) => x.name)
+    .sort((a, b) => a.localeCompare(b, 'nn'))
+    .join('; ');
 
 /** The CSV of the same choice: one row per question of each conversation's guide, what the client said,
- * the rating and the conclusion. Never an internal note: the rows do not carry one. */
+ * the rating, the conclusion and the actions of the catalogue chosen (2.22b). Never an internal note:
+ * the rows do not carry one. */
 export function overviewCsv(rounds: readonly RoundRow[], inProgress: boolean) {
   const { questions, own } = unionOf(rounds);
   const no = new Map(questions.map((q, n) => [q.id, n + 1]));
@@ -226,6 +264,7 @@ export function overviewCsv(rounds: readonly RoundRow[], inProgress: boolean) {
           a?.answer ?? '',
           a?.rating ? (RATING_WORD[a.rating as Rating] ?? '') : '',
           a?.action ?? '',
+          namesOf(a?.catalog),
         ]);
       }
     }
@@ -242,6 +281,7 @@ export function overviewCsv(rounds: readonly RoundRow[], inProgress: boolean) {
       'Kva kunden sa',
       'Vurdering',
       'Konklusjon og tiltak',
+      'Tiltak frå katalogen',
     ],
     lines,
   );

@@ -18,6 +18,8 @@ import type { FastifyReply } from 'fastify';
 import { AdminSessionGuard, type AdminRequest } from '../auth/admin-session.guard.js';
 import { auditWho } from '../auth/audit-who.js';
 import { sendCsv } from '../exports/exports.controller.js';
+import { FindingStatusInput } from '../seminars/seminar-input.js';
+import { InterviewActionsService } from './interview-actions.js';
 import {
   AnswerFieldInput,
   ClientsInput,
@@ -43,6 +45,7 @@ export class InterviewsController {
   constructor(
     private readonly interviews: InterviewsService,
     private readonly reports: InterviewReportService,
+    private readonly actions: InterviewActionsService,
   ) {}
 
   @Get('interview-guides')
@@ -126,5 +129,23 @@ export class InterviewsController {
   @Get('clients/:id/interviews')
   ofClient(@Param('id', ParseUUIDPipe) id: string) {
     return this.interviews.ofClient(id);
+  }
+  /** 2.22b: the actions of the catalogue chosen in the client's conversations, and their follow-up. */
+  @Get('clients/:id/interview-actions')
+  actionsOfClient(@Param('id', ParseUUIDPipe) id: string) {
+    return this.actions.ofClient(id);
+  }
+  @Put('interviews/:id/actions/:question/:action/status')
+  actionStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('question') question: string,
+    @Param('action', ParseUUIDPipe) action: string,
+    @Body() body: unknown,
+    @Req() req: AdminRequest,
+  ) {
+    if (!QUESTION_ID.test(question))
+      throw new NotFoundException('Spørsmålet finst ikkje i samtaleguiden.');
+    const input = parseWith(FindingStatusInput, body);
+    return this.actions.setStatus(id, question, action, input, actor(req));
   }
 }

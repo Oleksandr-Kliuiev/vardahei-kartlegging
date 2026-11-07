@@ -3,6 +3,8 @@
 // at a seminar (with a link to it) or done.
 // A closed round keeps its findings (2.5), so the status is set once the round is closed; it lives
 // beside the finding (3.1), and every change is in the log. This is the one place to change it.
+// 2.22b: the actions of the catalogue chosen in the client's conversations follow under the findings,
+// with the same status control (kunde-samtale-tiltak.tsx).
 import { useEffect, useRef, useState } from 'react';
 import {
   keepPreviousData,
@@ -16,6 +18,7 @@ import type { Dashboard } from './dashboard-models.js';
 import { Icon } from './icons.js';
 import type { Round } from './models.js';
 import { follow } from './nav.js';
+import { KundeSamtaleTiltak } from './kunde-samtale-tiltak.js';
 import { ErrorMessage } from './queries.js';
 import { type Seminar, shortDate } from './seminar-models.js';
 import { useToast } from './shell.js';
@@ -41,26 +44,35 @@ export const FOLLOW_UP: Record<string, readonly [string, string]> = {
 };
 const CLOSED = ['closed', 'archived'];
 
+/** What the status control reads of a row: a finding, or an action chosen in a conversation (2.22b). */
+export type FollowUp = Pick<FindingFollowUp, 'status' | 'seminar' | 'changed_by' | 'changed_at'>;
+
 /** The value of the choice: `open`, `closed` or `seminar:<id>`. */
-const choiceOf = (row: FindingFollowUp) =>
+const choiceOf = (row: FollowUp) =>
   row.status === 'in_seminar' && row.seminar ? `seminar:${row.seminar.id}` : row.status;
 
 /** The body of `PUT /api/admin/findings/:id/status`; a done finding keeps its seminar. */
-export function statusBody(choice: string, row: FindingFollowUp) {
+export function statusBody(choice: string, row: FollowUp) {
   if (choice.startsWith('seminar:')) return { status: 'in_seminar', seminar: choice.slice(8) };
   if (choice === 'closed')
     return row.seminar ? { status: 'closed', seminar: row.seminar.id } : { status: 'closed' };
   return { status: 'open' };
 }
 
+/** The status of a finding and its editor. `to` and `noun` let an action of a conversation (2.22b)
+ * use the same control: where the status goes, and what it is called in the labels. */
 function Oppfolging({
   row,
   text,
   seminars,
+  to,
+  noun = 'funnet',
 }: {
-  row: FindingFollowUp;
+  row: FollowUp & { id?: string };
   text: string;
   seminars: Seminar[];
+  to?: string;
+  noun?: string;
 }) {
   const queries = useQueryClient();
   const toast = useToast();
@@ -94,10 +106,10 @@ function Oppfolging({
     setBusy(true);
     setError(null);
     try {
-      await mutate(`/api/admin/findings/${row.id}/status`, 'PUT', statusBody(choice, row));
+      await mutate(to ?? `/api/admin/findings/${row.id}/status`, 'PUT', statusBody(choice, row));
       await queries.invalidateQueries({ queryKey: ['seminars'] });
       close();
-      toast('Status for funnet er lagra.');
+      toast(`Status for ${noun} er lagra.`);
     } catch (e) {
       setError(e instanceof Error ? e : new Error('Noko gjekk gale.'));
     } finally {
@@ -126,7 +138,7 @@ function Oppfolging({
             ref={opener}
             type="button"
             className="btn sm ghost"
-            aria-label={`Endre status for funnet: ${text}`}
+            aria-label={`Endre status for ${noun}: ${text}`}
             onClick={() => {
               setChoice(choiceOf(row));
               setEditing(true);
@@ -140,11 +152,11 @@ function Oppfolging({
         <span
           className="oppfolging-endre"
           role="group"
-          aria-label={`Ny status for funnet: ${text}`}
+          aria-label={`Ny status for ${noun}: ${text}`}
         >
           <select
             ref={field}
-            aria-label={`Status for funnet: ${text}`}
+            aria-label={`Status for ${noun}: ${text}`}
             value={choice}
             onChange={(e) => setChoice(e.target.value)}
           >
@@ -366,6 +378,12 @@ export function KundeFunn({
             </a>
           </>
         )}
+        <KundeSamtaleTiltak
+          client={client}
+          status={(row, text, to) => (
+            <Oppfolging row={row} text={text} seminars={seminars} to={to} noun="tiltaket" />
+          )}
+        />
       </div>
     </section>
   );

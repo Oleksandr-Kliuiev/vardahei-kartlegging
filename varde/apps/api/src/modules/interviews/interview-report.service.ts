@@ -11,6 +11,10 @@ import { countRatings, guideQuestions } from './interview-view.js';
 import type { Actor } from './interviews.service.js';
 
 const day = (d: Date | null) => (d === null ? null : d.toISOString().slice(0, 10));
+/** The actions of the catalogue chosen for an answer (2.22b): what they are called and their topic. */
+const CATALOG = {
+  select: { action: { select: { id: true, name: true, seminar_topic: true } } },
+} as const;
 
 @Injectable()
 export class InterviewReportService {
@@ -29,13 +33,30 @@ export class InterviewReportService {
             status: true,
             held_on: true,
             client: { select: { id: true, name: true } },
-            answers: { select: { question_id: true, rating: true, answer: true, action: true } },
+            answers: {
+              select: {
+                question_id: true,
+                rating: true,
+                answer: true,
+                action: true,
+                actions: CATALOG,
+              },
+            },
           },
         },
       },
     });
     if (rounds.length !== wanted.length) throw new NotFoundException('Samtalerunda finst ikkje.');
-    return rounds.map(({ interviews, ...r }) => ({ ...r, conversations: interviews }));
+    return rounds.map(({ interviews, ...r }) => ({
+      ...r,
+      conversations: interviews.map((i) => ({
+        ...i,
+        answers: i.answers.map(({ actions, ...a }) => ({
+          ...a,
+          catalog: actions.map((x) => x.action),
+        })),
+      })),
+    }));
   }
 
   async overview(ids: readonly string[], inProgress: boolean) {
@@ -64,7 +85,8 @@ export class InterviewReportService {
 
   /** The referat of one conversation for the client (A4): who took part, the counts, the overall
    * impression, what was agreed and every question with what the client said, the rating and the
-   * conclusion. Never a note. Every read is in AuditLog. */
+   * conclusion with the names of the actions of the catalogue chosen. Never a note. Every read is in
+   * AuditLog. */
   async referat(id: string, actor: Actor) {
     const i = await this.prisma.interview.findUnique({
       where: { id },
@@ -81,7 +103,9 @@ export class InterviewReportService {
         round: {
           select: { id: true, name: true, template_version: { select: { content: true } } },
         },
-        answers: { select: { question_id: true, rating: true, answer: true, action: true } },
+        answers: {
+          select: { question_id: true, rating: true, answer: true, action: true, actions: CATALOG },
+        },
       },
     });
     if (i === null) throw new NotFoundException('Samtalen finst ikkje.');
@@ -118,6 +142,10 @@ export class InterviewReportService {
           answer: a?.answer ?? '',
           rating: (a?.rating ?? null) as Rating | null,
           action: a?.action ?? '',
+          /** The names of the actions of the catalogue chosen (2.22b), beside the conclusion. */
+          catalog: (a?.actions ?? [])
+            .map((x) => x.action.name)
+            .sort((x, y) => x.localeCompare(y, 'nn')),
         };
       }),
     };

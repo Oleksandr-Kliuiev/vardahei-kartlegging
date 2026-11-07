@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { reduced } from '@varde/ui/motion';
 import { api } from './api.js';
 import { RuleEditor } from './funn-editor.js';
+import { Tiltakskatalog } from './funn-tiltak.js';
 import {
   type Channel,
   type Family,
@@ -149,6 +150,7 @@ export function FindingsPage() {
           )}
         </div>
       </div>
+      <Tiltakskatalog />
     </>
   );
 }

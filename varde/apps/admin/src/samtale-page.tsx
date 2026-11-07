@@ -26,7 +26,7 @@ import { StartSamtale } from './samtale-start.js';
 import { useModal } from './widgets.js';
 import './samtale.css';
 
-const FIELDS = ['answer', 'rating', 'action', 'note'] as const;
+const FIELDS = ['answer', 'rating', 'action', 'actions', 'note'] as const;
 
 const KEYS: Record<string, Rating> = {
   Digit1: 'ivaretatt',

@@ -1,6 +1,8 @@
 // 2.20: conversations stay out of the survey data paths (aggregates, snapshots, the client CSV, the
 // assistant, Atlas). Only the interviews module reads their tables; retention reaches them through it.
 // 2.21: the overview, its CSV and the referat read them in the same module (interview-report.service).
+// 2.22b: the actions of the catalogue chosen in a conversation (`interview_action`) are one of them, also
+// through the relations from the catalogue and from seminars (`in_interviews`, `interview_actions`).
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -19,14 +21,15 @@ function sources(dir: string): string[] {
 const files = sources(SRC).map((f) => ({ path: relative(SRC, f), text: readFileSync(f, 'utf8') }));
 
 /** A Prisma call on a conversation table (`db.interview.findMany`, `db['interviewAnswer']`), the
- * relation from a client or a round (`include: { interviews: true }`), or SQL naming one. */
+ * relation from a client, a round, an action or a seminar (`include: { interviews: true }`), or SQL
+ * naming one. */
 const TABLES = new RegExp(
   [
-    /\.(?:interview|interviewAnswer|interviewRound)\s*\.\s*(?:find|create|update|upsert|delete|count|aggregate|groupBy)/
+    /\.(?:interview|interviewAnswer|interviewRound|interviewAction)\s*\.\s*(?:find|create|update|upsert|delete|count|aggregate|groupBy)/
       .source,
-    /\[\s*['"`](?:interview|interviewAnswer|interviewRound)['"`]\s*\]/.source,
-    /\binterviews\s*:\s*(?:true|\{)/.source,
-    /\binterview_(?:answer|round)\b/.source,
+    /\[\s*['"`](?:interview|interviewAnswer|interviewRound|interviewAction)['"`]\s*\]/.source,
+    /\b(?:interviews|in_interviews|interview_actions)\s*:\s*(?:true|\{)/.source,
+    /\binterview_(?:answer|round|action)\b/.source,
     /\b(?:FROM|JOIN|INTO|UPDATE)\s+"?interview"?\b/.source,
   ].join('|'),
   'i',
@@ -40,6 +43,7 @@ describe('conversations stay in their own module (2.20)', () => {
         .map((f) => f.path)
         .sort(),
     ).toEqual([
+      'modules/interviews/interview-actions.ts',
       'modules/interviews/interview-report.service.ts',
       'modules/interviews/interview-retention.ts',
       'modules/interviews/interviews.service.ts',

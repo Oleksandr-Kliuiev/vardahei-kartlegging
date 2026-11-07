@@ -25,7 +25,7 @@
 | --- | --- |
 | ProgressEvent | 24 ч |
 | Ответы: закрытые и свободный текст, common и leader, оба опросника, импортированные раунды | бессрочно; удаление только по явному запросу (`client`, `respondent`, `submissions`) под AuditLog с записью в DeletionLedger |
-| Беседы с ключевыми людьми (`samtale`, 2.20): `interview_round`, `interview`, `interview_answer` — ответы, оценки, выводы, «Eige notat» | бессрочно, как ответы клиента; удаление только по запросу клиента (`retention.forget`, область `client`) под AuditLog; `deletion_request` перечисляет id бесед, журнал удаляет их снова при restore; в handover (`samtalar.csv`) вместе с заметками; в агрегаты, снимки, клиентский CSV, ассистенту и Atlas не попадают |
+| Беседы с ключевыми людьми (`samtale`, 2.20): `interview_round`, `interview`, `interview_answer` — ответы, оценки, выводы, «Eige notat»; `interview_action` — выбранные действия каталога и их статус (2.22b) | бессрочно, как ответы клиента; удаление только по запросу клиента (`retention.forget`, область `client`) под AuditLog; `deletion_request` перечисляет id бесед, журнал удаляет их снова при restore; в handover (`samtalar.csv`) вместе с заметками; в агрегаты, снимки, клиентский CSV, ассистенту и Atlas не попадают |
 | AggregateSnapshot released | ≥3 года, пересмотр ежегодно; удаление по запросу их не затрагивает |
 | Contact | пока есть отношение и согласие; проверка раз в год |
 | Registration | семинар + 90 дней |
