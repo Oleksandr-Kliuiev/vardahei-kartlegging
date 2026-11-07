@@ -186,6 +186,15 @@ Oleksandr заметил на скриншоте, что старт беседы
 - e2e «две вкладки» использует две вкладки одного браузера. Разные устройства ведут себя так же, потому что сервер сравнивает значения.
 - В выкатку входит 1fc076a с local main (вопрос о роли необязателен, из сессии кампании 06.11). Его admin-тест был красным; исправлен здесь (B3).
 
+### Выкатка (07.11)
+
+- `main` перемотан на `varde/samtale-1` и запушен на OK Oleksandr: `01f56a9..3182dad`, 13 коммитов вместе с `1fc076a`.
+- GitHub Actions run 42349169785 на `3182dad4627b`: changes, check, secrets, e2e, integration, image — все зелёные. Локальный CI перед этим давал только таймауты: Mac был занят индексацией Spotlight (`corespotlightd`, `mds`).
+- `ship-image.sh` и `deploy.sh 3182dad4627b` из чистого worktree: копия данных `/root/deploy-20261107-0750` (responses 57, snapshots 5429), миграция `20261106120000_interviews` применена, `varde-app` healthy, `/health` = `{"status":"ok","version":"3182dad4627b","db":"ok"}`.
+- Снаружи: `/admin/samtalar` без входа — 302 на `/auth/login`, `/api/admin/interview-rounds` и `/api/admin/interview-guides` без входа — 401, `/r` — 200.
+- Откат: `bash infra/ops/rollback.sh 1f71c99db687 20261106120000_interviews`.
+- Не проверено в проде: вход и сценарий беседы живым админом (у Claude нет входа в прод). Guide и рунды создаёт Oleksandr: Skjema → Nytt skjema → Samtale med nøkkelpersonar → nn → publiser; затем рунды «IT-kundar» и «BIO» со списками клиентов. Перед встречей советую репетицию на тестовом клиенте (удаление — Personvern → Sletting по клиенту).
+
 ### Риски и ограничения
 
 - Проверено в Chromium и в WebKit (сценарий беседы, см. «Проверки»). Safari и iPad шеф не использует (ответ Oleksandr 06.11), цель — Chrome и Edge на ноутбуке; настоящий Edge не открывался (тот же движок, что Chromium).
