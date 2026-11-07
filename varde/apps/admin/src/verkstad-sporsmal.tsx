@@ -182,17 +182,16 @@ export function Sporsmal(p: SporsmalProps) {
           )
         )}
       </div>
-      {!interview && (
-        <Svar
-          q={q}
-          lang={lang}
-          languages={p.languages}
-          locked={locked}
-          structureLocked={fixed}
-          scored={p.scored && q.part === 'common' && !q.role && q.type === 'single'}
-          onChange={p.onChange}
-        />
-      )}
+      <Svar
+        q={q}
+        interview={interview}
+        lang={lang}
+        languages={p.languages}
+        locked={locked}
+        structureLocked={fixed}
+        scored={p.scored && q.part === 'common' && !q.role && q.type === 'single'}
+        onChange={p.onChange}
+      />
       {other.length > 0 && (
         <ul className="vk-problemliste">
           {other.map((i, n) => (

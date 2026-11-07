@@ -32,6 +32,7 @@ export function TekstFelt({
   placeholder,
   big = false,
   hideLabel = false,
+  maxLength,
 }: {
   label: string;
   text: Text | undefined;
@@ -44,6 +45,8 @@ export function TekstFelt({
   big?: boolean;
   /** In a numbered list the number shows the place; the label is for screen readers. */
   hideLabel?: boolean;
+  /** The schema's limit: the field stops there instead of a refused draft. */
+  maxLength?: number;
 }) {
   const id = useId();
   const value = text?.[lang] ?? '';
@@ -54,6 +57,7 @@ export function TekstFelt({
     id,
     value,
     readOnly,
+    maxLength,
     placeholder: placeholder ?? (lang === 'nn' ? undefined : source),
     'aria-describedby': source ? `${id}-kjelde` : undefined,
     onChange: (e: { target: { value: string } }) => set(e.target.value),

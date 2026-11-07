@@ -1,6 +1,8 @@
 // 2.20 Samtalar end to end: a guide from «Nytt skjema → Samtale», published; a round with the fixture
 // client; the start; typing, the rating by keyboard and a reload that keeps everything; the network gone
 // while typing and back; the summary with «Vis for kunden»; «Fullfør» locks; the client page lists it.
+// 2.22a: the criteria under the rating buttons, and a repeat conversation with «Førre gong» and
+// «Før og etter» on the summary and the client page.
 import { expect, test, type Page } from '@playwright/test';
 import { login, menu, state } from './support.js';
 
@@ -238,4 +240,104 @@ test('two screens on one field: the later save stops, nothing typed is lost, the
   await expect(other.getByLabel('Kva seier kunden?')).toHaveValue('Skrive her.');
   await expect(there).toHaveCount(0);
   expect(await server()).toBe('Skrive her.');
+});
+
+test('a repeat conversation: criteria under the buttons, last time under the question, before and after', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await login(page);
+  const s = await state(page);
+  const guide = await publishedGuide(page, `Samtaleguide gjenteke ${s.mark}`);
+  const api = async (url: string, data?: object) => {
+    const r = await page.request.post(url, data === undefined ? {} : { data });
+    expect(r.ok(), `${url}: ${await r.text()}`).toBe(true);
+    return r.json() as Promise<{ id: string }>;
+  };
+  const conversation = async (name: string, held_on: string) => {
+    const round = await api('/api/admin/interview-rounds', {
+      name: `${name} ${s.mark}`,
+      template_version_id: guide,
+      clients: [s.client],
+    });
+    const view = (await (
+      await page.request.get(`/api/admin/interview-rounds/${round.id}`)
+    ).json()) as { interviews: { id: string }[] };
+    const id = view.interviews[0]!.id;
+    await api(`/api/admin/interviews/${id}/start`, {
+      held_on,
+      interviewees: [{ role: 'dagleg leiar' }],
+    });
+    return id;
+  };
+  const put = async (id: string, q: string, data: object) =>
+    expect(
+      (await page.request.put(`/api/admin/interviews/${id}/answers/${q}`, { data })).ok(),
+    ).toBe(true);
+  // In spring: N2 Forbetringspotensial with what was said and the conclusion, N3 Manglar; finished.
+  const spring = await conversation('Gjenteke vår', '2026-05-04');
+  await put(spring, 'N2', { field: 'rating', value: 'forbetring', expect: null });
+  await put(spring, 'N2', { field: 'answer', value: 'Dagleg leiar tek det.', expect: '' });
+  await put(spring, 'N2', { field: 'action', value: 'Peik ut ein ansvarleg.', expect: '' });
+  await put(spring, 'N3', { field: 'rating', value: 'manglar', expect: null });
+  await api(`/api/admin/interviews/${spring}/done`);
+
+  // In autumn: each button says when it applies; its name stays the word.
+  const autumn = await conversation('Gjenteke haust', '2026-11-10');
+  await page.goto(`/admin/samtalar/${autumn}`);
+  const ivaretatt = page.getByRole('radio', { name: 'Ivaretatt', exact: true });
+  await expect(ivaretatt).toContainText(
+    'Éin namngitt ansvarleg med stadfortredar, og dei tilsette veit kven det er.',
+  );
+  await expect(ivaretatt).toHaveAccessibleDescription(
+    'Éin namngitt ansvarleg med stadfortredar, og dei tilsette veit kven det er.',
+  );
+  await expect(page.getByRole('radio', { name: 'Manglar', exact: true })).toContainText(
+    'Ingen har ansvaret, eller ingen veit kven som har det.',
+  );
+  // Last time's rating under the question; what the client said then opens under it.
+  const before = page.locator('.sm-forre');
+  await expect(before.locator('summary')).toHaveText(
+    /^Førre gong \(04\.05\.2026\):.*Forbetringspotensial$/,
+  );
+  await expect(page.getByText('Dagleg leiar tek det.')).toBeHidden();
+  await before.locator('summary').click();
+  await expect(page.getByText('Dagleg leiar tek det.')).toBeVisible();
+  await expect(page.getByText('Peik ut ein ansvarleg.')).toBeVisible();
+  await page.keyboard.press('Alt+Digit1');
+  await expect(ivaretatt).toHaveAttribute('aria-checked', 'true');
+  await page.keyboard.press('Alt+ArrowDown');
+  await expect(page.locator('.sm-forre')).toHaveText(/^Førre gong \(04\.05\.2026\):.*Manglar$/);
+  await page.keyboard.press('Alt+Digit2');
+  await expect(
+    page.getByRole('radio', { name: 'Forbetringspotensial', exact: true }),
+  ).toHaveAttribute('aria-checked', 'true');
+  await page.keyboard.press('Alt+ArrowDown');
+  await expect(page.locator('.sm-q')).toContainText('privat e-post');
+  await expect(page.locator('.sm-forre')).toHaveCount(0);
+  await expect(saved(page)).toBeVisible();
+
+  // The summary: then and now, and both questions that went up the scale.
+  await page.getByRole('link', { name: 'Oppsummering' }).click();
+  const card = page.getByRole('region', { name: 'Før og etter' });
+  await expect(card).toContainText('Samanlikna med samtalen 04.05.2026');
+  await expect(card.getByRole('row', { name: /^Poeng/ })).toContainText('25');
+  await expect(card.getByRole('heading', { name: 'Betre 2' })).toBeVisible();
+  await expect(card.getByRole('listitem')).toHaveText([
+    /^1Kven har IT-ansvaret.*frå Forbetringspotensial til Ivaretatt$/,
+    /^2Informasjon om endringar.*frå Manglar til Forbetringspotensial$/,
+  ]);
+  await page.getByLabel('Vis for kunden').check();
+  await expect(card.getByRole('row', { name: /^Poeng/ })).toHaveCount(0);
+  await page.getByLabel('Vis for kunden').uncheck();
+  await page.getByRole('button', { name: 'Fullfør samtalen' }).first().click();
+  await expect(page.getByText(/Samtalen er låst/)).toBeVisible();
+
+  // The client page: one line for the latest two.
+  await page.goto(`/admin/clients/${s.client}`);
+  const line = page.getByRole('region', { name: 'Samtalar' }).locator('.sm-kunde-fe');
+  await expect(line).toContainText('04.05.2026');
+  await expect(line).toContainText('10.11.2026');
+  await expect(line).toContainText('2 betre');
+  await expect(line).toContainText('0 verre');
 });

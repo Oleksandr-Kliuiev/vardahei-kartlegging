@@ -114,6 +114,8 @@
 .vk .vk-stor { font-size: 21px; font-weight: 720; line-height: 1.3; color: var(--ink-strong); min-height: 58px; resize: vertical; }
 /* Long texts show whole (letter, question, JSON) up to a point, then scroll */
 .vk textarea.input { field-sizing: content; max-height: 420px; }
+/* The criteria of a conversation guide (3.1) are a line or two each. */
+.vk-kriteria .vk-felt textarea.input { min-height: 40px; }
 .vk-manglar { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; font-weight: 650; color: var(--warning-fg); }
 .vk-manglar .icon, .vk-ok .icon { width: 14px; height: 14px; }
 .vk-andre { display: grid; gap: 4px; font-size: 13px; }
