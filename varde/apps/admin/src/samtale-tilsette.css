@@ -1,0 +1,25 @@
+/* «Leiar vs tilsette» (2.22c): the employees' lines under the leader's answer and the summary card
+   «Leiar og tilsette». Muted words and numbers; nothing is told by colour. A line is a disclosure: the
+   question the employees got and the survey the numbers come from open under it. */
+.sm-tl { display: grid; gap: 2px; margin-top: -4px; }
+.sm-tl-linje summary { cursor: pointer; list-style: none; display: flex; align-items: flex-start; gap: 8px; min-height: 28px; padding: 4px 6px; margin: 0 -6px; border-radius: var(--r-sm); font-size: 13.5px; line-height: 1.45; color: var(--ink-muted); }
+.sm-tl-linje summary::-webkit-details-marker { display: none; }
+.sm-tl-linje summary:hover { background: var(--surface-hover); color: var(--ink); }
+.sm-tl-linje summary > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.sm-tl-linje summary b { font-weight: 650; color: var(--ink); }
+.sm-tl-linje summary .icon { flex: none; width: 14px; height: 14px; margin-top: 3px; }
+.sm-tl-linje summary .icon:last-child { transition: transform var(--t-base) var(--ease-sti); }
+.sm-tl-linje[open] summary .icon:last-child { transform: rotate(90deg); }
+.sm-tl-kjelde { display: grid; gap: 4px; margin: 2px 0 8px 22px; font-size: 13px; line-height: 1.5; color: var(--ink-muted); }
+.sm-tl-kjelde p { margin: 0; }
+
+/* The summary card */
+.sm-lt-liste { list-style: none; margin: 0; padding: 0; display: grid; }
+.sm-lt-liste > li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 4px 10px; align-items: start; padding: 10px 0; border-top: 1px solid var(--line); }
+.sm-lt-liste > li:first-child { border-top: 0; padding-top: 0; }
+.sm-lt-liste .sm-nr { padding-top: 2px; }
+.sm-lt-liste .sm-tl { margin-top: 2px; }
+.sm-lt-liste .linkbtn { padding: 6px; margin: -6px -6px -6px 0; font-size: 13px; }
+.sm-lt-vurd { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.sm-lt-feil { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.sm-lt-feil p { margin: 0; }

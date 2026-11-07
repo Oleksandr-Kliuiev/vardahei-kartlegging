@@ -13,6 +13,7 @@ import { ErrorMessage } from './queries.js';
 import { Fordeling, Konflikt, Mark, MAX } from './samtale-felt.js';
 import { ForOgEtter } from './samtale-for-etter.js';
 import { type FieldKey, type Lagring, useLagring } from './samtale-lagring.js';
+import { LeiarOgTilsette } from './samtale-leiar-tilsette.js';
 import {
   clock,
   countOf,
@@ -399,6 +400,7 @@ export function OppsummeringPage({ id }: { id: string }) {
             )}
           </div>
         </div>
+        <LeiarOgTilsette interview={id} items={items} at={at} />
         {!done && (
           <div className="sm-sum-fot">
             <button type="button" className="btn ghost" onClick={() => goTo(at(0))}>

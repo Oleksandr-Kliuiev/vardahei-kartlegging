@@ -25,6 +25,9 @@ const findings = file('findings', 'findings.service.ts');
 const retention = file('retention', 'handover.ts');
 const privacyCohort = file('privacy', 'cohort.ts');
 const seminars = file('seminars', 'seminars.service.ts');
+/** Samtalar «Leiar vs tilsette» (2.22c): one file of the interviews module, not the module. */
+const employees = file('interviews', 'employee-view.ts');
+const interviews = file('interviews', 'interviews.service.ts');
 
 /** PrivacyService and a Prisma client declared by name, as the rule matches them. */
 const TYPES = `
@@ -78,6 +81,7 @@ describe('allow-lists', () => {
       adminClientCells: [
         'apps/api/src/modules/dashboard/**',
         'apps/api/src/modules/findings/rule-preview.service.ts',
+        'apps/api/src/modules/interviews/employee-view.ts',
       ],
       roleClientCells: ['apps/api/src/modules/dashboard/**'],
       cohortCells: ['apps/api/src/modules/dashboard/**'],
@@ -90,6 +94,7 @@ describe('allow-lists', () => {
       'apps/api/src/modules/reports/**',
       'apps/api/src/modules/exports/csv.service.ts',
       'apps/api/src/modules/retention/handover.ts',
+      'apps/api/src/modules/interviews/employee-view.ts',
     ]);
     expect(FINDING_ALLOW).toEqual([
       'apps/api/src/modules/findings/**',
@@ -101,6 +106,7 @@ describe('allow-lists', () => {
   it.each([
     ['apps/api/src/modules/seminars/seminars.service.ts', [2]],
     ['apps/api/src/modules/reports/report.service.ts', [2]],
+    ['apps/api/src/modules/interviews/employee-view.ts', [2]],
     ['apps/api/src/main.ts', [2]],
     ['apps/api/src/modules/privacy/privacy.service.ts', undefined],
     ['apps/admin/src/main.tsx', undefined],
@@ -132,6 +138,13 @@ typedRuleTester().run('round-client-exits', rule, {
       ),
     },
     { name: 'rule preview of the dashboard', filename: preview, code: call('adminClientCells') },
+    {
+      name: 'the employees beside a conversation read one client as the dashboard does',
+      filename: employees,
+      code: code(
+        `void privacy.releasedRoundClients(['r']);\nvoid privacy.adminClientCells('r', 'c', defs);`,
+      ),
+    },
     { name: 'return of the client data', filename: retention, code: call('handover', `'c', 'r'`) },
     { name: 'round archive', filename: archive, code: call('archiveSnapshots', `'r'`) },
     {
@@ -240,6 +253,26 @@ typedRuleTester().run('round-client-exits', rule, {
       filename: csv,
       code: call('adminClientCells'),
       errors: [{ messageId: 'exit' }],
+    },
+    {
+      name: 'another file of the interviews module reads no client cells',
+      filename: interviews,
+      code: call('adminClientCells'),
+      errors: [{ messageId: 'exit' }],
+    },
+    {
+      name: 'the conversation puts no shared numbers beside the client, destructured either',
+      filename: employees,
+      code: code(
+        `void privacy.viewCells('r', 'all_clients', defs);\nconst { clientGroup } = privacy;\nvoid clientGroup;`,
+      ),
+      errors: [{ messageId: 'mixed' }, { messageId: 'mixed' }],
+    },
+    {
+      name: 'the conversation is no report: no own cells, no live view of the round',
+      filename: employees,
+      code: code(`void privacy.ownCells('r', 'c', defs);\nvoid privacy.aggregate({});`),
+      errors: [{ messageId: 'exit' }, { messageId: 'exit' }],
     },
     {
       name: 'destructured',

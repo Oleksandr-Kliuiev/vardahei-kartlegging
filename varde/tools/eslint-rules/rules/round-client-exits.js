@@ -14,6 +14,11 @@
 //      outside their allow-list: the model on a Prisma client, the relation in include/select
 //      unless a nested `select` leaves `numbers` out, or raw SQL on the table `finding`. `count`
 //      tells nothing per client.
+// Samtalar «Leiar vs tilsette» (2.22c, decision of Oleksandr 07.11): Samtalar joins the admin
+// dashboard's trusted circle, so one file of the interviews module (not the module) reads one
+// client's cells as the dashboard does: released only, the client's total beside the leader's
+// answer. The conversation is held at the client's table and its summary can be turned to the
+// client, so that file is also kept from the shared views, as the own channel is (rule b).
 
 import { globToRegExp } from './privacy-only-release.js';
 
@@ -27,10 +32,12 @@ export const ROUND_CLIENT_EXITS = Object.freeze({
   ]),
   /** Return of the client's own data on request (ADR-017): its own rows and snapshots. */
   handover: Object.freeze(['apps/api/src/modules/retention/**']),
-  /** The admin dashboard (ADR-021 variant B): one client, its role grid, the comparison. */
+  /** The admin dashboard (ADR-021 variant B): one client, its role grid, the comparison; and the
+   * employees' numbers beside a conversation (Samtalar, decision 07.11). */
   adminClientCells: Object.freeze([
     'apps/api/src/modules/dashboard/**',
     'apps/api/src/modules/findings/rule-preview.service.ts',
+    'apps/api/src/modules/interviews/employee-view.ts',
   ]),
   roleClientCells: Object.freeze(['apps/api/src/modules/dashboard/**']),
   cohortCells: Object.freeze(['apps/api/src/modules/dashboard/**']),
@@ -44,11 +51,13 @@ export const ROUND_CLIENT_EXITS = Object.freeze({
   archiveSnapshots: Object.freeze(['apps/api/src/modules/exports/round-archive.service.ts']),
 });
 
-/** The client's own channel: its own cells only, never the shared views next to them. */
+/** The client's own channel: its own cells only, never the shared views next to them; so is the
+ * conversation, which the client sees at the table (Samtalar, decision 07.11). */
 export const OWN_CHANNEL = Object.freeze([
   'apps/api/src/modules/reports/**',
   'apps/api/src/modules/exports/csv.service.ts',
   'apps/api/src/modules/retention/handover.ts',
+  'apps/api/src/modules/interviews/employee-view.ts',
 ]);
 
 /** Saved findings: computed and shown by findings, the client's report, the round archive. */

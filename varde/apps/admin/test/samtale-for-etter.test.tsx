@@ -1,7 +1,7 @@
 // Step 3 of Samtalar (3.1, 3.2): each rating button says when it applies, its name stays the word; a
 // repeat conversation shows last time's rating under the question, «Før og etter» on the summary and one
 // line on the client page. Moves follow Manglar < Forbetringspotensial < Ivaretatt only.
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForrigeGong, Sporsmalskort } from '../src/samtale-felt.js';
 import { ForEtterLinje, ForOgEtter, movesOf } from '../src/samtale-for-etter.js';
 import { Lagring, serverValues } from '../src/samtale-lagring.js';
@@ -75,10 +75,22 @@ function store(ratings: Record<string, Rating | null>) {
 }
 
 let view: ReturnType<typeof mount> | undefined;
+// The card also asks for the employees' lines (2.22c): answer that there is no released survey.
+beforeEach(() => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ class: 'aggregate', round: null, questions: [] })),
+      ),
+    ),
+  );
+});
 afterEach(() => {
   view?.close();
   view = undefined;
   localStorage.clear();
+  vi.unstubAllGlobals();
 });
 const card = (question: GuideQuestion, prev: Previous | null) =>
   mount(
@@ -93,6 +105,7 @@ const card = (question: GuideQuestion, prev: Previous | null) =>
       onPrev={() => undefined}
       onNext={() => undefined}
     />,
+    true,
   );
 const byId = (id: string | null) => (id ? document.getElementById(id) : null);
 
