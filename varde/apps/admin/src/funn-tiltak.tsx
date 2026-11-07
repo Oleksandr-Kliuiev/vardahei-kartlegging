@@ -111,11 +111,26 @@ export function Tiltakskatalog() {
   const opener = useRef<HTMLButtonElement>(null);
   const card = useRef<HTMLElement>(null);
   const back = useRef(false);
-  // «Til katalogen» from a conversation with an empty catalogue lands here.
+  // «Til katalogen» from a conversation with an empty catalogue lands here. The rules and the editor above
+  // arrive after the card and push it down: it is kept at the top until the person scrolls or 1.5 s
+  // pass, as the client page keeps «Funn».
   useEffect(() => {
-    if (window.location.hash !== '#tiltakskatalog' || !card.current) return;
-    card.current.scrollIntoView({ block: 'start' });
-    card.current.focus({ preventScroll: true });
+    const el = card.current;
+    if (window.location.hash !== '#tiltakskatalog' || !el) return;
+    el.focus({ preventScroll: true });
+    el.scrollIntoView?.({ block: 'start' });
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => el.scrollIntoView({ block: 'start' }));
+    const events = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const;
+    const stop = () => {
+      observer.disconnect();
+      clearTimeout(timer);
+      for (const e of events) window.removeEventListener(e, stop);
+    };
+    const timer = setTimeout(stop, 1500);
+    for (const e of events) window.addEventListener(e, stop, { passive: true });
+    observer.observe(document.body);
+    return stop;
   }, []);
   useEffect(() => {
     if (adding || !back.current) return;
