@@ -50,6 +50,7 @@
 .bib-val { border: 0; margin: 0; padding: 0; display: flex; gap: 8px 20px; flex-wrap: wrap; }
 .bib-val legend { width: 100%; }
 .bib-val label, .bib-sjekk { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; font-size: 14px; font-weight: 500; color: var(--ink); }
+.bib-felt > label.bib-sjekk { display: inline-flex; gap: 8px; justify-self: start; font-weight: 500; color: var(--ink); }
 .bib-val input, .bib-sjekk input { accent-color: var(--accent); margin: 0; }
 /* Innstillingar */
 .inn-skjema { display: grid; gap: 16px; max-width: 880px; }
