@@ -146,6 +146,13 @@ export class InterviewsController {
     if (!QUESTION_ID.test(question))
       throw new NotFoundException('Spørsmålet finst ikkje i samtaleguiden.');
     const input = parseWith(FindingStatusInput, body);
-    return this.actions.setStatus(id, question, action, input, actor(req));
+    // Lower case, as the database and AuditLog keep a uuid (a search of the log by id finds it).
+    return this.actions.setStatus(
+      id.toLowerCase(),
+      question,
+      action.toLowerCase(),
+      input,
+      actor(req),
+    );
   }
 }

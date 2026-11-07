@@ -255,7 +255,8 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
   );
   const item = (q: GuideQuestion, n: number, compact: boolean) => {
     const rating = store.rating(q.id);
-    const written = !!(store.text(`${q.id}:answer`).trim() || store.text(`${q.id}:action`).trim());
+    // An action chosen from the catalogue counts as taken up too (acceptance of 2.22b).
+    const written = ['answer', 'action', 'actions'].some((f) => store.text(`${q.id}:${f}`).trim());
     const conflict = FIELDS.some((f) => store.conflicts.has(`${q.id}:${f}`));
     const state =
       (rating ? '' : written ? ', skrive, ikkje vurdert' : ', ikkje teke opp') +

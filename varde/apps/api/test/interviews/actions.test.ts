@@ -6,6 +6,7 @@
 // still carry no note; handover names them; forget by client takes them with the conversation.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { interviewsCsv } from '../../src/modules/interviews/interview-retention.js';
+import { cookieHeader } from '../support/auth-app.js';
 import { parseCsv } from '../support/csv.js';
 import { createSeminar, makeClients, seminarApp, type SeminarApp } from '../support/seminars.js';
 
@@ -208,16 +209,40 @@ describe('the choice is one more field of the answer (2.22b)', () => {
     expect(
       (await status(talkA, 'N4', second.id, { status: 'closed', seminar: seminar.id })).statusCode,
     ).toBe(200);
-    expect((await t.call('DELETE', `/api/admin/seminars/${seminar.id}`)).statusCode).toBe(200);
+    // Deleted by another admin: both rows name who deleted it, not who took them up (the foreign key
+    // alone would have cleared the link under the old name), by name and never by Entra id, and the
+    // seminar's AuditLog counts the one that went back to open.
+    const andre = { oid: 'test:seminar-admin-2', name: 'Andre admin', via: 'entra' };
+    const other = await t.store.create({ ...andre, expiresAt: new Date(Date.now() + 3600_000) });
+    // Names come from the admin sessions in the database (the test app keeps its own in memory).
+    await t.prisma.adminSession.create({
+      data: { ...andre, expires_at: new Date(Date.now() + 3600_000) },
+    });
+    const sid = t.app.getHttpAdapter().getInstance().signCookie(other.sid);
+    const removed = await t.call('DELETE', `/api/admin/seminars/${seminar.id}`, undefined, {
+      cookie: cookieHeader({ '__Host-varde_session': sid }),
+    });
+    expect(removed.statusCode, removed.body).toBe(200);
+    expect(removed.json()).toMatchObject({ actions_reopened: 1 });
     const after = await by();
     expect(after.find((r) => r.action.id === first.id)).toMatchObject({
       status: 'open',
       seminar: null,
+      changed_by: 'Andre admin',
     });
     expect(after.find((r) => r.action.id === second.id)).toMatchObject({
       status: 'closed',
       seminar: null,
+      changed_by: 'Andre admin',
     });
+    const audit = await t.prisma.auditLog.findFirstOrThrow({
+      where: { what: 'seminars.delete', target: `seminar:${seminar.id}` },
+    });
+    expect(audit).toMatchObject({
+      who: 'entra:test:seminar-admin-2',
+      details: { actions_reopened: 1 },
+    });
+    await t.prisma.adminSession.deleteMany({ where: andre });
   });
 
   it('an action chosen in a conversation cannot leave the catalogue (RESTRICT)', async () => {
@@ -229,7 +254,23 @@ describe('the choice is one more field of the answer (2.22b)', () => {
 describe('the follow-up on the client page (2.22b)', () => {
   it('lists the chosen actions of this client only, with the question, the topic and the conversation', async () => {
     expect((await choose(talkB, 'N2', second.id, '')).statusCode).toBe(200);
+    // A note on the answer and on the conversation first: neither may reach the client page
+    // (acceptance of 2.22b, M06: this list was read before any note was written).
+    expect(
+      (await answer(talkA, 'N9', { field: 'note', value: `${NOTE} on the answer`, expect: '' }))
+        .statusCode,
+    ).toBe(200);
+    expect(
+      (
+        await t.call('PUT', `/api/admin/interviews/${talkA}/fields`, {
+          field: 'note',
+          value: `${NOTE} on the conversation`,
+          expect: '',
+        })
+      ).statusCode,
+    ).toBe(200);
     const { rows, body } = await rowsOf(clientA);
+    expect(body).not.toContain(NOTE);
     expect(rows.every((r) => r.interview === talkA)).toBe(true);
     const row = rows.find((r) => r.action.id === second.id)!;
     expect(row).toMatchObject({

@@ -17,6 +17,7 @@ import { materialsOf } from './materials.service.js';
 import type { ContactInput, SeminarInput } from './seminar-input.js';
 import { presenterWindow } from '../live/window.js';
 import { osloInstant, osloParts, whenText } from './when.js';
+import { reopenForSeminar } from '../interviews/interview-actions.js';
 
 const include = { clients: { include: { client: true } } } as const;
 export type SeminarRow = Prisma.SeminarGetPayload<{ include: typeof include }>;
@@ -283,8 +284,9 @@ export class SeminarsService {
   /**
    * «Slett seminaret»: a seminar that has not ended is removed with its registrations, materials and
    * links (AuditLog keeps the topic and the number registered, never a name). Findings taken up in it
-   * become open again. A held seminar, or one whose rounds were opened, stays: its answers belong
-   * to the rounds. Rounds still in draft are left as they are.
+   * become open again, and so do the actions of conversations taken up in it (2.22b). A held seminar,
+   * or one whose rounds were opened, stays: its answers belong to the rounds. Rounds still in draft are
+   * left as they are.
    */
   remove(id: string, who: string, now = new Date()) {
     return this.guarded(() =>
@@ -309,16 +311,23 @@ export class SeminarsService {
           where: { seminar_id: id },
           data: { seminar_id: null, changed_by: who, changed_at: now },
         });
+        // The actions of conversations taken up in it likewise (Samtalar 2.22b), through their module.
+        const actions = await reopenForSeminar(tx, id, who, now);
         await tx.seminar.delete({ where: { id } });
         await tx.auditLog.create({
           data: {
             who,
             what: 'seminars.delete',
             target: `seminar:${id}`,
-            details: { topic: s.topic_nn, registrations, findings_reopened: reopened.count },
+            details: {
+              topic: s.topic_nn,
+              registrations,
+              findings_reopened: reopened.count,
+              actions_reopened: actions,
+            },
           },
         });
-        return { id, registrations, findings_reopened: reopened.count };
+        return { id, registrations, findings_reopened: reopened.count, actions_reopened: actions };
       }),
     );
   }

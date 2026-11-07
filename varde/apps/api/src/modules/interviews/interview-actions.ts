@@ -7,6 +7,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { namesOf } from '../auth/people.js';
+import { EventsService } from '../events/events.service.js';
 import type { FindingStatusInput } from '../seminars/seminar-input.js';
 import { actionIds } from './interview-input.js';
 import { guideQuestions } from './interview-view.js';
@@ -22,10 +24,26 @@ export const actionsValue = (rows: readonly { action_id: string }[]) =>
     .join(',');
 
 /** The follow-up of a chosen action in the words of findings (3.1). `in_seminar` is an open action with
- * a seminar: when the seminar is deleted (SET NULL) it is open again, and one closed in it stays closed,
- * as seminars.service does for findings, without the seminar module touching a conversation. */
+ * a seminar: when the seminar is deleted it is open again, and one closed in it stays closed, as
+ * seminars.service does for findings (through reopenForSeminar below). */
 export const statusOf = (r: { closed: boolean; seminar_id: string | null }) =>
   r.closed ? 'closed' : r.seminar_id ? 'in_seminar' : 'open';
+
+/** A seminar is being deleted (seminars.remove, in its transaction): the actions taken up in it go back
+ * to open and the closed ones lose the link, both with who deleted it and when, as findings do. The
+ * foreign key would clear the link too, but silently and under the old name (acceptance of 2.22b).
+ * Returns how many went back to open, for the seminar's AuditLog. */
+export async function reopenForSeminar(tx: Tx, seminar: string, who: string, now: Date) {
+  const reopened = await tx.interviewAction.updateMany({
+    where: { seminar_id: seminar, closed: false },
+    data: { seminar_id: null, changed_by: who, changed_at: now },
+  });
+  await tx.interviewAction.updateMany({
+    where: { seminar_id: seminar },
+    data: { seminar_id: null, changed_by: who, changed_at: now },
+  });
+  return reopened.count;
+}
 
 /** Saves the chosen actions of one answer, after the compare-and-set of the field: every id must be in
  * the catalogue; an action that stays keeps its follow-up, a new one starts open. */
@@ -52,7 +70,10 @@ const day = (d: Date | null) => (d === null ? null : d.toISOString().slice(0, 10
 
 @Injectable()
 export class InterviewActionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly events: EventsService,
+  ) {}
 
   /** The actions chosen in one client's conversations (the client page, «Funn»), newest round first, then
    * in the order of the guide: the conversation, the question, the action with its seminar topic and the
@@ -92,6 +113,12 @@ export class InterviewActionsService {
         },
       },
     });
+    // A status set here names the admin; a seminar deleted names its Entra id, as for findings: the
+    // same lookup turns that into a name (the client page never shows an id).
+    const names = await namesOf(
+      this.prisma,
+      interviews.flatMap((i) => i.answers.flatMap((a) => a.actions.map((x) => x.changed_by))),
+    );
     return {
       rows: interviews.flatMap((i) => {
         const questions = guideQuestions(i.round.template_version.content);
@@ -123,7 +150,7 @@ export class InterviewActionsService {
                       starts_at: x.seminar.starts_at.toISOString(),
                     }
                   : null,
-                changed_by: x.changed_by,
+                changed_by: x.changed_by === null ? null : (names[x.changed_by] ?? x.changed_by),
                 changed_at: x.changed_at?.toISOString() ?? null,
               }));
           });
@@ -141,7 +168,7 @@ export class InterviewActionsService {
     input: FindingStatusInput,
     actor: { audit: string; name: string },
   ) {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // The same lock as a save of the field, so a choice taken away meanwhile is not set again.
       await tx.$queryRaw`SELECT id FROM interview WHERE id = ${interview}::uuid FOR UPDATE`;
       const key = { interview_id: interview, question_id: question, action_id: action };
@@ -176,5 +203,8 @@ export class InterviewActionsService {
         changed_at: row.changed_at?.toISOString() ?? null,
       };
     });
+    // As a finding's status: another admin's client page or seminar page refreshes (acceptance 2.22b).
+    this.events.changed('seminars');
+    return result;
   }
 }

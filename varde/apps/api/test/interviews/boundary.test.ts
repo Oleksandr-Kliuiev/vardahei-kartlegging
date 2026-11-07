@@ -50,7 +50,7 @@ describe('conversations stay in their own module (2.20)', () => {
     ]);
   });
 
-  it('outside it, only the app module and retention (forget, ledger, handover) import it', () => {
+  it('outside it, only the app module, retention (forget, ledger, handover) and a deleted seminar (reopening its actions) import it', () => {
     expect(
       files
         .filter((f) => !f.path.startsWith('modules/interviews/'))
@@ -62,6 +62,8 @@ describe('conversations stay in their own module (2.20)', () => {
       'modules/retention/forget.service.ts',
       'modules/retention/handover.ts',
       'modules/retention/ledger.ts',
+      // A deleted seminar reopens the actions of conversations taken up in it (acceptance of 2.22b).
+      'modules/seminars/seminars.service.ts',
     ]);
   });
 });

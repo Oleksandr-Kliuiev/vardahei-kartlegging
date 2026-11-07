@@ -42,8 +42,8 @@ export function SlettSporsmal({
     <div className="sem-sporsmal" role="group" aria-label={`Stadfest sletting av ${s.topic_nn}`}>
       <p>
         «{s.topic_nn}» blir sletta
-        {n > 0 ? ` saman med ${n} ${n === 1 ? 'påmelding' : 'påmeldingar'}` : ''}. Funn du tok opp i
-        seminaret blir opne att. Det kan ikkje angrast.
+        {n > 0 ? ` saman med ${n} ${n === 1 ? 'påmelding' : 'påmeldingar'}` : ''}. Funn og tiltak
+        frå samtalar som du tok opp i seminaret, blir opne att. Det kan ikkje angrast.
       </p>
       {error && (
         <p role="alert" className="sem-sporsmal-feil">

@@ -2,7 +2,8 @@
 // nothing typed is lost (in flight, offline, signed out, two tabs, a reload) and nothing is saved over
 // another screen's change unless the person chose it. Started from the acceptance review's probe.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { clean, Lagring } from '../src/samtale-lagring.js';
+import { clean, Lagring, serverValues } from '../src/samtale-lagring.js';
+import type { Interview } from '../src/samtale-models.js';
 import { SaveLine } from '../src/samtale-felt.js';
 import { mount } from './support.js';
 
@@ -464,5 +465,41 @@ describe('the autosave after the second review', () => {
       server: 'A1 A2',
       c: 'A1 A2',
     });
+  });
+});
+
+it('loads every field the server has, the chosen actions of the catalogue too (2.22b)', () => {
+  const i = {
+    summary: 'Samandrag',
+    agreed: 'Avtalt',
+    note: 'Notat',
+    guide: { questions: [{ id: 'N1' }, { id: 'N2' }] },
+    answers: {
+      N1: {
+        answer: 'Svar',
+        rating: 'manglar',
+        action: 'Konklusjon',
+        actions: 'a1,b2',
+        note: 'Eige notat',
+        updated_at: '2026-11-07T10:00:00Z',
+        updated_by: 'Anna',
+      },
+    },
+  } as unknown as Interview;
+  expect(serverValues(i)).toEqual({
+    ':summary': 'Samandrag',
+    ':agreed': 'Avtalt',
+    ':note': 'Notat',
+    'N1:answer': 'Svar',
+    'N1:rating': 'manglar',
+    'N1:action': 'Konklusjon',
+    'N1:actions': 'a1,b2',
+    'N1:note': 'Eige notat',
+    // A question not answered yet: empty fields, and no choice of actions.
+    'N2:answer': '',
+    'N2:rating': null,
+    'N2:action': '',
+    'N2:actions': '',
+    'N2:note': '',
   });
 });
