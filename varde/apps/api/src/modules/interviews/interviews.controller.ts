@@ -1,4 +1,5 @@
 // Admin routes of «Samtalar» (2.20): admin session only; the Origin check of 1.3 covers every change.
+// 2.21: the overview of one or more rounds, its CSV and the referat of one conversation.
 import {
   Body,
   Controller,
@@ -8,19 +9,25 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { FastifyReply } from 'fastify';
 import { AdminSessionGuard, type AdminRequest } from '../auth/admin-session.guard.js';
 import { auditWho } from '../auth/audit-who.js';
+import { sendCsv } from '../exports/exports.controller.js';
 import {
   AnswerFieldInput,
   ClientsInput,
   InterviewFieldInput,
+  OverviewQuery,
   parseWith,
   RoundInput,
   StartInput,
 } from './interview-input.js';
+import { InterviewReportService } from './interview-report.service.js';
 import { type Actor, InterviewsService } from './interviews.service.js';
 
 const QUESTION_ID = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
@@ -33,7 +40,10 @@ function actor(req: AdminRequest): Actor {
 @Controller('api/admin')
 @UseGuards(AdminSessionGuard)
 export class InterviewsController {
-  constructor(private readonly interviews: InterviewsService) {}
+  constructor(
+    private readonly interviews: InterviewsService,
+    private readonly reports: InterviewReportService,
+  ) {}
 
   @Get('interview-guides')
   guides() {
@@ -46,6 +56,21 @@ export class InterviewsController {
   @Post('interview-rounds')
   createRound(@Body() body: unknown, @Req() req: AdminRequest) {
     return this.interviews.createRound(parseWith(RoundInput, body), actor(req));
+  }
+  /** Static paths before `:id`; the router prefers them in any case. */
+  @Get('interview-rounds/overview')
+  overview(@Query() query: unknown) {
+    const q = parseWith(OverviewQuery, query);
+    return this.reports.overview(q.rounds, q.in_progress);
+  }
+  @Get('interview-rounds/export.csv')
+  async exportCsv(@Query() query: unknown, @Req() req: AdminRequest, @Res() reply: FastifyReply) {
+    const q = parseWith(OverviewQuery, query);
+    return sendCsv(
+      reply,
+      'samtalar',
+      await this.reports.exportCsv(q.rounds, q.in_progress, actor(req)),
+    );
   }
   @Get('interview-rounds/:id')
   round(@Param('id', ParseUUIDPipe) id: string) {
@@ -62,6 +87,10 @@ export class InterviewsController {
   @Get('interviews/:id')
   get(@Param('id', ParseUUIDPipe) id: string) {
     return this.interviews.get(id);
+  }
+  @Get('interviews/:id/referat')
+  referat(@Param('id', ParseUUIDPipe) id: string, @Req() req: AdminRequest) {
+    return this.reports.referat(id, actor(req));
   }
   @Post('interviews/:id/start')
   start(@Param('id', ParseUUIDPipe) id: string, @Body() body: unknown, @Req() req: AdminRequest) {

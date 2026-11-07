@@ -1,5 +1,6 @@
 // 2.20: conversations stay out of the survey data paths (aggregates, snapshots, the client CSV, the
 // assistant, Atlas). Only the interviews module reads their tables; retention reaches them through it.
+// 2.21: the overview, its CSV and the referat read them in the same module (interview-report.service).
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -39,6 +40,7 @@ describe('conversations stay in their own module (2.20)', () => {
         .map((f) => f.path)
         .sort(),
     ).toEqual([
+      'modules/interviews/interview-report.service.ts',
       'modules/interviews/interview-retention.ts',
       'modules/interviews/interviews.service.ts',
     ]);

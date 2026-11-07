@@ -68,6 +68,24 @@ export const InterviewFieldInput = z.strictObject({
 });
 export type InterviewFieldInput = z.infer<typeof InterviewFieldInput>;
 
+/** The choice of the overview and its CSV (2.21): one or more rounds (`rounds=<id>,<id>`), and whether
+ * conversations going on count too (`in_progress=true`). */
+export const OverviewQuery = z.object({
+  rounds: z
+    .string({ message: 'Vel ei samtalerunde.' })
+    .transform((s) => s.split(',').filter(Boolean))
+    .pipe(
+      z
+        .array(z.uuid({ message: 'Vel ei samtalerunde.' }))
+        .min(1)
+        .max(50),
+    ),
+  in_progress: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => v === 'true'),
+});
+
 /** Parse admin input; a rule with its own message says what is wrong. */
 export function parseWith<T>(schema: z.ZodType<T>, input: unknown): T {
   const result = schema.safeParse(input);
