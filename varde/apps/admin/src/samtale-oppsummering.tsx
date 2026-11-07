@@ -12,6 +12,7 @@ import { ErrorMessage } from './queries.js';
 import { Fordeling, Konflikt, Mark, MAX } from './samtale-felt.js';
 import { type FieldKey, type Lagring, useLagring } from './samtale-lagring.js';
 import {
+  clock,
   countOf,
   dmy,
   type GuideQuestion,
@@ -22,9 +23,10 @@ import {
   RATING,
   type Rating,
   scoreOf,
+  today,
   useInterview,
 } from './samtale-models.js';
-import { doneText, Fullfort, TomSide, Topp, Utlogga, useReopen } from './samtale-page.js';
+import { Fullfort, TomSide, Topp, Utlogga, useReopen } from './samtale-page.js';
 import './samtale.css';
 
 /** The fields of the whole conversation, with the id of their box on this page. */
@@ -51,6 +53,13 @@ function notSaved(store: Lagring) {
   if (store.state.kind === 'error') return `Nokre endringar er ikkje lagra: ${store.state.message}`;
   return 'Nokre endringar er ikkje lagra enno. Prøv igjen om litt.';
 }
+
+/** «Fullført og lagra 25.11.2026 kl. 15:30.» (2.21, concept), without the time when it is not known. */
+const savedText = (i: Interview) => {
+  if (!i.done_at) return 'Fullført og lagra.';
+  const at = new Date(i.done_at);
+  return `Fullført og lagra ${dmy(today(at))} kl. ${clock(at)}.`;
+};
 
 /** Fields another screen changed, each with a link to where the choice is made. */
 function Konfliktar({
@@ -114,6 +123,8 @@ export function OppsummeringPage({ id }: { id: string }) {
   const counts = countOf(questions, store.rating);
   const score = scoreOf(counts);
   const at = (n: number) => `/admin/samtalar/${id}?q=${questions[n]!.id}`;
+  const referat = `/admin/samtalar/${id}/referat`;
+  const oversikt = `/admin/samtalar/oversikt?runde=${i.round.id}`;
   const items = questions.map((q, n) => ({ q, n, r: store.rating(q.id) }));
   const unrated = items.filter((x) => !x.r);
   const notes = items.filter((x) => store.text(`${x.q.id}:note`).trim());
@@ -182,14 +193,26 @@ export function OppsummeringPage({ id }: { id: string }) {
       </Topp>
       <div className="sm-sum">
         {done && (
-          <div className="sm-melding sm-ok" role="status">
-            <span>
-              <Icon name="hake" small />
-              <b>{doneText(i)}</b> Samtalen er låst og er no med på kundesida.
-            </span>
-            <button type="button" className="btn sm" onClick={() => void reopened.reopen()}>
-              Opne for endring
-            </button>
+          <div className="sm-melding sm-ok sm-ferdig" role="status">
+            <Icon name="hake" small />
+            <div>
+              <p>
+                <b>{savedText(i)}</b> Samtalen er no med i oversikta og på kundesida.
+              </p>
+              <div className="sm-handlingar">
+                <a className="btn sm" href={referat} onClick={(e) => follow(e, referat)}>
+                  <Icon name="dok" small />
+                  Sjå referatet
+                </a>
+                <a className="btn sm" href={oversikt} onClick={(e) => follow(e, oversikt)}>
+                  <Icon name="graf" small />
+                  Til oversikta
+                </a>
+                <button type="button" className="linkbtn" onClick={() => void reopened.reopen()}>
+                  Opne for endring
+                </button>
+              </div>
+            </div>
           </div>
         )}
         {kunde && (

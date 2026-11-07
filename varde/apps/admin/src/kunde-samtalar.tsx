@@ -1,6 +1,6 @@
 // «Samtalar» on the client page (2.20), as in the concept: per round the day and the state, the bar of
 // the scale with the score and the counts, and the way into the conversation (or to its round before it
-// starts). Newest round first.
+// starts) and, once started, to its referat (2.21). Newest round first.
 import { follow } from './nav.js';
 import { Icon } from './icons.js';
 import { Fordeling } from './samtale-felt.js';
@@ -74,6 +74,17 @@ export function KundeSamtalar({ client }: { client: string }) {
                   >
                     {planned ? 'Til runda' : 'Opne samtalen'}
                   </a>
+                  {!planned && (
+                    <a
+                      className="btn sm"
+                      href={`${to}/referat`}
+                      aria-label={`Referat, ${i.round.name}`}
+                      onClick={(e) => follow(e, `${to}/referat`)}
+                    >
+                      <Icon name="dok" small />
+                      Referat
+                    </a>
+                  )}
                 </span>
               </li>
             );

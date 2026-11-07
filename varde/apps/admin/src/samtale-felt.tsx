@@ -42,14 +42,17 @@ const PARTS = [
   ['none', 'ingen'],
 ] as const;
 
-/** One whole split into the parts of the scale; `tall` prints the counts inside the wide parts. */
+/** One whole split into the parts of the scale; `tall` prints the counts inside the wide parts, `tips`
+ * gives each part a tip with its count and share (the overview's tips, 2.21). */
 export function Fordeling({
   counts,
   tall = false,
+  tips = false,
   label,
 }: {
   counts: Counts;
   tall?: boolean;
+  tips?: boolean;
   label: string;
 }) {
   const total = PARTS.reduce((n, [k]) => n + counts[k], 0);
@@ -63,7 +66,16 @@ export function Fordeling({
       aria-label={`${label}: ${words}`}
     >
       {PARTS.filter(([k]) => counts[k] > 0).map(([k, cls]) => (
-        <i key={k} className={`sm-${cls}`} style={{ flexGrow: counts[k] }}>
+        <i
+          key={k}
+          className={`sm-${cls}`}
+          style={{ flexGrow: counts[k] }}
+          data-tip={
+            tips
+              ? `${k === 'none' ? 'Ikkje vurdert' : RATING[k].word}|${counts[k]} av ${total} (${Math.round((counts[k] / total) * 100)} %)`
+              : undefined
+          }
+        >
           {tall && total && counts[k] / total >= 0.1 ? counts[k] : null}
         </i>
       ))}

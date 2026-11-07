@@ -1,0 +1,93 @@
+/* Samtalar → Oversikt (2.21, concept «Overview»): the tiles, the map of every answer, the weakest points,
+   the themes, the clients and the conclusions that recur. The scale keeps its glyph beside the colour. */
+/* The breakpoints measure the page's own width (a container), not the window: the menu takes 256 px. */
+.sm-oversikt { container: sm-oversikt / inline-size; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.sm-runde-namn { font-size: 14.5px; color: var(--ink-strong); overflow-wrap: anywhere; }
+.sm-med { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; font-size: 14px; font-weight: 600; color: var(--ink-strong); cursor: pointer; }
+.sm-verktoy .seg button[aria-pressed="true"], .sm-kart-val .seg button[aria-pressed="true"] { background: var(--surface); box-shadow: var(--shadow-1), var(--edge); }
+
+/* The tiles */
+.sm-flisar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+/* Each tile spans three rows of the row of tiles (subgrid): a name on two lines keeps the figures in line. */
+.sm-flis { grid-row: span 3; display: grid; grid-template-rows: subgrid; grid-template-columns: minmax(0, 1fr); row-gap: 4px; align-content: start; padding: 14px 16px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-1), var(--edge); min-width: 0; }
+.sm-flis-namn { align-self: end; font-size: 13.5px; font-weight: 600; color: var(--ink-muted); }
+.sm-flis-tal { font-size: 28px; font-weight: 760; line-height: 1.15; letter-spacing: -0.02em; color: var(--ink-strong); font-variant-numeric: tabular-nums; }
+.sm-flis-tal small { font-size: 15px; font-weight: 600; letter-spacing: 0; color: var(--ink-muted); }
+.sm-flis-under { font-size: 13px; color: var(--ink-muted); }
+.sm-maalar { display: block; height: 6px; margin-top: 6px; border-radius: 999px; background: var(--accent-soft-2); overflow: hidden; }
+.sm-maalar > i { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+@container sm-oversikt (max-width: 680px) { .sm-flisar { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* The map: name, score, then one 24 px cell per question with a 6 px gap between themes */
+.sm-kart-val { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.sm-kart-val .linkbtn { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 2px; font-size: 14px; }
+.sm-kart-innhald { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.sm-kart-rull { padding: 4px 2px 8px; }
+.sm-kart { display: grid; gap: 2px; align-items: center; width: max-content; }
+.sm-kart-lab { writing-mode: vertical-rl; transform: rotate(180deg); justify-self: center; align-self: end; max-height: 150px; padding-block: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 24px; font-size: 12px; color: var(--ink-muted); }
+.sm-kart-num { padding-bottom: 2px; text-align: center; font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted); }
+.sm-kart-poeng { padding-right: 8px; text-align: right; font-size: 12.5px; color: var(--ink-muted); }
+.sm-kart-h { font-size: 12px; }
+.sm-kart .sm-kart-namn { display: block; min-height: 24px; padding-right: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 24px; font-size: 13.5px; font-weight: 650; color: var(--ink-strong); text-decoration: none; }
+.sm-kart .sm-kart-namn:hover { color: var(--accent-text); text-decoration: underline; text-underline-offset: 3px; }
+.sm-kart .sm-celle { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 4px; font-size: 12px; font-weight: 800; line-height: 1; text-decoration: none; transition: transform var(--t-quick) var(--ease-sti), box-shadow var(--t-quick); }
+.sm-kart .sm-celle.sm-iv { background: var(--sm-iv); color: var(--sm-on-iv); }
+.sm-kart .sm-celle.sm-fb { background: var(--sm-fb); color: var(--sm-on-fb); }
+.sm-kart .sm-celle.sm-mg { background: var(--sm-mg); color: var(--sm-on-mg); }
+.sm-kart .sm-celle.sm-na { background: var(--sm-na); color: var(--sm-on-na); }
+.sm-kart .sm-celle.sm-tom { background: var(--surface); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.sm-kart .sm-celle-utan { background: repeating-linear-gradient(135deg, var(--line) 0 2px, transparent 2px 6px); }
+.sm-kart a.sm-celle:hover, .sm-kart a.sm-celle:focus-visible { position: relative; z-index: 1; transform: scale(1.18); outline: none; box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink-strong); }
+
+/* The tip of a cell or a part of a bar: above it, below when there is no room */
+.sm-tips { position: fixed; z-index: 70; pointer-events: none; display: grid; gap: 3px; max-width: 300px; padding: 10px 12px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--shadow-2); font-size: 13px; line-height: 1.45; }
+.sm-tips b { font-size: 14px; color: var(--ink-strong); }
+.sm-tips .muted { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; overflow-wrap: anywhere; }
+
+/* The weakest points and the themes: one row per item, the bar under the name on a narrow screen */
+.sm-duo { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.sm-wp { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; font-size: 14px; }
+.sm-wp-rad { display: grid; grid-template-columns: 26px minmax(0, 1fr) minmax(80px, 1.1fr) 52px; align-items: center; gap: 4px 10px; }
+.sm-tema-rad { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(70px, 1fr) 40px; align-items: center; gap: 4px 12px; }
+.sm-rad-hovud > span { padding-bottom: 4px; font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); }
+.sm-wp-rad .sm-rad-l { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-strong); }
+.sm-tema-rad .sm-rad-l { min-width: 0; overflow-wrap: anywhere; line-height: 1.3; color: var(--ink-strong); }
+.sm-wp-rad > .sm-rad-v, .sm-tema-rad > .sm-rad-v { text-align: right; font-variant-numeric: tabular-nums; }
+.sm-wp-rad:not(.sm-rad-hovud) > .sm-rad-v, .sm-tema-rad:not(.sm-rad-hovud) > .sm-rad-v { font-weight: 650; color: var(--ink-strong); }
+.sm-wp .sm-bar { height: 10px; min-width: 0; }
+.sm-meir-knapp { margin-top: 8px; padding-left: 0; }
+@container sm-oversikt (max-width: 760px) { .sm-duo { grid-template-columns: minmax(0, 1fr); } }
+@container sm-oversikt (max-width: 480px) {
+  .sm-wp-rad { grid-template-columns: 26px minmax(0, 1fr) 52px; grid-template-areas: "n l v" ". b b"; }
+  .sm-wp-rad > .sm-nr, .sm-wp-rad > span:first-child { grid-area: n; } .sm-wp-rad > .sm-rad-l { grid-area: l; } .sm-wp-rad > .sm-rad-v { grid-area: v; } .sm-wp-rad > .sm-bar { grid-area: b; }
+  .sm-tema-rad { grid-template-columns: minmax(0, 1fr) 40px; grid-template-areas: "l v" "b b"; }
+  .sm-tema-rad > .sm-rad-l, .sm-tema-rad > span:first-child { grid-area: l; } .sm-tema-rad > .sm-rad-v { grid-area: v; } .sm-tema-rad > .sm-bar { grid-area: b; }
+  .sm-rad-hovud > .sm-rad-b { display: none; }
+}
+
+/* Tables: the counts per question and the clients */
+table.sm-tabell { min-width: 640px; font-size: 14px; }
+.sm-tabell th { font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); }
+.sm-tabell th, .sm-tabell td { padding: 9px 12px; white-space: nowrap; }
+.sm-tabell .r { text-align: right; font-variant-numeric: tabular-nums; }
+.sm-kundetabell td:first-child { white-space: normal; min-width: 160px; }
+.sm-kundetabell .sm-bar { width: 150px; }
+.sm-kundelenkje { display: inline-flex; align-items: center; min-height: 28px; font-weight: 650; color: var(--ink-strong); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line-strong); overflow-wrap: anywhere; }
+.sm-kundelenkje:hover { color: var(--accent-text); }
+
+/* The conclusions that recur */
+.sm-tiltak { list-style: none; margin: 0; padding: 0; display: grid; }
+.sm-tiltak > li { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; align-items: center; gap: 4px 14px; padding: 11px 0; border-top: 1px solid var(--line); }
+.sm-tiltak > li:first-child { border-top: 0; padding-top: 2px; }
+.sm-tiltak-tal { font-size: 22px; font-weight: 760; line-height: 1; color: var(--ink-strong); }
+.sm-tiltak-tal small { display: block; margin-top: 3px; font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+.sm-tiltak-tekst { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; min-width: 0; }
+.sm-tiltak-tekst > b { font-size: 14.5px; color: var(--ink-strong); overflow-wrap: anywhere; }
+.sm-tiltak-tekst > span { font-size: 13px; color: var(--ink-muted); }
+.sm-ordlag { font-size: 13px; color: var(--ink-muted); }
+.sm-ordlag summary { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; cursor: pointer; font-weight: 600; }
+.sm-ordlag summary::before { content: ""; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); transition: transform var(--t-quick); }
+.sm-ordlag[open] summary::before { transform: rotate(45deg); }
+.sm-ordlag summary::-webkit-details-marker { display: none; }
+.sm-ordlag ul { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 2px; color: var(--ink); }
+@container sm-oversikt (max-width: 560px) { .sm-tiltak > li { grid-template-columns: 70px minmax(0, 1fr); } .sm-tiltak > li > .chip { grid-column: 2; justify-self: start; } }

@@ -13,7 +13,9 @@ import { RundarPage } from './rundar-page.js';
 import { RundePage } from './runde-page.js';
 import { SamtalarPage } from './samtalar-page.js';
 import { OppsummeringPage } from './samtale-oppsummering.js';
+import { OversiktPage } from './samtale-oversikt.js';
 import { SamtalePage } from './samtale-page.js';
+import { ReferatPage } from './samtale-referat.js';
 import { SeminarPage } from './seminar-page.js';
 import { SettingsPage } from './settings-page.js';
 import { sectionOf } from './shell.js';
@@ -90,6 +92,10 @@ const SKJEMA_FANER = [
   ['/admin/surveys', 'Skjema'],
   ['/admin/surveys/funn', 'Funn-reglar'],
 ] as const;
+const SAMTALAR_FANER = [
+  ['/admin/samtalar', 'Kundar'],
+  ['/admin/samtalar/oversikt', 'Oversikt'],
+] as const;
 
 /** The page of an address, or a pointer to where it moved. */
 export function resolve(path: string, search: string): Page {
@@ -144,8 +150,30 @@ export function resolve(path: string, search: string): Page {
   // One seminar has its own heading and tab title, the topic, as a round and a client have.
   if (seminar) return page(<SeminarPage id={seminar[1]} />, seminar[1] ? null : undefined);
   // Samtalar (2.20): the rounds; one conversation and its summary write their own heading and fill
-  // the window (focus mode of the concept).
-  if (path === '/admin/samtalar') return page(<SamtalarPage key={search} search={search} />);
+  // the window (focus mode of the concept). 2.21: «Kundar | Oversikt» and the referat, in the normal
+  // frame with the menu, as the concept draws them.
+  if (path === '/admin/samtalar')
+    return page(
+      <>
+        <Faner label="Samtalar" items={SAMTALAR_FANER} current={path} />
+        <SamtalarPage key={search} search={search} />
+      </>,
+    );
+  if (path === '/admin/samtalar/oversikt')
+    return page(
+      <>
+        <Faner label="Samtalar" items={SAMTALAR_FANER} current={path} />
+        <OversiktPage search={search} />
+      </>,
+      {
+        title: 'Oversikt over samtalane',
+        intro:
+          'Berre fullførte samtalar, med mindre du tek med dei som pågår. Klikk på ei rute for å opne svaret.',
+        doc: 'Oversikt · Samtalar',
+      },
+    );
+  const referat = match(path, `/admin/samtalar/${ID}/referat`);
+  if (referat) return page(<ReferatPage key={referat[1]} id={referat[1]!} />, null);
   const samtale = match(path, `/admin/samtalar/${ID}(/oppsummering)?`);
   if (samtale)
     return {

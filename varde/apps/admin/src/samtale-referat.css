@@ -1,0 +1,55 @@
+/* The referat of a conversation (2.21, concept «Client report (paper)»): A4 sheets that stay paper, light
+   in both themes and when printed; the scale always has its glyph and word. Printing follows report.css
+   (5.1): its @page and its list of what is hidden; here only the sheets of the referat are added. */
+.sm-referat { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.sm-ark-rad { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; justify-items: center; }
+.sm-ark {
+  --surface: #ffffff; --ink: #242729; --ink-strong: #242729; --ink-muted: #5d6063; --line: #e1e4e7; --sm-ark-soft: #f5f7f8; --focus: #236e91;
+  --sm-iv: #227f53; --sm-fb: #e2ad12; --sm-mg: #b8322c; --sm-na: #acaeb1;
+  color-scheme: light; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  width: 100%; max-width: 794px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; padding: 46px 52px 40px;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--shadow-2); font-size: 13.5px; line-height: 1.5;
+}
+.sm-ark-topp { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.sm-ark-topp > div { flex: 1 1 240px; display: grid; gap: 2px; min-width: 0; }
+.sm-ark-logo { flex: none; height: 24px; width: auto; display: block; }
+.sm-ark-kicker { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); }
+.sm-ark h2 { font-size: 24px; line-height: 1.15; font-weight: 790; letter-spacing: -0.02em; color: var(--ink-strong); overflow-wrap: anywhere; }
+.sm-ark h2.sm-ark-liten { font-size: 19px; }
+.sm-ark h3 { font-size: 14.5px; font-weight: 760; color: var(--ink-strong); margin: 6px 0 2px; }
+.sm-ark-meta { font-size: 13px; color: var(--ink-muted); }
+.sm-ark-del { display: grid; grid-template-columns: minmax(0, 1fr); }
+.sm-ark-tekst { white-space: pre-line; overflow-wrap: anywhere; }
+.sm-ark-fordeling { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; }
+.sm-ark-fordeling > span, .sm-ark-v { display: inline-flex; align-items: center; gap: 6px; font-weight: 650; white-space: nowrap; }
+.sm-pm { width: 18px; height: 18px; border-radius: 50%; display: inline-grid; place-items: center; flex: none; font-size: 12px; font-weight: 800; line-height: 1; }
+.sm-pm-iv { background: var(--sm-iv); color: #ffffff; } .sm-pm-fb { background: var(--sm-fb); color: #0b0b0b; }
+.sm-pm-mg { background: var(--sm-mg); color: #ffffff; } .sm-pm-na { background: var(--sm-na); color: #0b0b0b; }
+.sm-ark-rull { overflow-x: auto; }
+.sm-ark-rull:focus-visible { outline-offset: 4px; }
+table.sm-ark-tabell { width: 100%; min-width: 440px; border-collapse: collapse; font-size: 12.5px; color: inherit; }
+table.sm-ark-full { min-width: 620px; }
+.sm-ark-tabell th, .sm-ark-tabell td { padding: 7px 8px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+.sm-ark-tabell th { font-size: 12px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); background: var(--sm-ark-soft); white-space: nowrap; }
+.sm-ark-tabell td:first-child { font-variant-numeric: tabular-nums; }
+.sm-ark-fot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-muted); }
+@media (max-width: 640px) { .sm-ark { padding: 28px 20px; } }
+
+/* Printing and the PDF: the sheets only, each from a new A4 page, denser as the client report prints.
+   A sheet with many answers runs on over more pages, so the printed pages are numbered by the page
+   («Side 2 av 3») in the margin, and the sheet's own «Side 1 av 2» is left out. */
+@page sm-ark { @bottom-right { content: "Side " counter(page) " av " counter(pages); font-family: "Atkinson Hyperlegible Next Variable", "Atkinson Hyperlegible Next", sans-serif; font-size: 8.5pt; color: #5d6063; } }
+@media print {
+  .sm-referat > :not(.sm-ark-rad) { display: none !important; }
+  .sm-referat, .sm-ark-rad { display: block; }
+  .sm-ark { page: sm-ark; display: flex; flex-direction: column; gap: 12px; max-width: none; padding: 0; border: 0; border-radius: 0; box-shadow: none; font-size: 10pt; break-after: page; }
+  .sm-ark:last-child { break-after: auto; }
+  .sm-ark-side { display: none; }
+  .sm-ark-rull { overflow: visible; background: none; }
+  table.sm-ark-tabell, table.sm-ark-full { min-width: 0; font-size: 9pt; }
+  .sm-ark-tabell th, .sm-ark-tabell td { padding: 4px 6px; }
+  .sm-ark-tabell th { font-size: 8pt; }
+  .sm-ark-tabell thead { display: table-header-group; }
+  .sm-ark-tabell tr, .sm-ark-fordeling, .sm-ark-topp, .sm-ark-fot { break-inside: avoid; }
+  .sm-ark h3 { break-after: avoid; }
+}

@@ -93,7 +93,7 @@
 @media print {
   :root { color-scheme: light; }
   html, body { background: #ffffff !important; }
-  .sidemeny, .topplinje, .sidetittel, .slor, .toasts, .palett, .palett-bakgrunn,
+  .sidemeny, .topplinje, .sidetittel, .slor, .toasts, .palett, .palett-bakgrunn, .hopp,
   .rapport-varsel, .rapport-kontroll, .rapport-tom, [role='alert'] { display: none !important; }
   .skal { display: block; min-height: 0; background: none; }
   .side { max-width: none; margin: 0; padding: 0; }

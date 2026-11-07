@@ -60,12 +60,18 @@
 .sm-melding > span { display: inline-flex; align-items: flex-start; gap: 8px; margin: 0; min-width: 0; }
 /* A sentence stays a sentence: its links wrap with the words. */
 .sm-melding > p { display: block; flex: 1; margin: 0; min-width: 0; }
-.sm-melding .icon { margin-top: 3px; flex: none; }
+/* The notice's own mark only: a descendant rule also moved the icons inside its buttons (2.21). */
+.sm-melding > .icon, .sm-melding > span > .icon { margin-top: 3px; flex: none; }
 .sm-melding.sm-ok { background: var(--success-bg); color: var(--success-fg); border-color: var(--success-line); }
 .sm-melding.sm-varsel { background: var(--warning-bg); color: var(--warning-fg); border-color: var(--warning-line); justify-content: flex-start; align-items: flex-start; }
 /* Links inside the sentence stay inline, so a comma never starts a line; the padding gives a 24 px hit box. */
 .sm-melding.sm-varsel p a { color: inherit; font-weight: 650; padding: 3px 0; text-underline-offset: 2px; }
 .sm-melding.sm-info { color: var(--ink); }
+/* Finished (2.21, concept): the tick beside the sentence, the ways on under it. */
+.sm-melding.sm-ferdig { flex-wrap: nowrap; justify-content: flex-start; align-items: flex-start; }
+.sm-ferdig > div { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; flex: 1; min-width: 0; }
+.sm-handlingar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sm-handlingar .linkbtn { color: inherit; padding: 6px 4px; }
 .sm-flate { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 24px; align-items: start; }
 .sm-liste { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--sm-topp, 72px) + 12px); max-height: calc(100vh - var(--sm-topp, 72px) - 48px); overflow-y: auto; padding: 4px 6px 16px 0; border-right: 1px solid var(--line); scrollbar-width: thin;
   -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 24px), transparent); }

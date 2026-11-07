@@ -1,5 +1,5 @@
 // «Samtalar» (2.20): the shapes the API gives, the rating scale and small helpers shared by the pages.
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { api } from './api.js';
 import { longDate as dayInYear } from './overview.js';
 
@@ -104,6 +104,72 @@ export interface ClientInterview {
   score: number | null;
 }
 
+/** One answer in the overview (2.21): never a note. */
+export interface Cell {
+  rating: Rating | null;
+  answer: string;
+  action: string;
+}
+export interface OverviewQuestion extends GuideQuestion {
+  no: number;
+  counts: Counts;
+  /** Conversations with a conclusion written to this question. */
+  actions: number;
+}
+export interface OverviewRow {
+  id: string;
+  status: Status;
+  held_on: string | null;
+  client: { id: string; name: string };
+  round: { id: string; name: string };
+  counts: Counts;
+  score: number | null;
+  actions: number;
+  /** The questions of its own guide only. */
+  cells: Record<string, Cell>;
+}
+/** The overview of one or more rounds (2.21), as the API counts it. */
+export interface Overview {
+  rounds: { id: string; name: string; questions: string[] }[];
+  in_progress: boolean;
+  questions: OverviewQuestion[];
+  sections: { title: string; questions: string[]; counts: Counts; score: number | null }[];
+  conversations: OverviewRow[];
+  totals: {
+    conversations: number;
+    done: number;
+    in_progress: number;
+    shown: number;
+    counts: Counts;
+    score: number | null;
+    actions: number;
+  };
+  actions: { question: string; clients: number; texts: { text: string; clients: number }[] }[];
+}
+/** The referat of one conversation for the client (2.21): never a note. */
+export interface Referat {
+  id: string;
+  status: Status;
+  held_on: string | null;
+  done_at: string | null;
+  client: { id: string; name: string };
+  round: { id: string; name: string };
+  interviewees: Person[];
+  interviewers: string[];
+  summary: string;
+  agreed: string;
+  counts: Counts;
+  questions: {
+    id: string;
+    no: number;
+    short: string;
+    section: string;
+    answer: string;
+    rating: Rating | null;
+    action: string;
+  }[];
+}
+
 export const STATUS: Record<Status, string> = {
   planned: 'Ikkje starta',
   in_progress: 'Pågår',
@@ -188,4 +254,24 @@ export const useClientInterviews = (client: string) =>
   useQuery({
     queryKey: ['samtalar', 'client', client],
     queryFn: () => api<ClientInterview[]>(`/api/admin/clients/${client}/interviews`),
+  });
+/** The overview of the chosen rounds; the last answer stays on screen while another choice is read. */
+export const useOverview = (rounds: readonly string[], inProgress: boolean) =>
+  useQuery({
+    queryKey: ['samtalar', 'overview', rounds.join(','), inProgress],
+    queryFn: () =>
+      api<Overview>(
+        `/api/admin/interview-rounds/overview?rounds=${rounds.join(',')}${inProgress ? '&in_progress=true' : ''}`,
+      ),
+    enabled: rounds.length > 0,
+    placeholderData: keepPreviousData,
+  });
+/** The referat: read once per visit, since every read is written to AuditLog. */
+export const useReferat = (id: string) =>
+  useQuery({
+    queryKey: ['samtalar', 'referat', id],
+    queryFn: () => api<Referat>(`/api/admin/interviews/${id}/referat`),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    retry: false,
   });

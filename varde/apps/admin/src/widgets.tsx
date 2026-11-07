@@ -135,6 +135,16 @@ function useThumb(selector: string, chosen: string) {
       }
     };
     place();
+    // A row that scrolls sideways (a phone, long round names) shows the chosen item (2.21).
+    const row = box.current,
+      on = row?.querySelector<HTMLElement>(selector);
+    if (row && on && row.scrollWidth > row.clientWidth) {
+      const left = on.offsetLeft,
+        right = left + on.offsetWidth;
+      if (left < row.scrollLeft) row.scrollLeft = Math.max(0, left - 24);
+      else if (right > row.scrollLeft + row.clientWidth)
+        row.scrollLeft = right - row.clientWidth + 24;
+    }
     if (typeof ResizeObserver === 'undefined' || !box.current) return;
     const watch = new ResizeObserver(place);
     watch.observe(box.current);
