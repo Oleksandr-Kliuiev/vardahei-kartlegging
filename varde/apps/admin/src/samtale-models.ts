@@ -73,6 +73,8 @@ export interface AnswerRow {
   answer: string;
   rating: Rating | null;
   action: string;
+  /** The actions of the catalogue chosen (2.22b): their ids, sorted, joined by commas. */
+  actions?: string;
   note: string;
   updated_at: string;
   updated_by: string;
@@ -145,6 +147,12 @@ export interface Overview {
     actions: number;
   };
   actions: { question: string; clients: number; texts: { text: string; clients: number }[] }[];
+  /** The recurring actions of the catalogue (2.22b), the one most conversations chose first. */
+  catalog?: {
+    action: { id: string; name: string; seminar_topic: string };
+    clients: number;
+    questions: string[];
+  }[];
 }
 /** The referat of one conversation for the client (2.21): never a note. */
 export interface Referat {
@@ -167,6 +175,8 @@ export interface Referat {
     answer: string;
     rating: Rating | null;
     action: string;
+    /** The names of the actions of the catalogue chosen (2.22b). */
+    catalog?: string[];
   }[];
 }
 

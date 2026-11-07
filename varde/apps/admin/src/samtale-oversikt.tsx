@@ -16,7 +16,8 @@ import {
   useInterviewRounds,
   useOverview,
 } from './samtale-models.js';
-import { lowestFirst, missing, pct, ratedOf, seminarTopic, weakest } from './samtale-tal.js';
+import { lowestFirst, missing, pct, ratedOf, weakest } from './samtale-tal.js';
+import { TiltakIgjen } from './samtale-tiltak-oversikt.js';
 import { Seg } from './widgets.js';
 import './samtale.css';
 import './samtale-oversikt.css';
@@ -238,60 +239,6 @@ function Kundar({ o }: { o: Overview }) {
   );
 }
 
-function Tiltak({ o }: { o: Overview }) {
-  const of = o.totals.shown;
-  const byId = new Map(o.questions.map((q) => [q.id, q]));
-  return (
-    <section className="kort" aria-labelledby="sm-tiltak-h">
-      <div className="kort-hovud">
-        <h2 id="sm-tiltak-h">Tiltak som går igjen</h2>
-        <p>Kandidatar til tenester og seminartema</p>
-      </div>
-      <div className="kort-innhald">
-        {!o.actions.length && <p className="muted">Ingen tiltak er skrivne enno.</p>}
-        <ul className="sm-tiltak">
-          {o.actions.slice(0, 6).map((a) => {
-            const q = byId.get(a.question);
-            return (
-              <li key={a.question}>
-                <span className="sm-tiltak-tal tnum">
-                  {a.clients}
-                  <small>
-                    av {of} {of === 1 ? 'kunde' : 'kundar'}
-                  </small>
-                </span>
-                <span className="sm-tiltak-tekst">
-                  <b>{a.texts[0]?.text}</b>
-                  <span>
-                    Spørsmål {q?.no} · {q?.short}
-                  </span>
-                  {a.texts.length > 1 && (
-                    <details className="sm-ordlag">
-                      <summary>{a.texts.length} ulike formuleringar</summary>
-                      <ul>
-                        {a.texts.map((t) => (
-                          <li key={t.text}>
-                            {t.text} <span className="muted">· {t.clients}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </details>
-                  )}
-                </span>
-                {seminarTopic(a.clients, of) ? (
-                  <span className="chip accent">Seminartema?</span>
-                ) : (
-                  <span />
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
 export function OversiktPage({ search }: { search: string }) {
   const rounds = useInterviewRounds();
   const q = new URLSearchParams(search);
@@ -355,7 +302,7 @@ export function OversiktPage({ search }: { search: string }) {
                 <Tema o={o} />
               </div>
               <Kundar o={o} />
-              <Tiltak o={o} />
+              <TiltakIgjen o={o} />
             </>
           )}
           <Tips root={root} />

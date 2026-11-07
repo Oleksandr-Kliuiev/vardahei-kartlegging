@@ -60,6 +60,7 @@ const WHAT: Record<string, string> = {
   'interviews.reopen': 'Samtale opna for endring',
   'interviews.export': 'Samtalar eksporterte til CSV',
   'interviews.referat': 'Referat av samtale opna',
+  'interviews.action.status': 'Tiltak frå samtale endra',
   'break_glass.login': 'Nødtilgang brukt',
   'break_glass.enabled': 'Nødtilgang slått på',
   'break_glass.closed': 'Nødtilgang stengd',

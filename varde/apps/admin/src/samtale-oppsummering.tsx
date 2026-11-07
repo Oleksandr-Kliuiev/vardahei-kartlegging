@@ -27,6 +27,7 @@ import {
   useInterview,
 } from './samtale-models.js';
 import { Fullfort, TomSide, Topp, Utlogga, useReopen } from './samtale-page.js';
+import { PunktTiltak } from './samtale-tiltak.js';
 import './samtale.css';
 
 /** The fields of the whole conversation, with the id of their box on this page. */
@@ -39,6 +40,7 @@ const FIELD: Record<string, string> = {
   answer: 'Kva seier kunden?',
   rating: 'Vurdering',
   action: 'Konklusjon og tiltak',
+  actions: 'Tiltak frå katalogen',
   note: 'Eige notat',
 };
 
@@ -292,11 +294,7 @@ export function OppsummeringPage({ id }: { id: string }) {
                           <span className="sm-nr">{x.n + 1}</span>
                           <span className="sm-punkt">
                             <b>{x.q.short}</b>
-                            {store.text(`${x.q.id}:action`).trim() ? (
-                              <span>{store.text(`${x.q.id}:action`)}</span>
-                            ) : (
-                              <em>Ingen tiltak skrive</em>
-                            )}
+                            <PunktTiltak store={store} question={x.q.id} />
                           </span>
                           <a
                             className="linkbtn"

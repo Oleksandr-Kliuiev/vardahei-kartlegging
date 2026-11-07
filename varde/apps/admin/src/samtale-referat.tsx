@@ -10,6 +10,7 @@ import logo from './logo.png';
 import { follow } from './nav.js';
 import { ErrorMessage } from './queries.js';
 import { peopleText, RATING, type Rating, type Referat, useReferat } from './samtale-models.js';
+import { ReferatTiltak } from './samtale-tiltak-oversikt.js';
 import './report.css';
 import './samtale.css';
 import './samtale-referat.css';
@@ -136,7 +137,9 @@ export function Ark({ r }: { r: Referat }) {
                       <td>
                         <Vurdering r={q.rating} />
                       </td>
-                      <td className="sm-ark-tekst">{q.action}</td>
+                      <td className="sm-ark-tekst">
+                        <ReferatTiltak action={q.action} catalog={q.catalog} />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -188,7 +191,9 @@ export function Ark({ r }: { r: Referat }) {
                   <td>
                     <Vurdering r={q.rating} />
                   </td>
-                  <td className="sm-ark-tekst">{q.action}</td>
+                  <td className="sm-ark-tekst">
+                    <ReferatTiltak action={q.action} catalog={q.catalog} />
+                  </td>
                 </tr>
               ))}
             </tbody>

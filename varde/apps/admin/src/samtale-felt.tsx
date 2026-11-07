@@ -13,6 +13,7 @@ import {
   type Rating,
   SCALE,
 } from './samtale-models.js';
+import { KatalogTiltak } from './samtale-tiltak.js';
 
 /** The server takes up to 20 000 characters in a field; the box stops there instead of a refusal. */
 export const MAX = 20_000;
@@ -335,6 +336,7 @@ export function Sporsmalskort(p: {
         onChange={(e) => store.set(key('action'), e.target.value)}
       />
       <Konflikt store={store} field={key('action')} />
+      <KatalogTiltak store={store} question={q.id} readOnly={readOnly} />
       {note || noteOpen || store.conflicts.has(key('note')) ? (
         <>
           <div className="sm-label">

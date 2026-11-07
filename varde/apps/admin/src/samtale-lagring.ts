@@ -6,7 +6,8 @@
 import { useMemo, useSyncExternalStore } from 'react';
 import type { Interview, Rating } from './samtale-models.js';
 
-/** `N12:answer`, `N12:rating`, `N12:action`, `N12:note`; the whole conversation: `:summary`, `:agreed`, `:note`. */
+/** `N12:answer`, `N12:rating`, `N12:action`, `N12:actions` (2.22b), `N12:note`; the whole conversation:
+ * `:summary`, `:agreed`, `:note`. */
 export type FieldKey = string;
 type Value = string | null;
 
@@ -74,6 +75,7 @@ export function serverValues(i: Interview): Record<FieldKey, Value> {
     out[`${q.id}:answer`] = a?.answer ?? '';
     out[`${q.id}:rating`] = a?.rating ?? null;
     out[`${q.id}:action`] = a?.action ?? '';
+    out[`${q.id}:actions`] = a?.actions ?? '';
     out[`${q.id}:note`] = a?.note ?? '';
   }
   return out;
