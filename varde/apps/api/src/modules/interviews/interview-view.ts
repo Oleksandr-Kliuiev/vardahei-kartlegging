@@ -1,6 +1,10 @@
 // What «Samtalar» shows of a guide and of a conversation (2.20): the questions of the guide, the counts
 // of the rating scale and the score. Pure functions, shared by the service and the tests.
+import { criterionEntries, type CriterionRating } from '@varde/schema/template/criteria';
 import type { Rating } from './interview-input.js';
+
+/** When a question is Ivaretatt, Forbetringspotensial or Manglar (3.1); null where the guide says nothing. */
+export type Criteria = Record<CriterionRating, string | null>;
 
 export interface GuideQuestion {
   id: string;
@@ -9,6 +13,8 @@ export interface GuideQuestion {
   short: string;
   text: string;
   help: string | null;
+  /** Null when the guide has no criterion for the question. */
+  criteria: Criteria | null;
 }
 
 interface ContentQuestion {
@@ -18,7 +24,17 @@ interface ContentQuestion {
     short_label?: { nn: string };
     section_title?: { nn: string };
     help?: { nn: string };
+    criteria_ivaretatt?: { nn: string };
+    criteria_forbetring?: { nn: string };
+    criteria_manglar?: { nn: string };
   };
+}
+
+function criteriaOf(texts: ContentQuestion['texts']): Criteria | null {
+  const c = Object.fromEntries(
+    criterionEntries().map(([rating, key]) => [rating, texts[key]?.nn.trim() || null]),
+  ) as Criteria;
+  return c.ivaretatt || c.forbetring || c.manglar ? c : null;
 }
 
 /** The questions of a published guide, in order, with the theme each belongs to. */
@@ -37,6 +53,7 @@ export function guideQuestions(content: unknown): GuideQuestion[] {
       short: q.texts.short_label?.nn.trim() || text.slice(0, 48),
       text,
       help: q.texts.help?.nn.trim() || null,
+      criteria: criteriaOf(q.texts),
     };
   });
 }

@@ -1,7 +1,11 @@
 // 2.20: an interview guide (audience `interview`) is free text read aloud by Vardahei, nn only.
+// 3.1: each question may say when it is Ivaretatt, Forbetringspotensial or Manglar (a guide only).
 import { describe, expect, it } from 'vitest';
+import { CRITERION_MAX_LENGTH } from '../src/template/criteria.js';
+import { respondentTexts } from '../src/template/respondent-texts.js';
 import type { TemplateContent } from '../src/template/template.js';
 import { TemplateVersionContent } from '../src/template/validate.js';
+import { minimalTemplate } from './support/template.js';
 
 const nn = (text: string) => ({ nn: text });
 
@@ -103,5 +107,55 @@ describe('interview guide (2.20)', () => {
     } as unknown as (typeof g.questions)[0]['texts']['text'];
     // The shape itself asks for nn before any language rule runs.
     expect(messages(g).join('\n')).toMatch(/expected string, received undefined/);
+  });
+});
+
+describe('criteria of a rating (3.1)', () => {
+  const criteria = {
+    criteria_ivaretatt: nn('Éin namngitt ansvarleg med stadfortredar.'),
+    criteria_forbetring: nn('Nokon tek det i praksis, men det er ikkje avklart.'),
+    criteria_manglar: nn('Ingen har ansvaret.'),
+  };
+
+  it('a guide question may have all three, one or none; they are texts a reader meets', () => {
+    const g = guide();
+    g.questions[0]!.texts = { ...g.questions[0]!.texts, ...criteria };
+    g.questions[1]!.texts.criteria_manglar = nn('Dei tilsette får ikkje vite noko.');
+    expect(messages(g)).toEqual([]);
+    const keys = respondentTexts(g).map((t) => [t.key, t.where]);
+    expect(keys).toContainEqual(['q.N2.criteria_ivaretatt', 'N2: Ivaretatt når …']);
+    expect(keys).toContainEqual(['q.N2.criteria_forbetring', 'N2: Forbetringspotensial når …']);
+    expect(keys).toContainEqual(['q.N3.criteria_manglar', 'N3: Manglar når …']);
+    // Optional: an empty criterion is no gap that stops publishing.
+    expect(
+      respondentTexts(g)
+        .filter((t) => t.key.includes('criteria'))
+        .every((t) => !t.required),
+    ).toBe(true);
+  });
+
+  it(`a criterion over ${CRITERION_MAX_LENGTH} characters → rejected at its place; at the limit → valid`, () => {
+    const g = guide();
+    g.questions[1]!.texts.criteria_forbetring = nn('x'.repeat(CRITERION_MAX_LENGTH));
+    expect(messages(g)).toEqual([]);
+    g.questions[1]!.texts.criteria_forbetring = nn('x'.repeat(CRITERION_MAX_LENGTH + 1));
+    const r = TemplateVersionContent.safeParse(g);
+    expect(r.success).toBe(false);
+    expect(r.error?.issues.map((i) => [i.message, i.path])).toEqual([
+      [
+        `criterion forbetring of N3 is over ${CRITERION_MAX_LENGTH} characters`,
+        ['questions', 1, 'texts', 'criteria_forbetring'],
+      ],
+    ]);
+  });
+
+  it('a client survey has no criteria; an unknown text key stays refused', () => {
+    const c = minimalTemplate();
+    const q = c.questions[1] as { texts: Record<string, unknown> };
+    q.texts.criteria_ivaretatt = { nn: 'Alltid', en: 'Always' };
+    expect(messages(c)).toEqual(['criteria belong to a conversation guide (Q2)']);
+    const g = guide();
+    (g.questions[0]!.texts as Record<string, unknown>).criteria_delvis = nn('Delvis');
+    expect(messages(g).join('\n')).toMatch(/criteria_delvis/);
   });
 });

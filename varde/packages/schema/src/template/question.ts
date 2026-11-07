@@ -17,6 +17,11 @@ export const QuestionTexts = z.strictObject({
   section_title: LocalizedText.optional(),
   placeholder: LocalizedText.optional(),
   short_label: LocalizedText.optional(),
+  /** A conversation guide only (3.1, `criteria.ts`): when the answer is Ivaretatt, Forbetringspotensial
+   * or Manglar. */
+  criteria_ivaretatt: LocalizedText.optional(),
+  criteria_forbetring: LocalizedText.optional(),
+  criteria_manglar: LocalizedText.optional(),
 });
 
 export const Score = z.number().int().min(0).max(3);
