@@ -1,6 +1,8 @@
 // 2.20 Samtalar end to end: a guide from «Nytt skjema → Samtale», published; a round with the fixture
 // client; the start; typing, the rating by keyboard and a reload that keeps everything; the network gone
 // while typing and back; the summary with «Vis for kunden»; «Fullfør» locks; the client page lists it.
+// 2.21: the referat and the CSV of Oversikt have the answer and not the note; Oversikt shows it.
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { login, menu, state } from './support.js';
 
@@ -169,7 +171,7 @@ test('a conversation at the table is saved field by field, through a reload and 
   await page.getByLabel('Vis for kunden').uncheck();
   await page.getByLabel('Samla inntrykk').fill('God merksemd i leiinga.');
   await page.getByRole('button', { name: 'Fullfør samtalen' }).first().click();
-  await expect(page.getByText(/Samtalen er låst/)).toBeVisible();
+  await expect(page.getByText(/Samtalen er no med i oversikta og på kundesida/)).toBeVisible();
   await expect(page.getByLabel('Samla inntrykk')).toHaveJSProperty('readOnly', true);
   const done = (await (await page.request.get(`/api/admin/interviews/${id}`)).json()) as {
     status: string;
@@ -177,11 +179,48 @@ test('a conversation at the table is saved field by field, through a reload and 
   };
   expect(done).toMatchObject({ status: 'done', summary: 'God merksemd i leiinga.' });
 
-  // The client page lists the conversation.
+  // 2.21: the referat has what the client said and the conclusion, never the own note.
+  await page.getByRole('link', { name: 'Sjå referatet' }).click();
+  await expect(page.getByRole('heading', { name: 'Referat', level: 1 })).toBeVisible();
+  const sheets = page.locator('article.sm-ark');
+  await expect(sheets).toHaveCount(2);
+  await expect(sheets.first()).toContainText('Peik ut ein IT-ansvarleg og ein stadfortredar.');
+  await expect(sheets.first()).toContainText('God merksemd i leiinga.');
+  await expect(sheets.last()).toContainText('Skrive medan nettet var borte.');
+  await expect(sheets.last()).toContainText('Eigne notat frå Vardahei er ikkje med.');
+  await expect(page.getByText('Kandidat for beredskapspakken.')).toHaveCount(0);
+  await expect(page.getByText(/^Utkast:/)).toHaveCount(0);
+
+  // Oversikt shows the finished conversation; its CSV has the answer and not the note.
+  await page.getByRole('link', { name: 'Oppsummering' }).click();
+  await page.getByRole('link', { name: 'Til oversikta' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Oversikt over samtalane', level: 1 }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('link', {
+      name: 'Syntetisk admin kunde, 1 Kven har IT-ansvaret: forbetringspotensial',
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('table').getByRole('link', { name: 'Syntetisk admin kunde' }),
+  ).toBeVisible();
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('link', { name: 'Eksporter CSV' }).click(),
+  ]);
+  const csv = readFileSync(await download.path(), 'utf8');
+  expect(csv).toContain('Skrive medan nettet var borte.');
+  expect(csv).toContain('Peik ut ein IT-ansvarleg og ein stadfortredar.');
+  expect(csv).not.toContain('Kandidat for beredskapspakken.');
+
+  // The client page lists the conversation, with the way to its referat.
   await page.goto(`/admin/clients/${s.client}`);
   const block = page.getByRole('region', { name: 'Samtalar' });
   await expect(block.getByText(`Haust ${s.mark}`)).toBeVisible();
   await expect(block.getByText(/Fullført/)).toBeVisible();
+  await block.getByRole('link', { name: `Referat, Haust ${s.mark}` }).click();
+  await expect(page.locator('article.sm-ark').first()).toContainText('Syntetisk admin kunde');
 });
 
 test('two screens on one field: the later save stops, nothing typed is lost, the person chooses', async ({
