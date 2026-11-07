@@ -266,8 +266,12 @@ Oleksandr заметил на скриншоте, что старт беседы
 - Lint-защиты не видят динамический `import()`; в модуле его нет, правило это не запрещает.
 - Пара T-вопроса кончается, если формулировку переписали в новой версии (m1): лучше ничего, чем числа другого вопроса.
 
-### Выкатка (план)
+### Выкатка (07.11, шаги 2–3)
 
-- Ждёт OK Oleksandr после зелёного GitHub Actions: push `varde/samtale-2` в `main`, `ship-image.sh` и `deploy.sh` из чистого worktree.
-- Миграция `20261107120000_interview_actions` (down.sql). Откат — `bash infra/ops/rollback.sh 3182dad4627b 20261107120000_interview_actions`.
-- После выкатки: Skjema → guide беседы → новый черновик (стандартные критерии подставятся сами) → прочитать → опубликовать. Если guide ещё не создан, новый guide будет сразу с критериями.
+- `main` перемотан на `varde/samtale-2` и запушен на OK Oleksandr («Да, выкатывай»): `fda98ac..a08175b`.
+- GitHub Actions run 42365355960 на `a08175b67ff8`: changes, secrets, check, integration, e2e, image — все зелёные.
+- `ship-image.sh` и `deploy.sh a08175b67ff8` из чистого worktree `~/vardahei-kartlegging-samtale2`: копия данных `/root/deploy-20261107-1135` (responses 57, snapshots 5429), миграция `20261107120000_interview_actions` применена, `varde-app` healthy, `/health` = `{"status":"ok","version":"a08175b67ff8","db":"ok"}`.
+- Снаружи без входа: `/admin/samtalar` и `/admin/samtalar/oversikt` — 302 на `/auth/login`; `overview`, `export.csv`, `referat`, `employees`, `clients/:id/interview-actions`, `actions` — 401; `/r` — 200.
+- Откат: `bash infra/ops/rollback.sh 3182dad4627b 20261107120000_interview_actions`.
+- Не проверено в проде: сценарий живым админом (у Claude нет входа в прод).
+- Дальше Oleksandr: Skjema → guide беседы → новый черновик (стандартные критерии подставятся сами) → прочитать → опубликовать; без этого идущие рунды показывают кнопки оценки без критериев. Если guide ещё не создан, новый guide будет сразу с критериями.
