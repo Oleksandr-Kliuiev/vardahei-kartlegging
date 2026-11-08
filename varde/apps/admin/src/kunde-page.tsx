@@ -110,6 +110,7 @@ export function KundePage({ id, search = '' }: { id: string; search?: string }) 
       )}
       <div className="flate">
         <div className="s7 rom-side">
+          <KundeSamtalar client={client.id} />
           <section className="kort" aria-labelledby="kunde-tid">
             <div className="kort-hovud">
               <h2 id="kunde-tid">Over tid</h2>
@@ -126,7 +127,6 @@ export function KundePage({ id, search = '' }: { id: string; search?: string }) 
               </ol>
             </div>
           </section>
-          <KundeSamtalar client={client.id} />
           <KundeKontaktar key={client.id} client={client} />
         </div>
         <div className="s5 rom-side">

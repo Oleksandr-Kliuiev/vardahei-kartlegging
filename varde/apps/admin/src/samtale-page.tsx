@@ -4,7 +4,7 @@
 // window (focus mode); until it is finished, «Endre» in its bar corrects the people and the day.
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { mutate } from './api.js';
+import { loginUrl, mutate } from './api.js';
 import { Icon } from './icons.js';
 import { follow, goTo, replaceTo, useTitle } from './nav.js';
 import { ErrorMessage } from './queries.js';
@@ -87,7 +87,14 @@ export function Utlogga({ store }: { store: Lagring }) {
         Du er logga ut. Det du har skrive, ligg trygt på denne maskina og blir lagra når du har
         logga inn igjen.
       </span>
-      <a className="btn sm" href="/auth/login">
+      {/* Read at the click: the question may have changed since this was drawn. */}
+      <a
+        className="btn sm"
+        href={loginUrl()}
+        onClick={(e) => {
+          e.currentTarget.href = loginUrl();
+        }}
+      >
         Logg inn igjen
       </a>
     </div>
@@ -381,14 +388,23 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
             question_count: questions.length,
           }}
           names={round.data?.interviews.flatMap((r) => r.interviewers ?? []) ?? []}
+          clients={
+            round.data?.interviews.filter((r) => r.status === 'planned').map((r) => r.client) ?? []
+          }
           me={queries.getQueryData<{ name: string | null }>(['session'])?.name ?? null}
           onClose={() => setEditing(false)}
-          onDone={(sent) => {
+          onDone={({ client, ...fields }) => {
             setEditing(false);
+            const to = round.data?.interviews.find((r) => r.client.id === client)?.client;
             queries.setQueryData<Interview>(['samtalar', 'interview', id], (old) =>
-              old ? { ...old, ...sent } : old,
+              old ? { ...old, ...fields, ...(to ? { client: to } : {}) } : old,
             );
-            void queries.invalidateQueries({ queryKey: ['samtalar'], refetchType: 'none' });
+            if (client) {
+              // Another client: «Førre gong», the employees' numbers and every list are theirs now.
+              // The numbers go at once, so the last client's are never shown under the new name.
+              void queries.resetQueries({ queryKey: ['samtalar', 'tilsette', id] });
+              void queries.invalidateQueries({ queryKey: ['samtalar'] });
+            } else void queries.invalidateQueries({ queryKey: ['samtalar'], refetchType: 'none' });
           }}
         />
       )}

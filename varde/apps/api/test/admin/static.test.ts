@@ -23,7 +23,9 @@ beforeAll(async () => {
     via: 'entra',
     expiresAt: new Date(Date.now() + 3600_000),
   });
-  cookies = { '__Host-varde_session': t.app.getHttpAdapter().getInstance().signCookie(session.sid) };
+  cookies = {
+    '__Host-varde_session': t.app.getHttpAdapter().getInstance().signCookie(session.sid),
+  };
 });
 afterAll(async () => {
   await t.app?.close();
@@ -33,11 +35,18 @@ afterAll(async () => {
 
 describe('protected admin SPA (1.23)', () => {
   it('HTML redirects to login without a session; assets require session', async () => {
-    for (const path of ['/admin', '/admin/rounds']) {
+    // Each comes back to its own page once signed in, the query too (concept of Samtalar).
+    for (const [path, back] of [
+      ['/admin', '%2Fadmin'],
+      ['/admin/rounds', '%2Fadmin%2Frounds'],
+      ['/admin/samtalar/8c41e2d0?q=N26', '%2Fadmin%2Fsamtalar%2F8c41e2d0%3Fq%3DN26'],
+    ] as const) {
       const result = await t.get(path);
       expect(result.statusCode).toBe(302);
-      expect(result.headers.location).toBe('/auth/login');
+      expect(result.headers.location).toBe(`/auth/login?return_to=${back}`);
     }
+    // A path the login would not come back to is not offered to it.
+    expect((await t.get('/admin/a.b')).headers.location).toBe('/auth/login');
     const asset = readdirSync(resolve(dir, 'assets'))[0]!;
     expect((await t.get(`/admin/assets/${asset}`)).statusCode).toBe(401);
   });
@@ -93,7 +102,9 @@ describe('protected admin SPA (1.23)', () => {
       via: 'entra',
       expiresAt: new Date(Date.now() + 3600_000),
     });
-    const signed = { '__Host-varde_session': t.app.getHttpAdapter().getInstance().signCookie(session.sid) };
+    const signed = {
+      '__Host-varde_session': t.app.getHttpAdapter().getInstance().signCookie(session.sid),
+    };
     expect((await t.get('/admin', signed)).statusCode).toBe(200);
     await t.store.revoke(session.sid, new Date());
     expect((await t.get('/admin', signed)).statusCode).toBe(302);

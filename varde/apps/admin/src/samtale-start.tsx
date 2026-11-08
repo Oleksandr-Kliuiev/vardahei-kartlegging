@@ -87,7 +87,7 @@ export function Dialog(p: {
 
 export interface StartRow {
   id: string;
-  client: { name: string };
+  client: { id: string; name: string };
   held_on: string | null;
   interviewees: readonly Person[];
   interviewers: readonly string[];
@@ -96,6 +96,8 @@ export interface StartSent {
   held_on: string;
   interviewees: Person[];
   interviewers: string[];
+  /** «Endre»: the right client, when the conversation was started with the wrong one. */
+  client?: string;
 }
 interface Who {
   key: number;
@@ -128,6 +130,8 @@ export function StartSamtale(p: {
   me: string | null;
   /** «Endre» from the header of a conversation that is going on. */
   edit?: boolean;
+  /** «Endre»: the clients of the round not started yet, where a conversation can be moved. */
+  clients?: readonly { id: string; name: string }[];
   onClose: () => void;
   onDone: (sent: StartSent) => void;
 }) {
@@ -139,6 +143,9 @@ export function StartSamtale(p: {
   // Another name from Vardahei: null until «Legg til namn» opens the field (open at once with no names).
   const [other, setOther] = useState<string | null>(start.offered.length ? null : '');
   const [day, setDay] = useState(p.row.held_on ?? today());
+  const [client, setClient] = useState(p.row.client.id);
+  const others = [...(p.clients ?? [])].sort((a, b) => a.name.localeCompare(b.name, 'nn'));
+  const moving = others.find((c) => c.id === client);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   // Where the focus goes after a change that removes or disables the control that had it.
@@ -210,6 +217,7 @@ export function StartSamtale(p: {
         ),
       // A name typed but not yet added counts as ticked.
       interviewers: unique([...offered.filter((n) => ours.has(n)), ...(pending ? [pending] : [])]),
+      ...(moving ? { client: moving.id } : {}),
     };
     setBusy(true);
     setError(null);
@@ -249,6 +257,32 @@ export function StartSamtale(p: {
             {p.guide.title} · {p.guide.label} · {p.guide.question_count} spørsmål
           </span>
         </p>
+      )}
+      {p.edit && others.length > 0 && (
+        <div className="sm-dato">
+          <label className="field">
+            <span>Kunde</span>
+            <select
+              className="input"
+              aria-label="Kunde"
+              aria-describedby={`${uid}-kunde`}
+              value={client}
+              onChange={(e) => setClient(e.target.value)}
+            >
+              <option value={p.row.client.id}>{p.row.client.name}</option>
+              {others.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="sm-dlg-hint" id={`${uid}-kunde`} role="status">
+            {moving
+              ? `Samtalen og alt som er skrive, blir flytta til ${moving.name}. ${p.row.client.name} står att som ikkje starta.`
+              : 'Starta med feil kunde? Vel den rette her. Berre kundar i runda som ikkje har starta, kan veljast.'}
+          </p>
+        </div>
       )}
       <fieldset className={many ? 'sm-folk sm-folk-fleire' : 'sm-folk'}>
         <legend>Kven er med frå kunden?</legend>

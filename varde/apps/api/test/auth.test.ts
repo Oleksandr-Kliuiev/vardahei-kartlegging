@@ -44,9 +44,12 @@ afterEach(() => {
 });
 
 /** /auth/login → mock /authorize → callback path; returns what the callback needs. */
-async function startLogin(scenario: Scenario): Promise<{ oidc: string; callback: string }> {
+async function startLogin(
+  scenario: Scenario,
+  url = '/auth/login',
+): Promise<{ oidc: string; callback: string }> {
   mock.scenario = scenario;
-  const login = await t.get('/auth/login');
+  const login = await t.get(url);
   expect(login.statusCode).toBe(302);
   const oidc = setCookie(login, 'varde_oidc') ?? '';
   const auth = await fetch(String(login.headers.location), { redirect: 'manual' });
@@ -54,8 +57,8 @@ async function startLogin(scenario: Scenario): Promise<{ oidc: string; callback:
   return { oidc, callback: `${back.pathname}${back.search}` };
 }
 
-async function login(scenario: Scenario) {
-  const { oidc, callback } = await startLogin(scenario);
+async function login(scenario: Scenario, url?: string) {
+  const { oidc, callback } = await startLogin(scenario, url);
   return t.get(callback, { varde_oidc: oidc });
 }
 
@@ -64,6 +67,34 @@ async function memberSession(): Promise<string> {
   expect(res.statusCode).toBe(302);
   return setCookie(res, '__Host-varde_session') ?? '';
 }
+
+describe('back to where you were after signing in (concept of Samtalar)', () => {
+  const via = (to: string) => `/auth/login?return_to=${encodeURIComponent(to)}`;
+  it('a page of the admin: straight back to it, question and all', async () => {
+    const page = '/admin/samtalar/8c41e2d0-1111-4222-8333-123456789abc?q=N26';
+    const res = await login({ groups: [GROUP] }, via(page));
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe(page);
+    expect(setCookie(res, '__Host-varde_session')).toBeTruthy();
+  });
+  it.each([
+    '//evil.example/admin',
+    'https://evil.example/',
+    '/admin/../r',
+    '/admin/\\evil.example',
+  ])('anything else counts for nothing: %s goes to the front page', async (to) => {
+    const res = await login({ groups: [GROUP] }, via(to));
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe('/');
+  });
+  it('a list of pages is not a page; someone who is no member gets no way in', async () => {
+    const twice = '/auth/login?return_to=/admin&return_to=/admin/rounds';
+    expect((await login({ groups: [GROUP] }, twice)).headers.location).toBe('/');
+    const refused = await login({ groups: [] }, via('/admin/rounds'));
+    expect(refused.statusCode).toBe(403);
+    expect(refused.headers.location).toBeUndefined();
+  });
+});
 
 describe('Entra login (0.7)', () => {
   it('member → 302 to /, session cookie HttpOnly; Secure; SameSite=Lax; signed assertion with x5t#S256', async () => {
@@ -81,7 +112,9 @@ describe('Entra login (0.7)', () => {
     expect(a?.header.alg).toBe('RS256');
     expect(typeof a?.header['x5t#S256']).toBe('string');
     expect(a?.payload.aud).toBe(mock.tokenEndpoint);
-    const me = await t.get('/auth/me', { '__Host-varde_session': setCookie(res, '__Host-varde_session') ?? '' });
+    const me = await t.get('/auth/me', {
+      '__Host-varde_session': setCookie(res, '__Host-varde_session') ?? '',
+    });
     expect(me.statusCode).toBe(200);
     expect(me.json()).toMatchObject({ name: 'Test Admin', via: 'entra' });
   });
@@ -135,7 +168,9 @@ describe('Entra login (0.7)', () => {
   it('a tampered cookie signature → 401', async () => {
     const cookie = await memberSession();
     const [sid] = cookie.split('.');
-    expect((await t.get('/auth/me', { '__Host-varde_session': `${sid}.forged` })).statusCode).toBe(401);
+    expect((await t.get('/auth/me', { '__Host-varde_session': `${sid}.forged` })).statusCode).toBe(
+      401,
+    );
     expect((await t.get('/auth/me', { '__Host-varde_session': sid ?? '' })).statusCode).toBe(401);
   });
 

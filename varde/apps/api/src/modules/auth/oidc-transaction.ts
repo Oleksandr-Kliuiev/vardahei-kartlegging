@@ -11,6 +11,8 @@ export interface OidcTransaction {
   verifier: string;
   /** Epoch ms. */
   exp: number;
+  /** The page of the admin to come back to (return-to.ts), when the login came from one. */
+  back?: string;
 }
 
 export function newTransaction(now = Date.now()): OidcTransaction {

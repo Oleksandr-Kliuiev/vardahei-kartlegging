@@ -41,6 +41,11 @@ export const StartInput = z.strictObject({
     .array(line(80).pipe(z.string().min(1)))
     .max(6)
     .default([]),
+  /** «Endre»: the right client of the round, when the conversation was started with the wrong one. */
+  client: z
+    .uuid()
+    .transform((id) => id.toLowerCase())
+    .optional(),
 });
 export type StartInput = z.infer<typeof StartInput>;
 

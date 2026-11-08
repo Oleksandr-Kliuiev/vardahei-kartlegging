@@ -44,6 +44,7 @@ describe('conversations stay in their own module (2.20)', () => {
         .sort(),
     ).toEqual([
       'modules/interviews/interview-actions.ts',
+      'modules/interviews/interview-move.ts',
       'modules/interviews/interview-report.service.ts',
       'modules/interviews/interview-retention.ts',
       'modules/interviews/interviews.service.ts',

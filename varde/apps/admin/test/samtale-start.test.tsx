@@ -11,7 +11,7 @@ import { button, mount, settle } from './support.js';
 
 const row: StartRow = {
   id: 'iv1',
-  client: { name: 'Rekneskap 01' },
+  client: { id: 'c1', name: 'Rekneskap 01' },
   held_on: null,
   interviewees: [],
   interviewers: [],
@@ -317,4 +317,92 @@ it('keeps each name once, whatever its case and spaces', () => {
     'Asbjørn',
     'Oleksandr',
   ]);
+});
+
+// The concept, «ошиблись клиентом»: «Endre» moves a conversation started with the wrong client.
+const others = [
+  { id: 'c3', name: 'Tannlege 10' },
+  { id: 'c2', name: 'Bakeri 22' },
+];
+const kunde = () => view!.div.querySelector<HTMLSelectElement>('select[aria-label="Kunde"]');
+const choose = (el: HTMLSelectElement, value: string) =>
+  act(() => {
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')!.set!.call(el, value);
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+const started: StartRow = {
+  ...row,
+  held_on: '2026-11-10',
+  interviewees: [{ role: 'dagleg leiar' }],
+  interviewers: ['Asbjørn'],
+};
+const open = (clients: { id: string; name: string }[], edit: boolean, done = vi.fn()) => {
+  view = mount(
+    <StartSamtale
+      edit={edit}
+      row={started}
+      guide={guide}
+      names={[]}
+      clients={clients}
+      me={null}
+      onClose={() => undefined}
+      onDone={done}
+    />,
+  );
+  return done;
+};
+
+it('offers the clients of the round not started only in «Endre», the one it has first, then by name', () => {
+  open(others, false);
+  expect(kunde()).toBeNull();
+  view!.close();
+  open([], true);
+  expect(kunde()).toBeNull();
+  view!.close();
+  open(others, true);
+  expect([...kunde()!.options].map((o) => o.text)).toEqual([
+    'Rekneskap 01',
+    'Bakeri 22',
+    'Tannlege 10',
+  ]);
+  expect(kunde()!.value).toBe('c1');
+  // The name of the field is the label alone, and the hint says what it is for.
+  const hint = document.getElementById(kunde()!.getAttribute('aria-describedby')!)!;
+  expect(hint.textContent).toBe(
+    'Starta med feil kunde? Vel den rette her. Berre kundar i runda som ikkje har starta, kan veljast.',
+  );
+});
+
+it('says what a move does before it is saved, and sends no client when none was chosen', async () => {
+  const { sent } = server();
+  const done = open(others, true);
+  await act(async () => {
+    button(view!.div, 'Lagre').click();
+    await Promise.resolve();
+  });
+  await settle();
+  expect(sent[0]!.body).not.toHaveProperty('client');
+  expect(done.mock.calls[0]![0]).not.toHaveProperty('client');
+  view!.close();
+
+  const moved = server();
+  const after = open(others, true);
+  choose(kunde()!, 'c2');
+  expect(view!.div.querySelector('[role="status"]')!.textContent).toBe(
+    'Samtalen og alt som er skrive, blir flytta til Bakeri 22. Rekneskap 01 står att som ikkje starta.',
+  );
+  // Changing one's mind: back to the words of the hint, and no move.
+  choose(kunde()!, 'c1');
+  expect(view!.div.querySelector('[role="status"]')!.textContent).toMatch(/^Starta med feil kunde/);
+  choose(kunde()!, 'c2');
+  await act(async () => {
+    button(view!.div, 'Lagre').click();
+    await Promise.resolve();
+  });
+  await settle();
+  expect(moved.sent[0]).toMatchObject({
+    url: '/api/admin/interviews/iv1/start',
+    body: { client: 'c2', held_on: '2026-11-10' },
+  });
+  expect(after.mock.calls[0]![0]).toMatchObject({ client: 'c2' });
 });

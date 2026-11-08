@@ -8,6 +8,7 @@ import { ENTRA_SETTINGS, OIDC_CLIENT } from './auth.tokens.js';
 import { OIDC_COOKIE, oidcCookie } from './cookies.js';
 import { type IdClaims, isAdmin, type OidcClient } from './oidc.client.js';
 import { ConsumedTransactions, newTransaction, parseTransaction } from './oidc-transaction.js';
+import { returnTo } from './return-to.js';
 import { SessionService } from './session.service.js';
 
 export const NOT_MEMBER_TEXT = 'Du har ikkje tilgang til Varde.';
@@ -32,9 +33,11 @@ export class AuthController {
   }
 
   @Get('login')
-  async login(@Res() reply: FastifyReply): Promise<void> {
+  async login(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
     if (this.notConfigured(reply) || this.oidc === null) return;
     const t = newTransaction();
+    const back = returnTo((request.query as Record<string, unknown>).return_to);
+    if (back !== null) t.back = back;
     let url: URL;
     try {
       url = await this.oidc.loginUrl(t);
@@ -78,7 +81,8 @@ export class AuthController {
       via: 'entra',
       expiresAt: new Date(Date.now() + sessionTtlSeconds() * 1000),
     });
-    void reply.redirect('/', 302);
+    // Checked again: the cookie is signed, but the rule of where one may go lives in one place.
+    void reply.redirect(returnTo(t.back) ?? '/', 302);
   }
 
   @Post('logout')

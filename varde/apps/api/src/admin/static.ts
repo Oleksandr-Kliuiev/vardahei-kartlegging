@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import fastifyStatic from '@fastify/static';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
+import { returnTo } from '../modules/auth/return-to.js';
 import { SessionService } from '../modules/auth/session.service.js';
 import { RUNNER_CSP } from '../runner/static.js';
 
@@ -25,7 +26,14 @@ export async function registerAdminStatic(app: NestFastifyApplication): Promise<
       .header('cache-control', 'no-store');
     if ((await sessions.resolve(request)) === null) {
       if (path.startsWith('/admin/assets/')) void reply.status(401).send();
-      else void reply.redirect('/auth/login', 302);
+      else {
+        // Back to the same page once signed in (a reload after the session ran out).
+        const back = returnTo(request.url);
+        void reply.redirect(
+          back === null ? '/auth/login' : `/auth/login?return_to=${encodeURIComponent(back)}`,
+          302,
+        );
+      }
     }
   });
   if (!existsSync(resolve(root, 'index.html'))) return;

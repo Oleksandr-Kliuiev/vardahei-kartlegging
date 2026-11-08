@@ -7,13 +7,17 @@ export class ApiError extends Error {
   }
 }
 
+/** The sign-in that comes back to this page; the server takes only pages of the admin (return-to.ts). */
+export const loginUrl = () =>
+  `/auth/login?return_to=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
     credentials: 'same-origin',
     headers: { ...(init?.body ? { 'Content-Type': 'application/json' } : {}), ...init?.headers },
   });
-  if (response.status === 401) window.location.assign('/auth/login');
+  if (response.status === 401) window.location.assign(loginUrl());
   if (response.status === 403) window.dispatchEvent(new Event('varde:forbidden'));
   if (!response.ok) {
     const body = (await response.json().catch(() => null)) as { message?: unknown } | null;

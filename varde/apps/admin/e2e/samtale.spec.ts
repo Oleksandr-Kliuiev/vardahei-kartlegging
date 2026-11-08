@@ -281,6 +281,87 @@ test('two screens on one field: the later save stops, nothing typed is lost, the
   expect(await server()).toBe('Skrive her.');
 });
 
+test('the wrong client is corrected in «Endre»; a session that ran out comes back to the same question', async ({
+  page,
+  context,
+}) => {
+  test.setTimeout(90_000);
+  await login(page);
+  const s = await state(page);
+  const guide = await publishedGuide(page, `Samtaleguide flytt ${s.mark}`);
+  const made = await page.request.post('/api/admin/interview-rounds', {
+    data: {
+      name: `Flytt ${s.mark}`,
+      template_version_id: guide,
+      clients: [s.client, s.other_client],
+    },
+  });
+  expect(made.status()).toBe(201);
+  const round = ((await made.json()) as { id: string }).id;
+  const view = (await (await page.request.get(`/api/admin/interview-rounds/${round}`)).json()) as {
+    interviews: { id: string; client: { id: string } }[];
+  };
+  const id = view.interviews.find((i) => i.client.id === s.client)!.id;
+  expect(
+    (
+      await page.request.post(`/api/admin/interviews/${id}/start`, {
+        data: {
+          held_on: '2026-11-10',
+          interviewees: [{ role: 'dagleg leiar' }],
+          interviewers: ['Asbjørn'],
+        },
+      })
+    ).ok(),
+  ).toBe(true);
+
+  // Typed at the wrong client's table.
+  await page.goto(`/admin/samtalar/${id}?q=N5`);
+  const answer = page.getByLabel('Kva seier kunden?');
+  await answer.fill('Berre Dropbox.');
+  await expect(saved(page)).toBeVisible();
+
+  // «Endre»: says what a move does, and takes everything along.
+  await page.getByRole('button', { name: 'Endre kven som er med og dato' }).click();
+  const fix = page.getByRole('dialog');
+  const client = fix.getByRole('combobox', { name: 'Kunde', exact: true });
+  await expect(client).toHaveValue(s.client);
+  await client.selectOption({ label: 'Syntetisk andre kunde' });
+  await expect(fix.getByRole('status')).toContainText('blir flytta til Syntetisk andre kunde');
+  await fix.getByRole('button', { name: 'Lagre' }).click();
+  await expect(fix).toBeHidden();
+  await expect(page.locator('.sm-topp')).toContainText('Syntetisk andre kunde');
+  await expect(answer).toHaveValue('Berre Dropbox.');
+
+  // The list agrees: the right client is going on, the wrong one waits.
+  await page.goto(`/admin/samtalar?runde=${round}`);
+  const group = (name: RegExp) =>
+    page.locator('.sm-gruppekort').filter({ has: page.getByRole('heading', { name }) });
+  await expect(group(/^Pågår/)).toContainText('Syntetisk andre kunde');
+  await expect(group(/^Ikkje starta/)).toContainText('Syntetisk admin kunde');
+
+  // On the client page the block of conversations comes first, as in the concept.
+  await page.goto(`/admin/clients/${s.other_client}`);
+  await expect(page.locator('.rom-side').first().locator('section.kort h2').first()).toHaveText(
+    'Samtalar',
+  );
+
+  // The session runs out in the middle of a sentence: nothing is lost, and signing in comes back here.
+  await page.goto(`/admin/samtalar/${id}?q=N5`);
+  await expect(answer).toHaveValue('Berre Dropbox.');
+  await context.clearCookies();
+  await answer.fill('Berre Dropbox og Teams.');
+  const out = page.getByRole('alert').filter({ hasText: 'Du er logga ut' });
+  await expect(out).toBeVisible();
+  await out.getByRole('link', { name: 'Logg inn igjen' }).click();
+  await expect(page).toHaveURL(new RegExp(`/admin/samtalar/${id}\\?q=N5$`));
+  await expect(answer).toHaveValue('Berre Dropbox og Teams.');
+  await expect(saved(page)).toBeVisible();
+  const back = (await (await page.request.get(`/api/admin/interviews/${id}`)).json()) as {
+    answers: Record<string, { answer: string }>;
+  };
+  expect(back.answers.N5!.answer).toBe('Berre Dropbox og Teams.');
+});
+
 test('a repeat conversation: criteria under the buttons, last time under the question, before and after', async ({
   page,
 }) => {

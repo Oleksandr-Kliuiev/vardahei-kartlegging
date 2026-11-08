@@ -18,6 +18,7 @@ import type {
   RoundInput,
   StartInput,
 } from './interview-input.js';
+import { moveToClient } from './interview-move.js';
 import { changeOf, previousOf, previousView, withNewestCriteria } from './interview-compare.js';
 import { actionsValue, saveActions } from './interview-actions.js';
 import { countRatings, guideQuestions, guideTitle, score } from './interview-view.js';
@@ -287,11 +288,14 @@ export class InterviewsService {
     };
   }
 
-  /** «Start samtalen»: who sits at the table and when. Later the same call corrects them. */
+  /** «Start samtalen»: who sits at the table and when. Later the same call corrects them, and moves
+   * a conversation started with the wrong client to the right one. */
   async start(id: string, input: StartInput, actor: Actor) {
     return this.prisma.$transaction(async (tx) => {
       const i = await this.lock(tx, id);
       if (i.status === 'done') throw new ConflictException(DONE);
+      if (input.client && input.client !== i.client_id)
+        await moveToClient(tx, i, input.client, actor.audit);
       const now = new Date();
       await tx.interview.update({
         where: { id },
