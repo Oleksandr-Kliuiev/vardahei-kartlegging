@@ -4,14 +4,24 @@ import { mutate } from './api.js';
 import { ErrorMessage, useClients, useRounds } from './queries.js';
 import { HoldButton } from './widgets.js';
 
+type Answers = { common: number; leader: number; interviews: number };
 type Counts = { total: number; dry_run: boolean } & (
-  { common: number; leader: number } | { contacts: number; registrations: number }
+  Answers | { contacts: number; registrations: number }
 );
 
 /** What a participant deletion removes (3.1). */
 export function participantText(contacts: number, registrations: number) {
   if (!contacts) return 'Fann ingen deltakar med den e-postadressa.';
   return `Kontakten og ${registrations} ${registrations === 1 ? 'påmelding' : 'påmeldingar'} blir sletta.`;
+}
+
+/** The answers a deletion takes, by kind. Conversations (2.20) belong to a whole client, so only that
+ * choice names them: «0 samtalar» on one person's initials would say something nobody checked. */
+export function answersText(c: Answers, wholeClient: boolean) {
+  const common = `${c.common} ${c.common === 1 ? 'vanleg' : 'vanlege'} svar`;
+  const leader = `${c.leader} leiarsvar`;
+  if (!wholeClient) return `${common} og ${leader}`;
+  return `${common}, ${leader} og ${c.interviews} ${c.interviews === 1 ? 'samtale' : 'samtalar'}`;
 }
 
 export function DeletionPage() {
@@ -81,7 +91,7 @@ export function DeletionPage() {
           `${target}. ${
             'contacts' in result
               ? participantText(result.contacts, result.registrations)
-              : `${result.total} innsendingar fjerna`
+              : `${answersText(result, scope === 'client')} er fjerna`
           }. ${p(when.getDate())}.${p(when.getMonth() + 1)}.${when.getFullYear()} ${p(when.getHours())}:${p(when.getMinutes())}.`,
         );
         setPreview(null);
@@ -195,7 +205,7 @@ export function DeletionPage() {
           <p>
             {'contacts' in preview
               ? participantText(preview.contacts, preview.registrations)
-              : `${preview.common} vanlege svar og ${preview.leader} leiarsvar. Til saman ${preview.total} innsendingar.`}
+              : `${answersText(preview, scope === 'client')}. Til saman ${preview.total}.`}
           </p>
           <HoldButton
             className="fare"

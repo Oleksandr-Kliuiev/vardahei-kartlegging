@@ -38,7 +38,9 @@ test('submission ID from quotes → preview → confirmed deletion removes the q
   await page.getByLabel('Innsendings-ID-ar').fill(id);
   await page.getByLabel('Grunngjeving').fill('Syntetisk slettingsførespurnad');
   await page.getByRole('button', { name: 'Førehandsvis' }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'Til saman 1' })).toBeVisible();
+  await expect(
+    page.getByRole('status').filter({ hasText: '1 vanleg svar og 0 leiarsvar. Til saman 1.' }),
+  ).toBeVisible();
   await expect(
     page.getByRole('status').filter({ hasText: 'Du slettar: 1 valt innsending' }),
   ).toBeVisible();
@@ -51,6 +53,7 @@ test('submission ID from quotes → preview → confirmed deletion removes the q
   await expect(page.getByText('Svara er sletta.')).toHaveCount(0);
   await page.getByRole('button', { name: 'Stadfest sletting' }).click({ delay: 1400 });
   await expect(page.getByText('Svara er sletta.')).toBeVisible();
+  await expect(page.getByText('1 vanleg svar og 0 leiarsvar er fjerna.')).toBeVisible();
   const after = (await (await page.request.get(`/api/admin/rows/quotes?round=${f.id}`)).json()) as {
     quotes: { submission_id: string }[];
   };
