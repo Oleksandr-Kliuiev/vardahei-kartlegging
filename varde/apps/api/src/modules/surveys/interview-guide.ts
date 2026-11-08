@@ -3,7 +3,7 @@
 // question list and the overview show, the themes and a few hints for the one who asks. «Nytt skjema →
 // Samtale» starts from it; the guide is then edited and published in the workshop like any survey.
 // Each question says when it is Ivaretatt, Forbetringspotensial or Manglar (3.1, decision 07.11; the
-// texts of 07.11, which Oleksandr reviews in the workshop).
+// texts of 07.11, read and corrected before the first publication on 08.11).
 import { criterionEntries } from '@varde/schema/template/criteria';
 import type { TemplateContent } from '@varde/schema/template/template';
 
@@ -52,7 +52,7 @@ const GUIDE: [string, string | null, string, string, string?][] = [
     'N8',
     'Personvern og informasjon',
     'Opplysningar om kundar',
-    'Er de kjende med kva opplysningar de har lov til å lagre om forretningsforbindelsane dykkar?',
+    'Er de kjende med kva opplysningar de har lov til å lagre om forretningspartnarane dykkar?',
   ],
   [
     'N9',
@@ -158,12 +158,12 @@ const CRITERIA: Record<string, [string, string, string]> = {
     'Ingen har ansvaret, eller ingen veit kven som har det.',
   ],
   N3: [
-    'Endringar som gjeld tryggleik blir alltid fortalde dei tilsette, med kva dei skal gjere og kvifor.',
+    'Dei tilsette får alltid vite om endringar som gjeld tryggleik, med kva dei skal gjere og kvifor.',
     'Dei tilsette får vite om det av og til, eller berre munnleg utan fast måte.',
     'Dei tilsette får ikkje vite om endringar.',
   ],
   N4: [
-    'Jobb- og privat e-post er skilde, og det er sagt tydeleg at privat e-post ikkje skal brukast til jobb.',
+    'Jobb-e-post og privat e-post er skilde, og det er sagt tydeleg at privat e-post ikkje skal brukast til jobb.',
     'Det skjer av og til, eller det finst ingen klar regel.',
     'Privat e-post blir brukt fast til jobb.',
   ],
@@ -175,7 +175,7 @@ const CRITERIA: Record<string, [string, string, string]> = {
   N6: [
     'Kvar vikar får eigen brukar med berre det han treng, og tilgangen blir stengd når han sluttar.',
     'Vikarar får eigen brukar, men tilgangen blir ikkje alltid avgrensa eller stengd i tide.',
-    'Vikarar bruker andre sine brukarar eller delte innloggingar.',
+    'Vikarar brukar brukarane til andre eller delte innloggingar.',
   ],
   N7: [
     'PC-ar, mobilar og program blir oppdaterte automatisk eller etter fast rutine, og nokon følgjer med på at det skjer.',
@@ -183,7 +183,7 @@ const CRITERIA: Record<string, [string, string, string]> = {
     'Oppdateringar blir utsette eller ikkje gjorde.',
   ],
   N8: [
-    'Dei veit kva dei kan lagre om kundar og forretningsforbindelsar og kor lenge, og følgjer det.',
+    'Dei veit kva dei kan lagre om kundar og forretningspartnarar og kor lenge, og følgjer det.',
     'Dei har ei viss formeining, men ingen skrivne reglar eller sletterutinar.',
     'Dei kjenner ikkje til reglane.',
   ],
@@ -258,8 +258,8 @@ const CRITERIA: Record<string, [string, string, string]> = {
     'Inga trening.',
   ],
   N23: [
-    'Alle bruker ein felles passordhandterar.',
-    'Nokon bruker passordhandterar, men ikkje alle, eller berre den i nettlesaren.',
+    'Alle brukar ein felles passordhandterar.',
+    'Nokon brukar passordhandterar, men ikkje alle, eller berre den i nettlesaren.',
     'Ingen passordhandterar.',
   ],
   N24: [
