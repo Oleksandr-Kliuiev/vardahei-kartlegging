@@ -86,6 +86,35 @@ it('every key of a long run without a pause arrives: fast typing is no endless l
   expect(status(div)).toMatch(/^Lagra kl\./);
 });
 
+it('a letter typed and taken back inside the pause leaves nothing waiting and nothing to save', async () => {
+  const api = serve(versions());
+  const div = await open();
+  choose(div, 'Q3');
+  const text = question(div).value;
+  type(question(div), `${text}x`);
+  expect(status(div)).toBe('Lagrar …');
+  type(question(div), text);
+  expect(status(div)).toBe('Alt er lagra');
+  await wait(800);
+  expect(api.puts()).toHaveLength(0);
+  expect(status(div)).toBe('Alt er lagra');
+});
+
+it('a text taken back while its save is on the way is saved too, and the status settles', async () => {
+  const api = serve(versions(), undefined, [], 300);
+  const div = await open();
+  choose(div, 'Q3');
+  const text = question(div).value;
+  type(question(div), `${text} nytt`);
+  await wait(750);
+  expect(api.puts()).toHaveLength(1);
+  type(question(div), text);
+  await wait(1400);
+  expect(api.puts()).toHaveLength(2);
+  expect(api.puts()[1]!.body.content!.questions[2]!.texts.text.nn).toBe(text);
+  expect(status(div)).toMatch(/^Lagra kl\./);
+});
+
 it('a conflict keeps what was typed and saves over the other version only on purpose', async () => {
   const store = versions();
   const api = serve(store, (n) =>

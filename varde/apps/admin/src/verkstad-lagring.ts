@@ -78,6 +78,13 @@ export function useAutosave(
     last.current = saved;
   }, [saved]);
   const dirty = () => canonical(latest.current) !== canonical(last.current.content);
+  /** What is not saved goes after a short pause; the next key starts the pause again. */
+  const later = () => {
+    clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => {
+      if (!conflict.current) void run();
+    }, DELAY);
+  };
 
   const run = useCallback(async (): Promise<EditorVersion | null> => {
     // One save at a time, with the hash the previous one returned.
@@ -101,7 +108,10 @@ export function useAutosave(
         last.current = v;
         onSaved(v);
         dropBackup(v.id);
-        setState(dirty() ? { kind: 'waiting' } : { kind: 'saved', at: new Date() });
+        const more = dirty();
+        setState(more ? { kind: 'waiting' } : { kind: 'saved', at: new Date() });
+        // Text taken back while this save was on its way differs from it, and no key will ask again.
+        if (more) later();
         return v;
       } catch (e) {
         keepBackup(base.id, latest.current, base.content_hash);
@@ -128,14 +138,16 @@ export function useAutosave(
   }, [onSaved]);
 
   useEffect(() => {
-    if (!enabled || !dirty()) return;
+    if (!enabled) return;
+    if (!dirty()) {
+      // Typed and taken back: nothing waits any more. A save on its way settles the status itself.
+      if (shown.current === 'waiting' && !busy.current) setState({ kind: 'saved', at: null });
+      return;
+    }
     // Once, not per key: a state update left behind by every key makes React take a long run of keys for
     // an endless loop, and it turns the next key down (error 185, at the speed of a tool).
     if (shown.current !== 'waiting' && !conflict.current) setState({ kind: 'waiting' });
-    clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => {
-      if (!conflict.current) void run();
-    }, DELAY);
+    later();
     return () => clearTimeout(timer.current);
   }, [content, enabled]);
   // Leaving the workshop inside the app (menu, «Skjema», back): what is not saved yet is kept in this
