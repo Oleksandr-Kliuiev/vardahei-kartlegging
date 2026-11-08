@@ -43,6 +43,7 @@ const round = {
   after_conversation: false,
 };
 const svar: TilsetteSvar = {
+  client: 'c1',
   round,
   questions: [
     { question: 'N12', employees: [mfa, kvar] },
@@ -132,7 +133,7 @@ it('words a line in the labels of the template, a hidden one without numbers', (
 
 it('shows the lines of the question under the answer; the question and the survey open under each', async () => {
   server(svar);
-  view = mount(<TilsetteLinjer interview="iv1" question="N12" />, true);
+  view = mount(<TilsetteLinjer interview="iv1" client="c1" question="N12" />, true);
   await settle();
   expect(urls).toEqual(['/api/admin/interviews/iv1/employees']);
   const group = view.div.querySelector('[role="group"]')!;
@@ -156,12 +157,12 @@ it('shows the lines of the question under the answer; the question and the surve
 
 it('shows nothing for a question without a pair or a client without a released survey', async () => {
   server(svar);
-  view = mount(<TilsetteLinjer interview="iv1" question="N2" />, true);
+  view = mount(<TilsetteLinjer interview="iv1" client="c1" question="N2" />, true);
   await settle();
   expect(view.div.innerHTML).toBe('');
   view.close();
-  server({ round: null, questions: [] });
-  view = mount(<TilsetteLinjer interview="iv2" question="N12" />, true);
+  server({ client: 'c1', round: null, questions: [] });
+  view = mount(<TilsetteLinjer interview="iv2" client="c1" question="N12" />, true);
   await settle();
   expect(urls).toHaveLength(1);
   expect(view.div.innerHTML).toBe('');
@@ -183,7 +184,10 @@ const items: { q: GuideQuestion; n: number; r: Rating | null }[] = [
 
 it('lists the paired questions on the summary in guide order, with the rating beside the employees', async () => {
   server(svar);
-  view = mount(<LeiarOgTilsette interview="iv1" items={items} at={(n) => `/q/${n}`} />, true);
+  view = mount(
+    <LeiarOgTilsette interview="iv1" client="c1" items={items} at={(n) => `/q/${n}`} />,
+    true,
+  );
   await settle();
   const card = view.div.querySelector('section.kort')!;
   expect(card.querySelector('h2')!.textContent).toBe('Leiar og tilsette 2');
@@ -213,13 +217,19 @@ it('lists the paired questions on the summary in guide order, with the rating be
 });
 
 it('has no card without a released survey; when the numbers could not be read it says so and tries again', async () => {
-  server({ round: null, questions: [] });
-  view = mount(<LeiarOgTilsette interview="iv1" items={items} at={(n) => `/q/${n}`} />, true);
+  server({ client: 'c1', round: null, questions: [] });
+  view = mount(
+    <LeiarOgTilsette interview="iv1" client="c1" items={items} at={(n) => `/q/${n}`} />,
+    true,
+  );
   await settle();
   expect(view.div.innerHTML).toBe('');
   view.close();
   server({ message: 'Noko gjekk gale.' }, 500);
-  view = mount(<LeiarOgTilsette interview="iv3" items={items} at={(n) => `/q/${n}`} />, true);
+  view = mount(
+    <LeiarOgTilsette interview="iv3" client="c1" items={items} at={(n) => `/q/${n}`} />,
+    true,
+  );
   await settle();
   expect(view.div.querySelector('p')!.textContent).toBe('Fekk ikkje henta svara frå dei tilsette.');
   // «Prøv igjen» asks once more; an answer now shows the card.
@@ -228,4 +238,18 @@ it('has no card without a released survey; when the numbers could not be read it
   await settle();
   expect(urls).toEqual(['/api/admin/interviews/iv3/employees']);
   expect(view.div.querySelector('h2')!.textContent).toBe('Leiar og tilsette 2');
+});
+
+it('never draws the numbers of another client than the one on the screen (a screen behind a move)', async () => {
+  server({ ...svar, client: 'c2' });
+  view = mount(<TilsetteLinjer interview="iv1" client="c1" question="N12" />, true);
+  await settle();
+  expect(urls).toHaveLength(1);
+  expect(view.div.innerHTML).toBe('');
+  view.close();
+  server({ ...svar, client: 'c2' });
+  view = mount(<LeiarOgTilsette interview="iv1" client="c1" items={items} at={() => '/q'} />, true);
+  await settle();
+  expect(urls).toHaveLength(1);
+  expect(view.div.innerHTML).toBe('');
 });

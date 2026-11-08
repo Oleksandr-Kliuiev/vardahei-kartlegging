@@ -402,7 +402,66 @@ it('says what a move does before it is saved, and sends no client when none was 
   await settle();
   expect(moved.sent[0]).toMatchObject({
     url: '/api/admin/interviews/iv1/start',
-    body: { client: 'c2', held_on: '2026-11-10' },
+    // With the client this screen showed, so a move made on a stale screen is refused.
+    body: { client: 'c2', from: 'c1', held_on: '2026-11-10' },
   });
   expect(after.mock.calls[0]![0]).toMatchObject({ client: 'c2' });
+});
+
+it('never offers the client it has, even when a fresh list of the round says that one is free', async () => {
+  // A screen behind a move: the header still says c1, while the round says c1 is not started.
+  const { sent } = server();
+  open([{ id: 'c1', name: 'Rekneskap 01' }, ...others], true);
+  expect([...kunde()!.options].map((o) => o.text)).toEqual([
+    'Rekneskap 01',
+    'Bakeri 22',
+    'Tannlege 10',
+  ]);
+  expect(kunde()!.value).toBe('c1');
+  expect(view!.div.querySelector('[role="status"]')!.textContent).toMatch(/^Starta med feil kunde/);
+  await act(async () => {
+    button(view!.div, 'Lagre').click();
+    await Promise.resolve();
+  });
+  await settle();
+  expect(sent[0]!.body).not.toHaveProperty('client');
+  expect(sent[0]!.body).not.toHaveProperty('from');
+});
+
+it('stays open with the reason when the server refuses, and asks for a fresh view', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ message: 'Denne kunden har alt ein samtale i runda.' }), {
+          status: 409,
+        }),
+      ),
+    ),
+  );
+  const refused = vi.fn();
+  const done = vi.fn();
+  view = mount(
+    <StartSamtale
+      edit
+      row={started}
+      guide={guide}
+      names={[]}
+      clients={others}
+      me={null}
+      onClose={() => undefined}
+      onDone={done}
+      onRefused={refused}
+    />,
+  );
+  choose(kunde()!, 'c2');
+  await act(async () => {
+    button(view!.div, 'Lagre').click();
+    await Promise.resolve();
+  });
+  await settle();
+  expect(refused).toHaveBeenCalledTimes(1);
+  expect(done).not.toHaveBeenCalled();
+  expect(view.div.textContent).toContain('Denne kunden har alt ein samtale i runda.');
+  expect(view.div.querySelector('[role="dialog"]')).not.toBeNull();
 });

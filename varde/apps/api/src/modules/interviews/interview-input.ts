@@ -25,6 +25,8 @@ export type RoundInput = z.infer<typeof RoundInput>;
 
 export const ClientsInput = z.strictObject({ clients: z.array(z.uuid()).min(1).max(200) });
 
+const lowerUuid = z.uuid().transform((id) => id.toLowerCase());
+
 /** The people at the table: from the client a role and, if they want, a name; from Vardahei names. */
 export const StartInput = z.strictObject({
   held_on: z.iso.date(),
@@ -42,10 +44,9 @@ export const StartInput = z.strictObject({
     .max(6)
     .default([]),
   /** «Endre»: the right client of the round, when the conversation was started with the wrong one. */
-  client: z
-    .uuid()
-    .transform((id) => id.toLowerCase())
-    .optional(),
+  client: lowerUuid.optional(),
+  /** The client the screen showed: a move made on a stale screen is refused, not carried out. */
+  from: lowerUuid.optional(),
 });
 export type StartInput = z.infer<typeof StartInput>;
 

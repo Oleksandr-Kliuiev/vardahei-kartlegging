@@ -253,6 +253,8 @@ export function Sporsmalskort(p: {
   focusOnShow: boolean;
   /** The client's previous finished conversation with this guide, if any (3.2). */
   previous?: Previous | null;
+  /** The client on the screen, whose employees' numbers may be drawn (2.22c). */
+  client: string;
   onPrev: () => void;
   onNext: () => void;
 }) {
@@ -326,7 +328,7 @@ export function Sporsmalskort(p: {
           Ser ut som eit passord. Ikkje skriv passord eller nøklar i Varde.
         </p>
       )}
-      <TilsetteLinjer interview={store.id} question={q.id} />
+      <TilsetteLinjer interview={store.id} client={p.client} question={q.id} />
       <div className="sm-label" id={`${id}-vurdering`}>
         Vurdering
       </div>

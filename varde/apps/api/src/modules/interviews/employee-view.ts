@@ -67,7 +67,9 @@ export class EmployeeView {
 
   async load(id: string) {
     const conversation = await this.interviews.get(id);
-    const none = { class: 'aggregate' as const, round: null, questions: [] };
+    // Whose numbers these are: a screen that still shows another client draws none of them.
+    const client = conversation.client.id;
+    const none = { class: 'aggregate' as const, client, round: null, questions: [] };
     const round = await this.latestReleased(conversation.client.id);
     if (!round) return none;
     // The round has the client (else load answers 404), so the scope names it by its slug.
@@ -91,6 +93,7 @@ export class EmployeeView {
     });
     return {
       class: 'aggregate' as const,
+      client,
       round: {
         id: round.id,
         name: round.name,

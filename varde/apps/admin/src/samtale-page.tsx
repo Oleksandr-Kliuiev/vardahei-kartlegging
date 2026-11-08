@@ -308,6 +308,8 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
               ? undefined
               : () => {
                   opener.current = document.activeElement as HTMLElement | null;
+                  // Who may be chosen in it depends on what others have started since.
+                  void round.refetch();
                   setEditing(true);
                 }
           }
@@ -372,6 +374,7 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
               readOnly={readOnly}
               focusOnShow={moved}
               previous={i.previous}
+              client={i.client.id}
               onPrev={() => go(cur - 1)}
               onNext={() => go(cur + 1)}
             />
@@ -393,19 +396,21 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
           }
           me={queries.getQueryData<{ name: string | null }>(['session'])?.name ?? null}
           onClose={() => setEditing(false)}
-          onDone={({ client, ...fields }) => {
+          onDone={({ client, held_on, interviewees, interviewers }) => {
             setEditing(false);
+            const fields = { held_on, interviewees, interviewers };
             const to = round.data?.interviews.find((r) => r.client.id === client)?.client;
+            // Another client: «Førre gong» was the last client's, so it goes at once; the employees'
+            // numbers are read per client. The new client's «Førre gong» and every list come back.
             queries.setQueryData<Interview>(['samtalar', 'interview', id], (old) =>
-              old ? { ...old, ...fields, ...(to ? { client: to } : {}) } : old,
+              old ? { ...old, ...fields, ...(to ? { client: to, previous: null } : {}) } : old,
             );
-            if (client) {
-              // Another client: «Førre gong», the employees' numbers and every list are theirs now.
-              // The numbers go at once, so the last client's are never shown under the new name.
-              void queries.resetQueries({ queryKey: ['samtalar', 'tilsette', id] });
-              void queries.invalidateQueries({ queryKey: ['samtalar'] });
-            } else void queries.invalidateQueries({ queryKey: ['samtalar'], refetchType: 'none' });
+            void queries.invalidateQueries({
+              queryKey: ['samtalar'],
+              ...(client ? {} : { refetchType: 'none' as const }),
+            });
           }}
+          onRefused={() => void queries.invalidateQueries({ queryKey: ['samtalar'] })}
         />
       )}
     </>

@@ -56,6 +56,7 @@ const WHAT: Record<string, string> = {
   'interviews.round.create': 'Samtalerunde oppretta',
   'interviews.round.clients': 'Fleire kundar i samtalerunda',
   'interviews.start': 'Samtale starta',
+  'interviews.client': 'Samtale flytta til annan kunde',
   'interviews.done': 'Samtale fullført',
   'interviews.reopen': 'Samtale opna for endring',
   'interviews.export': 'Samtalar eksporterte til CSV',

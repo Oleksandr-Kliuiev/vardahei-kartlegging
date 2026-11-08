@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { EventsService } from '../events/events.service.js';
 import type {
   AnswerFieldInput,
   InterviewFieldInput,
@@ -49,7 +50,10 @@ function changed(current: string | null, by: string | null | undefined, at: Date
 
 @Injectable()
 export class InterviewsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly events: EventsService,
+  ) {}
 
   /** Published conversation guides, newest first: what a new round can use. */
   async guides() {
@@ -291,11 +295,11 @@ export class InterviewsService {
   /** «Start samtalen»: who sits at the table and when. Later the same call corrects them, and moves
    * a conversation started with the wrong client to the right one. */
   async start(id: string, input: StartInput, actor: Actor) {
-    return this.prisma.$transaction(async (tx) => {
+    const moved = await this.prisma.$transaction(async (tx) => {
       const i = await this.lock(tx, id);
       if (i.status === 'done') throw new ConflictException(DONE);
-      if (input.client && input.client !== i.client_id)
-        await moveToClient(tx, i, input.client, actor.audit);
+      const another = input.client === i.client_id ? undefined : input.client;
+      if (another) await moveToClient(tx, i, { client: another, from: input.from }, actor.audit);
       const now = new Date();
       await tx.interview.update({
         where: { id },
@@ -318,8 +322,11 @@ export class InterviewsService {
             details: { round: i.interview_round_id, client: i.client_id },
           },
         });
-      return { id };
+      return another !== undefined;
     });
+    // Other screens on this conversation learn whose it is now: its header, its numbers, the lists.
+    if (moved) this.events.changed('samtalar');
+    return { id };
   }
 
   /** One field of one answer, saved only while it still holds what the screen last saw. */

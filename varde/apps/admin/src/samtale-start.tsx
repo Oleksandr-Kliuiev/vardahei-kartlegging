@@ -98,6 +98,8 @@ export interface StartSent {
   interviewers: string[];
   /** «Endre»: the right client, when the conversation was started with the wrong one. */
   client?: string;
+  /** With `client`: the client this screen showed, so a stale screen's move is refused. */
+  from?: string;
 }
 interface Who {
   key: number;
@@ -134,6 +136,8 @@ export function StartSamtale(p: {
   clients?: readonly { id: string; name: string }[];
   onClose: () => void;
   onDone: (sent: StartSent) => void;
+  /** The server said no: what the choice was based on may be out of date. */
+  onRefused?: () => void;
 }) {
   const uid = useId();
   const [start] = useState(() => first(p));
@@ -143,9 +147,12 @@ export function StartSamtale(p: {
   // Another name from Vardahei: null until «Legg til namn» opens the field (open at once with no names).
   const [other, setOther] = useState<string | null>(start.offered.length ? null : '');
   const [day, setDay] = useState(p.row.held_on ?? today());
-  const [client, setClient] = useState(p.row.client.id);
-  const others = [...(p.clients ?? [])].sort((a, b) => a.name.localeCompare(b.name, 'nn'));
-  const moving = others.find((c) => c.id === client);
+  const [target, setTarget] = useState<string | null>(null);
+  // Never its own client: on a screen behind a move, that one can be free in a fresh list of the round.
+  const others = (p.clients ?? [])
+    .filter((c) => c.id !== p.row.client.id)
+    .sort((a, b) => a.name.localeCompare(b.name, 'nn'));
+  const moving = others.find((c) => c.id === target);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   // Where the focus goes after a change that removes or disables the control that had it.
@@ -217,13 +224,16 @@ export function StartSamtale(p: {
         ),
       // A name typed but not yet added counts as ticked.
       interviewers: unique([...offered.filter((n) => ours.has(n)), ...(pending ? [pending] : [])]),
-      ...(moving ? { client: moving.id } : {}),
+      ...(moving ? { client: moving.id, from: p.row.client.id } : {}),
     };
     setBusy(true);
     setError(null);
     mutate(`/api/admin/interviews/${p.row.id}/start`, 'POST', sent)
       .then(() => p.onDone(sent))
-      .catch((err: unknown) => setError(plain(err)))
+      .catch((err: unknown) => {
+        setError(plain(err));
+        p.onRefused?.();
+      })
       .finally(() => setBusy(false));
   };
 
@@ -266,8 +276,8 @@ export function StartSamtale(p: {
               className="input"
               aria-label="Kunde"
               aria-describedby={`${uid}-kunde`}
-              value={client}
-              onChange={(e) => setClient(e.target.value)}
+              value={moving?.id ?? p.row.client.id}
+              onChange={(e) => setTarget(e.target.value)}
             >
               <option value={p.row.client.id}>{p.row.client.name}</option>
               {others.map((c) => (

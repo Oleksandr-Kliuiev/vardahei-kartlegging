@@ -1,7 +1,7 @@
 import { Injectable, type OnModuleDestroy } from '@nestjs/common';
 import type { ServerResponse } from 'node:http';
 
-export type Topic = 'progress' | 'responses' | 'rounds' | 'seminars' | 'live';
+export type Topic = 'progress' | 'responses' | 'rounds' | 'seminars' | 'live' | 'samtalar';
 
 @Injectable()
 export class EventsService implements OnModuleDestroy {
@@ -68,7 +68,14 @@ export class EventsService implements OnModuleDestroy {
       };
     }
     // Reconnect refetches current state, including mutations missed while disconnected.
-    for (const topic of ['rounds', 'progress', 'responses', 'seminars', 'live'] as const)
+    for (const topic of [
+      'rounds',
+      'progress',
+      'responses',
+      'seminars',
+      'live',
+      'samtalar',
+    ] as const)
       this.send(response, topic);
     return () => {
       this.listeners.delete(response);

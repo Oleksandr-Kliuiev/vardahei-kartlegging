@@ -11,9 +11,14 @@ type Tx = Prisma.TransactionClient;
 export async function moveToClient(
   tx: Tx,
   i: { id: string; interview_round_id: string; client_id: string; status: string },
-  client: string,
+  { client, from }: { client: string; from: string | undefined },
   who: string,
 ) {
+  // The screen showed another client: moved meanwhile on another screen, so this choice is out of date.
+  if (from !== i.client_id)
+    throw new ConflictException(
+      'Samtalen er flytta til ein annan kunde på ein annan skjerm. Last sida på nytt.',
+    );
   if (i.status !== 'in_progress')
     throw new ConflictException(
       'Berre ein samtale som er i gang, kan flyttast til ein annan kunde.',

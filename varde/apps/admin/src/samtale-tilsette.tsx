@@ -31,14 +31,17 @@ export interface Runde {
   after_conversation: boolean;
 }
 export interface TilsetteSvar {
+  /** Whose numbers these are; drawn only under that client's name. */
+  client: string;
   round: Runde | null;
   questions: { question: string; employees: TilsetteLinje[] }[];
 }
 
-/** The employees' lines of one conversation; a released survey changes seldom. */
-export const useTilsette = (interview: string) =>
+/** The employees' lines of one conversation; a released survey changes seldom. Per client too: a
+ * conversation moved to another client must not keep the numbers of the last one. */
+export const useTilsette = (interview: string, client: string) =>
   useQuery({
-    queryKey: ['samtalar', 'tilsette', interview],
+    queryKey: ['samtalar', 'tilsette', interview, client],
     queryFn: () => api<TilsetteSvar>(`/api/admin/interviews/${interview}/employees`),
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
@@ -113,8 +116,10 @@ export function Linjer({ lines, round }: { lines: readonly TilsetteLinje[]; roun
 }
 
 /** Under the leader's answer in the conversation: the lines of this question, or nothing. */
-export function TilsetteLinjer({ interview, question }: { interview: string; question: string }) {
-  const { data } = useTilsette(interview);
-  const lines = data?.questions.find((q) => q.question === question)?.employees;
-  return data?.round && lines?.length ? <Linjer lines={lines} round={data.round} /> : null;
+export function TilsetteLinjer(p: { interview: string; client: string; question: string }) {
+  const { data } = useTilsette(p.interview, p.client);
+  // A screen behind a move still names the last client; the server already answers for the new one.
+  if (data?.client !== p.client) return null;
+  const lines = data.questions.find((q) => q.question === p.question)?.employees;
+  return data.round && lines?.length ? <Linjer lines={lines} round={data.round} /> : null;
 }

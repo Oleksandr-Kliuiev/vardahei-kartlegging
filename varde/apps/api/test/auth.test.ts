@@ -87,6 +87,16 @@ describe('back to where you were after signing in (concept of Samtalar)', () => 
     expect(res.statusCode).toBe(302);
     expect(res.headers.location).toBe('/');
   });
+  it('even a signed login cookie cannot send anyone elsewhere: checked again at the callback', async () => {
+    const { oidc, callback } = await startLogin({ groups: [GROUP] }, via('/admin/rounds'));
+    const fastify = t.app.getHttpAdapter().getInstance();
+    const inner = JSON.parse(fastify.unsignCookie(oidc).value!) as Record<string, unknown>;
+    expect(inner.back).toBe('/admin/rounds');
+    const evil = fastify.signCookie(JSON.stringify({ ...inner, back: 'https://evil.example/' }));
+    const res = await t.get(callback, { varde_oidc: evil });
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe('/');
+  });
   it('a list of pages is not a page; someone who is no member gets no way in', async () => {
     const twice = '/auth/login?return_to=/admin&return_to=/admin/rounds';
     expect((await login({ groups: [GROUP] }, twice)).headers.location).toBe('/');

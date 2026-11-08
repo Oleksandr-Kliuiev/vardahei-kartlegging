@@ -9,17 +9,21 @@ import { kjelde, Linjer, useTilsette } from './samtale-tilsette.js';
 
 export function LeiarOgTilsette({
   interview,
+  client,
   items,
   at,
 }: {
   interview: string;
+  client: string;
   items: readonly { q: GuideQuestion; n: number; r: Rating | null }[];
   at: (n: number) => string;
 }) {
-  const t = useTilsette(interview);
-  const round = t.data?.round;
+  const t = useTilsette(interview, client);
+  // Only this client's numbers: a screen behind a move draws none of the new client's.
+  const data = t.data?.client === client ? t.data : undefined;
+  const round = data?.round;
   const rows = items.flatMap((x) => {
-    const lines = t.data?.questions.find((q) => q.question === x.q.id)?.employees ?? [];
+    const lines = data?.questions.find((q) => q.question === x.q.id)?.employees ?? [];
     return lines.length ? [{ ...x, lines }] : [];
   });
   if (t.isError)

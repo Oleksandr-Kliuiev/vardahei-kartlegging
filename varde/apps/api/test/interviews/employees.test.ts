@@ -328,7 +328,8 @@ describe('Leiar vs tilsette (2.22c)', () => {
 
   it('takes the latest released survey of the client: Runde 2, not newer live, unreleased or post-seminar rounds, not Runde 1', async () => {
     const m = (await employees('daco')) as Model;
-    expect(m.class).toBe('aggregate');
+    // Says whose numbers they are: the admin draws them only under that client's name.
+    expect(m).toMatchObject({ class: 'aggregate', client: client.daco });
     expect(m.round).toMatchObject({ id: f.tryggleik, name: 'Runde 2 IT-tryggleik' });
     // The seeded version has the F questions only: the T pairs have no line.
     expect(ids(m)).toEqual([
@@ -374,7 +375,12 @@ describe('Leiar vs tilsette (2.22c)', () => {
 
   it('gives nothing without a released, closed survey of the client', async () => {
     for (const who of ['none', 'live', 'unreleased', 'late'])
-      expect(await employees(who), who).toEqual({ class: 'aggregate', round: null, questions: [] });
+      expect(await employees(who), who).toMatchObject({
+        class: 'aggregate',
+        client: expect.any(String) as string,
+        round: null,
+        questions: [],
+      });
   });
 
   it('follows the questions of the conversation guide and their order', async () => {

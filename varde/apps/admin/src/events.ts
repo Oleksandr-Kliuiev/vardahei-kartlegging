@@ -34,7 +34,8 @@ export function useEvents(client: QueryClient): boolean {
         topic === 'responses' ||
         topic === 'rounds' ||
         topic === 'seminars' ||
-        topic === 'live'
+        topic === 'live' ||
+        topic === 'samtalar'
       )
         void client.invalidateQueries({ queryKey: [topic] });
     };

@@ -34,6 +34,7 @@ describe('the page a login comes back to', () => {
     ['/\\evil.example'],
     ['https://evil.example/admin'],
     ['/admin//evil.example'],
+    ['/admin//x'],
     ['/admin/\\evil.example'],
     ['/admin/../r'],
     ['/admin/..'],

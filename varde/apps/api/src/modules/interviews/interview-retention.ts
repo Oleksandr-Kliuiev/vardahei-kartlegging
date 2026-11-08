@@ -33,7 +33,8 @@ export async function forgetInterviews(
       scope_ref: { scope: 'client', client, interviews: ids },
     },
   });
-  await tx.interview.deleteMany({ where: { id: { in: ids } } });
+  // Still this client's: a conversation moved to another client meanwhile is not taken along.
+  await tx.interview.deleteMany({ where: { id: { in: ids }, client_id: client } });
   await tx.auditLog.create({
     data: {
       who,

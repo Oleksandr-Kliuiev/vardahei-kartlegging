@@ -398,7 +398,7 @@ export function OppsummeringPage({ id }: { id: string }) {
             )}
           </div>
         </div>
-        <LeiarOgTilsette interview={id} items={items} at={at} />
+        <LeiarOgTilsette interview={id} client={i.client.id} items={items} at={at} />
         {!done && (
           <div className="sm-sum-fot">
             <button type="button" className="btn ghost" onClick={() => goTo(at(0))}>

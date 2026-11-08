@@ -102,6 +102,7 @@ const card = (question: GuideQuestion, prev: Previous | null) =>
       readOnly={false}
       focusOnShow={false}
       previous={prev}
+      client="c1"
       onPrev={() => undefined}
       onNext={() => undefined}
     />,
