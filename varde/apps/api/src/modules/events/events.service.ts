@@ -67,15 +67,9 @@ export class EventsService implements OnModuleDestroy {
         this.listeners.delete(response);
       };
     }
-    // Reconnect refetches current state, including mutations missed while disconnected.
-    for (const topic of [
-      'rounds',
-      'progress',
-      'responses',
-      'seminars',
-      'live',
-      'samtalar',
-    ] as const)
+    // Reconnect refetches current state, including mutations missed while disconnected. Not
+    // `samtalar`: it would read every open conversation again, and each read of a referat is logged.
+    for (const topic of ['rounds', 'progress', 'responses', 'seminars', 'live'] as const)
       this.send(response, topic);
     return () => {
       this.listeners.delete(response);
