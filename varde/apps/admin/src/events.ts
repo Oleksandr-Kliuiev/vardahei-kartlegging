@@ -37,7 +37,11 @@ export function useEvents(client: QueryClient): boolean {
         topic === 'live' ||
         topic === 'samtalar'
       )
-        void client.invalidateQueries({ queryKey: [topic] });
+        void client.invalidateQueries({
+          queryKey: [topic],
+          // A referat is read once per visit: each read is written to AuditLog.
+          predicate: (query) => query.queryKey[1] !== 'referat',
+        });
     };
     stream.addEventListener('changed', changed);
     return () => {

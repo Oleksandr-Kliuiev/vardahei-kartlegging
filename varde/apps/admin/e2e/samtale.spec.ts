@@ -320,6 +320,21 @@ test('the wrong client is corrected in «Endre»; a session that ran out comes b
   await answer.fill('Berre Dropbox.');
   await expect(saved(page)).toBeVisible();
 
+  // The session runs out in the middle of a sentence: nothing is lost, and signing in comes back here.
+  await page.waitForLoadState('networkidle');
+  await context.clearCookies();
+  await answer.fill('Berre Dropbox og Teams.');
+  const out = page.getByRole('alert').filter({ hasText: 'Du er logga ut' });
+  await expect(out).toBeVisible();
+  await out.getByRole('link', { name: 'Logg inn igjen' }).click();
+  await expect(page).toHaveURL(new RegExp(`/admin/samtalar/${id}\\?q=N5$`));
+  await expect(answer).toHaveValue('Berre Dropbox og Teams.');
+  await expect(saved(page)).toBeVisible();
+  const back = (await (await page.request.get(`/api/admin/interviews/${id}`)).json()) as {
+    answers: Record<string, { answer: string }>;
+  };
+  expect(back.answers.N5!.answer).toBe('Berre Dropbox og Teams.');
+
   // «Endre»: says what a move does, and takes everything along.
   await page.getByRole('button', { name: 'Endre kven som er med og dato' }).click();
   const fix = page.getByRole('dialog');
@@ -330,7 +345,7 @@ test('the wrong client is corrected in «Endre»; a session that ran out comes b
   await fix.getByRole('button', { name: 'Lagre' }).click();
   await expect(fix).toBeHidden();
   await expect(page.locator('.sm-topp')).toContainText('Syntetisk andre kunde');
-  await expect(answer).toHaveValue('Berre Dropbox.');
+  await expect(answer).toHaveValue('Berre Dropbox og Teams.');
 
   // The list agrees: the right client is going on, the wrong one waits.
   await page.goto(`/admin/samtalar?runde=${round}`);
@@ -344,22 +359,6 @@ test('the wrong client is corrected in «Endre»; a session that ran out comes b
   await expect(page.locator('.rom-side').first().locator('section.kort h2').first()).toHaveText(
     'Samtalar',
   );
-
-  // The session runs out in the middle of a sentence: nothing is lost, and signing in comes back here.
-  await page.goto(`/admin/samtalar/${id}?q=N5`);
-  await expect(answer).toHaveValue('Berre Dropbox.');
-  await context.clearCookies();
-  await answer.fill('Berre Dropbox og Teams.');
-  const out = page.getByRole('alert').filter({ hasText: 'Du er logga ut' });
-  await expect(out).toBeVisible();
-  await out.getByRole('link', { name: 'Logg inn igjen' }).click();
-  await expect(page).toHaveURL(new RegExp(`/admin/samtalar/${id}\\?q=N5$`));
-  await expect(answer).toHaveValue('Berre Dropbox og Teams.');
-  await expect(saved(page)).toBeVisible();
-  const back = (await (await page.request.get(`/api/admin/interviews/${id}`)).json()) as {
-    answers: Record<string, { answer: string }>;
-  };
-  expect(back.answers.N5!.answer).toBe('Berre Dropbox og Teams.');
 });
 
 test('a repeat conversation: criteria under the buttons, last time under the question, before and after', async ({

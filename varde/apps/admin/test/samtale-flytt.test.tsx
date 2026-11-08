@@ -280,5 +280,12 @@ it('the other screens hear of a move on the stream, under the key of Samtalar', 
       data: JSON.stringify({ topic: 'samtalar' }),
     } as MessageEvent<string>),
   );
-  expect(invalidate).toHaveBeenCalledWith({ queryKey: ['samtalar'] });
+  const asked = invalidate.mock.calls[0]![0] as unknown as {
+    queryKey: string[];
+    predicate: (q: { queryKey: unknown[] }) => boolean;
+  };
+  expect(asked.queryKey).toEqual(['samtalar']);
+  expect(asked.predicate({ queryKey: ['samtalar', 'interview', 'iv1'] })).toBe(true);
+  // A referat is read once per visit, since each read is written to AuditLog.
+  expect(asked.predicate({ queryKey: ['samtalar', 'referat', 'iv1'] })).toBe(false);
 });

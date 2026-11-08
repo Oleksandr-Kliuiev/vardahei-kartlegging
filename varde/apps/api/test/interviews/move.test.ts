@@ -203,6 +203,51 @@ describe('a conversation started with the wrong client', () => {
     }
   });
 
+  it('a move and a deletion on request at the same moment: the ledger lists exactly what went', async () => {
+    for (let n = 0; n < 6; n += 1) {
+      const made = async (side: string) =>
+        (
+          await t.prisma.client.create({
+            data: { slug: `${t.mark}-g${n}${side}`, name: `Gløym ${side}${n} ${t.mark}` },
+          })
+        ).id;
+      const [x, y] = [await made('a'), await made('b')];
+      const r = await t.call('POST', '/api/admin/interview-rounds', {
+        name: `Flytt gløym ${n} ${t.mark}`,
+        template_version_id: guide,
+        clients: [x, y],
+      });
+      expect(r.statusCode, r.body).toBe(201);
+      const view = json<{ interviews: Row[] }>(
+        await t.call('GET', `/api/admin/interview-rounds/${json<{ id: string }>(r).id}`),
+      );
+      const id = view.interviews.find((v) => v.client.id === x)!.id;
+      expect((await start(id)).statusCode).toBe(201);
+
+      const [, forgot] = await Promise.all([
+        move(id, x, y),
+        t.call('POST', '/api/admin/retention/forget', {
+          scope: { scope: 'client', client: x },
+          reason: 'test',
+          dry_run: false,
+        }),
+      ]);
+      expect(forgot.statusCode, forgot.body).toBeLessThan(300);
+
+      const still = await t.prisma.interview.findUnique({ where: { id } });
+      const requests = await t.prisma.deletionRequest.findMany({
+        where: { scope: 'client', scope_ref: { path: ['client'], equals: x } },
+      });
+      const listed = requests.flatMap(
+        (q) => (q.scope_ref as { interviews?: string[] }).interviews ?? [],
+      );
+      if (still) {
+        expect(still.client_id).toBe(y);
+        expect(listed).not.toContain(id);
+      } else expect(listed).toContain(id);
+    }
+  });
+
   it('takes the id in any case and is no move at all to the client it already has', async () => {
     const id = (await of(a)).id;
     const before = (await moves()).length;

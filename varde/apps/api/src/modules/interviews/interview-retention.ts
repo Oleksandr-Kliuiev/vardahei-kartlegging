@@ -13,7 +13,7 @@ type Db = Pick<Prisma.TransactionClient, 'interview' | 'deletionRequest'>;
 /** Deletes every conversation of the client (answers go with them), with its own `retention.forget` row
  * in AuditLog (counts only, as for answers); a dry run only counts. */
 export async function forgetInterviews(
-  tx: Db & Pick<Prisma.TransactionClient, 'auditLog'>,
+  tx: Db & Pick<Prisma.TransactionClient, 'auditLog' | '$queryRaw'>,
   client: string,
   who: string,
   reason: string,
@@ -21,8 +21,11 @@ export async function forgetInterviews(
 ): Promise<number> {
   // Without a client, Prisma would read `client_id: undefined` as no filter at all.
   if (!client) throw new Error('forgetInterviews needs a client');
+  // Locked as they are read: a move to another client either came first (then it is not this client's
+  // any more) or waits and finds it gone, so the ledger lists exactly what is deleted.
   const ids = (
-    await tx.interview.findMany({ where: { client_id: client }, select: { id: true } })
+    await tx.$queryRaw<{ id: string }[]>`
+      SELECT id FROM interview WHERE client_id = ${client}::uuid FOR UPDATE`
   ).map((i) => i.id);
   if (dryRun || ids.length === 0) return ids.length;
   const request = await tx.deletionRequest.create({
@@ -33,8 +36,7 @@ export async function forgetInterviews(
       scope_ref: { scope: 'client', client, interviews: ids },
     },
   });
-  // Still this client's: a conversation moved to another client meanwhile is not taken along.
-  await tx.interview.deleteMany({ where: { id: { in: ids }, client_id: client } });
+  await tx.interview.deleteMany({ where: { id: { in: ids } } });
   await tx.auditLog.create({
     data: {
       who,
