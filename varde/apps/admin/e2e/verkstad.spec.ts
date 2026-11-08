@@ -81,6 +81,41 @@ test('an edit saves itself and stays after a reload; the phone follows the trail
   await expect(at).toHaveAttribute('data-question-id', 'Q2');
 });
 
+test('keys sent without a pause all arrive, on the screen and in the saved draft', async ({
+  page,
+  context,
+}) => {
+  const v = await newSurvey(page, [role, mfa]);
+  await row(page, 'Q2').click();
+  const text = page.getByLabel('Spørsmålet', { exact: true });
+  const before = await text.inputValue();
+  await text.click();
+  await page.keyboard.press('End');
+  const typed =
+    ' og kor ofte har du sagt fra om tryggleik pa jobb og kan du lagre innloggingar trygt i ein kvelv';
+  // Faster than anyone types and without waiting for the page, the way a browser tool sends keys.
+  const cdp = await context.newCDPSession(page);
+  await Promise.all(
+    [...typed].flatMap((ch) => {
+      const key = {
+        key: ch,
+        code: ch === ' ' ? 'Space' : `Key${ch.toUpperCase()}`,
+        windowsVirtualKeyCode: ch.toUpperCase().charCodeAt(0),
+      };
+      return [
+        cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', text: ch, ...key }),
+        cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', ...key }),
+      ];
+    }),
+  );
+  await expect(text).toHaveValue(before + typed);
+  await saved(page);
+  const draft = (await (await page.request.get(`/api/admin/surveys/versions/${v.id}`)).json()) as {
+    content: { questions: Question[] };
+  };
+  expect(draft.content.questions.find((q) => q.id === 'Q2')!.texts.text.nn).toBe(before + typed);
+});
+
 test('a save from another tab is never overwritten silently, and what was typed here stays', async ({
   page,
   context,

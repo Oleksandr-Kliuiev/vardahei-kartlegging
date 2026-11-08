@@ -59,6 +59,33 @@ it('edits save themselves with the hash they were loaded with, then with the new
   expect(api.puts().map((c) => c.body.content_hash)).toEqual([hash(0), hash(1)]);
 });
 
+it('every key of a long run without a pause arrives: fast typing is no endless loop to React', async () => {
+  const api = serve(versions());
+  const div = await open();
+  choose(div, 'Q3');
+  const sentence =
+    'Kor ofte har du sagt frå om tryggleik på jobb, og kan du lagre innloggingar trygt i ein passordkvelv no?';
+  const field = question(div);
+  const before = field.value;
+  // One task for all the keys, so nothing runs between them, as from a tool that types. A key adds to
+  // what the field holds, like in a browser: a key that is turned down is gone for the next one too.
+  act(() => {
+    for (const letter of sentence) {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(
+        field,
+        field.value + letter,
+      );
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+  expect(field.value).toBe(before + sentence);
+  expect(status(div)).toBe('Lagrar …');
+  await wait(800);
+  expect(api.puts()).toHaveLength(1);
+  expect(api.puts()[0]!.body.content!.questions[2]!.texts.text.nn).toBe(before + sentence);
+  expect(status(div)).toMatch(/^Lagra kl\./);
+});
+
 it('a conflict keeps what was typed and saves over the other version only on purpose', async () => {
   const store = versions();
   const api = serve(store, (n) =>

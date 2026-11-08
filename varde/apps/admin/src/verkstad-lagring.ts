@@ -69,9 +69,11 @@ export function useAutosave(
     timer = useRef(0),
     retry = useRef(0),
     conflict = useRef(false),
-    on = useRef(enabled);
+    on = useRef(enabled),
+    shown = useRef(state.kind);
   latest.current = content;
   on.current = enabled;
+  shown.current = state.kind;
   useEffect(() => {
     last.current = saved;
   }, [saved]);
@@ -127,7 +129,9 @@ export function useAutosave(
 
   useEffect(() => {
     if (!enabled || !dirty()) return;
-    setState((s) => (s.kind === 'conflict' ? s : { kind: 'waiting' }));
+    // Once, not per key: a state update left behind by every key makes React take a long run of keys for
+    // an endless loop, and it turns the next key down (error 185, at the speed of a tool).
+    if (shown.current !== 'waiting' && !conflict.current) setState({ kind: 'waiting' });
     clearTimeout(timer.current);
     timer.current = window.setTimeout(() => {
       if (!conflict.current) void run();
