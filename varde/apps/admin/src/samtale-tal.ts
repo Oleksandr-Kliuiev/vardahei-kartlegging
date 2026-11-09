@@ -1,5 +1,6 @@
 // The arithmetic of the overview (2.21) that the page does itself: shares, the weakest first, where the
 // map leaves a gap between themes, what a cell's tip says. The API counts; these only order and word.
+import { byNorsk } from './norsk.js';
 import {
   type Counts,
   type OverviewQuestion,
@@ -31,16 +32,14 @@ export function lowestFirst<T extends { score: number | null }>(
   list: readonly T[],
   name: (x: T) => string,
 ) {
-  return [...list].sort(
-    (a, b) => (a.score ?? 101) - (b.score ?? 101) || name(a).localeCompare(name(b), 'nn'),
-  );
+  return [...list].sort((a, b) => (a.score ?? 101) - (b.score ?? 101) || byNorsk(name(a), name(b)));
 }
 
 /** The rows of the map: weakest first, or by the client's name (then the round). */
 export function mapRows(rows: readonly OverviewRow[], order: 'svakast' | 'namn') {
   const named = (r: OverviewRow) => `${r.client.name} ${r.round.name}`;
   return order === 'namn'
-    ? [...rows].sort((a, b) => named(a).localeCompare(named(b), 'nn'))
+    ? [...rows].sort((a, b) => byNorsk(named(a), named(b)))
     : lowestFirst(rows, named);
 }
 

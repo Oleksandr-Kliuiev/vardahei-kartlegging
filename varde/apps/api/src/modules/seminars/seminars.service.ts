@@ -14,7 +14,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { PrivacyService, type PrivacySession } from '../privacy/privacy.service.js';
 import { codeHash, issueCode } from '../rounds/codes.js';
 import { materialsOf } from './materials.service.js';
-import type { ContactInput, SeminarInput } from './seminar-input.js';
+import type { ContactInput, NewContactInput, SeminarInput } from './seminar-input.js';
 import { presenterWindow } from '../live/window.js';
 import { osloInstant, osloParts, whenText } from './when.js';
 import { reopenForSeminar } from '../interviews/interview-actions.js';
@@ -174,7 +174,27 @@ export class SeminarsService {
     return { rows: await this.privacy.participants.clientList(this.prisma, client, session) };
   }
 
-  /** The admin corrects name and company of a contact (the public form never does). */
+  /**
+   * Vardahei enters the client's contact person (wave A): the company follows the client, and the
+   * contact is kept on the relationship, never on a consent. A known e-mail is refused — that
+   * contact is corrected instead, so one person never becomes two rows.
+   */
+  async createContact(input: NewContactInput, session: PrivacySession | undefined) {
+    const client = await this.prisma.client.findUnique({ where: { id: input.client } });
+    if (client?.kind !== 'client') throw new BadRequestException('Kunden finst ikkje.');
+    const made = await this.privacy.participants.createForClient(
+      this.prisma,
+      { ...input, company: client.name },
+      session,
+    );
+    if (!made)
+      throw new ConflictException(
+        'Det finst alt ein kontakt med den e-posten. Rett den kontakten i staden.',
+      );
+    return { ok: true };
+  }
+
+  /** The admin corrects name, role and company of a contact (the public form never does). */
   async updateContact(contact: string, input: ContactInput, session: PrivacySession | undefined) {
     let company = input.company ?? '';
     if (input.client !== null) {
@@ -187,11 +207,17 @@ export class SeminarsService {
       name: input.name,
       company,
       client: input.client,
+      ...(input.role === undefined ? {} : { role: input.role }),
       withdraw_invite: input.withdraw_invite,
     };
     if (!(await this.privacy.participants.update(this.prisma, contact, change, session)))
       throw new NotFoundException('Kontakten finst ikkje.');
     return { ok: true };
+  }
+
+  /** «Stadfest valde» in the yearly check (wave B): several contacts in one press. */
+  async confirmContacts(contacts: readonly string[], session: PrivacySession | undefined) {
+    return { confirmed: await this.privacy.participants.confirmMany(this.prisma, contacts, session) };
   }
 
   async confirmContact(contact: string, session: PrivacySession | undefined) {
@@ -201,9 +227,11 @@ export class SeminarsService {
   }
 
   private async requireClients(tx: Prisma.TransactionClient, ids: readonly string[]) {
-    // Customers only: the technical client of live polls (3.4) is never one of them.
-    if ((await tx.client.count({ where: { id: { in: [...ids] }, kind: 'client' } })) !== ids.length)
-      throw new BadRequestException('Ein av kundane finst ikkje.');
+    // Customers only: the technical client of live polls (3.4) is never one of them, and an
+    // archived client (wave B) takes part in nothing new until someone takes it back.
+    const where = { id: { in: [...ids] }, kind: 'client', archived_at: null };
+    if ((await tx.client.count({ where })) !== ids.length)
+      throw new BadRequestException('Ein av kundane finst ikkje eller er arkivert.');
   }
 
   private fields(input: SeminarInput) {

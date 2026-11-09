@@ -401,8 +401,10 @@ describe('2.16 acceptance: workshop publication keeps the comparison with round 
     const f6 = content.questions.find((q) => q.id === 'F6')!;
     f6.texts.text = { ...f6.texts.text, en: '' };
     const saved = await editor.save(draft.id, { content_hash: draft.content_hash, content }, who);
-    for (const lang of saved.required_languages)
-      await editor.accept(draft.id, saved.content_hash, lang as 'nn' | 'en', who);
+    // The language that lacks the text cannot be signed off either (wave C): the hole belongs to
+    // English, so English is what refuses — Nynorsk is whole and can still be read.
+    await expect(editor.accept(draft.id, saved.content_hash, 'en', who)).rejects.toThrow(/manglar/);
+    await editor.accept(draft.id, saved.content_hash, 'nn', who);
     await expect(
       editor.publish(draft.id, saved.content_hash, { F6: 'orthographic' }, who),
     ).rejects.toThrow(/empty texts: q\.F6\.text/);

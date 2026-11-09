@@ -1,0 +1,57 @@
+/* Merkelappar på kundar og eitt felles kundeval (bølgje A). Chip-ane er dei same som elles i
+   admin; her er berre plasseringa og det som høyrer til vala. */
+
+.merkelappar { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.merkelappar .chip { gap: 4px; }
+.merke-bort { min-height: 24px; width: 24px; padding: 0; border: 0; background: none; color: inherit; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+.merke-bort:hover { background: color-mix(in oklab, currentColor 18%, transparent); }
+.merke-bort .icon { width: 12px; height: 12px; }
+
+.merke-felt { display: grid; gap: 8px; }
+.merke-tittel { font-size: 13px; font-weight: 700; color: var(--ink-strong); }
+.merke-nytt { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.merke-nytt .input { flex: 1 1 180px; min-width: 0; min-height: 36px; }
+
+/* Kundeval: søk, merkelappar som filter, og lista med avkryssing. */
+.kval { border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; margin: 0; display: grid; gap: 12px; min-width: 0; }
+.kval > legend { font-size: 13px; font-weight: 700; color: var(--ink-strong); padding: 0 4px; }
+.kval-tal { font-weight: 400; color: var(--ink-muted); }
+.kval-sok .input { width: 100%; min-height: 40px; }
+.kval-merke { max-width: 100%; justify-self: start; }
+.kval-merke button[aria-pressed='true'] { background: var(--surface); box-shadow: var(--shadow-1), var(--edge); }
+.kval-knappar { display: flex; gap: 8px; flex-wrap: wrap; }
+.kval-liste { display: grid; gap: 4px; max-height: 340px; overflow-y: auto; padding-right: 4px; }
+.kval-kunde { display: grid; gap: 8px; padding: 4px 0; }
+.kval-kunde + .kval-kunde { border-top: 1px solid var(--line); }
+.kval-namn { display: grid; }
+.kval-namn small { color: var(--ink-muted); font-size: 12px; }
+.kval-meir { display: flex; gap: 12px; flex-wrap: wrap; padding-left: 28px; padding-bottom: 8px; }
+.kval-meir label { display: grid; gap: 4px; font-size: 13px; font-weight: 700; color: var(--ink-strong); }
+.kval-meir input { font-weight: 400; min-height: 36px; }
+
+/* Den årlege sjekken: kryss for fleire om gongen (bølgje B). */
+.sjekk-alle { margin-bottom: 4px; }
+.sjekk-kryss { align-items: start; gap: 10px; }
+.sjekk-kryss input { margin-top: 3px; flex: none; }
+.sjekk-kryss > span { display: grid; gap: 2px; min-width: 0; }
+
+/* Runden: skjemaet er framleis eit val så lenge runden er eit utkast (bølgje B). */
+.runde-versjon { display: grid; gap: 6px; max-width: 520px; font-size: 13px; font-weight: 700; color: var(--ink-strong); }
+.runde-versjon select { font-weight: 400; min-height: 40px; width: 100%; }
+
+/* Kundelista: søk og filter over lista, merkelappane i rada. */
+.kundar-verktoy { display: flex; gap: 8px 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.kundar-sok { flex: 1 1 220px; max-width: 420px; min-width: 0; min-height: 40px; }
+.rad-hovud .merkelappar { margin-top: 4px; }
+
+/* «Legg til fleire kundar» og grunngjevinga ved sletting: felta står over kvarandre, ikkje på rad
+   (den globale label-regla er ei flex-rad, og då krympar tekstfeltet). */
+.bolk .field { display: grid; gap: 6px; align-items: start; justify-self: stretch; max-width: 560px; }
+.bolk .field > span { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+/* «Legg til fleire kundar»: lista blir limd inn, og framsynet seier kva som skjer. */
+.bolk-felt { width: 100%; min-height: 140px; font-family: var(--font-mono); font-size: 13px; }
+.bolk-framsyn { display: grid; gap: 4px; margin: 0; padding: 10px 12px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--line); font-size: 13.5px; }
+
+@media (max-width: 560px) {
+  .kval-meir { padding-left: 0; }
+}

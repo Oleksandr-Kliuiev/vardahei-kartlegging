@@ -5,9 +5,10 @@ import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { mutate } from './api.js';
 import { Icon } from './icons.js';
+import { shortDate } from './norsk.js';
 import { ErrorMessage } from './queries.js';
 import type { IssuedKey, LivePanel } from './seminar-live-models.js';
-import { copy, shortDate } from './seminar-models.js';
+import { copy } from './seminar-models.js';
 import { useToast } from './shell.js';
 
 const TIME = new Intl.DateTimeFormat('en-GB', {

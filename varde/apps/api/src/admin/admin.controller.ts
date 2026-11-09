@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -12,6 +13,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { z } from 'zod';
 import { AdminSessionGuard, type AdminRequest } from '../modules/auth/admin-session.guard.js';
 import { auditWho } from '../modules/auth/audit-who.js';
 import { ClientsService } from './clients.service.js';
@@ -40,6 +42,11 @@ export class AdminController {
   createClient(@Body() body: unknown, @Req() r: AdminRequest) {
     return this.clientService.save(null, body, auditWho(r.adminSession));
   }
+  /** «Legg til fleire kundar»: a whole pasted list at once (wave A). */
+  @Post('/clients/batch')
+  createClients(@Body() body: unknown, @Req() r: AdminRequest) {
+    return this.clientService.batch(body, auditWho(r.adminSession));
+  }
   @Put('/clients/:id')
   editClient(
     @Param('id', ParseUUIDPipe) id: string,
@@ -47,6 +54,17 @@ export class AdminController {
     @Req() r: AdminRequest,
   ) {
     return this.clientService.save(id, body, auditWho(r.adminSession));
+  }
+  /** «Arkiver kunden» and «Hent kunden attende» (wave B). */
+  @Put('/clients/:id/archive')
+  archiveClient(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: unknown,
+    @Req() r: AdminRequest,
+  ) {
+    const input = z.strictObject({ archived: z.boolean() }).safeParse(body);
+    if (!input.success) throw new BadRequestException('Kontroller opplysningane.');
+    return this.clientService.archive(id, input.data.archived, auditWho(r.adminSession));
   }
   @Get('/clients/:id/ties')
   clientTies(@Param('id', ParseUUIDPipe) id: string) {

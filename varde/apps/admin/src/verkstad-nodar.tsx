@@ -6,6 +6,7 @@ import type { TemplateContent } from '../../../packages/schema/src/template/temp
 import { Icon, type IconName } from './icons.js';
 import { Cairn } from './verkstad-sti.js';
 import { TekstFelt, issueText, type Issue } from './verkstad-felt.js';
+import { InnhaldFil } from './verkstad-fil.js';
 import { expressionWords } from './verkstad-vilkar.js';
 import { sectionsOf, setIdentification, whereOf, type Lang, type Text } from './verkstad-model.js';
 
@@ -208,6 +209,12 @@ export function OmSkjemaet(p: NodeProps & { versionLabel: string }) {
           Teknisk: heile skjemaet som JSON
         </summary>
         <div className="vk-teknisk-innhald">
+          <InnhaldFil
+            content={c}
+            versionLabel={p.versionLabel}
+            readOnly={p.readOnly}
+            onChange={p.onChange}
+          />
           <p className="vk-hint">
             For det felta ikkje dekkjer, til dømes vilkåra til råda. Nøkkel og målgruppe kan ikkje
             endrast.

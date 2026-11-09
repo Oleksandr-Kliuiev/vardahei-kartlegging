@@ -154,6 +154,8 @@ export function contactsOf(t: SeminarApp) {
           email: string;
           company: string;
           client_id: string | null;
+          role_at_client: string | null;
+          kept_by_admin: boolean;
           invite_consent_version: string | null;
           invite_consent_at: Date | null;
           last_confirmed_at: Date;

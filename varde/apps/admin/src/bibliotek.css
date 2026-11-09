@@ -18,8 +18,10 @@
 .bib-kortvegg { position: relative; display: grid; min-height: 148px; } /* rommar sporsmalet om sletting utan at rutenettet hoppar */
 .bib-kortvegg > .bib-kort { min-width: 0; }
 .bib-kort.har-utkast .bib-type, .bib-kort.har-utkast .bib-namn { padding-right: 36px; }
-.bib-slett { position: absolute; top: 10px; right: 10px; color: var(--ink-muted); }
-.bib-slett:hover, .bib-slett:focus-visible { color: var(--danger-fg); background: var(--danger-bg); }
+.bib-kort-handlingar { position: absolute; top: 10px; right: 10px; display: flex; gap: 2px; }
+.bib-kort-handlingar .ikonknapp { color: var(--ink-muted); }
+.bib-kort-handlingar .ikonknapp:hover, .bib-kort-handlingar .ikonknapp:focus-visible { color: var(--accent-text); background: var(--accent-soft); }
+.bib-kort-handlingar .ikonknapp[aria-label^="Slett"]:hover, .bib-kort-handlingar .ikonknapp[aria-label^="Slett"]:focus-visible { color: var(--danger-fg); background: var(--danger-bg); }
 .bib-sporsmal { position: absolute; inset: 0; display: grid; align-content: center; gap: 10px; padding: 12px 20px; overflow: auto; border-radius: var(--r-lg); background: var(--danger-bg); border: 1px solid var(--danger-line); }
 .bib-sporsmal p { margin: 0; font-size: 13.5px; color: var(--ink); }
 .bib-sporsmal .bib-feil { color: var(--danger-fg); font-weight: 600; }

@@ -6,8 +6,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, mutate } from './api.js';
 import { Icon, type IconName } from './icons.js';
 import { goTo } from './nav.js';
+import { byNorsk, flatNorsk } from './norsk.js';
 import { longDate } from './overview.js';
-import { ErrorMessage } from './queries.js';
+import { ErrorMessage, useSurveys } from './queries.js';
 import { useToast } from './shell.js';
 import {
   AUDIENCE,
@@ -16,6 +17,7 @@ import {
   type TrashedDraft,
 } from './survey-models.js';
 import './bibliotek.css';
+import './kundar.css';
 
 const LANGS: Record<string, string> = { nn: 'Nynorsk', en: 'English', nb: 'Bokmål' };
 const open = (e: MouseEvent<HTMLAnchorElement>, id: string) => {
@@ -24,19 +26,22 @@ const open = (e: MouseEvent<HTMLAnchorElement>, id: string) => {
   goTo(`/admin/surveys/${id}`);
 };
 
-export function SurveysPage() {
-  const surveys = useQuery({
-    queryKey: ['surveys'],
-    queryFn: () => api<SurveySummary[]>('/api/admin/surveys'),
-  });
+export function SurveysPage({ view = 'skjema' }: { view?: 'skjema' | 'papirkorg' }) {
+  const surveys = useSurveys();
   const trash = useQuery({
     queryKey: ['surveys', 'trash'],
     queryFn: () => api<TrashedDraft[]>('/api/admin/surveys/trash'),
   });
   const [making, setMaking] = useState(false);
-  const [view, setView] = useState<'skjema' | 'papirkorg'>('skjema');
-  const list = [...(surveys.data ?? [])].sort((a, b) =>
-    (a.title ?? a.key).localeCompare(b.title ?? b.key, 'nn'),
+  const [copyOf, setCopyOf] = useState<string | null>(null);
+  const [find, setFind] = useState('');
+  const words = flatNorsk(find.trim());
+  const all = [...(surveys.data ?? [])].sort((a, b) => byNorsk(a.title ?? a.key, b.title ?? b.key));
+  // The search looks at what is on the card: the name and the kind of survey.
+  const list = all.filter(
+    (s) =>
+      flatNorsk(s.title ?? s.key).includes(words) ||
+      flatNorsk(AUDIENCE[s.audience] ?? s.audience).includes(words),
   );
   const trashed = trash.data ?? [];
   return (
@@ -47,23 +52,28 @@ export function SurveysPage() {
             ? trash.data
               ? `${trashed.length} sletta utkast`
               : 'Hentar papirkorga …'
-            : surveys.data
-              ? `${list.length} skjema`
-              : 'Hentar skjema …'}
+            : !surveys.data
+              ? 'Hentar skjema …'
+              : words
+                ? `${list.length} av ${all.length} skjema`
+                : `${all.length} skjema`}
         </p>
         <div className="bib-topp-handlingar">
           {view === 'papirkorg' ? (
-            <button type="button" className="btn" onClick={() => setView('skjema')}>
+            <button type="button" className="btn" onClick={() => goTo('/admin/surveys')}>
               Tilbake til skjema
             </button>
           ) : (
             <>
-              {trashed.length > 0 && (
-                <button type="button" className="btn ghost" onClick={() => setView('papirkorg')}>
-                  <Icon name="slett" small />
-                  Papirkorg ({trashed.length})
-                </button>
-              )}
+              {/* The trash has its own address and stays reachable when it is empty (wave C). */}
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => goTo('/admin/surveys/papirkorg')}
+              >
+                <Icon name="slett" small />
+                Papirkorg{trashed.length > 0 ? ` (${trashed.length})` : ''}
+              </button>
               {!making && (
                 <button type="button" className="btn primary" onClick={() => setMaking(true)}>
                   <Icon name="pluss" small />
@@ -74,15 +84,48 @@ export function SurveysPage() {
           )}
         </div>
       </div>
+      {view === 'skjema' && all.length > 1 && (
+        <div className="kundar-verktoy">
+          <input
+            className="input kundar-sok"
+            type="search"
+            placeholder="Finn skjema"
+            aria-label="Finn skjema"
+            value={find}
+            onChange={(e) => setFind(e.target.value)}
+          />
+        </div>
+      )}
       {view === 'skjema' && making && (
-        <NyttSkjema surveys={list} onClose={() => setMaking(false)} />
+        <NyttSkjema
+          // The copy source is every survey, not only the ones the search box leaves standing.
+          surveys={all}
+          {...(copyOf === null ? {} : { copyFrom: copyOf })}
+          onClose={() => {
+            setMaking(false);
+            setCopyOf(null);
+          }}
+        />
       )}
       <ErrorMessage error={view === 'papirkorg' ? trash.error : surveys.error} />
       {view === 'skjema' ? (
         <ul className="bib-rutenett">
+          {surveys.data && list.length === 0 && (
+            <li className="bib-tom">
+              {all.length === 0
+                ? 'Ingen skjema enno. Lag det første med «Nytt skjema».'
+                : 'Ingen skjema passar. Prøv eit anna ord.'}
+            </li>
+          )}
           {list.map((s) => (
             <li key={s.id}>
-              <Kort s={s} />
+              <Kort
+                s={s}
+                onCopy={() => {
+                  setCopyOf(s.id);
+                  setMaking(true);
+                }}
+              />
             </li>
           ))}
         </ul>
@@ -214,7 +257,7 @@ function KorgRad({ t }: { t: TrashedDraft }) {
   );
 }
 
-function Kort({ s }: { s: SurveySummary }) {
+function Kort({ s, onCopy }: { s: SurveySummary; onCopy: () => void }) {
   const queries = useQueryClient();
   const toast = useToast();
   const [asking, setAsking] = useState(false);
@@ -257,30 +300,48 @@ function Kort({ s }: { s: SurveySummary }) {
             ? `Brukt i ${rounds} ${rounds === 1 ? 'runde' : 'rundar'}`
             : 'Ikkje brukt i rundar'}
         </span>
+        {/* The published version is the one the clients answer, so it stays on the card while a
+            draft is being written; the draft stands beside it with what is left. */}
         <span className="bib-status">
-          {s.draft ? (
+          {newest && (
+            <>
+              <span className="chip ok">Publisert v{newest.version_no}</span>
+              {!s.draft && newest.published_at ? longDate(new Date(newest.published_at)) : ''}
+            </>
+          )}
+          {s.draft && (
             <>
               <span className="chip warn">Utkast v{s.draft.version_no}</span>
               {s.draft.left ? `${s.draft.left} ting att før publisering` : 'Klar til publisering'}
             </>
-          ) : newest ? (
-            <>
-              <span className="chip ok">Publisert v{newest.version_no}</span>
-              {newest.published_at ? longDate(new Date(newest.published_at)) : ''}
-            </>
-          ) : null}
+          )}
         </span>
       </a>
-      {s.draft && !asking && (
-        <button
-          type="button"
-          className="ikonknapp bib-slett"
-          aria-label={`Slett utkastet til ${title}`}
-          title="Slett utkastet"
-          onClick={() => setAsking(true)}
-        >
-          <Icon name="slett" small />
-        </button>
+      {!asking && (
+        <div className="bib-kort-handlingar">
+          {newest && (
+            <button
+              type="button"
+              className="ikonknapp"
+              aria-label={`Lag ein kopi av ${title}`}
+              title="Kopier skjemaet"
+              onClick={onCopy}
+            >
+              <Icon name="kopi" small />
+            </button>
+          )}
+          {s.draft && (
+            <button
+              type="button"
+              className="ikonknapp"
+              aria-label={`Slett utkastet til ${title}`}
+              title="Slett utkastet"
+              onClick={() => setAsking(true)}
+            >
+              <Icon name="slett" small />
+            </button>
+          )}
+        </div>
       )}
       {s.draft && asking && (
         <div className="bib-sporsmal" role="group" aria-label={`Stadfest sletting for ${title}`}>
@@ -357,14 +418,23 @@ const STARTS: { id: Start; title: string; text: string; icon: IconName }[] = [
   },
 ];
 
-function NyttSkjema({ surveys, onClose }: { surveys: SurveySummary[]; onClose: () => void }) {
+function NyttSkjema({
+  surveys,
+  copyFrom,
+  onClose,
+}: {
+  surveys: SurveySummary[];
+  /** «Kopier» on a card opens this form on that survey (wave C). */
+  copyFrom?: string | undefined;
+  onClose: () => void;
+}) {
   const queries = useQueryClient();
-  const [start, setStart] = useState<Start>('client_survey');
+  const [start, setStart] = useState<Start>(copyFrom ? 'copy' : 'client_survey');
   const [initials, setInitials] = useState(true);
   const [english, setEnglish] = useState(false);
   const [withRole, setWithRole] = useState(true);
   const copies = surveys.filter((s) => s.versions.some((v) => v.status === 'published'));
-  const [copyOf, setCopyOf] = useState(copies[0]?.id ?? '');
+  const [copyOf, setCopyOf] = useState(copyFrom ?? copies[0]?.id ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const source = copies.find((s) => s.id === copyOf);
@@ -406,25 +476,25 @@ function NyttSkjema({ surveys, onClose }: { surveys: SurveySummary[]; onClose: (
         <fieldset className="bib-startar">
           <legend>Kva slags skjema?</legend>
           <div className="bib-rutenett">
-          {STARTS.map((s) => (
-            <label key={s.id} className="bib-start">
-              <input
-                type="radio"
-                name="start"
-                value={s.id}
-                checked={start === s.id}
-                disabled={s.id === 'copy' && !copies.length}
-                onChange={() => setStart(s.id)}
-              />
-              <span className="bib-start-ikon" aria-hidden="true">
-                <Icon name={s.icon} small />
-              </span>
-              <span className="bib-start-tekst">
-                <b>{s.title}</b>
-                <small>{s.text}</small>
-              </span>
-            </label>
-          ))}
+            {STARTS.map((s) => (
+              <label key={s.id} className="bib-start">
+                <input
+                  type="radio"
+                  name="start"
+                  value={s.id}
+                  checked={start === s.id}
+                  disabled={s.id === 'copy' && !copies.length}
+                  onChange={() => setStart(s.id)}
+                />
+                <span className="bib-start-ikon" aria-hidden="true">
+                  <Icon name={s.icon} small />
+                </span>
+                <span className="bib-start-tekst">
+                  <b>{s.title}</b>
+                  <small>{s.text}</small>
+                </span>
+              </label>
+            ))}
           </div>
         </fieldset>
         <div className="bib-felt">

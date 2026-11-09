@@ -84,7 +84,7 @@ const fetcher = vi.fn((path: string, init?: RequestInit) => {
   void init;
   const body =
     path === '/api/admin/clients'
-      ? [{ id: C, name: 'Daco', slug: 'daco', employee_count: 25 }]
+      ? [{ id: C, name: 'Daco', slug: 'daco', employee_count: 25, tags: [], archived_at: null }]
       : path === '/api/admin/rounds'
         ? rounds
         : path === '/api/admin/seminars'
@@ -186,8 +186,8 @@ describe('the client page: contacts (2.17)', () => {
     expect(document.activeElement).toBe(toggle);
     const items = [...card.querySelectorAll('#kunde-kontaktliste li')].map((li) => li.textContent);
     expect(items).toEqual([
-      'ZZ Kari Syntetiskkari@example.test · dagleg leiar · invitasjonar: ja · sist sjekka 16.10.2026Påmeld: Phishing og falske fakturaer (12.11.2026)',
-      'ZZ Ola SyntetiskÅrleg sjekkola@example.test · invitasjonar: nei · sist sjekka 01.09.2025',
+      'ZZ Kari Syntetiskkari@example.test · dagleg leiar · invitasjonar: ja · sist sjekka 16.10.2026SlettPåmeld: Phishing og falske fakturaer (12.11.2026)',
+      'ZZ Ola SyntetiskÅrleg sjekkola@example.test · invitasjonar: nei · sist sjekka 01.09.2025Slett',
     ]);
     expect(card.querySelector('a[href="mailto:kari@example.test"]')).not.toBeNull();
     expect(card.querySelector('.kontakt-liste a[href="/admin/seminars/s1"]')).not.toBeNull();

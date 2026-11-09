@@ -21,7 +21,9 @@ import { FindingStatusService } from './finding-status.service.js';
 import {
   ActionInput,
   ContactInput,
+  ConfirmContactsInput,
   FindingStatusInput,
+  NewContactInput,
   parseWith,
   SeminarInput,
 } from './seminar-input.js';
@@ -97,6 +99,10 @@ export class SeminarsController {
   review(@Req() req: AdminRequest) {
     return this.seminars.contactsToReview(req.adminSession);
   }
+  @Post('contacts')
+  createContact(@Body() body: unknown, @Req() req: AdminRequest) {
+    return this.seminars.createContact(parseWith(NewContactInput, body), req.adminSession);
+  }
   @Put('contacts/:id')
   updateContact(
     @Param('id', ParseUUIDPipe) id: string,
@@ -104,6 +110,11 @@ export class SeminarsController {
     @Req() req: AdminRequest,
   ) {
     return this.seminars.updateContact(id, parseWith(ContactInput, body), req.adminSession);
+  }
+  @Post('contacts/confirm')
+  confirmMany(@Body() body: unknown, @Req() req: AdminRequest) {
+    const input = parseWith(ConfirmContactsInput, body);
+    return this.seminars.confirmContacts(input.contacts, req.adminSession);
   }
   @Post('contacts/:id/confirm')
   confirm(@Param('id', ParseUUIDPipe) id: string, @Req() req: AdminRequest) {

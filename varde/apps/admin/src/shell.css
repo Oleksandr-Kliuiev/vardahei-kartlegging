@@ -187,11 +187,9 @@ button.fare, .knapp.fare { color: var(--danger-fg); border-color: var(--danger-l
 .start-runde form > fieldset::before { top: -32px; }
 .start-runde form > fieldset::after { top: 0; }
 .start-runde legend { font-weight: 650; padding: 4px 0 8px; }
-.start-runde .launch-client { padding: 10px 0; align-items: center; }
-.start-runde .launch-client > .knappar { margin-top: 0; }
 .start-runde .editor-form { margin: 16px 0 0; }
 .start-runde form > button { justify-self: start; }
-.start-runde label:has(> input[type="checkbox"]) { display: flex; flex-direction: row; align-items: center; gap: 10px; }
+.start-runde label:has(> input[type="checkbox"]) { display: flex; flex-direction: row; align-items: center; gap: 10px; justify-self: start; }
 
 /* Telefonen i skjemaverkstaden (2.15) */
 .telefon-wrap { display: grid; gap: 8px; justify-items: center; }

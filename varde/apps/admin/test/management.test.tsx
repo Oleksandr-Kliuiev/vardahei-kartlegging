@@ -35,19 +35,24 @@ it('launch selects all/none, uses defaults, submits once and shows invitation li
   vi.stubGlobal('fetch', fetcher);
   view = mount(
     <LaunchForm
-      clients={[{ id: 'c', name: 'Testkunde', slug: 'test', employee_count: 12 }]}
+      clients={[{ id: 'c', name: 'Testkunde', slug: 'test', employee_count: 12, tags: [], archived_at: null  }]}
       versions={[{ id: 'v', label: 'v1', template: { key: 'test' } }]}
     />,
     true,
   );
   expect(view.div.textContent).not.toContain('Invitasjonar til den nye runden');
   act(() => button(view!.div, 'Vel alle').click());
-  expect(view.div.querySelector<HTMLInputElement>('[name="count-c"]')!.value).toBe('12');
+  // The head count of the client is the round's starting point, and the fields belong to the pick.
+  const felt = (label: string) =>
+    [...view!.div.querySelectorAll<HTMLLabelElement>('.kval-meir label')].find((l) =>
+      l.textContent?.startsWith(label),
+    )!.querySelector('input')!;
+  expect(felt('Tilsette i runden').value).toBe('12');
   act(() => button(view!.div, 'Vel ingen').click());
-  expect(view.div.querySelector('[name="count-c"]')).toBeNull();
+  expect(view.div.querySelector('.kval-meir')).toBeNull();
   act(() => button(view!.div, 'Vel alle').click());
   input(view.div.querySelector('[name="name"]')!, 'Ny runde');
-  input(view.div.querySelector('[name="deadline-c"]')!, '2099-01-01');
+  input(felt('Frist for'), '2099-01-01');
   act(() => {
     view!.div.querySelector<HTMLSelectElement>('[name="version"]')!.value = 'v';
     view!.div.querySelector<HTMLInputElement>('[name="open"]')!.click();
@@ -77,7 +82,7 @@ it('client edits explicitly save both name and count', async () => {
   const fetcher = vi.fn(() => Promise.resolve(new Response('{}')));
   vi.stubGlobal('fetch', fetcher);
   view = mount(
-    <ClientForm client={{ id: 'c', name: 'Test', slug: 'test', employee_count: 12 }} />,
+    <ClientForm client={{ id: 'c', name: 'Test', slug: 'test', employee_count: 12, tags: [], archived_at: null  }} />,
     true,
   );
   input(view.div.querySelector('[name="name"]')!, 'Endra');
@@ -92,7 +97,7 @@ it('client edits explicitly save both name and count', async () => {
     '/api/admin/clients/c',
     expect.objectContaining({
       method: 'PUT',
-      body: JSON.stringify({ name: 'Endra', employee_count: 24 }),
+      body: JSON.stringify({ name: 'Endra', employee_count: 24, tags: [] }),
     }),
   );
 });

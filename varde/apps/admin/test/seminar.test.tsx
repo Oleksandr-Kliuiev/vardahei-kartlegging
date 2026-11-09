@@ -64,7 +64,7 @@ const fetcher = vi.fn((path: string, init?: RequestInit) => {
             : path === '/api/admin/contacts/review'
               ? { rows: [{ id: 'k1', name: 'ZZ Gammal', company: 'X', email: 'gammal@example.test', last_confirmed_at: '2025-01-02T10:00:00Z', registrations: 0 }] }
               : path === '/api/admin/clients'
-                ? [{ id: 'c1', name: 'Syntetisk A' }]
+                ? [{ id: 'c1', name: 'Syntetisk A', slug: 'a', employee_count: 10, tags: ['it'], archived_at: null }]
                 : path.endsWith('/live')
                   ? { poll: null, versions: [], presenter: { valid_from: '', valid_to: '', valid_text: '', valid_now: false, active: null } }
                   : path.endsWith('/rounds')
@@ -112,7 +112,11 @@ describe('seminar list', () => {
       button(view!.div, 'Stadfest').click();
     });
     await settle();
-    expect(fetcher).toHaveBeenCalledWith('/api/admin/contacts/k1/confirm', expect.objectContaining({ method: 'POST' }));
+    // One press or several: the same endpoint, one audited confirmation per contact (wave B).
+    expect(fetcher).toHaveBeenCalledWith(
+      '/api/admin/contacts/confirm',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ contacts: ['k1'] }) }),
+    );
     expect(view.div.textContent).not.toContain('ZZ Gammal');
   });
   it('a new seminar posts the form; no English topic unless English is on', async () => {
@@ -136,7 +140,7 @@ describe('seminar list', () => {
     set('.sem-form input[type="date"]', '2026-11-05');
     set('.sem-form input[maxlength="200"]', 'Sogndal');
     act(() => {
-      view!.div.querySelector<HTMLInputElement>('.sem-kundar input')!.click();
+      view!.div.querySelector<HTMLInputElement>('.kval-liste input[type="checkbox"]')!.click();
     });
     act(() => {
       view!.div.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
@@ -252,14 +256,22 @@ describe('one seminar', () => {
     set(form.querySelector('input')!, 'ZZ Retta Namn');
     set(form.querySelector('select')!, '');
     set(form.querySelectorAll('input')[1]!, 'Eige firma AS');
+    set(form.querySelectorAll('input')[2]!, 'IT-ansvarleg');
     act(() => {
       form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     });
     await settle();
     const put = fetcher.mock.calls.find(([p, i]) => p === '/api/admin/contacts/k1' && i?.method === 'PUT');
-    expect(JSON.parse(put![1]!.body as string)).toEqual({ name: 'ZZ Retta Namn', company: 'Eige firma AS', client: null });
+    expect(JSON.parse(put![1]!.body as string)).toEqual({
+      name: 'ZZ Retta Namn',
+      role: 'IT-ansvarleg',
+      company: 'Eige firma AS',
+      client: null,
+    });
     expect(view.div.querySelector('table')?.textContent).toContain('ZZ Retta Namn');
     expect(view.div.querySelector('table')?.textContent).toContain('Eige firma AS');
+    // The role stands under the name in the list, so it is not written and then hidden.
+    expect(view.div.querySelector('table')?.textContent).toContain('IT-ansvarleg');
   });
   it('«Endre kontakten» withdraws the consent to invitations; it never offers to give it', async () => {
     view = mount(
@@ -295,6 +307,7 @@ describe('one seminar', () => {
     const put = fetcher.mock.calls.find(([p, i]) => p === '/api/admin/contacts/k1' && i?.method === 'PUT');
     expect(JSON.parse(put![1]!.body as string)).toEqual({
       name: 'ZZ Deltakar',
+      role: '',
       client: 'c1',
       withdraw_invite: true,
     });

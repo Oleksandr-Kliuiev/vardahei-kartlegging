@@ -15,7 +15,7 @@ import {
 import { animate, ease, setTheme } from '@varde/ui/motion';
 import { Icon, type IconName } from './icons.js';
 import logo from './logo.png';
-import { useClients, useRounds } from './queries.js';
+import { useClients, useRounds, useSurveys } from './queries.js';
 
 export interface Section {
   url: string;
@@ -422,7 +422,8 @@ export function Palette({
   const [q, setQ] = useState('');
   const [sel, setSel] = useState(0);
   const clients = useClients(),
-    rounds = useRounds();
+    rounds = useRounds(),
+    surveys = useSurveys();
   const box = useRef<HTMLDivElement>(null),
     input = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -459,6 +460,20 @@ export function Palette({
       to: `/admin/rounds/${r.id}`,
       icon: 'flagg' as const,
     })),
+    // A survey opens where it is worked on: the draft when there is one, else the newest version.
+    ...(surveys.data ?? []).flatMap((s) => {
+      const target = s.draft?.id ?? s.versions[0]?.id;
+      return target
+        ? [
+            {
+              label: s.title ?? s.key,
+              hint: 'Skjema',
+              to: `/admin/surveys/${target}`,
+              icon: 'skjema' as const,
+            },
+          ]
+        : [];
+    }),
   ].filter((h) => h.label.toLowerCase().includes(q.trim().toLowerCase()));
   const pick = (h: Hit | undefined) => {
     if (!h) return;

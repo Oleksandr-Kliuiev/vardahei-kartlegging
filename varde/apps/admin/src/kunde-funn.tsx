@@ -18,9 +18,10 @@ import type { Dashboard } from './dashboard-models.js';
 import { Icon } from './icons.js';
 import type { Round } from './models.js';
 import { follow } from './nav.js';
+import { shortDate } from './norsk.js';
 import { KundeSamtaleTiltak } from './kunde-samtale-tiltak.js';
 import { ErrorMessage } from './queries.js';
-import { type Seminar, shortDate } from './seminar-models.js';
+import type { Seminar } from './seminar-models.js';
 import { useToast } from './shell.js';
 
 export interface FindingFollowUp {

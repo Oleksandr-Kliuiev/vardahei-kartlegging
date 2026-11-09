@@ -6,8 +6,9 @@ import {
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import type { z } from 'zod';
-import { emptyTexts, unfinishedTexts } from '@varde/schema/template/respondent-texts';
+import { emptyTexts, unfinishedIn, unfinishedTexts } from '@varde/schema/template/respondent-texts';
 import { TemplateContentShape, type TemplateContent } from '@varde/schema/template/template';
+import type { LocalizedText } from '@varde/schema/template/texts';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { namesOf } from '../auth/people.js';
 import { contentHash, sourceHash } from './hashes.js';
@@ -25,6 +26,15 @@ import {
   type DraftInput,
   type SaveInput,
 } from './editor-contract.js';
+
+/** The name of a copy: nynorsk from the form, the other languages empty for «Omsetjing». */
+function renamed(text: LocalizedText, title: string): LocalizedText {
+  return {
+    nn: title,
+    ...(text.en === undefined ? {} : { en: '' }),
+    ...(text.nb === undefined ? {} : { nb: '' }),
+  };
+}
 
 /** What is left before a draft can be published: issues, empty texts, languages not approved. */
 function leftOf(v: { content: unknown; translation_acceptance: unknown }): number {
@@ -191,7 +201,10 @@ export class EditorService {
         let content: TemplateContent;
         if (base) {
           content = { ...validated(base.content), key };
-          content.intro = { ...content.intro, title: { ...content.intro.title, nn: title } };
+          // The copy takes the new name, and the name in the other languages is cleared instead of
+          // kept from the survey it came from: «Omsetjing» then asks for it, as it does for a new
+          // survey, and the old name never goes out to anyone answering in English.
+          content.intro = { ...content.intro, title: renamed(content.intro.title, title) };
         } else if (input.title !== undefined) {
           const { contact, sender } = await this.settings.defaults(tx);
           content = {
@@ -437,11 +450,21 @@ export class EditorService {
       return { id, survey_removed: left === 0 };
     });
   }
+  /**
+   * «Eg har lese korrektur» / «Godkjenn English» (2.16). One language at a time: approving Nynorsk
+   * asks only that the Nynorsk texts are whole, so the words can be read and signed off while the
+   * translation is still being written (wave C). Publishing still waits for every language.
+   */
   accept(id: string, hash: string, lang: 'nn' | 'en' | 'nb', who: string) {
     return this.locked(id, hash, async (tx, v) => {
-      validated(v.content);
+      const content = validatedDraft(v.content);
       if (!v.required_languages.includes(lang))
         throw new BadRequestException('Språket er ikkje valt.');
+      const waiting = unfinishedIn(content, lang);
+      if (waiting.length)
+        throw new BadRequestException(
+          `Språket har ${waiting.length} ${waiting.length === 1 ? 'tekst som manglar' : 'tekstar som manglar'}. Skriv dei først.`,
+        );
       const acceptance = await this.publisher.acceptIn(tx, id, lang, who);
       await this.audit(tx, who, `translation.${lang}`, id);
       return acceptance;

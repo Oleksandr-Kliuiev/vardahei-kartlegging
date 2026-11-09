@@ -80,9 +80,9 @@ const fetcher = vi.fn((path: string, init?: RequestInit) => {
     return refuse ? json({ message: refuse }, 400) : json({ ok: true, changed: true });
   if (path === '/api/admin/clients')
     return json([
-      { id: 'c-daco', name: 'Daco', slug: 'daco', employee_count: 20 },
-      { id: 'c-gasta', name: 'Gasta', slug: 'gasta', employee_count: 21 },
-      { id: 'c-kviknes', name: 'Kviknes', slug: 'kviknes', employee_count: 30 },
+      { id: 'c-daco', name: 'Daco', slug: 'daco', employee_count: 20, tags: [], archived_at: null },
+      { id: 'c-gasta', name: 'Gasta', slug: 'gasta', employee_count: 21, tags: [], archived_at: null },
+      { id: 'c-kviknes', name: 'Kviknes', slug: 'kviknes', employee_count: 30, tags: [], archived_at: null },
     ]);
   if (path === '/api/admin/rounds/launch')
     return json({ id: 'r-etter', round_client_ids: ['rc1', 'rc2'], status: 'draft' }, 201);
@@ -171,7 +171,7 @@ describe('the card «Rundar»', () => {
     const form = view.div.querySelector('form')!;
     expect(view.div.textContent).toContain('Undersøking etter seminaret');
     expect(view.div.textContent).toContain('Vel same skjema som undersøkinga før');
-    expect([...form.querySelectorAll('.launch-client label')].map((l) => l.textContent)).toEqual([
+    expect([...form.querySelectorAll('.kval-kunde label')].map((l) => l.textContent)).toEqual([
       'Daco',
       'Frist for Daco',
       'Tilsette i runden for Daco',
@@ -185,8 +185,11 @@ describe('the card «Rundar»', () => {
     act(() => {
       const version = form.querySelector<HTMLSelectElement>('select[name="version"]')!;
       version.value = 'v1';
-      for (const input of form.querySelectorAll<HTMLInputElement>('input[type="date"]'))
-        input.value = '2099-12-01';
+      // Controlled fields: React keeps its own value tracker, so set through its setter.
+      for (const input of form.querySelectorAll<HTMLInputElement>('input[type="date"]')) {
+        Reflect.set(Object.getPrototypeOf(input) as object, 'value', '2099-12-01', input);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
     });
     act(() => form.requestSubmit());
     await settle();

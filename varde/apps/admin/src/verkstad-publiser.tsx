@@ -164,13 +164,18 @@ export function Publiser(p: PubliserProps) {
     p.dirty ? undefined : (p.saved.translation_acceptance[lang] as { at?: string } | undefined);
   const missing = (lang: Lang) => missingIn(p.content, lang).length;
   const languagesDone = p.languages.every((l) => acceptance(l) && !missing(l));
-  // Everything that keeps the survey from being whole: schema issues and empty texts, each with its place.
+  // Everything that keeps the survey from being whole: schema issues and empty texts, each with its
+  // place. A text a translation still lacks is not one of them — that belongs to its own language
+  // below, so Nynorsk can be read and signed off while the English is still being written (wave C).
+  const translationGap = (i: Issue) => /^missing (en|nb)$/.test(i.message);
   const gaps = [
-    ...p.issues.map((i) => ({
-      what: issueText(i),
-      where: whereOf(p.content, i.path),
-      node: issueNode(p.content, i.path),
-    })),
+    ...p.issues
+      .filter((i) => !translationGap(i))
+      .map((i) => ({
+        what: issueText(i),
+        where: whereOf(p.content, i.path),
+        node: issueNode(p.content, i.path),
+      })),
     ...p.empty.map((t) => ({
       what: 'Teksten er tom.',
       where: t.where,

@@ -3,13 +3,14 @@
 // Kontaktar». The names live in this card while it is open, never in the query cache, and go when
 // the count changes (a registration, a deletion): then they come again only on request.
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './api.js';
 import { Icon } from './icons.js';
+import { NyKontakt, SlettKontakt } from './kunde-kontakt-skjema.js';
 import type { Client } from './models.js';
 import { follow } from './nav.js';
+import { shortDate } from './norsk.js';
 import { ErrorMessage } from './queries.js';
-import { shortDate } from './seminar-models.js';
 
 export interface ClientContact {
   id: string;
@@ -27,6 +28,8 @@ export interface ClientContact {
 export const contactCount = (n: number) => `${n} ${n === 1 ? 'kontakt' : 'kontaktar'}`;
 
 export function KundeKontaktar({ client }: { client: Client }) {
+  const queries = useQueryClient();
+  const [adding, setAdding] = useState(false);
   const count = useQuery({
     queryKey: ['seminars', 'client-contacts', client.id],
     queryFn: () =>
@@ -76,12 +79,12 @@ export function KundeKontaktar({ client }: { client: Client }) {
           </a>
         )}
         <p className="forklaring">
-          Kontaktane kjem frå påmeldingar til seminar. Lista har namn og e-post. Kvar gong nokon
-          opnar ho, blir det skrive i loggen.
+          Kontaktane er dei de har lagt inn sjølve, og dei som har meldt seg på eit seminar. Lista
+          har namn og e-post. Kvar gong nokon opnar ho, blir det skrive i loggen.
         </p>
-        {total > 0 && (
-          // One button that stays where it is, so the focus does not fall to the page.
-          <div className="handlingar">
+        {/* One button that stays where it is, so the focus does not fall to the page. */}
+        <div className="handlingar">
+          {total > 0 && (
             <button
               type="button"
               className="btn sm"
@@ -92,7 +95,24 @@ export function KundeKontaktar({ client }: { client: Client }) {
             >
               {rows ? 'Skjul kontaktane' : 'Vis kontaktane'}
             </button>
-          </div>
+          )}
+          {!adding && (
+            <button type="button" className="btn sm" onClick={() => setAdding(true)}>
+              <Icon name="pluss" small />
+              Legg til kontakt
+            </button>
+          )}
+        </div>
+        {adding && (
+          <NyKontakt
+            client={client}
+            onClose={() => setAdding(false)}
+            onSaved={() => {
+              setAdding(false);
+              setRows(null);
+              void queries.invalidateQueries({ queryKey: ['seminars', 'client-contacts'] });
+            }}
+          />
         )}
         {rows && (
           <div id="kunde-kontaktliste">
@@ -111,6 +131,18 @@ export function KundeKontaktar({ client }: { client: Client }) {
                       {c.role ? ` · ${c.role}` : ''} · invitasjonar: {c.invite ? 'ja' : 'nei'} ·
                       sist sjekka {shortDate(c.last_confirmed_at)}
                     </small>
+                    <div className="handlingar">
+                      <SlettKontakt
+                        name={c.name}
+                        email={c.email}
+                        onDone={() => {
+                          setRows(null);
+                          void queries.invalidateQueries({
+                            queryKey: ['seminars', 'client-contacts'],
+                          });
+                        }}
+                      />
+                    </div>
                     {c.seminars.length > 0 && (
                       <small>
                         Påmeld:{' '}

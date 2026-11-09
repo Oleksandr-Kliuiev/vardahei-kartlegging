@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from './api.js';
 import { Icon } from './icons.js';
 import { follow } from './nav.js';
+import { byNorsk } from './norsk.js';
 import { ErrorMessage } from './queries.js';
 import type { Lagring } from './samtale-lagring.js';
 import './samtale-tiltak.css';
@@ -251,7 +252,7 @@ export function KatalogTiltak({
     byId.get(a)?.name ??
     (catalog.isPending ? 'Hentar …' : catalog.isError ? 'Tiltak' : 'Ukjent tiltak');
   // The chips in the order of their names: the stored order is the order of the ids.
-  const shown = [...chosen].sort((a, b) => name(a).localeCompare(name(b), 'nn'));
+  const shown = [...chosen].sort((a, b) => byNorsk(name(a), name(b)));
   const toggle = (a: string) =>
     store.set(key, valueOf(chosen.includes(a) ? chosen.filter((x) => x !== a) : [...chosen, a]));
   const conflict = store.conflicts.get(key);

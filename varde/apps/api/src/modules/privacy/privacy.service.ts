@@ -113,6 +113,32 @@ export class PrivacyService {
     return db.aggregateSnapshot.count({ where: { client_id: client } });
   }
 
+  /** What one client in one round has left behind: answers, started sessions and released cells.
+   * A count only, no values — it tells whether the client can be taken out of the round again
+   * (wave B), never anything about the answers themselves. */
+  async roundClientTraces(db: Prisma.TransactionClient, roundClient: string): Promise<number> {
+    const [responses, progress, cells] = await Promise.all([
+      db.response.count({ where: { round_client_id: roundClient } }),
+      db.progressEvent.count({ where: { round_client_id: roundClient } }),
+      db.aggregateSnapshot.count({ where: { round_client_id: roundClient } }),
+    ]);
+    return responses + progress + cells;
+  }
+
+  /** The same for a whole round: one that leaves nothing behind may be deleted (wave B). */
+  async roundTraces(db: Prisma.TransactionClient, round: string): Promise<number> {
+    const [clients, cells, seminars] = await Promise.all([
+      db.roundClient.count({ where: { round_id: round } }),
+      db.aggregateSnapshot.count({ where: { round_id: round } }),
+      db.seminar.count({
+        where: {
+          OR: [{ round_before_id: round }, { round_live_id: round }, { round_after_id: round }],
+        },
+      }),
+    ]);
+    return clients + cells + seminars;
+  }
+
   /** The only outputs of seminar live poll answers (3.4): the count and shown results with k. */
   readonly live = new LiveTally(() => this.config.k);
 

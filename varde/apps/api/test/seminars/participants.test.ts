@@ -160,6 +160,19 @@ describe('participant list (class rows of seminars)', () => {
       company: client.name,
       client_id: client.id,
     });
+    // The role at the client: written here, kept when the field is left out, cleared when empty.
+    expect((await put({ name: 'ZZ Rett', client: client.id, role: 'dagleg leiar' })).statusCode).toBe(200);
+    expect((await contactsOf(t)).find((x) => x.id === c.id)!.role_at_client).toBe('dagleg leiar');
+    const roled = await t.prisma.auditLog.findFirstOrThrow({
+      where: { what: 'seminars.contact.update', target: `contact:${c.id}` },
+      orderBy: { at: 'desc' },
+    });
+    expect(roled.details).toEqual({ fields: ['role'] });
+    expect(JSON.stringify(roled)).not.toMatch(/leiar/);
+    expect((await put({ name: 'ZZ Rett', client: client.id })).statusCode).toBe(200);
+    expect((await contactsOf(t)).find((x) => x.id === c.id)!.role_at_client).toBe('dagleg leiar');
+    expect((await put({ name: 'ZZ Rett', client: client.id, role: '' })).statusCode).toBe(200);
+    expect((await contactsOf(t)).find((x) => x.id === c.id)!.role_at_client).toBeNull();
     expect((await put({ name: 'ZZ Rett' })).json<{ message: string }>().message).toBe(
       'Vel ein kunde eller skriv namnet på bedrifta.',
     );
@@ -180,6 +193,100 @@ describe('participant list (class rows of seminars)', () => {
     expect((await put({ name: w.name, company: w.company, invite: true }, w.id)).statusCode).toBe(400);
     // The edit does not count as the yearly check either.
     expect((await contactsOf(t)).find((x) => x.id === c.id)!.last_confirmed_at).toEqual(c.last_confirmed_at);
+  });
+});
+
+describe('Vardahei legg inn kontaktpersonen til kunden (bølgje A)', () => {
+  it('creates the contact on the client, with no consent to invitations, and the daily job keeps it', async () => {
+    const client = await t.prisma.client.create({
+      data: { slug: `${t.mark}-kontaktperson`, name: `Syntetisk kunde ${t.mark}` },
+    });
+    const mail = email(t, 'leiar');
+    const made = await t.call('POST', '/api/admin/contacts', {
+      name: 'ZZ Dagleg Leiar',
+      email: mail.toUpperCase(),
+      role: 'dagleg leiar',
+      client: client.id,
+    });
+    expect(made.statusCode).toBe(201);
+    const row = (await contactsOf(t)).find((c) => c.email === mail)!;
+    expect(row).toMatchObject({
+      name: 'ZZ Dagleg Leiar',
+      company: client.name,
+      client_id: client.id,
+      role_at_client: 'dagleg leiar',
+      kept_by_admin: true,
+      invite_consent_version: null,
+    });
+    // AuditLog says what was written, never the name or the address.
+    const audit = await t.prisma.auditLog.findFirstOrThrow({
+      where: { what: 'seminars.contact.create', target: `contact:${row.id}` },
+    });
+    expect(JSON.stringify(audit)).not.toMatch(/ZZ |example\.test/);
+    // The same address twice is one person: the admin corrects the contact that exists.
+    const again = await t.call('POST', '/api/admin/contacts', {
+      name: 'ZZ Ein Annan',
+      email: mail,
+      client: client.id,
+    });
+    expect(again.statusCode).toBe(409);
+    // An unknown client, and a consent the admin tries to give, are both refused.
+    expect(
+      (
+        await t.call('POST', '/api/admin/contacts', {
+          name: 'ZZ X',
+          email: email(t, 'ukjend'),
+          client: '00000000-0000-4000-8000-000000000000',
+        })
+      ).statusCode,
+    ).toBe(400);
+    expect(
+      (
+        await t.call('POST', '/api/admin/contacts', {
+          name: 'ZZ X',
+          email: email(t, 'ukjend'),
+          client: client.id,
+          invite: true,
+        })
+      ).statusCode,
+    ).toBe(400);
+    // It has no registration and no consent, and still survives the daily job.
+    await t.app.get(RetentionRun).run();
+    expect((await contactsOf(t)).some((c) => c.email === mail)).toBe(true);
+    await withPg((c) => c.query('DELETE FROM contact WHERE id = $1', [row.id]));
+    await t.prisma.client.delete({ where: { id: client.id } });
+  });
+});
+
+describe('den årlege sjekken over fleire om gongen (bølgje B)', () => {
+  it('confirms every contact it is given, each one its own line in the journal', async () => {
+    const s = await createSeminar(t);
+    for (const who of ['bolk-1', 'bolk-2'])
+      await register(t, s.id, email(t, who), { name: `ZZ ${who}`, invite: true });
+    const marked = (await contactsOf(t)).filter((c) => c.email.includes('bolk-'));
+    expect(marked).toHaveLength(2);
+    await withPg((c) =>
+      c.query(`UPDATE contact SET review_flagged_at = now() WHERE id = ANY($1)`, [
+        marked.map((m) => m.id),
+      ]),
+    );
+    const done = await t.call('POST', '/api/admin/contacts/confirm', {
+      contacts: [...marked.map((m) => m.id), '00000000-0000-4000-8000-000000000000'],
+    });
+    expect(done.statusCode).toBe(201);
+    expect(done.json<{ confirmed: number }>().confirmed).toBe(2);
+    for (const m of marked) {
+      const after = (await contactsOf(t)).find((c) => c.id === m.id)!;
+      expect(after.review_flagged_at).toBeNull();
+      expect(
+        await t.prisma.auditLog.count({
+          where: { what: 'seminars.contact.confirm', target: `contact:${m.id}` },
+        }),
+      ).toBe(1);
+    }
+    expect((await t.call('POST', '/api/admin/contacts/confirm', { contacts: [] })).statusCode).toBe(
+      400,
+    );
   });
 });
 

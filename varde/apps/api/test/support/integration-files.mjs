@@ -57,6 +57,7 @@ export const INTEGRATION_FILES = [
   'test/rounds/seed.test.ts',
   'test/rounds/codes.test.ts',
   'test/rounds/lifecycle.test.ts',
+  'test/rounds/remove.test.ts',
   'test/imports/svar-import.test.ts',
   'test/imports/runde1-import.test.ts',
   'test/metrics/parity.test.ts',

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { mutate } from './api.js';
+import { Kundeval } from './kundeval.js';
 import { versionText, type Client, type Version } from './models.js';
 import { ErrorMessage, useAction } from './queries.js';
 import { SendOut } from './round-client.js';
@@ -30,9 +31,21 @@ export function LaunchForm({
   const [selected, setSelected] = useState<string[]>(() =>
     seminar ? clients.map((c) => c.id) : [],
   );
+  // The deadline and head count of each picked client live here, not in the form: a client the
+  // search or a tag filter hides keeps what was written for it, and nothing is sent half-filled.
+  const [each, setEach] = useState<Record<string, { deadline: string; count: string }>>({});
   const [launched, setLaunched] = useState<{ id: string; name: string }[]>([]);
   const action = useAction();
   const empty = !seminar && selected.length === 0;
+  const detail = (id: string) =>
+    each[id] ?? {
+      deadline: '',
+      count: String(clients.find((c) => c.id === id)?.employee_count ?? ''),
+    };
+  const set = (id: string, part: Partial<{ deadline: string; count: string }>) =>
+    setEach((was) => ({ ...was, [id]: { ...detail(id), ...part } }));
+  /** Picked, but still without a deadline — the round cannot start before they have one. */
+  const missing = selected.filter((id) => detail(id).deadline === '');
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -54,14 +67,14 @@ export function LaunchForm({
           open: form.has('open'),
           clients: selected.map((id) => ({
             client_id: id,
-            deadline: form.get(`deadline-${id}`),
-            population_snapshot:
-              form.get(`count-${id}`) === '' ? null : Number(form.get(`count-${id}`)),
+            deadline: detail(id).deadline,
+            population_snapshot: detail(id).count === '' ? null : Number(detail(id).count),
           })),
           ...(seminar ? { seminar: seminar.id } : {}),
         },
       );
       setSelected([]);
+      setEach({});
       onLaunched?.();
       if (onCreated) {
         onCreated(result.id, result.status === 'open');
@@ -108,58 +121,57 @@ export function LaunchForm({
             ))}
           </select>
         </label>
-        <fieldset>
-          <legend>{seminar ? 'Kundar på seminaret' : 'Kundar i runden'}</legend>
-          <div className="knappar">
-            <button type="button" onClick={() => setSelected(clients.map((c) => c.id))}>
-              Vel alle
-            </button>
-            <button type="button" onClick={() => setSelected([])}>
-              Vel ingen
-            </button>
-          </div>
-          {clients.map((c) => (
-            <div className="launch-client" key={c.id}>
+        <Kundeval
+          clients={clients}
+          chosen={selected}
+          onChange={setSelected}
+          legend={seminar ? 'Kundar på seminaret' : 'Kundar i runden'}
+          extra={(c) => (
+            <>
               <label>
+                Frist for {c.name}
                 <input
-                  type="checkbox"
-                  checked={selected.includes(c.id)}
-                  onChange={(e) =>
-                    setSelected(
-                      e.target.checked ? [...selected, c.id] : selected.filter((id) => id !== c.id),
-                    )
-                  }
+                  type="date"
+                  required
+                  value={detail(c.id).deadline}
+                  onChange={(e) => set(c.id, { deadline: e.target.value })}
                 />
-                {c.name}
               </label>
-              {selected.includes(c.id) && (
-                <div className="knappar">
-                  <label>
-                    Frist for {c.name}
-                    <input name={`deadline-${c.id}`} type="date" required />
-                  </label>
-                  <label>
-                    Tilsette i runden for {c.name}
-                    <input
-                      name={`count-${c.id}`}
-                      type="number"
-                      min={1}
-                      max={9999}
-                      defaultValue={c.employee_count ?? ''}
-                    />
-                  </label>
-                </div>
-              )}
-            </div>
-          ))}
-        </fieldset>
+              <label>
+                Tilsette i runden for {c.name}
+                <input
+                  type="number"
+                  min={1}
+                  max={9999}
+                  value={detail(c.id).count}
+                  onChange={(e) => set(c.id, { count: e.target.value })}
+                />
+              </label>
+            </>
+          )}
+        />
+        {missing.length > 0 && (
+          <p className="forklaring" role="status">
+            {missing.length === 1
+              ? 'Ein vald kunde manglar'
+              : `${missing.length} valde kundar manglar`}{' '}
+            frist:{' '}
+            {missing
+              .slice(0, 3)
+              .map((id) => clients.find((c) => c.id === id)?.name)
+              .join(', ')}
+            {missing.length > 3 ? ' og fleire' : ''}.
+          </p>
+        )}
         {!empty && (
           <label>
             <input type="checkbox" name="open" />
             Opne med ein gong
           </label>
         )}
-        <button disabled={action.isPending || (!!seminar && !selected.length)}>
+        <button
+          disabled={action.isPending || (!!seminar && !selected.length) || missing.length > 0}
+        >
           {seminar ? 'Start undersøkinga' : empty ? 'Opprett runden utan kundar' : 'Start runden'}
         </button>
         {empty && (

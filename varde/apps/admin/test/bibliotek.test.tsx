@@ -84,12 +84,53 @@ it('the library names each survey, says what is left in its draft and opens the 
     'IT-sikkerheit i kvardagen',
   ]);
   expect(cards[1]!.textContent).toContain('41 spørsmål · Nynorsk, English · Brukt i 3 rundar');
+  // The published version is what the clients answer, so it stays on the card beside the draft.
+  expect(cards[1]!.textContent).toContain('Publisert v2');
   expect(cards[1]!.textContent).toContain('Utkast v32 ting att før publisering');
   expect(cards[1]!.getAttribute('href')).toBe('/admin/surveys/d1');
   expect(cards[0]!.textContent).toContain('Ikkje brukt i rundar');
   expect(cards[0]!.textContent).toContain('Publisert v1');
   act(() => cards[1]!.click());
   expect(location.pathname).toBe('/admin/surveys/d1');
+});
+
+it('the library is searched, the trash has its own address, and a card copies the survey', async () => {
+  serve((url) => (url.endsWith('/trash') ? [] : library));
+  view = mount(<SurveysPage />, true);
+  await settle();
+  const div = view.div;
+  expect(div.querySelector('.bib-tal')?.textContent).toBe('2 skjema');
+  const search = div.querySelector<HTMLInputElement>('input[type="search"]')!;
+  act(() => {
+    Reflect.set(Object.getPrototypeOf(search) as object, 'value', 'seminar', search);
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  expect(div.querySelector('.bib-tal')?.textContent).toBe('1 av 2 skjema');
+  expect([...div.querySelectorAll('.bib-namn')].map((n) => n.textContent)).toEqual([
+    'Etter KI-seminaret',
+  ]);
+  act(() => {
+    Reflect.set(Object.getPrototypeOf(search) as object, 'value', 'finst ikkje', search);
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  expect(div.textContent).toContain('Ingen skjema passar');
+  // The trash is reachable even when it is empty, by its own address.
+  act(() => byText(div, 'Papirkorg').click());
+  expect(location.pathname).toBe('/admin/surveys/papirkorg');
+  // «Kopier skjemaet» opens «Nytt skjema» on that survey.
+  act(() => {
+    Reflect.set(Object.getPrototypeOf(search) as object, 'value', '', search);
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  act(() => {
+    div
+      .querySelector<HTMLButtonElement>('[aria-label="Lag ein kopi av Etter KI-seminaret"]')!
+      .click();
+  });
+  await settle();
+  const copy = div.querySelector<HTMLInputElement>('input[value="copy"]')!;
+  expect(copy.checked).toBe(true);
+  expect(div.querySelector<HTMLSelectElement>('select')!.value).toBe('t2');
 });
 
 it('«Nytt skjema» makes a survey from a start, or a copy, and opens it', async () => {

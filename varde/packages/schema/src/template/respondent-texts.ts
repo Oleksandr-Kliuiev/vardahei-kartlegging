@@ -4,7 +4,7 @@
 // the API read the same list. Types only: no zod at run time, so the admin can import it.
 import { CRITERION_LABEL, criterionEntries } from './criteria.js';
 import type { TemplateContent } from './template.js';
-import type { LocalizedText } from './texts.js';
+import type { Lang, LocalizedText } from './texts.js';
 
 export interface RespondentText {
   /** Stable across moves and renames: `intro.title`, `q.F5.text`, `q.F5.option.ja`, `tip.2.title` … */
@@ -98,6 +98,14 @@ export function respondentTexts(c: TemplateContent): RespondentText[] {
 /** Texts a respondent would meet empty: a question without words, an answer without a label … */
 export const emptyTexts = (c: TemplateContent): RespondentText[] =>
   respondentTexts(c).filter((t) => t.required && !t.text.nn.trim());
+
+/** What stands in the way of approving one language (2.16; wave C): for Nynorsk the texts a
+ * respondent would meet empty, for a translation every text whose Nynorsk is already written.
+ * Approving Nynorsk therefore never waits for English, while publishing still waits for both. */
+export const unfinishedIn = (c: TemplateContent, lang: Lang): RespondentText[] =>
+  lang === 'nn'
+    ? emptyTexts(c)
+    : respondentTexts(c).filter((t) => t.text.nn.trim() && !(t.text[lang] ?? '').trim());
 
 /** Required texts that are empty in Nynorsk or in a language the survey must have: publishing waits. */
 export const unfinishedTexts = (c: TemplateContent): RespondentText[] =>

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from './api.js';
 import type { Dashboard } from './dashboard-models.js';
+import { talNorsk } from './norsk.js';
 import { ErrorMessage } from './queries.js';
 import { Zones, KeyQuestions, Findings, CommonQuestions } from './dashboard-aggregate.js';
 import { EmployeeSection, QuotesSection } from './dashboard-rows.js';
@@ -104,8 +105,7 @@ export function DashboardRound({
   );
 }
 
-const percentText = (share: number) =>
-  `${new Intl.NumberFormat('nn-NO', { maximumFractionDigits: 1 }).format(share * 100)} %`;
+const percentText = (share: number) => `${talNorsk(share * 100)} %`;
 
 /** The thresholds of the rules in force, or a pointer to «Funn-reglar» when the rules differ (16.10). */
 export function thresholdText(t: Dashboard['finding_thresholds']): string {

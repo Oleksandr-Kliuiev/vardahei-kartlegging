@@ -31,6 +31,8 @@ export interface ParticipantRow {
   name: string;
   company: string;
   client: string | null;
+  /** What the person does at the client; empty until an admin writes it. */
+  role: string | null;
   email: string;
   lang: string;
   registered_at: string;
@@ -43,6 +45,8 @@ export interface ContactChange {
   name: string;
   company: string;
   client: string | null;
+  /** What the person does at the client; left out means the role stays as it is. */
+  role?: string | null;
   withdraw_invite: boolean;
 }
 export interface ContactReviewRow {
@@ -144,9 +148,9 @@ export class ParticipantStore {
     return true;
   }
 
-  /** The admin corrects a contact: name, company and the client it belongs to, and may withdraw
-   * the consent to invitations (never give it). AuditLog names the changed fields, never their
-   * values. False if there is no such contact. */
+  /** The admin corrects a contact: name, role, company and the client it belongs to, and may
+   * withdraw the consent to invitations (never give it). AuditLog names the changed fields, never
+   * their values. False if there is no such contact. */
   update(
     db: RowsDb,
     contact: string,
@@ -157,14 +161,22 @@ export class ParticipantStore {
     return db.$transaction(async (tx) => {
       const old = await tx.contact.findUnique({
         where: { id: contact },
-        select: { name: true, company: true, client_id: true, invite_consent_version: true },
+        select: {
+          name: true,
+          company: true,
+          client_id: true,
+          role_at_client: true,
+          invite_consent_version: true,
+        },
       });
       if (!old) return false;
       const withdraw = change.withdraw_invite && old.invite_consent_version !== null;
+      const role = change.role !== undefined && old.role_at_client !== change.role;
       const fields = [
         ...(old.name === change.name ? [] : ['name']),
         ...(old.company === change.company ? [] : ['company']),
         ...(old.client_id === change.client ? [] : ['client']),
+        ...(role ? ['role'] : []),
         ...(withdraw ? ['invite'] : []),
       ];
       if (fields.length === 0) return true;
@@ -174,6 +186,7 @@ export class ParticipantStore {
           name: change.name,
           company: change.company,
           client_id: change.client,
+          ...(role ? { role_at_client: change.role } : {}),
           ...(withdraw ? { invite_consent_version: null, invite_consent_at: null } : {}),
         },
       });
@@ -246,6 +259,7 @@ export class ParticipantStore {
               name: true,
               company: true,
               client_id: true,
+              role_at_client: true,
               email: true,
               invite_consent_version: true,
             },
@@ -262,6 +276,7 @@ export class ParticipantStore {
         name: r.contact.name,
         company: r.contact.company,
         client: r.contact.client_id,
+        role: r.contact.role_at_client,
         email: r.contact.email,
         lang: r.lang,
         registered_at: r.created_at.toISOString(),
@@ -418,6 +433,72 @@ export class ParticipantStore {
     });
   }
 
+  /** The yearly check over several contacts at once (wave B): fifty marked contacts were fifty
+   * presses. Each one is still its own line in AuditLog, so the trail does not change. */
+  confirmMany(
+    db: RowsDb,
+    contacts: readonly string[],
+    session: PrivacySession | null | undefined,
+    now = new Date(),
+  ): Promise<number> {
+    const who = auditWho(requireSession(session), true);
+    return db.$transaction(async (tx) => {
+      let done = 0;
+      for (const contact of [...new Set(contacts)]) {
+        const r = await tx.contact.updateMany({
+          where: { id: contact },
+          data: { last_confirmed_at: now, review_flagged_at: null },
+        });
+        if (!r.count) continue;
+        done += 1;
+        await tx.auditLog.create({
+          data: { who, what: 'seminars.contact.confirm', target: `contact:${contact}` },
+        });
+      }
+      return done;
+    });
+  }
+
+  /**
+   * Vardahei enters the client's contact person itself (wave A, decision of Oleksandr 09.11),
+   * instead of waiting for that person to fill in a seminar form. The contact is kept on the
+   * relationship with the client, so `kept_by_admin` holds the daily job back; the yearly check
+   * marks it like the rest. Never a consent to invitations: only the person gives that, on the
+   * form. `false` when that e-mail is already known — the admin corrects the contact that exists.
+   */
+  async createForClient(
+    db: RowsDb,
+    p: { name: string; email: string; role: string | null; client: string; company: string },
+    session: PrivacySession | null | undefined,
+  ): Promise<boolean> {
+    const who = auditWho(requireSession(session), true);
+    return db.$transaction(async (tx) => {
+      await lockEmail(tx, p.email);
+      if (await tx.contact.findUnique({ where: { email: p.email }, select: { id: true } }))
+        return false;
+      const contact = await tx.contact.create({
+        data: {
+          name: p.name,
+          email: p.email,
+          company: p.company,
+          client_id: p.client,
+          role_at_client: p.role,
+          kept_by_admin: true,
+        },
+        select: { id: true },
+      });
+      await tx.auditLog.create({
+        data: {
+          who,
+          what: 'seminars.contact.create',
+          target: `contact:${contact.id}`,
+          details: { client: p.client, role: p.role === null ? 'nei' : 'ja' },
+        },
+      });
+      return true;
+    });
+  }
+
   /** Retention (daily job): registrations of seminars that ended before `cutoff`. */
   async expire(tx: Prisma.TransactionClient, cutoff: Date): Promise<number> {
     return (await tx.registration.deleteMany({ where: { seminar: { ends_at: { lt: cutoff } } } }))
@@ -425,11 +506,16 @@ export class ParticipantStore {
   }
 
   /** Retention (daily job, decision 16.10): a contact with no registration left and no consent to
-   * invitations goes — after its last registration expired, or was removed by the admin. Each one
-   * under the lock of its e-mail, checked again after the lock: a registration made at the same
-   * moment either waits for the job or keeps its contact (the delete would cascade to it). */
+   * invitations goes — after its last registration expired, or was removed by the admin. A contact
+   * person Vardahei entered (`kept_by_admin`) is kept on the relationship with the client and stays.
+   * Each one under the lock of its e-mail, checked again after the lock: a registration made at the
+   * same moment either waits for the job or keeps its contact (the delete would cascade to it). */
   async removeUnused(tx: Prisma.TransactionClient): Promise<number> {
-    const unused = { invite_consent_version: null, registrations: { none: {} } };
+    const unused = {
+      invite_consent_version: null,
+      kept_by_admin: false,
+      registrations: { none: {} },
+    };
     const found = await tx.contact.findMany({ where: unused, select: { id: true, email: true } });
     let removed = 0;
     for (const c of found) {

@@ -13,6 +13,7 @@ import {
 } from 'react';
 import { mutate } from './api.js';
 import { Icon } from './icons.js';
+import { byNorsk, flatNorsk } from './norsk.js';
 import { ErrorMessage } from './queries.js';
 import { type Person, plain, today } from './samtale-models.js';
 
@@ -25,8 +26,7 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 /** One line as the API takes it: no control characters and no half characters. */
 const line = (s: string) => s.replace(/\p{Cc}/gu, ' ').replace(/\p{Cs}/gu, '�');
-const same = (a: string, b: string) =>
-  a.trim().toLocaleLowerCase('nn') === b.trim().toLocaleLowerCase('nn');
+const same = (a: string, b: string) => flatNorsk(a.trim()) === flatNorsk(b.trim());
 
 /** Each name once, whatever its case and spaces; the first spelling stays. */
 export function unique(names: readonly string[]) {
@@ -34,7 +34,7 @@ export function unique(names: readonly string[]) {
   const out: string[] = [];
   for (const raw of names) {
     const name = raw.trim();
-    const key = name.toLocaleLowerCase('nn');
+    const key = flatNorsk(name);
     if (!name || seen.has(key)) continue;
     seen.add(key);
     out.push(name);
@@ -113,7 +113,7 @@ function first(p: { row: StartRow; names: readonly string[]; me: string | null; 
   const saved = p.row.interviewers;
   const chosen = unique(saved.length || p.edit ? saved : p.me ? [p.me] : []);
   // Once each in the order they came (the first spelling stays), then by name.
-  const rest = unique(p.names).sort((a, b) => a.localeCompare(b, 'nn'));
+  const rest = unique(p.names).sort(byNorsk);
   const from: readonly Person[] = p.row.interviewees.length
     ? p.row.interviewees
     : [{ role: 'dagleg leiar' }];
@@ -151,7 +151,7 @@ export function StartSamtale(p: {
   // Never its own client: on a screen behind a move, that one can be free in a fresh list of the round.
   const others = (p.clients ?? [])
     .filter((c) => c.id !== p.row.client.id)
-    .sort((a, b) => a.name.localeCompare(b.name, 'nn'));
+    .sort((a, b) => byNorsk(a.name, b.name));
   const moving = others.find((c) => c.id === target);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error | null>(null);

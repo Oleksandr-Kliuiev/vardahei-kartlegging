@@ -56,6 +56,11 @@ export const ContactInput = z
     name: text(120).pipe(z.string().min(1)),
     company: text(120).optional(),
     client: z.uuid().nullable().default(null),
+    /** What the person does at the client. Left out means «no change», empty clears it. */
+    role: text(120)
+      .transform((s) => (s === '' ? null : s))
+      .nullable()
+      .optional(),
     /** The admin may withdraw the consent to invitations, never give it. */
     withdraw_invite: z.boolean().default(false),
   })
@@ -63,6 +68,23 @@ export const ContactInput = z
     message: 'Vel ein kunde eller skriv namnet på bedrifta.',
   });
 export type ContactInput = z.infer<typeof ContactInput>;
+
+/** Vardahei enters the client's contact person (wave A): no consent, so no consent fields. */
+export const NewContactInput = z.strictObject({
+  name: text(120).pipe(z.string().min(1)),
+  email: Email,
+  client: z.uuid(),
+  role: text(120)
+    .transform((s) => (s === '' ? null : s))
+    .nullable()
+    .default(null),
+});
+export type NewContactInput = z.infer<typeof NewContactInput>;
+
+/** «Stadfest valde» in the yearly check (wave B). */
+export const ConfirmContactsInput = z.strictObject({
+  contacts: z.array(z.uuid()).min(1).max(200),
+});
 
 export const FindingStatusInput = z.discriminatedUnion('status', [
   z.strictObject({ status: z.literal('open') }),

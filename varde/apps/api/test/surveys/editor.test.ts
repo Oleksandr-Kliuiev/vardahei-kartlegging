@@ -193,14 +193,20 @@ describe('admin survey editor and launch (1d)', () => {
     expect(saved.statusCode).toBe(200);
     version = saved.json<Version>();
     expect((await call('GET', `${path(version.id)}/preview`)).statusCode).toBe(200);
-    expect(
-      (
-        await call('POST', `${path(version.id)}/accept`, {
-          content_hash: version.content_hash,
-          lang: 'nn',
-        })
-      ).statusCode,
-    ).toBe(400);
+    // Wave C: a language is approved on its own texts. The Nynorsk is whole, so it can be read and
+    // signed off while the English is still being written; English itself waits for its texts.
+    const nn = await call('POST', `${path(version.id)}/accept`, {
+      content_hash: version.content_hash,
+      lang: 'nn',
+    });
+    expect(nn.statusCode).toBe(201);
+    version = (await call('GET', path(version.id))).json<Version>();
+    const en = await call('POST', `${path(version.id)}/accept`, {
+      content_hash: version.content_hash,
+      lang: 'en',
+    });
+    expect(en.statusCode).toBe(400);
+    expect(en.json<{ message: string }>().message).toMatch(/manglar/);
     const broken = structuredClone(c);
     broken.questions[1]!.visible_if = { '==': [{ var: 'missing' }, 'ja'] };
     const rejected = await call('PUT', path(version.id), {

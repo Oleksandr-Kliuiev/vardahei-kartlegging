@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { api } from './api.js';
 import { ClientForm } from './clients-form.js';
+import { ArkiverKunde } from './kunde-arkiv.js';
 import { Zone } from './dashboard-aggregate.js';
 import { type Dashboard, numberText } from './dashboard-models.js';
 import { dashboardQuery } from './dashboard-page.js';
@@ -17,10 +18,11 @@ import { KundeSamtalar } from './kunde-samtalar.js';
 import { SlettKunde } from './kunde-slett.js';
 import type { Round } from './models.js';
 import { follow, useTitle } from './nav.js';
+import { shortDate } from './norsk.js';
 import { ErrorMessage, useClients, useRounds } from './queries.js';
 import { longDate } from './overview.js';
 import { ROUND_STATUS, roundWhen } from './runde-page.js';
-import { type SeminarList, shortDate } from './seminar-models.js';
+import type { SeminarList } from './seminar-models.js';
 import './dashboard.css';
 
 const query = (round: string, client: string) => new URLSearchParams({ round, client }).toString();
@@ -80,6 +82,12 @@ export function KundePage({ id, search = '' }: { id: string; search?: string }) 
           <div>
             <h1>{client.name}</h1>
             <p>
+              {client.archived_at !== null && (
+                <>
+                  <span className="chip">Arkivert</span>
+                  {' · '}
+                </>
+              )}
               {client.employee_count === null
                 ? 'Tal tilsette er ikkje sett'
                 : `${client.employee_count} tilsette`}
@@ -92,6 +100,7 @@ export function KundePage({ id, search = '' }: { id: string; search?: string }) 
               <button type="button" className="btn" onClick={() => setEditing(true)}>
                 Endre namn og tal tilsette
               </button>
+              <ArkiverKunde key={`arkiv-${client.id}`} client={client} />
               <SlettKunde key={client.id} client={client} />
             </div>
           )}

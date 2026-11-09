@@ -1,8 +1,14 @@
+import { shortDate } from './norsk.js';
+
 export interface Client {
   id: string;
   name: string;
   slug: string;
   employee_count: number | null;
+  /** Free tags («IT», «BIO»): the lists filter by them and a pick of clients can take one whole. */
+  tags: string[];
+  /** Archived (wave B): kept with everything it has, but out of the lists and the pickers. */
+  archived_at: string | null;
 }
 export interface RoundClient {
   id: string;
@@ -55,9 +61,7 @@ export function versionText(v: Version): string {
   const parts = [`${name} · ${v.label}`];
   const facts = [
     v.question_count ? `${v.question_count} spørsmål` : '',
-    v.published_at
-      ? `publisert ${new Date(v.published_at).toLocaleDateString('nn-NO', { day: 'numeric', month: 'short', year: 'numeric' })}`
-      : '',
+    v.published_at ? `publisert ${shortDate(v.published_at)}` : '',
   ].filter(Boolean);
   if (facts.length) parts.push(`(${facts.join(', ')})`);
   return parts.join(' ');
