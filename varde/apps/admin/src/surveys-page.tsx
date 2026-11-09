@@ -405,6 +405,7 @@ function NyttSkjema({ surveys, onClose }: { surveys: SurveySummary[]; onClose: (
       <form onSubmit={create}>
         <fieldset className="bib-startar">
           <legend>Kva slags skjema?</legend>
+          <div className="bib-rutenett">
           {STARTS.map((s) => (
             <label key={s.id} className="bib-start">
               <input
@@ -424,6 +425,7 @@ function NyttSkjema({ surveys, onClose }: { surveys: SurveySummary[]; onClose: (
               </span>
             </label>
           ))}
+          </div>
         </fieldset>
         <div className="bib-felt">
           {start === 'copy' && (
