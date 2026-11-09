@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -46,6 +47,14 @@ export class AdminController {
     @Req() r: AdminRequest,
   ) {
     return this.clientService.save(id, body, auditWho(r.adminSession));
+  }
+  @Get('/clients/:id/ties')
+  clientTies(@Param('id', ParseUUIDPipe) id: string) {
+    return this.clientService.ties(id);
+  }
+  @Delete('/clients/:id')
+  deleteClient(@Param('id', ParseUUIDPipe) id: string, @Req() r: AdminRequest) {
+    return this.clientService.remove(id, auditWho(r.adminSession));
   }
   @Get('/versions')
   versions() {

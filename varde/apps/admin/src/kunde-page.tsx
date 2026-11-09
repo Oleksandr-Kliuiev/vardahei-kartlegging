@@ -14,6 +14,7 @@ import { roundsOf } from './kundar-page.js';
 import { KundeFunn } from './kunde-funn.js';
 import { KundeKontaktar } from './kunde-kontaktar.js';
 import { KundeSamtalar } from './kunde-samtalar.js';
+import { SlettKunde } from './kunde-slett.js';
 import type { Round } from './models.js';
 import { follow, useTitle } from './nav.js';
 import { ErrorMessage, useClients, useRounds } from './queries.js';
@@ -87,9 +88,12 @@ export function KundePage({ id, search = '' }: { id: string; search?: string }) 
             </p>
           </div>
           {!editing && (
-            <button type="button" className="btn" onClick={() => setEditing(true)}>
-              Endre namn og tal tilsette
-            </button>
+            <div className="handlingar">
+              <button type="button" className="btn" onClick={() => setEditing(true)}>
+                Endre namn og tal tilsette
+              </button>
+              <SlettKunde key={client.id} client={client} />
+            </div>
           )}
         </div>
       </div>

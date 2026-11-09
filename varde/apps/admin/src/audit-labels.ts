@@ -17,6 +17,7 @@ const WHAT: Record<string, string> = {
   'rounds.code.revoke': 'Lenkje trekt attende',
   'clients.create': 'Kunde oppretta',
   'clients.update': 'Kunde endra',
+  'clients.delete': 'Kunde sletta',
   'privacy.release.auto': 'Tal frigjevne automatisk',
   'privacy.release.manual': 'Tal frigjevne for hand',
   'privacy.rows': 'Svarrader lesne',

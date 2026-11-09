@@ -208,3 +208,11 @@ export class InterviewActionsService {
     return result;
   }
 }
+
+/** How many conversations a client has, for the check before a client is deleted. */
+export function interviewCountForClient(
+  db: Prisma.TransactionClient,
+  client: string,
+): Promise<number> {
+  return db.interview.count({ where: { client_id: client } });
+}

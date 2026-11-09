@@ -31,6 +31,7 @@ export const INTEGRATION_FILES = [
   'test/findings/rule-editor.test.ts',
   'test/findings/backfill.test.ts',
   'test/admin/data.test.ts',
+  'test/admin/client-delete.test.ts',
   'test/admin/break-glass.test.ts',
   'test/events/stream.test.ts',
   'test/responses/submission.test.ts',

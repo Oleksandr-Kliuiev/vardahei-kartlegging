@@ -107,6 +107,12 @@ export class PrivacyService {
   readonly store = new ResponseStore();
   /** The only read and write path of seminar Contact and Registration (3.1). */
   readonly participants = new ParticipantStore();
+
+  /** How many aggregate cells refer to a client: a count only, no values. */
+  clientSnapshotCount(db: Prisma.TransactionClient, client: string): Promise<number> {
+    return db.aggregateSnapshot.count({ where: { client_id: client } });
+  }
+
   /** The only outputs of seminar live poll answers (3.4): the count and shown results with k. */
   readonly live = new LiveTally(() => this.config.k);
 

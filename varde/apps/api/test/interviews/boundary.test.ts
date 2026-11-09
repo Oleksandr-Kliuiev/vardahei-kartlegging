@@ -51,7 +51,7 @@ describe('conversations stay in their own module (2.20)', () => {
     ]);
   });
 
-  it('outside it, only the app module, retention (forget, ledger, handover) and a deleted seminar (reopening its actions) import it', () => {
+  it('outside it, only the app module, retention (forget, ledger, handover) a deleted client's check, and a deleted seminar (reopening its actions) import it', () => {
     expect(
       files
         .filter((f) => !f.path.startsWith('modules/interviews/'))
@@ -59,6 +59,7 @@ describe('conversations stay in their own module (2.20)', () => {
         .map((f) => f.path)
         .sort(),
     ).toEqual([
+      'admin/clients.service.ts',
       'app.module.ts',
       'modules/retention/forget.service.ts',
       'modules/retention/handover.ts',
