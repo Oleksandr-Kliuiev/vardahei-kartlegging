@@ -137,6 +137,13 @@ model Client {
   kind              String          @default("client")
   industry          String?
   employee_count    Int?
+  /// Free tags of the client («IT», «BIO»): the lists filter by them and a pick of clients can take
+  /// a whole tag at once (wave A, decision of Oleksandr 09.11). Lower case, each one once.
+  tags              String[]        @default([])
+  /// Arkivert (wave B): a client Vardahei no longer works with, or a duplicate that already has a
+  /// round and therefore cannot be deleted. It is kept with everything it has, and stays out of the
+  /// lists and the pickers until it is taken back.
+  archived_at       DateTime?       @db.Timestamptz(6)
   default_lang      String          @default("nn")
   atlas_external_id String?
   round_clients     RoundClient[]
@@ -523,8 +530,9 @@ model SeminarClient {
 /// client's name or the person's own text. The consent to this registration is on Registration;
 /// `invite_consent_*` is the optional consent to invitations to later seminars (both or none,
 /// CHECK). The public form creates a contact; of a known one it only adds a missing consent to
-/// invitations. Name, company, client and the withdrawal of that consent are the admin's
-/// (AuditLog); `last_confirmed_at` and the yearly mark change only by «Stadfest».
+/// invitations. An admin may enter a client's contact person itself (`kept_by_admin`), never with a
+/// consent to invitations. Name, role, company, client and the withdrawal of that consent are the
+/// admin's (AuditLog); `last_confirmed_at` and the yearly mark change only by «Stadfest».
 model Contact {
   id                     String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name                   String
@@ -533,6 +541,9 @@ model Contact {
   client                 Client?        @relation(fields: [client_id], references: [id], onDelete: SetNull)
   company                String
   role_at_client         String?
+  /// Vardahei entered this person as the client's contact: kept on the relationship with the client,
+  /// not on a consent, so the daily job leaves it be. The yearly check marks it as it marks the rest.
+  kept_by_admin          Boolean        @default(false)
   invite_consent_version String?
   invite_consent_at      DateTime?      @db.Timestamptz(6)
   created_at             DateTime       @default(now()) @db.Timestamptz(6)

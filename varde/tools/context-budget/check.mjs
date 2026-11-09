@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // Context-budget (PRINCIPLES §11, ADR-018): files in varde/** over 700 lines fail, over 500 warn.
+// One exception warns instead of failing: prisma/schema.prisma — see SOFT_ONLY below.
 // Usage: node tools/context-budget/check.mjs [--selfcheck]
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -12,6 +13,13 @@ export const EXTENSIONS = ['ts', 'tsx', 'js', 'mjs', 'cjs', 'css', 'scss', 'sql'
 const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'coverage', '.git']);
 /** Generated SQL has its own CLAUDE.md (0.4). */
 const EXCLUDED_PATH = /(^|\/)prisma\/migrations(\/|$)/;
+/**
+ * Warns but never fails (decision of Oleksandr 09.11). The Prisma schema is one short declaration
+ * per column, read by model and never in halves, so length says little about how hard it is to hold
+ * in the head. Splitting it into prisma/schema/ is the only way Prisma offers, and that moves
+ * prisma/migrations — a path infra/ops/rollback.sh depends on to roll production back.
+ */
+const SOFT_ONLY = /(^|\/)prisma\/schema\.prisma$/;
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 export const VARDE_ROOT = join(HERE, '..', '..');
@@ -46,7 +54,7 @@ export function checkBudget(root) {
       } else if (entry.isFile() && ext.test(entry.name)) {
         scanned += 1;
         const lines = countLines(readFileSync(full, 'utf8'));
-        if (lines > HARD_LIMIT) over.push({ path: rel, lines });
+        if (lines > HARD_LIMIT && !SOFT_ONLY.test(rel)) over.push({ path: rel, lines });
         else if (lines > SOFT_LIMIT) warnings.push({ path: rel, lines });
       }
     }

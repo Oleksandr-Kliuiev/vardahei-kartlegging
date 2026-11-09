@@ -55,6 +55,8 @@ export interface Participant {
   name: string;
   company: string;
   client: string | null;
+  /** What the person does at the client; empty until someone writes it. */
+  role: string | null;
   email: string;
   lang: string;
   registered_at: string;
@@ -122,19 +124,6 @@ export const perCompany = (c: SeminarCounts) =>
   [...c.companies.map((x) => `${x.company} ${x.n}`), ...(c.other ? [`andre ${c.other}`] : [])].join(' · ');
 
 export const registered = (n: number) => `${n} påmeld${n === 1 ? '' : 'e'}`;
-
-const DATE = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'Europe/Oslo',
-  day: 'numeric',
-  month: 'numeric',
-  year: 'numeric',
-});
-/** «16.10.2026», Oslo time, for lists and logs. */
-export const shortDate = (iso: string) =>
-  DATE.formatToParts(new Date(iso))
-    .filter((p) => p.type !== 'literal')
-    .map((p) => p.value)
-    .join('.');
 
 /** In-app navigation without a page load: the shell follows popstate (App.tsx). */
 export function go(event: MouseEvent<HTMLAnchorElement> | null, href: string) {

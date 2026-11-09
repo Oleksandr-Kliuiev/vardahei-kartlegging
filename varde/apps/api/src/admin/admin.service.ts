@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { clientFields } from './clients.service.js';
 import { PrivacyService } from '../modules/privacy/privacy.service.js';
 import { namesOf } from '../modules/auth/people.js';
 
@@ -16,12 +17,7 @@ export class AdminService {
     return this.prisma.client.findMany({
       where: { kind: 'client' },
       orderBy: { name: 'asc' },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        employee_count: true,
-      },
+      select: clientFields,
     });
   }
 

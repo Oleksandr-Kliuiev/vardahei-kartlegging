@@ -58,8 +58,17 @@ describe('context-budget', () => {
     expect(result.scanned).toBe(0);
   });
 
-  it('still budgets prisma/schema.prisma outside migrations', () => {
-    file('apps/api/prisma/schema.prisma', 701);
+  // Decision of Oleksandr 09.11: the Prisma schema stays in sight but never fails the build —
+  // splitting it is the only way to shorten it, and that moves the path rollback.sh depends on.
+  it('warns about prisma/schema.prisma but never fails on it', () => {
+    file('apps/api/prisma/schema.prisma', 900);
+    const result = checkBudget(root);
+    expect(result.over).toEqual([]);
+    expect(result.warnings).toEqual([{ path: 'apps/api/prisma/schema.prisma', lines: 900 }]);
+  });
+
+  it('still fails on any other prisma file outside migrations', () => {
+    file('apps/api/prisma/seed.prisma', 701);
     expect(checkBudget(root).over).toHaveLength(1);
   });
 });

@@ -479,7 +479,10 @@ export class InterviewsService {
 
   private async requireClients(tx: Tx, ids: readonly string[]) {
     if (ids.length === 0) return;
-    const found = await tx.client.count({ where: { id: { in: [...ids] }, kind: 'client' } });
-    if (found !== ids.length) throw new BadRequestException('Vel berre kundar som finst i Varde.');
+    // An archived client (wave B) is not picked for anything new until someone takes it back.
+    const where = { id: { in: [...ids] }, kind: 'client', archived_at: null };
+    const found = await tx.client.count({ where });
+    if (found !== ids.length)
+      throw new BadRequestException('Vel berre kundar som finst i Varde og ikkje er arkiverte.');
   }
 }

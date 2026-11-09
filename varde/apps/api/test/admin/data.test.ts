@@ -9,7 +9,9 @@ let t: TestApp, prisma: PrismaService, cookie: string;
 let fixture: Awaited<ReturnType<typeof runnerRound>>;
 const saved = { ...process.env },
   mark = `test.admin.${Date.now()}`,
-  ids: string[] = [];
+  ids: string[] = [],
+  /** Clients this file makes itself (wave A): removed in the same order they were added. */
+  kundeIds: string[] = [];
 const call = (method: 'GET' | 'PATCH' | 'POST', url: string, payload?: object, auth = true) =>
   t.app
     .getHttpAdapter()
@@ -35,6 +37,7 @@ beforeAll(async () => {
 });
 afterAll(async () => {
   for (const id of ids) await removeRunnerRound(prisma, id);
+  await prisma.client.deleteMany({ where: { id: { in: kundeIds } } });
   await prisma.client.delete({ where: { id: fixture.client.id } });
   await prisma.auditLog.deleteMany({ where: { who: mark } });
   await t.app.close();
@@ -82,6 +85,8 @@ describe('admin lists and employee count (1.24)', () => {
       name: mark,
       slug: fixture.client.slug,
       employee_count: null,
+      tags: [],
+      archived_at: null,
     });
     const draft = await prisma.templateVersion.create({
       data: {
@@ -148,6 +153,66 @@ describe('admin lists and employee count (1.24)', () => {
         where: { who: mark, what: 'clients.update', target: `client:${fixture.client.id}` },
       }),
     ).toBe(2);
+  });
+  it('tags are kept lower case and without doubles, and are left alone when not sent', async () => {
+    const made = await call('POST', '/api/admin/clients', {
+      name: `${mark}-merkelapp`,
+      employee_count: 5,
+      tags: ['IT', ' it ', 'BIO'],
+    });
+    expect(made.statusCode).toBe(201);
+    const client = made.json<{ id: string; tags: string[] }>();
+    expect(client.tags).toEqual(['it', 'bio']);
+    kundeIds.push(client.id);
+    // A head count on its own says nothing about the tags, so they stay.
+    expect(
+      (await call('PATCH', `/api/admin/clients/${client.id}`, { employee_count: 6 })).statusCode,
+    ).toBe(200);
+    expect((await prisma.client.findUnique({ where: { id: client.id } }))?.tags).toEqual([
+      'it',
+      'bio',
+    ]);
+    // An empty list is a choice, and clears them.
+    const cleared = await call('POST', '/api/admin/clients', { name: '', employee_count: null });
+    expect(cleared.statusCode).toBe(400);
+    for (const tags of [['a'.repeat(25)], ['', 'it'], ['a', 'b', 'c', 'd', 'e', 'f', 'g']])
+      expect(
+        (await call('POST', '/api/admin/clients', { name: `${mark}-x`, employee_count: null, tags }))
+          .statusCode,
+      ).toBe(400);
+  });
+  it('«Legg til fleire kundar» adds the new ones and leaves the names that are clients already', async () => {
+    const first = `${mark}-bolk-1`,
+      second = `${mark}-bolk-2`;
+    const made = await call('POST', '/api/admin/clients/batch', {
+      clients: [
+        { name: first, employee_count: 12, tags: ['bio'] },
+        { name: second, employee_count: null, tags: [] },
+      ],
+    });
+    expect(made.statusCode).toBe(201);
+    const { created } = made.json<{ created: { id: string; name: string }[]; skipped: string[] }>();
+    expect(created.map((c) => c.name)).toEqual([first, second]);
+    for (const c of created) kundeIds.push(c.id);
+    expect((await prisma.client.findUnique({ where: { id: created[0]!.id } }))?.tags).toEqual([
+      'bio',
+    ]);
+    expect(
+      await prisma.auditLog.count({
+        where: { who: mark, what: 'clients.create', target: `client:${created[0]!.id}` },
+      }),
+    ).toBe(1);
+    // Running the same list again adds nothing twice, whatever the case of the names.
+    const again = await call('POST', '/api/admin/clients/batch', {
+      clients: [
+        { name: first.toUpperCase(), employee_count: null, tags: [] },
+        { name: `${mark}-bolk-3`, employee_count: null, tags: [] },
+      ],
+    });
+    const twice = again.json<{ created: { id: string }[]; skipped: string[] }>();
+    expect(twice.skipped).toEqual([first.toUpperCase()]);
+    expect(twice.created).toHaveLength(1);
+    kundeIds.push(twice.created[0]!.id);
   });
   it('strict validation rejects extra fields, invalid counts and audit limits', async () => {
     for (const employee_count of [0, -1, 1.5, 10000, '12'])

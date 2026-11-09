@@ -8,12 +8,15 @@ import type { Prisma } from '@prisma/client';
 import { EventsService } from '../events/events.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { MetricsService } from '../metrics/metrics.service.js';
+import { PrivacyService } from '../privacy/privacy.service.js';
 import { CodesService, deadlineExpiry } from './codes.js';
 
 /** A seminar live poll is led from its seminar (3.4), never through the round admin. */
 const LIVE_ROUND = 'Live-spørsmåla blir styrte frå seminaret.';
 /** The technical client of live polls (3.4) takes part in no survey. */
 const NOT_A_CUSTOMER = 'Vel ein av kundane.';
+/** An archived client (wave B) takes part in nothing new until someone takes it back. */
+const ARCHIVED = 'Kunden er arkivert. Hent han attende først.';
 
 export interface NewRound {
   name: string;
@@ -32,6 +35,7 @@ export class RoundsService {
     private readonly codes: CodesService,
     private readonly metrics: MetricsService,
     private readonly events: EventsService,
+    private readonly privacy: PrivacyService,
   ) {}
 
   private async changed<T>(operation: Promise<T>): Promise<T> {
@@ -136,6 +140,7 @@ export class RoundsService {
           const client = await tx.client.findUnique({ where: { id: item.client_id } });
           if (!client) throw new NotFoundException('Kunden finst ikkje.');
           if (client.kind !== 'client') throw new BadRequestException(NOT_A_CUSTOMER);
+          if (client.archived_at !== null) throw new BadRequestException(ARCHIVED);
           const deadline = new Date(item.deadline);
           if (input.open && deadlineExpiry(deadline) <= new Date())
             throw new BadRequestException('Vel ein frist fram i tid.');
@@ -216,6 +221,7 @@ export class RoundsService {
         const client = await tx.client.findUnique({ where: { id: input.client_id } });
         if (!client) throw new NotFoundException('Kunden finst ikkje.');
         if (client.kind !== 'client') throw new BadRequestException(NOT_A_CUSTOMER);
+        if (client.archived_at !== null) throw new BadRequestException(ARCHIVED);
         if (
           await tx.roundClient.findUnique({
             where: { round_id_client_id: { round_id: id, client_id: input.client_id } },
@@ -235,6 +241,69 @@ export class RoundsService {
         });
         await this.audit(tx, who, 'client.add', `round_client:${rc.id}`);
         return rc;
+      }),
+    );
+  }
+
+  /**
+   * Takes a client back out of a round (wave B): a client picked by mistake, or one that is not
+   * taking part after all. Only while nothing is lost by it — no answer, no started session and no
+   * released cell — and only while the round is still running; a closed round is history. The code
+   * of the client goes with it, so the link stops working.
+   */
+  removeClient(id: string, who: string) {
+    return this.changed(
+      this.prisma.$transaction(async (tx) => {
+        const { rc, round } = await this.lockClient(tx, id);
+        if (!['draft', 'open'].includes(round.status))
+          throw new ConflictException('Runden er avslutta.');
+        if ((await this.privacy.roundClientTraces(tx, id)) > 0)
+          throw new ConflictException(
+            'Kunden har alt svar eller aktivitet i runden. Steng han for svar i staden.',
+          );
+        const client = await tx.client.findUnique({
+          where: { id: rc.client_id },
+          select: { name: true },
+        });
+        await tx.revokedRoundCode.deleteMany({ where: { round_client_id: id } });
+        await tx.roundClient.delete({ where: { id } });
+        await tx.auditLog.create({
+          data: {
+            who,
+            what: 'rounds.client.remove',
+            target: `round:${round.id}`,
+            details: { client: client?.name ?? '' },
+          },
+        });
+        return { id };
+      }),
+    );
+  }
+
+  /**
+   * Deletes a round nothing hangs on (wave B): one made by mistake, before any client was added.
+   * A round with clients, released numbers or a seminar that points at it stays.
+   */
+  remove(id: string, who: string) {
+    return this.changed(
+      this.prisma.$transaction(async (tx) => {
+        const round = await this.lockRound(tx, id);
+        if (round.status !== 'draft')
+          throw new ConflictException('Berre ei runde som ikkje er opna, kan slettast.');
+        if ((await this.privacy.roundTraces(tx, id)) > 0)
+          throw new ConflictException(
+            'Runden har kundar, tal eller eit seminar som peikar på han, og kan ikkje slettast.',
+          );
+        await tx.round.delete({ where: { id } });
+        await tx.auditLog.create({
+          data: {
+            who,
+            what: 'rounds.remove',
+            target: `round:${id}`,
+            details: { name: round.name },
+          },
+        });
+        return { id };
       }),
     );
   }

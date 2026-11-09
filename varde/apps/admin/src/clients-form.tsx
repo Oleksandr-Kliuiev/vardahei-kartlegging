@@ -1,9 +1,10 @@
-import type { FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { mutate } from './api.js';
+import { MerkelappFelt, tagsOf } from './merkelappar.js';
 import type { Client } from './models.js';
-import { ErrorMessage, useAction } from './queries.js';
+import { ErrorMessage, useAction, useClients } from './queries.js';
 
-/** A new client, or the name and head count of one (2.17: on the client's own page). */
+/** A new client, or the name, head count and tags of one (2.17: on the client's own page). */
 export function ClientForm({
   client,
   onSaved,
@@ -12,6 +13,8 @@ export function ClientForm({
   onSaved?: (saved: Client) => void;
 }) {
   const action = useAction();
+  const clients = useClients();
+  const [tags, setTags] = useState<string[]>(client?.tags ?? []);
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const element = e.currentTarget,
@@ -24,11 +27,15 @@ export function ClientForm({
           {
             name: data.get('name'),
             employee_count: data.get('count') === '' ? null : Number(data.get('count')),
+            tags,
           },
         ),
       {
         onSuccess: (saved) => {
-          if (!client) element.reset();
+          if (!client) {
+            element.reset();
+            setTags([]);
+          }
           onSaved?.(saved as Client);
         },
       },
@@ -50,6 +57,7 @@ export function ClientForm({
           defaultValue={client?.employee_count ?? ''}
         />
       </label>
+      <MerkelappFelt value={tags} known={tagsOf(clients.data ?? [])} onChange={setTags} />
       <button disabled={action.isPending}>{client ? 'Lagre kunde' : 'Opprett kunde'}</button>
       <ErrorMessage error={action.error} />
     </form>

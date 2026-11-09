@@ -114,6 +114,9 @@
 .vk .vk-stor { font-size: 21px; font-weight: 720; line-height: 1.3; color: var(--ink-strong); min-height: 58px; resize: vertical; }
 /* Long texts show whole (letter, question, JSON) up to a point, then scroll */
 .vk textarea.input { field-sizing: content; max-height: 420px; }
+/* A published version is locked, and its fields look it: a sunken fill and no caret, so nobody
+   writes into a field that keeps nothing. The edge keeps its own colour (WCAG 1.4.11, 3:1). */
+.vk input[readonly], .vk textarea[readonly] { background: var(--bg-sunken); cursor: default; }
 /* The criteria of a conversation guide (3.1) are a line or two each. */
 .vk-kriteria .vk-felt textarea.input { min-height: 40px; }
 .vk-manglar { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; font-weight: 650; color: var(--warning-fg); }
@@ -202,6 +205,14 @@
 .vk-teknisk summary .icon { transition: transform var(--t-base) var(--ease-sti); }
 .vk-teknisk[open] summary .icon { transform: rotate(90deg); }
 .vk-teknisk-innhald { display: grid; gap: 12px; padding-top: 8px; }
+/* «Innhaldet som fil» (wave C5): the two buttons, and what a picked file turns out to hold. */
+.vk-fil { display: grid; gap: 10px; }
+.vk-fil-funn { display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-sunken); }
+.vk-fil-funn p { margin: 0; font-size: 13.5px; }
+.vk-fil-liste { margin: 0; padding-inline-start: 20px; display: grid; gap: 4px; font-size: 13.5px; }
+/* The sunken fill is lighter than the page, so muted ink no longer reaches AA on it. */
+.vk-fil-funn .vk-dempa { color: var(--ink); }
+.vk-fil-feil { margin: 0; font-size: 13.5px; font-weight: 600; color: var(--warning-fg); }
 .vk .vk-json { font-family: var(--font-mono); font-size: 12.5px; min-height: 220px; line-height: 1.45; white-space: pre; }
 .vk-knappar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .vk-fot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 14px; }
@@ -310,6 +321,9 @@
 .vk-ver:last-child { border-bottom: 0; }
 .vk-ver p { margin: 0; }
 .vk-ver-tittel { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* A ghost button paints no edge, so one that opens a row would read as indented text: pull it
+   back by its own padding and border, and the words line up with the chip above. */
+.vk-ver .vk-knappar > .btn.ghost:first-child { margin-inline-start: -13px; }
 .vk-endringar { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 6px; font-size: 13.5px; }
 /* A conversation guide (2.20): no phone; on a wide screen the editor takes its column, below 900 px
    the two and one column layouts above already apply. */

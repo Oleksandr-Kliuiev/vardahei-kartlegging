@@ -163,9 +163,11 @@ describe('survey library, new surveys and settings (2.16)', () => {
         copy_from: saved.id,
       })
     ).json<Version>();
+    // The copy carries the new name, and the English one is blank: «Omsetjing» asks for it before
+    // publishing, so the name of the survey it came from never goes out to anyone answering.
     expect(copy.content).toEqual({
       ...editorContent(copy.content.key),
-      intro: { ...editorContent(key).intro, title: { nn: `Kopi ${run}`, en: 'Syntetisk skjema' } },
+      intro: { ...editorContent(key).intro, title: { nn: `Kopi ${run}`, en: '' } },
     });
     const draft = await call('POST', `/api/admin/surveys/${saved.template_id}/drafts`, {
       copy_from: saved.id,

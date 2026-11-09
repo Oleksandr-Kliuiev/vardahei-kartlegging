@@ -279,13 +279,6 @@ summary {
   min-height: 80px;
   width: 100%;
 }
-.launch-client {
-  border-top: 1px solid var(--line);
-  padding: 14px 0;
-}
-.launch-client > .knappar {
-  margin-top: 10px;
-}
 h2,
 h3,
 .distribution > span:first-child {
@@ -324,11 +317,6 @@ h3,
 .editor-form input:not([type='checkbox']) {
   width: 100%;
   text-overflow: ellipsis;
-}
-.launch-client {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
 }
 label {
   flex-wrap: wrap;

@@ -151,6 +151,7 @@ export function RoundClientCard({
 }) {
   const action = useAction();
   const [confirm, setConfirm] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [send, setSend] = useState(asked && rc.status === 'open');
   const card = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -166,6 +167,15 @@ export function RoundClientCard({
       clearTimeout(timer);
     };
   }, [confirm]);
+  useEffect(() => {
+    if (!removing) return;
+    const timer = setTimeout(() => {
+      setRemoving(false);
+    }, 5000);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [removing]);
   const base = `/api/admin/round-clients/${rc.id}`;
   const run = (work: () => Promise<unknown>) => {
     action.mutate(work);
@@ -248,6 +258,26 @@ export function RoundClientCard({
             Rapport til kunden
           </a>
         )}
+        {/* Picked by mistake, or not taking part after all (wave B). Only while nothing is lost by
+            it: the server refuses a client that has answers, a started session or released numbers. */}
+        {(progress?.responses_total ?? 0) === 0 &&
+          ['draft', 'open', 'closed'].includes(rc.status) && (
+            <button
+              className="fare"
+              disabled={action.isPending}
+              aria-label={`Ta ${rc.client.name} ut av runden`}
+              onClick={() => {
+                if (!removing) {
+                  setRemoving(true);
+                  return;
+                }
+                setRemoving(false);
+                run(() => mutate(base, 'DELETE'));
+              }}
+            >
+              {removing ? 'Kunden og lenkja blir borte. Stadfest' : 'Ta ut av runden'}
+            </button>
+          )}
         {rc.status === 'open' && (
           <button
             aria-expanded={send}

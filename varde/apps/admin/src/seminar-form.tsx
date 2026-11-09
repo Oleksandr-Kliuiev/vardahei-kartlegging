@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { mutate } from './api.js';
+import { Kundeval } from './kundeval.js';
 import { ErrorMessage, useClients } from './queries.js';
 import { bodyOf, type SeminarDraft } from './seminar-models.js';
 import { Seg } from './widgets.js';
@@ -121,24 +122,12 @@ export function SeminarForm({
           />
         </label>
         <div className="field">
-          <span>Kundar</span>
-          <div className="sem-kundar">
-            {clients.data?.map((c) => (
-              <label key={c.id} className="kryss">
-                <input
-                  type="checkbox"
-                  checked={d.clients.includes(c.id)}
-                  onChange={(e) =>
-                    set(
-                      'clients',
-                      e.target.checked ? [...d.clients, c.id] : d.clients.filter((x) => x !== c.id),
-                    )
-                  }
-                />{' '}
-                {c.name}
-              </label>
-            ))}
-          </div>
+          <Kundeval
+            clients={clients.data ?? []}
+            chosen={d.clients}
+            onChange={(next) => set('clients', next)}
+            legend="Kundar"
+          />
           <p className="forklaring">Dei som melder seg på, kan velje mellom desse eller skrive inn ei anna bedrift.</p>
         </div>
         <ErrorMessage error={error} />

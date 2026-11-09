@@ -10,6 +10,7 @@ import { dashboardQuery } from './dashboard-page.js';
 import { Icon } from './icons.js';
 import { FOLLOW_UP } from './kunde-funn.js';
 import { follow } from './nav.js';
+import { byNorsk } from './norsk.js';
 import { ErrorMessage, useClients, useRounds } from './queries.js';
 import type { SeminarDetail, SeminarFinding } from './seminar-models.js';
 import './dashboard.css';
@@ -188,7 +189,7 @@ function Liste({ seminar, groups }: { seminar: SeminarDetail; groups: FunnGroup[
     .map((group, i) => ({ group, result: results[i] }))
     .sort(
       (a, b) =>
-        clientName(a.group.client).localeCompare(clientName(b.group.client), 'nb') ||
+        byNorsk(clientName(a.group.client), clientName(b.group.client)) ||
         order(a.group.round) - order(b.group.round),
     );
   const error = clients.error ?? rounds.error;

@@ -5,8 +5,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, mutate } from './api.js';
+import { shortDate } from './norsk.js';
 import { ErrorMessage, useClients } from './queries.js';
-import { type Participant, type SeminarDetail, shortDate } from './seminar-models.js';
+import type { Participant, SeminarDetail } from './seminar-models.js';
 
 function EditContact({
   row,
@@ -21,6 +22,7 @@ function EditContact({
   const [name, setName] = useState(row.name);
   const [client, setClient] = useState(row.client ?? '');
   const [company, setCompany] = useState(row.client ? '' : row.company);
+  const [role, setRole] = useState(row.role ?? '');
   const [withdraw, setWithdraw] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -31,6 +33,7 @@ function EditContact({
     try {
       await mutate(`/api/admin/contacts/${row.contact}`, 'PUT', {
         name,
+        role,
         ...(client ? { client } : { company, client: null }),
         ...(withdraw ? { withdraw_invite: true } : {}),
       });
@@ -40,6 +43,7 @@ function EditContact({
         name: name.trim(),
         client: client || null,
         company: chosen?.name ?? company.trim(),
+        role: role.trim() || null,
         invite: row.invite && !withdraw,
       });
     } catch (e) {
@@ -71,6 +75,16 @@ function EditContact({
             <input className="input" required maxLength={120} value={company} onChange={(e) => setCompany(e.target.value)} />
           </label>
         )}
+        <label className="field">
+          <span>Rolle hos kunden</span>
+          <input
+            className="input"
+            maxLength={120}
+            placeholder="dagleg leiar, IT-ansvarleg …"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+          />
+        </label>
         <div className="field">
           <span>Invitasjonar</span>
           {row.invite ? (
@@ -209,7 +223,10 @@ export function NameList({ seminar }: { seminar: SeminarDetail }) {
                     </tr>
                   ) : (
                     <tr key={p.registration}>
-                      <th scope="row">{p.name}</th>
+                      <th scope="row">
+                        {p.name}
+                        {p.role ? <span className="sem-rolle">{p.role}</span> : null}
+                      </th>
                       <td>{p.company}</td>
                       <td>{p.email}</td>
                       <td>

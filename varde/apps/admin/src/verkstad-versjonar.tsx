@@ -11,7 +11,12 @@ import { diffQuestions } from './verkstad-tekst.js';
 export function Versjonar(p: {
   versions: VersionSummary[];
   current: string;
+  /** With a draft open there is nowhere to put a second one (one draft per survey). */
+  hasDraft: boolean;
+  busy: boolean;
   onOpen: (id: string) => void;
+  /** «Byggj utkast på denne»: going back to an older wording is one press (wave C). */
+  onDraftFrom: (id: string) => void;
   onClose: () => void;
 }) {
   const close = useRef<HTMLButtonElement>(null);
@@ -74,12 +79,30 @@ export function Versjonar(p: {
                     Kva endra seg frå v{before.version_no}?
                   </button>
                 )}
+                {/* The new work of this panel, so it carries an edge: a ghost button here reads as
+                    a line of text and nobody presses it. */}
+                {v.status === 'published' && !p.hasDraft && (
+                  <button
+                    type="button"
+                    className="btn sm"
+                    disabled={p.busy}
+                    onClick={() => p.onDraftFrom(v.id)}
+                  >
+                    Byggj utkast på v{v.version_no}
+                  </button>
+                )}
               </div>
               {before && shown === v.id && <Endringar before={before.id} after={v.id} />}
             </li>
           );
         })}
       </ol>
+      {p.hasDraft && (
+        <p className="vk-skuff-innhald vk-dempa">
+          Eitt utkast om gongen. Publiser eller slett utkastet for å byggje eit nytt på ein annan
+          versjon.
+        </p>
+      )}
     </aside>
   );
 }

@@ -41,7 +41,6 @@
 .sem-form .kryss input { width: 18px; height: 18px; accent-color: var(--accent); }
 .sem-form-tid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
 @media (max-width: 480px) { .sem-form-tid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .sem-form-tid > :first-child { grid-column: span 2; } }
-.sem-kundar { display: flex; flex-wrap: wrap; gap: 8px 18px; }
 .sem-form .forklaring { margin-top: 0; }
 
 /* Eitt seminar */
@@ -100,6 +99,8 @@
 .sem-last-ned { margin-top: 12px; }
 
 /* Namnelista: handlingar per rad og retting av ein kontakt */
+/* Rolla hos kunden står under namnet, så tabellen held kolonnane sine */
+.sem-rolle { display: block; font-weight: 400; font-size: 13px; color: var(--ink-muted); }
 .sem-rad-handling { white-space: nowrap; text-align: right; }
 /* Knappane går under kvarandre når kolonnane treng plassen */
 .sem-rad-knappar { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }

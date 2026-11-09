@@ -129,6 +129,17 @@ export function resolve(path: string, search: string): Page {
       </>,
       { title: 'Funn-reglar' },
     );
+  if (path === '/admin/surveys/papirkorg')
+    return page(
+      <>
+        <Faner label="Skjema" items={SKJEMA_FANER} current="/admin/surveys" />
+        <SurveysPage view="papirkorg" />
+      </>,
+      {
+        title: 'Papirkorg',
+        intro: 'Utkast du har sletta. Hent dei attende, eller slett dei for godt.',
+      },
+    );
   const workshop = match(path, `/admin/surveys/${ID}`);
   if (workshop)
     return {

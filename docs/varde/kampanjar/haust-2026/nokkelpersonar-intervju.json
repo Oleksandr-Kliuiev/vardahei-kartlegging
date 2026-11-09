@@ -1,0 +1,498 @@
+{
+  "key": "nokkelpersonar-intervju",
+  "audience": "client_survey",
+  "identification": "none",
+  "required_languages": [
+    "nn",
+    "en"
+  ],
+  "leader_roles": [],
+  "intro": {
+    "title": {
+      "nn": "Samtale med nøkkelpersonar",
+      "en": "Conversation with key people"
+    },
+    "short": {
+      "nn": "Nøkkelpersonar",
+      "en": "Key people"
+    },
+    "minutes": 20,
+    "letter": [
+      {
+        "nn": "Vardahei IT kartlegg IT-tryggleik og beredskap i bedrifta. Denne samtalen er for deg som kjenner drifta og rutinane best — gjerne dagleg leiar eller ein annan nøkkelperson.",
+        "en": "Vardahei IT is assessing IT security and preparedness in the company. This conversation is for whoever knows the business and its routines best — typically the managing director or another key person."
+      },
+      {
+        "nn": "Spørsmåla handlar om ansvar, rutinar, tilgangar og beredskap. Skriv svara med eigne ord; det finst ikkje fasitsvar, og «veit ikkje» er eit heilt greitt svar.",
+        "en": "The questions cover responsibility, routines, access and preparedness. Write your answers in your own words; there are no model answers, and \"not sure\" is a perfectly fine answer."
+      }
+    ],
+    "sender": {
+      "nn": "Asbjørn og resten av gjengen i Vardahei IT",
+      "en": "Asbjørn and the rest of the team at Vardahei IT"
+    },
+    "facts": [
+      {
+        "nn": "Svara ser berre Vardahei IT. Vi går gjennom dei saman med bedrifta.",
+        "en": "Only Vardahei IT sees the answers. We go through them with the company."
+      },
+      {
+        "nn": "Ikkje skriv passord, nøklar eller andre hemmelege opplysningar i svara.",
+        "en": "Don't write passwords, keys or other secrets in your answers."
+      },
+      {
+        "nn": "«Veit ikkje» er eit nyttig svar. Det fortel oss kva vi bør sjå nærare på saman.",
+        "en": "“Not sure” is a useful answer. It tells us what we should look at together."
+      }
+    ],
+    "contact": {
+      "name": "Vardahei IT",
+      "phone": "+47 930 94 567",
+      "email": "post@vardahei.no",
+      "hours": {
+        "nn": "Måndag til fredag 08–16",
+        "en": "Monday to Friday 08–16"
+      }
+    }
+  },
+  "leader_intro": {
+    "title": {
+      "nn": "Nokre spørsmål til deg som leiar",
+      "en": "A few questions for you as a manager"
+    },
+    "text": {
+      "nn": "Sidan du har ansvar i bedrifta, har vi nokre spørsmål til.",
+      "en": "Since you have responsibility in the company, we have a few more questions."
+    }
+  },
+  "tips": [],
+  "max_tips": 0,
+  "invitation": {
+    "letter": {
+      "nn": "Hei!\n\nVi kartlegg IT-tryggleiken vår saman med Vardahei IT. Som ein del av kartlegginga vil Vardahei IT gjerne høyre korleis du som kjenner drifta og rutinane best, vil skildre ansvar, rutinar, tilgangar og beredskap i bedrifta.\n\nDet er ingen fasitsvar, og «veit ikkje» er eit heilt greitt svar. Det tek om lag {minutt} minutt. Ikkje skriv passord eller andre hemmelege opplysningar i svara.\n\n{lenkje}\n\nLenkja går til {host}, så du kan trygt opne ho.{frist}\n\nTakk!",
+      "en": "Hi,\n\nWe're assessing our IT security together with Vardahei IT. As part of the assessment, Vardahei IT would like to hear, in your own words as the person who knows the business and its routines best, how you'd describe responsibility, routines, access and preparedness in the company.\n\nThere are no model answers, and \"not sure\" is a perfectly fine answer. It takes about {minutt} minutes. Please don't write passwords or other secrets in your answers.\n\n{lenkje}\n\nThe link goes to {host}, so it's safe to open.{frist}\n\nThanks!"
+    },
+    "poster": {
+      "title": {
+        "nn": "Samtale med nøkkelpersonar",
+        "en": "Conversation with key people"
+      },
+      "text": {
+        "nn": "For deg som kjenner drifta og rutinane best. Det tek om lag {minutt} minutt.",
+        "en": "For whoever knows the business and its routines best. It takes about {minutt} minutes."
+      },
+      "footer": {
+        "nn": "Ikkje skriv passord eller andre hemmelege opplysningar i svara. Svara ser berre Vardahei IT.",
+        "en": "Don't write passwords or other secrets in your answers. Only Vardahei IT sees the answers."
+      }
+    }
+  },
+  "questions": [
+    {
+      "id": "N1",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kva rolle har du i bedrifta?",
+          "en": "What is your role at work?"
+        },
+        "section_title": {
+          "nn": "Om deg",
+          "en": "About you"
+        }
+      },
+      "options": [
+        {
+          "id": "leiar",
+          "texts": {
+            "text": {
+              "nn": "Leiar",
+              "en": "Manager"
+            }
+          }
+        },
+        {
+          "id": "kontor",
+          "texts": {
+            "text": {
+              "nn": "Administrasjon/kontor",
+              "en": "Administration/office"
+            }
+          }
+        },
+        {
+          "id": "prod",
+          "texts": {
+            "text": {
+              "nn": "Produksjon/drift",
+              "en": "Production/operations"
+            }
+          }
+        },
+        {
+          "id": "sal",
+          "texts": {
+            "text": {
+              "nn": "Sal / Kundeservice",
+              "en": "Sales / customer service"
+            }
+          }
+        },
+        {
+          "id": "it",
+          "texts": {
+            "text": {
+              "nn": "IT / superbrukar",
+              "en": "IT / super user"
+            }
+          }
+        },
+        {
+          "id": "anna",
+          "texts": {
+            "text": {
+              "nn": "Anna",
+              "en": "Other"
+            }
+          }
+        }
+      ],
+      "role": true,
+      "required": true
+    },
+    {
+      "id": "N2",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Er det definert kven som har ansvaret for IT hos dykk, eller «flyt» det litt rundt? Veit til dømes ein tilsett kven han skal gå til om han oppdagar eit IT-tryggleiksproblem?",
+          "en": "Is it clearly defined who is responsible for IT in your company, or does it \"float\" around a bit? For example, does an employee know who to go to if they discover an IT security problem?"
+        },
+        "section_title": {
+          "nn": "Ansvar og rolle",
+          "en": "Responsibility and role"
+        }
+      }
+    },
+    {
+      "id": "N3",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Dersom de gjer endringar som gjeld tryggleik, blir dei tilsette informerte om dette? Korleis?",
+          "en": "If you make changes related to security, are employees informed about this? How?"
+        }
+      }
+    },
+    {
+      "id": "N4",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Brukar tilsette privat e-post saman med jobb-e-post?",
+          "en": "Do employees use private email alongside work email?"
+        },
+        "section_title": {
+          "nn": "E-post, deling og tilgangar",
+          "en": "Email, sharing and access"
+        }
+      }
+    },
+    {
+      "id": "N5",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Korleis blir filer delte internt og eksternt? (Eigne område for deling, passord, utløpsdato og liknande.)",
+          "en": "How are files shared internally and externally? (Dedicated sharing areas, passwords, expiry dates and so on.)"
+        }
+      }
+    },
+    {
+      "id": "N6",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Korleis blir tilgangar handterte for ferievikarar, sesongarbeidarar og liknande? Får dei eigne profilar?",
+          "en": "How is access handled for holiday temps, seasonal workers and similar? Do they get their own profiles?"
+        }
+      }
+    },
+    {
+      "id": "N7",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Har de rutinar for jamleg oppdatering av PC-ar, telefonar og programvare?",
+          "en": "Do you have routines for regularly updating computers, phones and software?"
+        },
+        "section_title": {
+          "nn": "Utstyr og programvare",
+          "en": "Devices and software"
+        }
+      }
+    },
+    {
+      "id": "N8",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Er de kjende med kva opplysningar de har lov til å lagre om forretningsforbindelsane dykkar?",
+          "en": "Are you aware of what information you are allowed to store about your business contacts?"
+        },
+        "section_title": {
+          "nn": "Personvern og informasjon",
+          "en": "Privacy and information"
+        }
+      }
+    },
+    {
+      "id": "N9",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Har de kontroll på kva system bedriftsinformasjon eller personopplysningar blir lagra i?",
+          "en": "Do you have control over which systems company information or personal data is stored in?"
+        }
+      }
+    },
+    {
+      "id": "N10",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Har tilsette lov til å installere jobbsystem eller e-post på private einingar? Og har tilsette lov til å installere private program på jobb-PC-en?",
+          "en": "Are employees allowed to install work systems or email on private devices? And are employees allowed to install private programs on their work computer?"
+        }
+      }
+    },
+    {
+      "id": "N11",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Har de oversikt over kvar alle interne personopplysningar ligg, slik at de veit at eit datainnbrot kan meldast til Datatilsynet?",
+          "en": "Do you have an overview of where all internal personal data is kept, so you know a data breach can be reported to the Norwegian Data Protection Authority?"
+        }
+      }
+    },
+    {
+      "id": "N12",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "I system med bedriftsinformasjon eller personopplysningar: er det etablert 2-faktorpålogging?",
+          "en": "In systems with company information or personal data: is two-factor sign-in in place?"
+        }
+      }
+    },
+    {
+      "id": "N13",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Brukar de delte passord for pålogging til ulike tenester?",
+          "en": "Do you use shared passwords for signing in to different services?"
+        },
+        "section_title": {
+          "nn": "Passord og pålogging",
+          "en": "Passwords and sign-in"
+        }
+      }
+    },
+    {
+      "id": "N14",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Brukar de gode/sterke passord, utan gjenbruk av passord?",
+          "en": "Do you use good, strong passwords, without reusing passwords?"
+        }
+      }
+    },
+    {
+      "id": "N15",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Har de reglar for bruk av PC på reise (til dømes Wi-Fi)?",
+          "en": "Do you have rules for using your computer when travelling (for example Wi-Fi)?"
+        }
+      }
+    },
+    {
+      "id": "N16",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Har de differensiert tilgang til filer og mapper?",
+          "en": "Do you have differentiated access to files and folders?"
+        },
+        "section_title": {
+          "nn": "Tilgangsstyring og rutinar",
+          "en": "Access control and routines"
+        }
+      }
+    },
+    {
+      "id": "N17",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Har de rutinar for onboarding og offboarding av tilsette? (Gjeld både system og rutinar.)",
+          "en": "Do you have routines for onboarding and offboarding employees? (Covers both systems and procedures.)"
+        }
+      }
+    },
+    {
+      "id": "N18",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Er IT-tryggleik ein del av det leiinga fokuserer på, til dømes på styremøte og i den daglege oppfølginga av tilsette?",
+          "en": "Is IT security part of what management focuses on, for example at board meetings and in day-to-day follow-up of employees?"
+        },
+        "section_title": {
+          "nn": "Leiing, øving og beredskap",
+          "en": "Management, practice and preparedness"
+        }
+      }
+    },
+    {
+      "id": "N19",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Har de testa ei større tilbakeføring av data (eit simulert dataangrep)? Viss ikkje: trur de det hadde vore nyttig?",
+          "en": "Have you tested a major data restore (a simulated cyberattack)? If not, do you think it would be useful?"
+        }
+      }
+    },
+    {
+      "id": "N20",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Har de backup på fleire lokasjonar?",
+          "en": "Do you have backups in several locations?"
+        }
+      }
+    },
+    {
+      "id": "N21",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Har de sett opp reglar i M365 for å førebyggje phishing?",
+          "en": "Have you set up rules in M365 to prevent phishing?"
+        }
+      }
+    },
+    {
+      "id": "N22",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Trener de på å avsløre phishing?",
+          "en": "Do you practise spotting phishing?"
+        }
+      }
+    },
+    {
+      "id": "N23",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Har de passordverktøy (ein passordhandterar)?",
+          "en": "Do you have a password tool (a password manager)?"
+        }
+      }
+    },
+    {
+      "id": "N24",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Gjennomfører de ein årleg tryggleikssjekk?",
+          "en": "Do you carry out an annual security check?"
+        }
+      }
+    },
+    {
+      "id": "N25",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Korleis handterer de bruk av og tilgang til mobilar i forhold til bedriftsdata?",
+          "en": "How do you handle the use of, and access to, mobile phones in relation to company data?"
+        },
+        "section_title": {
+          "nn": "Mobil og opplæring",
+          "en": "Mobile and training"
+        }
+      }
+    },
+    {
+      "id": "N26",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Får tilsette opplæring i tryggleik? (Til dømes testing av e-postar, rutinar og liknande.)",
+          "en": "Do employees get security training? (For example email testing, routines and similar.)"
+        }
+      }
+    },
+    {
+      "id": "N27",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Har de ein beredskapsplan ved IT-tryggleikshendingar?",
+          "en": "Do you have a contingency plan for IT security incidents?"
+        },
+        "section_title": {
+          "nn": "Beredskap ved hending",
+          "en": "Incident preparedness"
+        }
+      }
+    },
+    {
+      "id": "N28",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Veit tilsette kven dei skal kontakte ved mistenkjeleg aktivitet?",
+          "en": "Do employees know who to contact in case of suspicious activity?"
+        }
+      }
+    }
+  ]
+}

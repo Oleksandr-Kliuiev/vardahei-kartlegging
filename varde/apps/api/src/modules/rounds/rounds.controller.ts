@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -100,6 +101,17 @@ export class RoundsController {
   @Post('/round-clients/:id/reissue')
   reissue(@Param('id', ParseUUIDPipe) id: string, @Req() r: AdminRequest) {
     return this.rounds.reissue(id, auditWho(r.adminSession));
+  }
+
+  /** Takes a client back out of a round, and deletes a round nothing hangs on (wave B). */
+  @Delete('/round-clients/:id')
+  removeClient(@Param('id', ParseUUIDPipe) id: string, @Req() r: AdminRequest) {
+    return this.rounds.removeClient(id, auditWho(r.adminSession));
+  }
+
+  @Delete('/rounds/:id')
+  removeRound(@Param('id', ParseUUIDPipe) id: string, @Req() r: AdminRequest) {
+    return this.rounds.remove(id, auditWho(r.adminSession));
   }
 
   @Post('/rounds/:id/close')

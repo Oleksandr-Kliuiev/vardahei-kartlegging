@@ -49,6 +49,7 @@ import { Bank } from './verkstad-bank.js';
 import { Meir, notesQuery, openNotes } from './verkstad-meir.js';
 import { Omsetjing } from './verkstad-omsetjing.js';
 import { diffQuestions, withText } from './verkstad-tekst.js';
+import { duplicatedInto } from './verkstad-kopier.js';
 import { Versjonar } from './verkstad-versjonar.js';
 import { useModal } from './widgets.js';
 import { emptyTexts } from '../../../packages/schema/src/template/respondent-texts.js';
@@ -270,27 +271,7 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
   };
   const duplicate = (q: Question) => {
     const id = nextId(content, used());
-    const copy = JSON.parse(JSON.stringify(q)) as Question & Record<string, unknown>;
-    delete copy.frozen;
-    delete copy.anchor_key;
-    delete copy.role;
-    delete copy.identifier;
-    const where =
-      q.part === 'leader'
-        ? 'leader'
-        : sectionsOf(content).findIndex((s) => s.questions.includes(q));
-    const list = where === 'leader' ? leaderOf(content) : sectionsOf(content)[where]!.questions;
-    const after = list[list.indexOf(q) + 1];
-    change((c) =>
-      insertQuestion(
-        c,
-        { ...copy, id },
-        {
-          in: where,
-          ...(after ? { before: after.id } : {}),
-        },
-      ),
-    );
+    change((c) => duplicatedInto(c, q, id));
     setSel(id);
   };
   const move = (id: string, place: Place) => change((c) => moveQuestion(c, id, place));
@@ -374,7 +355,9 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
       setBusy(false);
     }
   };
-  const newDraft = async () => {
+  /** A new draft, built on the version asked for — by default the one open (2.16, wave C: the
+   * «Versjonar» panel offers any published version, so going back is one press, not a hunt). */
+  const newDraft = async (from = saved.id) => {
     if (draftRef) return goTo(`/admin/surveys/${draftRef.id}`);
     setBusy(true);
     try {
@@ -384,7 +367,7 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
         'POST',
         {
           label: `v${max + 1}`,
-          copy_from: saved.id,
+          copy_from: from,
         },
       );
       void queries.invalidateQueries({ queryKey: ['surveys'] });
@@ -690,7 +673,10 @@ function Verkstad({ initial, surveys }: { initial: EditorVersion; surveys: Surve
         <Versjonar
           versions={versions}
           current={saved.id}
+          hasDraft={draftRef !== undefined || saved.status === 'draft'}
+          busy={busy}
           onOpen={(id) => goTo(`/admin/surveys/${id}`)}
+          onDraftFrom={(id) => void newDraft(id)}
           onClose={() => setPanel(null)}
         />
       )}

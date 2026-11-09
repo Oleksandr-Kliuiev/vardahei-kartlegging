@@ -3,6 +3,7 @@
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from 'react';
 import { mutate } from './api.js';
 import { Icon } from './icons.js';
+import { Kundeval } from './kundeval.js';
 import type { Client } from './models.js';
 import { ErrorMessage } from './queries.js';
 import type { Guide } from './samtale-models.js';
@@ -40,50 +41,6 @@ export function Skuff(p: {
   );
 }
 
-/** Clients to tick, with a search for a long list. */
-function Kundeval({
-  clients,
-  chosen,
-  onChange,
-}: {
-  clients: Client[];
-  chosen: Set<string>;
-  onChange: (next: Set<string>) => void;
-}) {
-  const [find, setFind] = useState('');
-  const shown = clients.filter((c) => c.name.toLowerCase().includes(find.trim().toLowerCase()));
-  const toggle = (id: string) => {
-    const next = new Set(chosen);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    onChange(next);
-  };
-  return (
-    <fieldset className="sm-kundeval">
-      <legend>
-        Kundar <span className="muted">{chosen.size} valde</span>
-      </legend>
-      <input
-        className="input"
-        type="search"
-        placeholder="Finn kunde"
-        aria-label="Finn kunde"
-        value={find}
-        onChange={(e) => setFind(e.target.value)}
-      />
-      <div className="sm-kundeliste">
-        {shown.map((c) => (
-          <label key={c.id} className="sm-kunde">
-            <input type="checkbox" checked={chosen.has(c.id)} onChange={() => toggle(c.id)} />
-            {c.name}
-          </label>
-        ))}
-        {!shown.length && <p className="muted">Ingen kundar passar.</p>}
-      </div>
-    </fieldset>
-  );
-}
-
 export function NyRunde(p: {
   guides: Guide[];
   clients: Client[];
@@ -92,7 +49,7 @@ export function NyRunde(p: {
 }) {
   const [name, setName] = useState('');
   const [guide, setGuide] = useState(p.guides[0]?.id ?? '');
-  const [chosen, setChosen] = useState(new Set<string>());
+  const [chosen, setChosen] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const submit = (e: FormEvent<HTMLFormElement>) => {
@@ -102,7 +59,7 @@ export function NyRunde(p: {
     mutate<{ id: string }>('/api/admin/interview-rounds', 'POST', {
       name,
       template_version_id: guide,
-      clients: [...chosen],
+      clients: chosen,
     })
       .then((r) => p.onCreated(r.id))
       .catch((err: unknown) => setError(err instanceof Error ? err : new Error('Noko gjekk gale.')))
@@ -142,7 +99,7 @@ export function NyRunde(p: {
           ))}
         </select>
       </label>
-      <Kundeval clients={p.clients} chosen={chosen} onChange={setChosen} />
+      <Kundeval clients={p.clients} chosen={chosen} onChange={setChosen} legend="Kundar" />
     </Skuff>
   );
 }
@@ -153,14 +110,14 @@ export function LeggTilKundar(p: {
   onClose: () => void;
   onDone: () => void;
 }) {
-  const [chosen, setChosen] = useState(new Set<string>());
+  const [chosen, setChosen] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    mutate(`/api/admin/interview-rounds/${p.round.id}/clients`, 'POST', { clients: [...chosen] })
+    mutate(`/api/admin/interview-rounds/${p.round.id}/clients`, 'POST', { clients: chosen })
       .then(p.onDone)
       .catch((err: unknown) => setError(err instanceof Error ? err : new Error('Noko gjekk gale.')))
       .finally(() => setBusy(false));
@@ -173,14 +130,14 @@ export function LeggTilKundar(p: {
       footer={
         <>
           <ErrorMessage error={error} />
-          <button className="btn primary" disabled={busy || !chosen.size}>
-            Legg til {chosen.size || ''}
+          <button className="btn primary" disabled={busy || !chosen.length}>
+            Legg til {chosen.length || ''}
           </button>
         </>
       }
     >
       {p.clients.length ? (
-        <Kundeval clients={p.clients} chosen={chosen} onChange={setChosen} />
+        <Kundeval clients={p.clients} chosen={chosen} onChange={setChosen} legend="Kundar" />
       ) : (
         <p className="muted">Alle kundane er alt med i runda.</p>
       )}

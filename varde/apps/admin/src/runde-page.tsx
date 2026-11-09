@@ -6,8 +6,8 @@ import { mutate } from './api.js';
 import { DashboardRound } from './dashboard-page.js';
 import { Icon } from './icons.js';
 import { Logg } from './logg.js';
-import type { Client, Round } from './models.js';
-import { follow, useTitle } from './nav.js';
+import { versionText, type Client, type Round } from './models.js';
+import { follow, goTo, useTitle } from './nav.js';
 import { longDate } from './overview.js';
 import { progressQuery, ProgressRound } from './progress-page.js';
 import { ErrorMessage, useAction, useClients, useRounds, useVersions } from './queries.js';
@@ -15,6 +15,7 @@ import { RoundReports } from './report-page.js';
 import { RoundClientCard } from './round-client.js';
 import { Faner, HoldButton } from './widgets.js';
 import './dashboard.css';
+import './kundar.css';
 
 const TABS = [
   ['framdrift', 'Framdrift'],
@@ -185,7 +186,11 @@ function AddClient({ round, clients }: { round: Round; clients: Client[] }) {
 /** Opening, deadlines, links, invitation and reminder per client; closing the whole round. */
 function Utsending({ round, asked }: { round: Round; asked: string | null }) {
   const clients = useClients();
+  const versions = useVersions();
   const action = useAction();
+  // While the round is a draft, the form it asks is still a choice, and a round made by mistake
+  // and left empty can go (wave B). Once it is opened, both are fixed.
+  const draft = round.status === 'draft';
   const progress = useQuery({ ...progressQuery(round.id), enabled: round.status !== 'draft' });
   const done = finished(round);
   return (
@@ -213,7 +218,45 @@ function Utsending({ round, asked }: { round: Round; asked: string | null }) {
             />
           ))}
         </div>
+        {draft && (
+          <label className="runde-versjon">
+            Skjema for runden
+            <select
+              value={round.template_version_id ?? ''}
+              disabled={action.isPending}
+              onChange={(e) => {
+                if (e.target.value)
+                  action.mutate(() =>
+                    mutate(`/api/admin/rounds/${round.id}`, 'PATCH', {
+                      template_version_id: e.target.value,
+                    }),
+                  );
+              }}
+            >
+              <option value="">Vel publisert versjon</option>
+              {(versions.data ?? []).map((v) => (
+                <option key={v.id} value={v.id}>
+                  {versionText(v)}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {!done && <AddClient round={round} clients={clients.data ?? []} />}
+        {draft && round.round_clients.length === 0 && (
+          <HoldButton
+            className="fare"
+            label="Slett runden"
+            hint="Hald inne knappen i over eitt sekund. Runden er tom og blir borte."
+            disabled={action.isPending}
+            onConfirm={() =>
+              action.mutate(async () => {
+                await mutate(`/api/admin/rounds/${round.id}`, 'DELETE');
+                goTo('/admin/rounds');
+              })
+            }
+          />
+        )}
         {round.status === 'open' && (
           <HoldButton
             className="fare"
