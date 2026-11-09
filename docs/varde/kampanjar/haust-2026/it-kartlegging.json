@@ -1,0 +1,2724 @@
+{
+  "key": "it-kartlegging",
+  "audience": "client_survey",
+  "identification": "initials",
+  "required_languages": [
+    "nn",
+    "en"
+  ],
+  "leader_roles": [],
+  "intro": {
+    "title": {
+      "nn": "Teknisk kartlegging",
+      "en": "Technical assessment"
+    },
+    "short": {
+      "nn": "Teknisk kartlegging",
+      "en": "Technical assessment"
+    },
+    "minutes": 15,
+    "letter": [
+      {
+        "nn": "Vardahei IT kartlegg IT-sikkerheit og beredskap i bedrifta. Denne delen er for den som kjenner IT-oppsettet best, anten det er ein tilsett eller ein IT-leverandør.",
+        "en": "Vardahei IT is assessing IT security and preparedness in the company. This part is for whoever knows the IT setup best, whether that's an employee or an IT provider."
+      },
+      {
+        "nn": "Spørsmåla handlar om brukarkontoar, utstyr, nettverk, e-post, backup og overvaking. Svara gir oss eit bilete av infrastrukturen, så vi kan bruke tida på det som betyr mest når vi går gjennom kartlegginga med bedrifta.",
+        "en": "The questions cover user accounts, devices, network, email, backup and monitoring. The answers give us a picture of the infrastructure, so we can spend the time on what matters most when we go through the assessment with the company."
+      }
+    ],
+    "sender": {
+      "nn": "Asbjørn og resten av gjengen i Vardahei IT",
+      "en": "Asbjørn and the rest of the team at Vardahei IT"
+    },
+    "facts": [
+      {
+        "nn": "Ikkje skriv passord, nøklar eller andre hemmelege opplysningar i skjemaet. Vi spør korleis ting er ordna, ikkje etter sjølve tilgangane.",
+        "en": "Don't write passwords, keys or other secrets in the form. We ask how things are set up, not for the credentials themselves."
+      },
+      {
+        "nn": "«Veit ikkje» er eit nyttig svar. Det fortel oss kva vi bør sjå nærare på saman.",
+        "en": "“Not sure” is a useful answer. It tells us what we should look at together."
+      },
+      {
+        "nn": "Svara ser berre Vardahei IT. Vi går gjennom dei saman med bedrifta.",
+        "en": "Only Vardahei IT sees the answers. We go through them with the company."
+      }
+    ],
+    "contact": {
+      "name": "Vardahei IT",
+      "phone": "+47 930 94 567",
+      "email": "post@vardahei.no",
+      "hours": {
+        "nn": "Måndag til fredag 08–16",
+        "en": "Monday to Friday 08–16"
+      }
+    }
+  },
+  "leader_intro": {
+    "title": {
+      "nn": "Nokre spørsmål til deg som leiar",
+      "en": "A few questions for you as a manager"
+    },
+    "text": {
+      "nn": "Sidan du har ansvar i bedrifta, har vi nokre spørsmål til.",
+      "en": "Since you have responsibility in the company, we have a few more questions."
+    }
+  },
+  "tips": [],
+  "max_tips": 0,
+  "invitation": {
+    "letter": {
+      "nn": "Hei!\n\nVi kartlegg IT-sikkerheita vår saman med Vardahei IT. Som ein del av kartlegginga vil Vardahei IT ha ei oversikt over IT-oppsettet vårt: brukarkontoar, utstyr, nettverk, e-post, backup og overvaking.\n\nKan du som kjenner IT-en vår best fylle ut skjemaet? Det tek om lag {minutt} minutt. Ikkje skriv passord eller andre hemmelege opplysningar i skjemaet.\n\n{lenkje}\n\nLenkja går til {host}, så du kan trygt opne ho.{frist}\n\nTakk!",
+      "en": "Hi,\n\nWe're assessing our IT security together with Vardahei IT. As part of the assessment, Vardahei IT would like an overview of our IT setup: user accounts, devices, network, email, backup and monitoring.\n\nCould you, as the person who knows our IT best, fill in the form? It takes about {minutt} minutes. Please don't write passwords or other secrets in the form.\n\n{lenkje}\n\nThe link goes to {host}, so it's safe to open.{frist}\n\nThanks!"
+    },
+    "poster": {
+      "title": {
+        "nn": "Teknisk kartlegging",
+        "en": "Technical assessment"
+      },
+      "text": {
+        "nn": "For den som kjenner IT-oppsettet best. Det tek om lag {minutt} minutt.",
+        "en": "For whoever knows the IT setup best. It takes about {minutt} minutes."
+      },
+      "footer": {
+        "nn": "Ikkje skriv passord eller andre hemmelege opplysningar i skjemaet. Svara ser berre Vardahei IT.",
+        "en": "Don't write passwords or other secrets in the form. Only Vardahei IT sees the answers."
+      }
+    }
+  },
+  "questions": [
+    {
+      "id": "I1",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Skriv inn initialane dine: 2 første og 3 siste. Eksempel: Ola Nordman = OLNOR",
+          "en": "Enter your initials: first 2 and last 3 letters. Example: Ola Nordman = OLNOR"
+        },
+        "help": {
+          "nn": "Initialane gjer at vi veit kven vi kan spørje om noko er uklart. Svara ser berre Vardahei IT.",
+          "en": "Your initials tell us who to ask if something is unclear. Only Vardahei IT sees the answers."
+        },
+        "placeholder": {
+          "nn": "OLNOR",
+          "en": "OLNOR"
+        },
+        "section_title": {
+          "nn": "Om deg",
+          "en": "About you"
+        }
+      },
+      "required": true,
+      "identifier": true,
+      "type": "text",
+      "single_line": true,
+      "uppercase": true,
+      "max_length": 8
+    },
+    {
+      "id": "I2",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kva er rolla di i IT-arbeidet for bedrifta?",
+          "en": "What is your role in the company's IT?"
+        }
+      },
+      "options": [
+        {
+          "id": "intern",
+          "texts": {
+            "text": {
+              "nn": "Eg er tilsett og har IT som hovudoppgåve",
+              "en": "I'm employed and IT is my main job"
+            }
+          }
+        },
+        {
+          "id": "deltid",
+          "texts": {
+            "text": {
+              "nn": "Eg er tilsett og tek IT ved sida av anna arbeid",
+              "en": "I'm employed and handle IT alongside other work"
+            }
+          }
+        },
+        {
+          "id": "ekstern",
+          "texts": {
+            "text": {
+              "nn": "Eg er ekstern IT-leverandør",
+              "en": "I'm an external IT provider"
+            }
+          }
+        },
+        {
+          "id": "leiar",
+          "texts": {
+            "text": {
+              "nn": "Eg er dagleg leiar",
+              "en": "I'm the managing director"
+            }
+          }
+        },
+        {
+          "id": "anna",
+          "texts": {
+            "text": {
+              "nn": "Anna",
+              "en": "Other"
+            }
+          }
+        }
+      ],
+      "role": true,
+      "required": true
+    },
+    {
+      "id": "I3",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kven driftar IT-en hos dykk i dag?",
+          "en": "Who runs IT in your company today?"
+        },
+        "section_title": {
+          "nn": "IT-ansvar og dokumentasjon",
+          "en": "IT responsibility and documentation"
+        }
+      },
+      "options": [
+        {
+          "id": "intern",
+          "texts": {
+            "text": {
+              "nn": "Ein eigen IT-tilsett",
+              "en": "A dedicated IT employee"
+            }
+          }
+        },
+        {
+          "id": "deltid",
+          "texts": {
+            "text": {
+              "nn": "Ein tilsett ved sida av anna arbeid",
+              "en": "An employee, alongside other work"
+            }
+          }
+        },
+        {
+          "id": "ekstern",
+          "texts": {
+            "text": {
+              "nn": "Ein ekstern IT-leverandør",
+              "en": "An external IT provider"
+            }
+          }
+        },
+        {
+          "id": "delt",
+          "texts": {
+            "text": {
+              "nn": "Delt mellom oss og ein ekstern leverandør",
+              "en": "Shared between us and an external provider"
+            }
+          }
+        },
+        {
+          "id": "ingen",
+          "texts": {
+            "text": {
+              "nn": "Ingen fast ordning",
+              "en": "No fixed arrangement"
+            }
+          }
+        }
+      ],
+      "free_text": {
+        "texts": {
+          "text": {
+            "nn": "Kva leverandør? (valfritt)",
+            "en": "Which provider? (optional)"
+          }
+        },
+        "when": [
+          "ekstern",
+          "delt"
+        ]
+      }
+    },
+    {
+      "id": "I4",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Står det i ein skriftleg avtale kva IT-leverandøren har ansvar for (til dømes backup, oppdateringar og overvaking)?",
+          "en": "Is there a written agreement on what the IT provider is responsible for (for example backup, updates and monitoring)?"
+        }
+      },
+      "options": [
+        {
+          "id": "ja",
+          "texts": {
+            "text": {
+              "nn": "Ja",
+              "en": "Yes"
+            }
+          }
+        },
+        {
+          "id": "delvis",
+          "texts": {
+            "text": {
+              "nn": "Delvis",
+              "en": "Partly"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei",
+              "en": "No"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ],
+      "visible_if": {
+        "in": [
+          {
+            "var": "I3"
+          },
+          [
+            "ekstern",
+            "delt"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "I5",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Finst det dokumentasjon av IT-oppsettet (brukarar, utstyr, nettverk og leverandørar)?",
+          "en": "Is the IT setup documented (users, devices, network and suppliers)?"
+        }
+      },
+      "options": [
+        {
+          "id": "oppdatert",
+          "texts": {
+            "text": {
+              "nn": "Ja, oppdatert det siste året",
+              "en": "Yes, updated in the last year"
+            }
+          }
+        },
+        {
+          "id": "gammal",
+          "texts": {
+            "text": {
+              "nn": "Ja, men gammal eller ufullstendig",
+              "en": "Yes, but old or incomplete"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei",
+              "en": "No"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I6",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kvar blir administratorpassord og andre tilgangar lagra?",
+          "en": "Where are admin passwords and other credentials stored?"
+        },
+        "help": {
+          "nn": "Ikkje skriv sjølve passorda her.",
+          "en": "Don't write the passwords themselves here."
+        }
+      },
+      "options": [
+        {
+          "id": "vault",
+          "texts": {
+            "text": {
+              "nn": "I ein passordhandterar eller eit dokumentasjonsverktøy med tilgangsstyring",
+              "en": "In a password manager or documentation tool with access control"
+            }
+          }
+        },
+        {
+          "id": "dokument",
+          "texts": {
+            "text": {
+              "nn": "I eit dokument, ein wiki eller eit rekneark",
+              "en": "In a document, a wiki or a spreadsheet"
+            }
+          }
+        },
+        {
+          "id": "papir",
+          "texts": {
+            "text": {
+              "nn": "På papir",
+              "en": "On paper"
+            }
+          }
+        },
+        {
+          "id": "hovudet",
+          "texts": {
+            "text": {
+              "nn": "Berre i hovudet til nokon",
+              "en": "Only in someone's head"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I7",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kjem de inn i alle systema om den som har administratortilgangen blir sjuk eller sluttar?",
+          "en": "Can you get into all systems if the person with admin access falls ill or leaves?"
+        }
+      },
+      "options": [
+        {
+          "id": "dokumentert",
+          "texts": {
+            "text": {
+              "nn": "Ja, minst to har tilgang, og det er dokumentert",
+              "en": "Yes, at least two people have access, and it is documented"
+            }
+          }
+        },
+        {
+          "id": "truleg",
+          "texts": {
+            "text": {
+              "nn": "Truleg, men det er ikkje dokumentert",
+              "en": "Probably, but it isn't documented"
+            }
+          }
+        },
+        {
+          "id": "ein",
+          "texts": {
+            "text": {
+              "nn": "Nei, berre éin person har tilgang",
+              "en": "No, only one person has access"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I8",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kva brukar de til e-post og kontorprogram?",
+          "en": "What do you use for email and office software?"
+        },
+        "section_title": {
+          "nn": "Brukarkontoar og pålogging",
+          "en": "User accounts and sign-in"
+        }
+      },
+      "options": [
+        {
+          "id": "m365",
+          "texts": {
+            "text": {
+              "nn": "Microsoft 365",
+              "en": "Microsoft 365"
+            }
+          }
+        },
+        {
+          "id": "google",
+          "texts": {
+            "text": {
+              "nn": "Google Workspace",
+              "en": "Google Workspace"
+            }
+          }
+        },
+        {
+          "id": "web",
+          "texts": {
+            "text": {
+              "nn": "E-post frå eit webhotell eller ein internettleverandør",
+              "en": "Email from a web host or an internet provider"
+            }
+          }
+        },
+        {
+          "id": "anna",
+          "texts": {
+            "text": {
+              "nn": "Anna eller blanda",
+              "en": "Other or mixed"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I9",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Er tofaktorpålogging (MFA) slått på for alle brukarane i e-postsystemet?",
+          "en": "Is two-factor sign-in (MFA) turned on for all users in the email system?"
+        }
+      },
+      "options": [
+        {
+          "id": "alle",
+          "texts": {
+            "text": {
+              "nn": "Ja, for alle",
+              "en": "Yes, for everyone"
+            }
+          }
+        },
+        {
+          "id": "fleste",
+          "texts": {
+            "text": {
+              "nn": "For dei fleste",
+              "en": "For most"
+            }
+          }
+        },
+        {
+          "id": "nokre",
+          "texts": {
+            "text": {
+              "nn": "Berre for nokre",
+              "en": "Only for some"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei",
+              "en": "No"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I10",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Blir MFA kravd med ein sentral regel, slik at ingen kan skru det av for seg sjølv?",
+          "en": "Is MFA enforced by a central policy, so users can't turn it off for themselves?"
+        }
+      },
+      "options": [
+        {
+          "id": "ja",
+          "texts": {
+            "text": {
+              "nn": "Ja (til dømes Conditional Access eller standard sikkerheitsinnstillingar)",
+              "en": "Yes (for example Conditional Access or security defaults)"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei, det er slått på per brukar",
+              "en": "No, it's turned on per user"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ],
+      "visible_if": {
+        "in": [
+          {
+            "var": "I9"
+          },
+          [
+            "alle",
+            "fleste",
+            "nokre"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "I11",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Har dei som administrerer systema eigne admin-kontoar som ikkje blir brukte til e-post og vanleg arbeid?",
+          "en": "Do the people who administer the systems have separate admin accounts that are not used for email and everyday work?"
+        }
+      },
+      "options": [
+        {
+          "id": "ja",
+          "texts": {
+            "text": {
+              "nn": "Ja",
+              "en": "Yes"
+            }
+          }
+        },
+        {
+          "id": "delvis",
+          "texts": {
+            "text": {
+              "nn": "Delvis",
+              "en": "Partly"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei",
+              "en": "No"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I12",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kor mange har full administratortilgang til e-post- og skysystemet?",
+          "en": "How many people have full admin access to the email and cloud system?"
+        }
+      },
+      "options": [
+        {
+          "id": "ein",
+          "texts": {
+            "text": {
+              "nn": "1",
+              "en": "1"
+            }
+          }
+        },
+        {
+          "id": "to",
+          "texts": {
+            "text": {
+              "nn": "2–4",
+              "en": "2–4"
+            }
+          }
+        },
+        {
+          "id": "fem",
+          "texts": {
+            "text": {
+              "nn": "5 eller fleire",
+              "en": "5 or more"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I13",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Finst det kontoar som fleire loggar på med same brukarnamn og passord (til dømes ein felles resepsjonskonto eller ein felles PC-brukar)?",
+          "en": "Are there accounts that several people sign in to with the same username and password (for example a shared reception account or a shared computer user)?"
+        }
+      },
+      "options": [
+        {
+          "id": "fleire",
+          "texts": {
+            "text": {
+              "nn": "Ja, fleire",
+              "en": "Yes, several"
+            }
+          }
+        },
+        {
+          "id": "nokre",
+          "texts": {
+            "text": {
+              "nn": "Ja, ein eller to",
+              "en": "Yes, one or two"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei",
+              "en": "No"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I14",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kva skjer med kontoane når nokon sluttar?",
+          "en": "What happens to the accounts when someone leaves?"
+        }
+      },
+      "options": [
+        {
+          "id": "rutine",
+          "texts": {
+            "text": {
+              "nn": "Dei blir stengde same dag etter ei fast rutine",
+              "en": "They are closed the same day, following a set routine"
+            }
+          }
+        },
+        {
+          "id": "utan",
+          "texts": {
+            "text": {
+              "nn": "Dei blir stengde, men utan fast rutine",
+              "en": "They are closed, but without a set routine"
+            }
+          }
+        },
+        {
+          "id": "opne",
+          "texts": {
+            "text": {
+              "nn": "Det hender at kontoar står opne lenge",
+              "en": "Accounts sometimes stay open for a long time"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I15",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Har vanlege brukarar administratorrettar på PC-en sin (kan installere kva som helst)?",
+          "en": "Do ordinary users have admin rights on their computers (can install anything)?"
+        }
+      },
+      "options": [
+        {
+          "id": "fleste",
+          "texts": {
+            "text": {
+              "nn": "Ja, dei fleste",
+              "en": "Yes, most of them"
+            }
+          }
+        },
+        {
+          "id": "nokre",
+          "texts": {
+            "text": {
+              "nn": "Nokre få",
+              "en": "A few"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei",
+              "en": "No"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I16",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Er tilgangen til mapper og filer styrt etter kva kvar tilsett treng?",
+          "en": "Is access to folders and files based on what each employee needs?"
+        }
+      },
+      "options": [
+        {
+          "id": "ja",
+          "texts": {
+            "text": {
+              "nn": "Ja, med grupper eller roller",
+              "en": "Yes, with groups or roles"
+            }
+          }
+        },
+        {
+          "id": "delvis",
+          "texts": {
+            "text": {
+              "nn": "Delvis",
+              "en": "Partly"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei, alle har tilgang til alt",
+              "en": "No, everyone has access to everything"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I17",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Omtrent kor mange PC-ar og Mac-ar har bedrifta?",
+          "en": "Roughly how many PCs and Macs does the company have?"
+        },
+        "section_title": {
+          "nn": "PC-ar og mobilar",
+          "en": "Computers and phones"
+        }
+      },
+      "options": [
+        {
+          "id": "u5",
+          "texts": {
+            "text": {
+              "nn": "Under 5",
+              "en": "Fewer than 5"
+            }
+          }
+        },
+        {
+          "id": "5",
+          "texts": {
+            "text": {
+              "nn": "5–10",
+              "en": "5–10"
+            }
+          }
+        },
+        {
+          "id": "11",
+          "texts": {
+            "text": {
+              "nn": "11–20",
+              "en": "11–20"
+            }
+          }
+        },
+        {
+          "id": "21",
+          "texts": {
+            "text": {
+              "nn": "21–50",
+              "en": "21–50"
+            }
+          }
+        },
+        {
+          "id": "o50",
+          "texts": {
+            "text": {
+              "nn": "Over 50",
+              "en": "More than 50"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I18",
+      "type": "multi",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kva operativsystem har PC-ane?",
+          "en": "Which operating systems do the computers run?"
+        },
+        "help": {
+          "nn": "Kryss av alt som passar. Windows 10 får ikkje lenger sikkerheitsoppdateringar utan ein betalt tilleggsavtale.",
+          "en": "Tick everything that applies. Windows 10 no longer gets security updates without a paid extended support agreement."
+        }
+      },
+      "options": [
+        {
+          "id": "w11",
+          "texts": {
+            "text": {
+              "nn": "Windows 11",
+              "en": "Windows 11"
+            }
+          }
+        },
+        {
+          "id": "w10",
+          "texts": {
+            "text": {
+              "nn": "Windows 10",
+              "en": "Windows 10"
+            }
+          }
+        },
+        {
+          "id": "eldre",
+          "texts": {
+            "text": {
+              "nn": "Eldre Windows-versjonar",
+              "en": "Older Windows versions"
+            }
+          }
+        },
+        {
+          "id": "mac",
+          "texts": {
+            "text": {
+              "nn": "macOS",
+              "en": "macOS"
+            }
+          }
+        },
+        {
+          "id": "anna",
+          "texts": {
+            "text": {
+              "nn": "Anna (til dømes Linux eller Chromebook)",
+              "en": "Other (for example Linux or Chromebook)"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ],
+      "exclusive_options": [
+        "vk"
+      ]
+    },
+    {
+      "id": "I19",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Blir PC-ane styrte sentralt (til dømes med Intune, eit RMM-verktøy eller eit domene)?",
+          "en": "Are the computers managed centrally (for example with Intune, an RMM tool or a domain)?"
+        },
+        "help": {
+          "nn": "Sentral styring betyr at nokon kan sjå status og rulle ut oppdateringar og innstillingar på alle maskinene frå éin stad.",
+          "en": "Central management means someone can see the status of every machine and roll out updates and settings from one place."
+        }
+      },
+      "options": [
+        {
+          "id": "alle",
+          "texts": {
+            "text": {
+              "nn": "Ja, alle",
+              "en": "Yes, all of them"
+            }
+          }
+        },
+        {
+          "id": "fleste",
+          "texts": {
+            "text": {
+              "nn": "Dei fleste",
+              "en": "Most of them"
+            }
+          }
+        },
+        {
+          "id": "nokre",
+          "texts": {
+            "text": {
+              "nn": "Nokre få",
+              "en": "A few"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei",
+              "en": "No"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I20",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Korleis blir Windows og programma oppdaterte?",
+          "en": "How are Windows and the programs kept up to date?"
+        }
+      },
+      "options": [
+        {
+          "id": "overvaka",
+          "texts": {
+            "text": {
+              "nn": "Automatisk, og nokon følgjer med på at det skjer",
+              "en": "Automatically, and someone checks that it happens"
+            }
+          }
+        },
+        {
+          "id": "auto",
+          "texts": {
+            "text": {
+              "nn": "Automatisk, men ingen sjekkar",
+              "en": "Automatically, but nobody checks"
+            }
+          }
+        },
+        {
+          "id": "sjolv",
+          "texts": {
+            "text": {
+              "nn": "Kvar brukar gjer det sjølv",
+              "en": "Each user does it themselves"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I21",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kva vern har PC-ane mot skadevare?",
+          "en": "What protection do the computers have against malware?"
+        }
+      },
+      "options": [
+        {
+          "id": "edr",
+          "texts": {
+            "text": {
+              "nn": "EDR som nokon overvakar (IT-leverandør eller SOC)",
+              "en": "EDR that someone monitors (an IT provider or a SOC)"
+            }
+          }
+        },
+        {
+          "id": "av",
+          "texts": {
+            "text": {
+              "nn": "Antivirus med sentral oversikt",
+              "en": "Antivirus with central oversight"
+            }
+          }
+        },
+        {
+          "id": "defender",
+          "texts": {
+            "text": {
+              "nn": "Berre innebygd Microsoft Defender utan sentral oversikt",
+              "en": "Only built-in Microsoft Defender without central oversight"
+            }
+          }
+        },
+        {
+          "id": "ingen",
+          "texts": {
+            "text": {
+              "nn": "Ikkje noko",
+              "en": "None"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ],
+      "free_text": {
+        "texts": {
+          "text": {
+            "nn": "Kva produkt? (valfritt)",
+            "en": "Which product? (optional)"
+          }
+        },
+        "when": [
+          "edr",
+          "av"
+        ]
+      }
+    },
+    {
+      "id": "I22",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Er harddisken på berbare PC-ar kryptert (BitLocker eller FileVault)?",
+          "en": "Are laptop hard drives encrypted (BitLocker or FileVault)?"
+        }
+      },
+      "options": [
+        {
+          "id": "alle",
+          "texts": {
+            "text": {
+              "nn": "Ja, på alle",
+              "en": "Yes, on all of them"
+            }
+          }
+        },
+        {
+          "id": "nokre",
+          "texts": {
+            "text": {
+              "nn": "På nokre",
+              "en": "On some"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei",
+              "en": "No"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I23",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kan de låse eller slette ein jobbmobil eller PC frå sentralt hald om han blir borte?",
+          "en": "Can you lock or wipe a work phone or computer remotely if it gets lost?"
+        }
+      },
+      "options": [
+        {
+          "id": "ja",
+          "texts": {
+            "text": {
+              "nn": "Ja",
+              "en": "Yes"
+            }
+          }
+        },
+        {
+          "id": "nokre",
+          "texts": {
+            "text": {
+              "nn": "Berre for nokre einingar",
+              "en": "Only for some devices"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei",
+              "en": "No"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I24",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kan tilsette nå jobb-e-post og filer frå private einingar?",
+          "en": "Can employees reach work email and files from their own devices?"
+        }
+      },
+      "options": [
+        {
+          "id": "fritt",
+          "texts": {
+            "text": {
+              "nn": "Ja, utan avgrensingar",
+              "en": "Yes, without restrictions"
+            }
+          }
+        },
+        {
+          "id": "avgrensa",
+          "texts": {
+            "text": {
+              "nn": "Ja, men med avgrensingar (til dømes appvern eller berre nettlesar)",
+              "en": "Yes, but with restrictions (for example app protection or browser only)"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei, berre frå utstyr bedrifta eig",
+              "en": "No, only from company-owned devices"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I25",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Har de lokale serverar?",
+          "en": "Do you have on-premises servers?"
+        },
+        "section_title": {
+          "nn": "Server, nettverk og internett",
+          "en": "Servers, network and internet"
+        }
+      },
+      "options": [
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei, alt ligg i skyen",
+              "en": "No, everything is in the cloud"
+            }
+          }
+        },
+        {
+          "id": "ein",
+          "texts": {
+            "text": {
+              "nn": "Ja, ein",
+              "en": "Yes, one"
+            }
+          }
+        },
+        {
+          "id": "fleire",
+          "texts": {
+            "text": {
+              "nn": "Ja, fleire",
+              "en": "Yes, several"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I26",
+      "type": "multi",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kva blir serverane brukte til?",
+          "en": "What are the servers used for?"
+        },
+        "help": {
+          "nn": "Kryss av alt som passar.",
+          "en": "Tick everything that applies."
+        }
+      },
+      "options": [
+        {
+          "id": "ad",
+          "texts": {
+            "text": {
+              "nn": "Domenekontrollar (Active Directory)",
+              "en": "Domain controller (Active Directory)"
+            }
+          }
+        },
+        {
+          "id": "fil",
+          "texts": {
+            "text": {
+              "nn": "Filserver",
+              "en": "File server"
+            }
+          }
+        },
+        {
+          "id": "fag",
+          "texts": {
+            "text": {
+              "nn": "Fagsystem eller database",
+              "en": "Business system or database"
+            }
+          }
+        },
+        {
+          "id": "print",
+          "texts": {
+            "text": {
+              "nn": "Utskrift",
+              "en": "Printing"
+            }
+          }
+        },
+        {
+          "id": "kamera",
+          "texts": {
+            "text": {
+              "nn": "Kamera eller adgangskontroll",
+              "en": "Cameras or access control"
+            }
+          }
+        },
+        {
+          "id": "anna",
+          "texts": {
+            "text": {
+              "nn": "Anna",
+              "en": "Other"
+            }
+          }
+        }
+      ],
+      "visible_if": {
+        "in": [
+          {
+            "var": "I25"
+          },
+          [
+            "ein",
+            "fleire"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "I27",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Får serverane framleis sikkerheitsoppdateringar frå produsenten?",
+          "en": "Do the servers still get security updates from the vendor?"
+        },
+        "help": {
+          "nn": "Windows Server 2012 R2 og eldre får ikkje lenger oppdateringar, og Windows Server 2016 mistar støtta i januar 2027.",
+          "en": "Windows Server 2012 R2 and older no longer get updates, and Windows Server 2016 loses support in January 2027."
+        }
+      },
+      "options": [
+        {
+          "id": "ja",
+          "texts": {
+            "text": {
+              "nn": "Ja",
+              "en": "Yes"
+            }
+          }
+        },
+        {
+          "id": "nokre",
+          "texts": {
+            "text": {
+              "nn": "Nokre er for gamle",
+              "en": "Some are too old"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei",
+              "en": "No"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ],
+      "visible_if": {
+        "in": [
+          {
+            "var": "I25"
+          },
+          [
+            "ein",
+            "fleire"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "I28",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kven har ansvar for brannmuren eller ruteren mot internett?",
+          "en": "Who is responsible for the firewall or router facing the internet?"
+        }
+      },
+      "options": [
+        {
+          "id": "oss",
+          "texts": {
+            "text": {
+              "nn": "Vi eller IT-leverandøren, og han blir halden oppdatert",
+              "en": "We or our IT provider, and it is kept up to date"
+            }
+          }
+        },
+        {
+          "id": "isp",
+          "texts": {
+            "text": {
+              "nn": "Internettleverandøren (ruteren følgde med abonnementet)",
+              "en": "The internet provider (the router came with the subscription)"
+            }
+          }
+        },
+        {
+          "id": "ingen",
+          "texts": {
+            "text": {
+              "nn": "Ingen har eigentleg ansvaret",
+              "en": "Nobody is really responsible"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I29",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Er det trådlause nettet for gjester skilt frå nettet der jobbutstyret er?",
+          "en": "Is the guest wireless network separated from the network your work equipment is on?"
+        }
+      },
+      "options": [
+        {
+          "id": "ja",
+          "texts": {
+            "text": {
+              "nn": "Ja",
+              "en": "Yes"
+            }
+          }
+        },
+        {
+          "id": "ikkje",
+          "texts": {
+            "text": {
+              "nn": "Vi har ikkje gjestenett",
+              "en": "We don't have a guest network"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei, gjester brukar same nett",
+              "en": "No, guests use the same network"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I30",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Er skrivarar, kamera, kassasystem, betalingsterminalar eller produksjonsutstyr på eit eige nett?",
+          "en": "Are printers, cameras, point-of-sale systems, payment terminals or production equipment on a separate network?"
+        }
+      },
+      "options": [
+        {
+          "id": "ja",
+          "texts": {
+            "text": {
+              "nn": "Ja, på eigne nett (til dømes VLAN)",
+              "en": "Yes, on separate networks (for example VLANs)"
+            }
+          }
+        },
+        {
+          "id": "delvis",
+          "texts": {
+            "text": {
+              "nn": "Delvis",
+              "en": "Partly"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei, alt er på same nett",
+              "en": "No, everything is on the same network"
+            }
+          }
+        },
+        {
+          "id": "ikkje",
+          "texts": {
+            "text": {
+              "nn": "Vi har ikkje slikt utstyr",
+              "en": "We don't have such equipment"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I31",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Er standardpassorda bytte på skrivarar, ruterar, kamera og anna nettverksutstyr?",
+          "en": "Have the default passwords been changed on printers, routers, cameras and other network equipment?"
+        }
+      },
+      "options": [
+        {
+          "id": "alt",
+          "texts": {
+            "text": {
+              "nn": "Ja, på alt",
+              "en": "Yes, on everything"
+            }
+          }
+        },
+        {
+          "id": "noko",
+          "texts": {
+            "text": {
+              "nn": "På noko",
+              "en": "On some of it"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei",
+              "en": "No"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I32",
+      "type": "multi",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Korleis kjem tilsette og leverandørar inn i systema utanfrå?",
+          "en": "How do employees and suppliers reach the systems from outside?"
+        },
+        "help": {
+          "nn": "Kryss av alt som passar.",
+          "en": "Tick everything that applies."
+        }
+      },
+      "options": [
+        {
+          "id": "vpn",
+          "texts": {
+            "text": {
+              "nn": "VPN",
+              "en": "VPN"
+            }
+          }
+        },
+        {
+          "id": "rdpgw",
+          "texts": {
+            "text": {
+              "nn": "Fjernskrivebord (RDP) via VPN eller gateway",
+              "en": "Remote desktop (RDP) through a VPN or gateway"
+            }
+          }
+        },
+        {
+          "id": "rdpope",
+          "texts": {
+            "text": {
+              "nn": "Fjernskrivebord (RDP) ope mot internett",
+              "en": "Remote desktop (RDP) open to the internet"
+            }
+          }
+        },
+        {
+          "id": "fjernhjelp",
+          "texts": {
+            "text": {
+              "nn": "Fjernhjelpverktøy (TeamViewer, AnyDesk, ScreenConnect eller liknande)",
+              "en": "Remote support tools (TeamViewer, AnyDesk, ScreenConnect or similar)"
+            }
+          }
+        },
+        {
+          "id": "sky",
+          "texts": {
+            "text": {
+              "nn": "Alt ligg i skyen, så det trengst ikkje",
+              "en": "Everything is in the cloud, so it isn't needed"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ],
+      "exclusive_options": [
+        "vk"
+      ]
+    },
+    {
+      "id": "I33",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Har leverandørar (fagsystem, kasse, IT) fast fjerntilgang til maskinene eller nettverket dykkar?",
+          "en": "Do suppliers (business systems, point of sale, IT) have standing remote access to your machines or network?"
+        }
+      },
+      "options": [
+        {
+          "id": "alltid",
+          "texts": {
+            "text": {
+              "nn": "Ja, tilgangen står alltid open",
+              "en": "Yes, access is always open"
+            }
+          }
+        },
+        {
+          "id": "ved",
+          "texts": {
+            "text": {
+              "nn": "Ja, men berre når vi opnar for det",
+              "en": "Yes, but only when we open it"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei",
+              "en": "No"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I34",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Har de reservesamband om internett fell ut (til dømes ein 4G- eller 5G-ruter)?",
+          "en": "Do you have a backup connection if the internet goes down (for example a 4G or 5G router)?"
+        }
+      },
+      "options": [
+        {
+          "id": "ja",
+          "texts": {
+            "text": {
+              "nn": "Ja",
+              "en": "Yes"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei",
+              "en": "No"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I35",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kven administrerer domenet og DNS-oppsettet (til dømes firma.no)?",
+          "en": "Who manages the domain and DNS (for example company.no)?"
+        },
+        "section_title": {
+          "nn": "E-post og domene",
+          "en": "Email and domain"
+        }
+      },
+      "options": [
+        {
+          "id": "oss",
+          "texts": {
+            "text": {
+              "nn": "Vi sjølve",
+              "en": "We do"
+            }
+          }
+        },
+        {
+          "id": "it",
+          "texts": {
+            "text": {
+              "nn": "IT-leverandøren vår",
+              "en": "Our IT provider"
+            }
+          }
+        },
+        {
+          "id": "web",
+          "texts": {
+            "text": {
+              "nn": "Eit webbyrå eller ein domeneleverandør",
+              "en": "A web agency or a domain provider"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I36",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Er SPF, DKIM og DMARC sett opp for e-postdomenet?",
+          "en": "Are SPF, DKIM and DMARC set up for the email domain?"
+        }
+      },
+      "options": [
+        {
+          "id": "full",
+          "texts": {
+            "text": {
+              "nn": "Ja, alle tre, og DMARC står på quarantine eller reject",
+              "en": "Yes, all three, and DMARC is set to quarantine or reject"
+            }
+          }
+        },
+        {
+          "id": "none",
+          "texts": {
+            "text": {
+              "nn": "Ja, men DMARC står på none",
+              "en": "Yes, but DMARC is set to none"
+            }
+          }
+        },
+        {
+          "id": "delvis",
+          "texts": {
+            "text": {
+              "nn": "Berre nokre av dei",
+              "en": "Only some of them"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei",
+              "en": "No"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I37",
+      "type": "multi",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kva vern mot phishing og skadeleg e-post har de i tillegg til standardfilteret?",
+          "en": "What protection against phishing and malicious email do you have beyond the standard filter?"
+        },
+        "help": {
+          "nn": "Kryss av alt som passar.",
+          "en": "Tick everything that applies."
+        }
+      },
+      "options": [
+        {
+          "id": "mdo",
+          "texts": {
+            "text": {
+              "nn": "Microsoft Defender for Office 365 eller tilsvarande",
+              "en": "Microsoft Defender for Office 365 or similar"
+            }
+          }
+        },
+        {
+          "id": "vedlegg",
+          "texts": {
+            "text": {
+              "nn": "Reglar som stoppar farlege vedlegg",
+              "en": "Rules that stop dangerous attachments"
+            }
+          }
+        },
+        {
+          "id": "ekstern",
+          "texts": {
+            "text": {
+              "nn": "Åtvaring på e-post frå eksterne avsendarar",
+              "en": "A warning on email from external senders"
+            }
+          }
+        },
+        {
+          "id": "vidaresending",
+          "texts": {
+            "text": {
+              "nn": "Blokkering av automatisk vidaresending til eksterne adresser",
+              "en": "Blocking automatic forwarding to external addresses"
+            }
+          }
+        },
+        {
+          "id": "ingen",
+          "texts": {
+            "text": {
+              "nn": "Ikkje noko ekstra vern",
+              "en": "No extra protection"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ],
+      "exclusive_options": [
+        "ingen",
+        "vk"
+      ]
+    },
+    {
+      "id": "I38",
+      "type": "multi",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kvar ligg dei viktigaste filene dykkar?",
+          "en": "Where are your most important files kept?"
+        },
+        "help": {
+          "nn": "Kryss av alt som passar.",
+          "en": "Tick everything that applies."
+        },
+        "section_title": {
+          "nn": "Data og backup",
+          "en": "Data and backup"
+        }
+      },
+      "options": [
+        {
+          "id": "sharepoint",
+          "texts": {
+            "text": {
+              "nn": "SharePoint eller Teams",
+              "en": "SharePoint or Teams"
+            }
+          }
+        },
+        {
+          "id": "onedrive",
+          "texts": {
+            "text": {
+              "nn": "OneDrive",
+              "en": "OneDrive"
+            }
+          }
+        },
+        {
+          "id": "filserver",
+          "texts": {
+            "text": {
+              "nn": "Lokal filserver",
+              "en": "Local file server"
+            }
+          }
+        },
+        {
+          "id": "annasky",
+          "texts": {
+            "text": {
+              "nn": "Dropbox, Google Drive eller liknande",
+              "en": "Dropbox, Google Drive or similar"
+            }
+          }
+        },
+        {
+          "id": "lokalt",
+          "texts": {
+            "text": {
+              "nn": "Lokalt på PC-ane",
+              "en": "Locally on the computers"
+            }
+          }
+        },
+        {
+          "id": "fag",
+          "texts": {
+            "text": {
+              "nn": "I fagsystemet",
+              "en": "In the business system"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ],
+      "exclusive_options": [
+        "vk"
+      ]
+    },
+    {
+      "id": "I39",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kan tilsette dele filer med «alle som har lenka», utan pålogging?",
+          "en": "Can employees share files with “anyone with the link”, without sign-in?"
+        }
+      },
+      "options": [
+        {
+          "id": "av",
+          "texts": {
+            "text": {
+              "nn": "Nei, det er slått av",
+              "en": "No, it's turned off"
+            }
+          }
+        },
+        {
+          "id": "utlop",
+          "texts": {
+            "text": {
+              "nn": "Ja, men lenkene går ut etter ei tid",
+              "en": "Yes, but the links expire after a while"
+            }
+          }
+        },
+        {
+          "id": "fritt",
+          "texts": {
+            "text": {
+              "nn": "Ja, utan avgrensingar",
+              "en": "Yes, without restrictions"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I40",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kva fagsystem og skytenester er viktigast for drifta? Skriv gjerne kven som er leverandør.",
+          "en": "Which business systems and cloud services matter most for operations? Feel free to name the supplier."
+        },
+        "placeholder": {
+          "nn": "Til dømes økonomisystem, booking, kasse og lønn",
+          "en": "For example accounting, booking, point of sale and payroll"
+        }
+      }
+    },
+    {
+      "id": "I41",
+      "type": "multi",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kva blir det teke backup av?",
+          "en": "What is backed up?"
+        },
+        "help": {
+          "nn": "Kryss av alt som passar. Microsoft og Google tek ikkje vare på dataa dykkar på same måte som ein eigen backup gjer.",
+          "en": "Tick everything that applies. Microsoft and Google don't protect your data the way a backup of your own does."
+        }
+      },
+      "options": [
+        {
+          "id": "server",
+          "texts": {
+            "text": {
+              "nn": "Serverar",
+              "en": "Servers"
+            }
+          }
+        },
+        {
+          "id": "m365",
+          "texts": {
+            "text": {
+              "nn": "E-post og filer i Microsoft 365 eller Google",
+              "en": "Email and files in Microsoft 365 or Google"
+            }
+          }
+        },
+        {
+          "id": "pc",
+          "texts": {
+            "text": {
+              "nn": "PC-ar",
+              "en": "Computers"
+            }
+          }
+        },
+        {
+          "id": "fag",
+          "texts": {
+            "text": {
+              "nn": "Fagsystem i skyen (eksport eller avtale med leverandøren)",
+              "en": "Cloud business systems (export or agreement with the supplier)"
+            }
+          }
+        },
+        {
+          "id": "ingen",
+          "texts": {
+            "text": {
+              "nn": "Ingenting fast",
+              "en": "Nothing on a regular basis"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ],
+      "exclusive_options": [
+        "ingen",
+        "vk"
+      ]
+    },
+    {
+      "id": "I42",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Finst det ein kopi av backupen som ikkje kan slettast eller krypterast frå nettverket dykkar (til dømes offline eller med slettevern)?",
+          "en": "Is there a copy of the backup that can't be deleted or encrypted from your network (for example offline or with deletion protection)?"
+        },
+        "help": {
+          "nn": "Løysepengevirus prøver ofte å slette backupen først.",
+          "en": "Ransomware often tries to delete the backup first."
+        }
+      },
+      "options": [
+        {
+          "id": "ja",
+          "texts": {
+            "text": {
+              "nn": "Ja",
+              "en": "Yes"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei",
+              "en": "No"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I43",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Når vart backupen sist testa ved at de henta tilbake data?",
+          "en": "When was the backup last tested by restoring data?"
+        }
+      },
+      "options": [
+        {
+          "id": "mnd",
+          "texts": {
+            "text": {
+              "nn": "Den siste månaden",
+              "en": "In the last month"
+            }
+          }
+        },
+        {
+          "id": "ar",
+          "texts": {
+            "text": {
+              "nn": "Det siste året",
+              "en": "In the last year"
+            }
+          }
+        },
+        {
+          "id": "eldre",
+          "texts": {
+            "text": {
+              "nn": "Meir enn eitt år sidan",
+              "en": "More than a year ago"
+            }
+          }
+        },
+        {
+          "id": "aldri",
+          "texts": {
+            "text": {
+              "nn": "Aldri",
+              "en": "Never"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I44",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kva skjer om ein backup feilar?",
+          "en": "What happens if a backup fails?"
+        }
+      },
+      "options": [
+        {
+          "id": "oppfolg",
+          "texts": {
+            "text": {
+              "nn": "Nokon får varsel og følgjer det opp",
+              "en": "Someone gets an alert and follows it up"
+            }
+          }
+        },
+        {
+          "id": "varsel",
+          "texts": {
+            "text": {
+              "nn": "Det kjem varsel, men ingen følgjer fast med",
+              "en": "An alert is sent, but nobody checks regularly"
+            }
+          }
+        },
+        {
+          "id": "ingen",
+          "texts": {
+            "text": {
+              "nn": "Ingen får beskjed",
+              "en": "Nobody is told"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I45",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Om serveren eller hovudsystemet blir utilgjengeleg, kor lang tid trur du det tek å få drifta i gang att?",
+          "en": "If the server or main system becomes unavailable, how long do you think it takes to get operations running again?"
+        }
+      },
+      "options": [
+        {
+          "id": "timar",
+          "texts": {
+            "text": {
+              "nn": "Nokre timar",
+              "en": "A few hours"
+            }
+          }
+        },
+        {
+          "id": "dag",
+          "texts": {
+            "text": {
+              "nn": "Ein arbeidsdag",
+              "en": "One working day"
+            }
+          }
+        },
+        {
+          "id": "dagar",
+          "texts": {
+            "text": {
+              "nn": "Fleire dagar",
+              "en": "Several days"
+            }
+          }
+        },
+        {
+          "id": "veke",
+          "texts": {
+            "text": {
+              "nn": "Over ei veke",
+              "en": "More than a week"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I46",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Får nokon varsel om mistenkeleg aktivitet, til dømes innlogging frå utlandet eller mange feil passord på rad?",
+          "en": "Does anyone get alerts about suspicious activity, for example sign-ins from abroad or many wrong passwords in a row?"
+        },
+        "section_title": {
+          "nn": "Overvaking og beredskap",
+          "en": "Monitoring and preparedness"
+        }
+      },
+      "options": [
+        {
+          "id": "dogn",
+          "texts": {
+            "text": {
+              "nn": "Ja, og nokon følgjer opp døgnet rundt",
+              "en": "Yes, and someone responds around the clock"
+            }
+          }
+        },
+        {
+          "id": "arbeidstid",
+          "texts": {
+            "text": {
+              "nn": "Ja, i arbeidstida",
+              "en": "Yes, during working hours"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei",
+              "en": "No"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I47",
+      "type": "single",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Finst det ein skriven plan for korleis IT-en skal setjast i drift att etter eit dataangrep (kven gjer kva, og i kva rekkjefølgje)?",
+          "en": "Is there a written plan for getting IT running again after a cyberattack (who does what, and in what order)?"
+        }
+      },
+      "options": [
+        {
+          "id": "testa",
+          "texts": {
+            "text": {
+              "nn": "Ja, og han er testa",
+              "en": "Yes, and it has been tested"
+            }
+          }
+        },
+        {
+          "id": "utesta",
+          "texts": {
+            "text": {
+              "nn": "Ja, men han er ikkje testa",
+              "en": "Yes, but it hasn't been tested"
+            }
+          }
+        },
+        {
+          "id": "nei",
+          "texts": {
+            "text": {
+              "nn": "Nei",
+              "en": "No"
+            }
+          }
+        },
+        {
+          "id": "vk",
+          "texts": {
+            "text": {
+              "nn": "Veit ikkje",
+              "en": "Not sure"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "I48",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Kva er dei tre største IT-svakheitene hos dykk, slik du ser det?",
+          "en": "What are the three biggest IT weaknesses in your company, as you see it?"
+        },
+        "section_title": {
+          "nn": "Til slutt",
+          "en": "Finally"
+        }
+      }
+    },
+    {
+      "id": "I49",
+      "type": "text",
+      "part": "common",
+      "texts": {
+        "text": {
+          "nn": "Er det noko anna vi bør vite før vi går gjennom kartlegginga?",
+          "en": "Is there anything else we should know before we go through the assessment?"
+        },
+        "help": {
+          "nn": "Valfritt.",
+          "en": "Optional."
+        }
+      }
+    }
+  ]
+}
