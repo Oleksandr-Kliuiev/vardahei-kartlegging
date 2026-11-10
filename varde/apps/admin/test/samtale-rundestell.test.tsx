@@ -30,12 +30,14 @@ const interview = {
 };
 
 let rounds: ReturnType<typeof round>[];
+let empty: boolean;
 let sent: { url: string; method: string; body: unknown }[];
 let view: ReturnType<typeof mount> | undefined;
 const res = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
 beforeEach(() => {
   rounds = [round('r1', 'Kartkegging', 'open'), round('r2', 'Gamal runde', 'closed')];
+  empty = false;
   sent = [];
   window.history.pushState({}, '', '/admin/samtalar');
   vi.stubGlobal(
@@ -63,7 +65,7 @@ beforeEach(() => {
       if (url.startsWith('/api/admin/interview-rounds/')) {
         const id = url.split('/').pop()!;
         const r = rounds.find((x) => x.id === id)!;
-        return res({ ...r, guide, interviews: [interview] });
+        return res({ ...r, guide, interviews: empty ? [] : [interview] });
       }
       if (url === '/api/admin/interview-guides') return res([guide]);
       if (url === '/api/admin/clients') return res([{ id: 'c1', name: 'Autohuset', tags: [] }]);
@@ -98,6 +100,22 @@ it('offers the way back to a closed round, so closing one is never a trap', asyn
   const seg = div.querySelector('.seg')?.textContent ?? '';
   expect(seg).toContain('Gamal runde (avslutta)');
   expect(seg).toContain('Kartkegging');
+});
+
+it('does not invite a closed and empty round to add clients it cannot take', async () => {
+  rounds = [round('r1', 'Tom runde', 'closed')];
+  empty = true;
+  const div = await open();
+  const text = div.textContent ?? '';
+  expect(text).toContain('Ho er avslutta');
+  expect(text).not.toContain('Legg dei til med knappen over');
+});
+
+it('still invites an open and empty round to add clients', async () => {
+  rounds = [round('r1', 'Tom runde', 'open')];
+  empty = true;
+  const div = await open();
+  expect(div.textContent).toContain('Legg dei til med knappen over');
 });
 
 it('shows a third, open round in the chooser beside the one in use', async () => {

@@ -200,7 +200,11 @@ export function SamtalarPage({ search }: { search: string }) {
           {group('Ikkje starta', planned, all ? Infinity : 6)}
           {group('Fullførte', finished)}
           {!rows.length && (
-            <p className="muted">Ingen kundar i runda enno. Legg dei til med knappen over.</p>
+            <p className="muted">
+              {chosen.status === 'open'
+                ? 'Ingen kundar i runda enno. Legg dei til med knappen over.'
+                : 'Ingen kundar i runda. Ho er avslutta, så du kan ikkje leggje til fleire.'}
+            </p>
           )}
         </>
       )}

@@ -301,3 +301,5 @@ p.sm-forre, .sm-forre > summary { display: flex; flex-wrap: wrap; align-items: c
 .sm-rundestell { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); display: grid; gap: 8px; justify-items: start; }
 .sm-rundestell h3 { margin: 0; font-size: 15px; }
 .sm-rundestell .forklaring { margin: 0; }
+/* The «Avslutta» chip follows running text in this line, so it needs the space the text has not. */
+.sm-guide .chip { margin-inline-start: 8px; }
