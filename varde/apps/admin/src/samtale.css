@@ -295,3 +295,9 @@ p.sm-forre, .sm-forre > summary { display: flex; flex-wrap: wrap; align-items: c
 .sm-kunde-fe b { color: var(--ink-strong); font-variant-numeric: tabular-nums; }
 .sm-kunde-tal { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; font-size: 13.5px; color: var(--ink-muted); }
 .sm-kunde-tal b { color: var(--ink-strong); font-variant-numeric: tabular-nums; }
+
+/* «Endre runda» (10.11): the end of the tour sits under the name, with its own line above it so it
+   is not read as part of the field. */
+.sm-rundestell { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); display: grid; gap: 8px; justify-items: start; }
+.sm-rundestell h3 { margin: 0; font-size: 15px; }
+.sm-rundestell .forklaring { margin: 0; }
