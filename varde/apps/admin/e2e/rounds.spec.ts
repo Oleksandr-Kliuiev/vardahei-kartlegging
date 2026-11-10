@@ -83,7 +83,7 @@ test('employee count is edited on the client page, new snapshots use it, deadlin
   // The head count of a round is a snapshot: editing the client later never changes it.
   const existing = await client.locator('.kundekort-topp small').textContent();
   await page.goto(`/admin/clients/${fixture.client}`);
-  await page.getByRole('button', { name: 'Endre namn og tal tilsette' }).click();
+  await page.getByRole('button', { name: 'Endre kunden' }).click();
   const edited = page.waitForResponse(
     (r) =>
       r.url().endsWith(`/api/admin/clients/${fixture.client}`) &&

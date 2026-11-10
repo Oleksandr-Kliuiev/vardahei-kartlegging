@@ -163,7 +163,7 @@ export function Kart({ data, order }: { data: Overview; order: 'svakast' | 'namn
   const name = (r: (typeof rows)[number]) =>
     twice.has(r.client.id) ? `${r.client.name} (${r.round.name})` : r.client.name;
   return (
-    <div className="tabell-wrap sm-kart-rull">
+    <div className="tabell-wrap sm-kart-rull" tabIndex={0} role="region" aria-label="Kart over samtalane">
       <p className="sr-only" id={hint}>
         Piltastane flyttar mellom rutene. Enter opnar svaret.
       </p>

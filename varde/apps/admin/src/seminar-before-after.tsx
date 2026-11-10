@@ -156,7 +156,7 @@ function Clients({ data }: { data: Ready }) {
         <h2 id="fe-kundar-tittel">Per kunde</h2>
         <p>Lågare snittscore og lågare kritisk andel er betre.</p>
       </div>
-      <div className="kort-innhald tabell-wrap">
+      <div className="kort-innhald tabell-wrap" tabIndex={0} role="region" aria-label="Per kunde, før og etter">
         <table className="kompakt">
           <thead>
             <tr>

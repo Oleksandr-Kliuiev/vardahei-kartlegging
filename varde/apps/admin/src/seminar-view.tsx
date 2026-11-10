@@ -68,7 +68,9 @@ function NewLink({ seminar }: { seminar: SeminarDetail }) {
     <div className="sem-ny-lenkje">
       <button
         type="button"
-        className={confirm ? 'btn sm danger' : 'btn sm ghost'}
+        // «Ny lenkje» kills the link that is already out; a ghost reads as the heading of the
+        // warning under it, so it carries an edge like every other press on this card.
+        className={confirm ? 'btn sm danger' : 'btn sm'}
         disabled={busy}
         aria-describedby="ny-lenkje-varsel"
         onClick={() => (confirm ? void reissue() : setConfirm(true))}
@@ -114,7 +116,7 @@ function Registrations({ seminar }: { seminar: SeminarDetail }) {
                 Kopier lenkje til påmelding
               </button>
               <a
-                className="btn sm ghost"
+                className="btn sm"
                 href={seminar.link}
                 target="_blank"
                 rel="noopener noreferrer"

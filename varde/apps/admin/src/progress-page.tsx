@@ -32,7 +32,7 @@ export function ProgressRound({ round }: { round: Round }) {
           grupper er ikkje viste. «–» tyder at talet ikkje er tilgjengeleg.
         </p>
         <ErrorMessage error={progress.error} />
-        <div className="tabell-wrap">
+        <div className="tabell-wrap" tabIndex={0} role="region" aria-label="Framdrift per kunde">
           <table className="framdrift">
             <thead>
               <tr>

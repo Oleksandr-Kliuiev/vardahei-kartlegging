@@ -199,7 +199,7 @@ export function NameList({ seminar }: { seminar: SeminarDetail }) {
         ) : rows.length === 0 ? (
           <p className="tom">Ingen er påmelde no.</p>
         ) : (
-          <div className="tabell-wrap">
+          <div className="tabell-wrap" tabIndex={0} role="region" aria-label="Påmelde til seminaret">
             <table className="sem-pamelde">
               <thead>
                 <tr>

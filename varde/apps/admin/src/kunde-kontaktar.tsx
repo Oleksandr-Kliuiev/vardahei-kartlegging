@@ -111,6 +111,8 @@ export function KundeKontaktar({ client }: { client: Client }) {
               setAdding(false);
               setRows(null);
               void queries.invalidateQueries({ queryKey: ['seminars', 'client-contacts'] });
+              // A contact is one of the ties «Slett kunden» counts, and that panel may stand open.
+              void queries.invalidateQueries({ queryKey: ['client-ties'] });
             }}
           />
         )}
@@ -140,6 +142,7 @@ export function KundeKontaktar({ client }: { client: Client }) {
                           void queries.invalidateQueries({
                             queryKey: ['seminars', 'client-contacts'],
                           });
+                          void queries.invalidateQueries({ queryKey: ['client-ties'] });
                         }}
                       />
                     </div>

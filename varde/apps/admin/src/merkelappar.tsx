@@ -1,4 +1,4 @@
-// Free tags on a client (wave A, decision of Oleksandr 09.11): «IT», «BIO». They are what a
+// Free tags on a client (wave A, decision of Oleksandr 09.11): «it», «bio». They are what a
 // campaign tells its cohorts apart by — in the client list and wherever clients are picked — so
 // they are written in one place and read in many. Stored in lower case; each one once.
 import { useState, type KeyboardEvent } from 'react';
@@ -14,8 +14,10 @@ export const tagsOf = (clients: readonly Client[]): string[] =>
 const clean = (t: string) => t.trim().toLocaleLowerCase('nb').slice(0, 24);
 
 /** The tags of one client, as they are shown in a list. */
-export function Merkelappar({ tags }: { tags: readonly string[] }) {
-  if (!tags.length) return null;
+export function Merkelappar({ tags }: { tags: readonly string[] | undefined }) {
+  // A payload from before the tags, or a client the server has not filled in yet, shows nothing
+  // rather than taking the page down with it.
+  if (!tags?.length) return null;
   return (
     <span className="merkelappar">
       {tags.map((t) => (
@@ -80,7 +82,7 @@ export function MerkelappFelt({
           list="merkelapp-liste"
           maxLength={24}
           disabled={full}
-          placeholder={full ? 'Seks merkelappar er nok' : 'IT, BIO …'}
+          placeholder={full ? 'Seks merkelappar er nok' : 'it, bio …'}
           aria-label="Ny merkelapp"
           aria-describedby="merke-hjelp"
           value={text}
@@ -100,8 +102,9 @@ export function MerkelappFelt({
         </button>
       </div>
       <p className="forklaring" id="merke-hjelp">
-        Skriv ein merkelapp og trykk Enter. Du filtrerer kundelista på dei, og vel heile merkelappen
-        når du plukkar kundar til ei runde eller eit seminar.
+        Skriv ein merkelapp og trykk Enter; han blir lagra med små bokstavar, så «IT» og «it» er
+        same merkelappen. Du filtrerer kundelista på dei, og vel heile merkelappen når du plukkar
+        kundar til ei runde eller eit seminar.
       </p>
     </div>
   );

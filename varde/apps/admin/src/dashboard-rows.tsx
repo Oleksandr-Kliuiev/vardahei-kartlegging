@@ -34,7 +34,7 @@ function EmployeeRows({ query }: { query: string }) {
               {data.summary.worse} verre, {data.summary.same} omtrent likt.
             </p>
           )}
-          <div className="tabell-wrap">
+          <div className="tabell-wrap" tabIndex={0} role="region" aria-label="Svar per tilsett">
             <table className="tilsette">
               <thead>
                 <tr>

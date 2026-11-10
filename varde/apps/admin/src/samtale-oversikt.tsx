@@ -198,7 +198,7 @@ function Kundar({ o }: { o: Overview }) {
         <p>Svakast først: der vi truleg trengst mest</p>
       </div>
       <div className="kort-innhald">
-        <div className="tabell-wrap">
+        <div className="tabell-wrap" tabIndex={0} role="region" aria-label="Kundar, svakast først">
           <table className="sm-tabell sm-kundetabell">
             <thead>
               <tr>
