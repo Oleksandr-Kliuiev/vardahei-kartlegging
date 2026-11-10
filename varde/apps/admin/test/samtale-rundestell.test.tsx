@@ -125,6 +125,13 @@ it('still invites an open and empty round to add clients', async () => {
   expect(div.textContent).toContain('Legg dei til med knappen over');
 });
 
+it('does not say the name twice when the round carries the title of its guide', async () => {
+  rounds = [round('r1', guide.title, 'open')];
+  const div = await open();
+  const line = div.querySelector('.sm-guide')?.textContent ?? '';
+  expect(line.match(new RegExp(guide.title, 'g'))?.length).toBe(1);
+});
+
 it('shows a third, open round in the chooser beside the one in use', async () => {
   rounds = [...rounds, round('r3', 'Vår 2027', 'open')];
   const div = await open();

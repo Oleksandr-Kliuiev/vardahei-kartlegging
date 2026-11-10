@@ -189,7 +189,7 @@ export function SamtalarPage({ search }: { search: string }) {
           <p className="sm-guide">
             {/* With one round offered there is no chooser to read the name from, so the line carries
                 it; a closed round says so here whether the chooser shows it or not. */}
-            {offered.length === 1 && (
+            {offered.length === 1 && chosen.name !== round.data.guide.title && (
               <>
                 <b>{chosen.name}</b> ·{' '}
               </>
