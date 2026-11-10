@@ -48,6 +48,8 @@ describe('conversations stay in their own module (2.20)', () => {
       'modules/interviews/interview-report.service.ts',
       'modules/interviews/interview-retention.ts',
       'modules/interviews/interviews.service.ts',
+      // 10.11: the name of a round and the end of a tour; the same module, the same tables.
+      'modules/interviews/rounds-admin.service.ts',
     ]);
   });
 

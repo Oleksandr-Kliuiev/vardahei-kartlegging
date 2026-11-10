@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Icon } from './icons.js';
 import { follow, goTo } from './nav.js';
 import { ErrorMessage, useClients } from './queries.js';
-import { LeggTilKundar, NyRunde } from './samtale-dialogar.js';
+import { EndreRunde, LeggTilKundar, NyRunde } from './samtale-dialogar.js';
 import { Fordeling } from './samtale-felt.js';
 import {
   dmy,
@@ -21,7 +21,7 @@ import { StartSamtale } from './samtale-start.js';
 import { Seg, useModal } from './widgets.js';
 import './samtale.css';
 
-type Panel = null | 'ny' | 'kundar' | InterviewRow;
+type Panel = null | 'ny' | 'kundar' | 'endre' | InterviewRow;
 
 export function SamtalarPage({ search }: { search: string }) {
   const rounds = useInterviewRounds();
@@ -32,6 +32,14 @@ export function SamtalarPage({ search }: { search: string }) {
   const list = rounds.data ?? [];
   const chosen =
     list.find((r) => r.id === asked) ?? list.find((r) => r.status === 'open') ?? list[0];
+  // A round that is over leaves the chooser so the list stops growing; the one being looked at
+  // stays in it whatever its state, or closing a round would make it vanish under your hand.
+  // «Vis avslutta» is the way back to one — without it a closed round could never be opened again.
+  const [visAvslutta, setVisAvslutta] = useState(false);
+  const offered = list.filter(
+    (r) => r.status === 'open' || visAvslutta || r.id === chosen?.id,
+  );
+  const avslutta = list.filter((r) => r.status !== 'open' && r.id !== chosen?.id).length;
   const round = useInterviewRound(chosen?.id);
   const [panel, setPanel] = useState<Panel>(null);
   const [all, setAll] = useState(false);
@@ -76,7 +84,13 @@ export function SamtalarPage({ search }: { search: string }) {
           {r.status === 'done' && r.score !== null && <b className="tnum">{r.score}</b>}
         </span>
         {r.status === 'planned' ? (
-          <button type="button" className="btn sm" onClick={() => open(r)}>
+          // A closed round takes no new conversation, so the press is not offered either.
+          <button
+            type="button"
+            className="btn sm"
+            disabled={chosen?.status !== 'open'}
+            onClick={() => open(r)}
+          >
             Start samtale
           </button>
         ) : (
@@ -114,21 +128,35 @@ export function SamtalarPage({ search }: { search: string }) {
     <div className="sm-rundar">
       <ErrorMessage error={rounds.error ?? round.error} />
       <div className="sm-verktoy">
-        {list.length > 1 && chosen && (
+        {offered.length > 1 && chosen && (
           <Seg
             label="Samtalerunde"
             value={chosen.id}
-            options={list.map(
-              (r) => [r.id, `${r.name} · ${r.counts.done} av ${r.counts.total}`] as const,
+            options={offered.map(
+              (r) =>
+                [
+                  r.id,
+                  `${r.name}${r.status === 'open' ? '' : ' (avslutta)'} · ${r.counts.done} av ${r.counts.total}`,
+                ] as const,
             )}
             onChange={(id) => goTo(`/admin/samtalar?runde=${id}`)}
           />
         )}
         <span className="sm-verktoy-hogre">
-          {chosen && (
-            <button type="button" className="btn sm ghost" onClick={() => open('kundar')}>
+          {chosen && chosen.status === 'open' && (
+            <button type="button" className="btn sm" onClick={() => open('kundar')}>
               <Icon name="pluss" small />
               Legg til kundar
+            </button>
+          )}
+          {chosen && (
+            <button type="button" className="btn sm" onClick={() => open('endre')}>
+              Endre runda
+            </button>
+          )}
+          {avslutta > 0 && !visAvslutta && (
+            <button type="button" className="btn sm" onClick={() => setVisAvslutta(true)}>
+              Vis {avslutta} avslutta
             </button>
           )}
           <button
@@ -158,12 +186,15 @@ export function SamtalarPage({ search }: { search: string }) {
       {chosen && round.data && (
         <>
           <p className="sm-guide">
-            {list.length === 1 && (
+            {/* With one round offered there is no chooser to read the name from, so the line carries
+                it; a closed round says so here whether the chooser shows it or not. */}
+            {offered.length === 1 && (
               <>
                 <b>{chosen.name}</b> ·{' '}
               </>
             )}
             {round.data.guide.title} · {round.data.guide.label} · {total} spørsmål
+            {chosen.status !== 'open' && <span className="chip warn">Avslutta</span>}
           </p>
           {group('Pågår', going)}
           {group('Ikkje starta', planned, all ? Infinity : 6)}
@@ -189,6 +220,17 @@ export function SamtalarPage({ search }: { search: string }) {
         <LeggTilKundar
           round={chosen}
           clients={(clients.data ?? []).filter((c) => !known.has(c.id))}
+          onClose={() => setPanel(null)}
+          onDone={() => {
+            setPanel(null);
+            refresh();
+          }}
+        />
+      )}
+      {panel === 'endre' && chosen && (
+        <EndreRunde
+          key={chosen.id}
+          round={chosen}
           onClose={() => setPanel(null)}
           onDone={() => {
             setPanel(null);

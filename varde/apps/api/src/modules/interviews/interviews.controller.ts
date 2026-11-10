@@ -27,10 +27,12 @@ import {
   OverviewQuery,
   parseWith,
   RoundInput,
+  RoundNameInput,
   StartInput,
 } from './interview-input.js';
 import { InterviewReportService } from './interview-report.service.js';
 import { type Actor, InterviewsService } from './interviews.service.js';
+import { InterviewRoundsAdmin } from './rounds-admin.service.js';
 
 const QUESTION_ID = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
 
@@ -46,6 +48,7 @@ export class InterviewsController {
     private readonly interviews: InterviewsService,
     private readonly reports: InterviewReportService,
     private readonly actions: InterviewActionsService,
+    private readonly roundAdmin: InterviewRoundsAdmin,
   ) {}
 
   @Get('interview-guides')
@@ -78,6 +81,24 @@ export class InterviewsController {
   @Get('interview-rounds/:id')
   round(@Param('id', ParseUUIDPipe) id: string) {
     return this.interviews.round(id);
+  }
+  /** The name of a round that exists (10.11): a typo in it used to stand for good. */
+  @Put('interview-rounds/:id/name')
+  renameRound(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: unknown,
+    @Req() req: AdminRequest,
+  ) {
+    return this.roundAdmin.rename(id, parseWith(RoundNameInput, body).name, actor(req));
+  }
+  /** The end of a tour, and the way back from it: nothing is deleted either way. */
+  @Post('interview-rounds/:id/close')
+  closeRound(@Param('id', ParseUUIDPipe) id: string, @Req() req: AdminRequest) {
+    return this.roundAdmin.setOpen(id, false, actor(req));
+  }
+  @Post('interview-rounds/:id/reopen')
+  reopenRound(@Param('id', ParseUUIDPipe) id: string, @Req() req: AdminRequest) {
+    return this.roundAdmin.setOpen(id, true, actor(req));
   }
   @Post('interview-rounds/:id/clients')
   addClients(

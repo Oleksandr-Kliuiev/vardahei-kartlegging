@@ -23,6 +23,12 @@ export const RoundInput = z.strictObject({
 });
 export type RoundInput = z.infer<typeof RoundInput>;
 
+/** A new name for a round that exists (10.11): the same rule as the name it was made with. */
+export const RoundNameInput = z.strictObject({
+  name: line(120).pipe(z.string().min(1, { message: 'Gi runda eit namn.' })),
+});
+export type RoundNameInput = z.infer<typeof RoundNameInput>;
+
 export const ClientsInput = z.strictObject({ clients: z.array(z.uuid()).min(1).max(200) });
 
 const lowerUuid = z.uuid().transform((id) => id.toLowerCase());

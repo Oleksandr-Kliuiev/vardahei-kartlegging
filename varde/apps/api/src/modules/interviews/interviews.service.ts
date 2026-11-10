@@ -298,6 +298,15 @@ export class InterviewsService {
     const moved = await this.prisma.$transaction(async (tx) => {
       const i = await this.lock(tx, id);
       if (i.status === 'done') throw new ConflictException(DONE);
+      // A closed round takes no new conversations (10.11). One already going stays writable, so
+      // closing the round never traps work that was left half done.
+      if (i.status === 'planned') {
+        const round = await tx.interviewRound.findUnique({
+          where: { id: i.interview_round_id },
+          select: { status: true },
+        });
+        if (round?.status !== 'open') throw new ConflictException('Samtalerunda er avslutta.');
+      }
       const another = input.client === i.client_id ? undefined : input.client;
       if (another) await moveToClient(tx, i, { client: another, from: input.from }, actor.audit);
       const now = new Date();
