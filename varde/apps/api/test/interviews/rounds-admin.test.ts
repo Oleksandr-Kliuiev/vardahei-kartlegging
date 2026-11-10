@@ -193,3 +193,53 @@ describe('closing a conversation round', () => {
     expect(rows.interviews).toHaveLength(1);
   });
 });
+
+describe('deleting a conversation round', () => {
+  it('removes one nobody has sat down in, with its planned conversations', async () => {
+    const round = await makeRound(`Feilopretta ${t.mark}`, [clientA, clientB]);
+    const gone = await t.call('DELETE', `/api/admin/interview-rounds/${round}`);
+    expect(gone.statusCode, gone.body).toBe(200);
+    expect(await roundRow(round)).toBeUndefined();
+    expect(
+      await t.prisma.interview.count({ where: { interview_round_id: round } }),
+    ).toBe(0);
+    const log = await t.prisma.auditLog.findFirst({
+      where: { target: `interview_round:${round}`, what: 'interviews.round.delete' },
+      select: { details: true },
+    });
+    expect(log?.details).toMatchObject({ name: `Feilopretta ${t.mark}`, planned: 2 });
+  });
+
+  it('keeps a round the moment one conversation is started, closed or not', async () => {
+    const round = await makeRound(`Brukt ${t.mark}`);
+    const going = await planned(round);
+    expect(
+      (
+        await t.call('POST', `/api/admin/interviews/${going}/start`, {
+          held_on: '2026-11-10',
+          interviewees: [{ role: 'dagleg leiar' }],
+          interviewers: ['Syntetisk admin'],
+          client: clientA,
+        })
+      ).statusCode,
+    ).toBe(201);
+    const refused = await t.call('DELETE', `/api/admin/interview-rounds/${round}`);
+    expect(refused.statusCode).toBe(409);
+    expect(refused.body).toContain('Avslutt henne i staden');
+    expect((await roundRow(round))?.name).toBe(`Brukt ${t.mark}`);
+
+    // Closing does not open the door either: what is written leaves through «Personvern → Sletting».
+    expect((await t.call('POST', `/api/admin/interview-rounds/${round}/close`)).statusCode).toBe(
+      201,
+    );
+    expect((await t.call('DELETE', `/api/admin/interview-rounds/${round}`)).statusCode).toBe(409);
+  });
+
+  it('says so when the round is already gone', async () => {
+    const gone = await t.call(
+      'DELETE',
+      '/api/admin/interview-rounds/00000000-0000-4000-8000-000000000000',
+    );
+    expect(gone.statusCode).toBe(404);
+  });
+});

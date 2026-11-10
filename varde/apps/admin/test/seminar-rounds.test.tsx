@@ -110,11 +110,23 @@ afterEach(() => {
 });
 const text = (testid: string) =>
   view!.div.querySelector(`[data-testid="${testid}"]`)?.textContent ?? '';
+/**
+ * Waits for what a query brings instead of betting on one `settle()`. The live summary lost that
+ * race on a loaded CI runner (10.11): «1 av 2 spørsmål viste» had not arrived after 50 ms.
+ */
+async function until(has: () => boolean, tries = 40) {
+  for (let i = 0; i < tries; i += 1) {
+    if (has()) return;
+    await settle();
+  }
+  throw new Error('the card never got what the test waits for');
+}
 
 describe('the card «Rundar»', () => {
   it('three steps: before, live and after with their state; nothing linked yet', async () => {
     view = mount(<RoundsCard seminar={seminar} onLive={() => {}} />, true);
     await settle();
+    await until(() => text('steg-live').includes('1 av 2 spørsmål viste'));
     expect(text('steg-for')).toContain('Før seminaret');
     expect(text('steg-for')).toContain('Inga undersøking er kopla til');
     expect(text('steg-live')).toContain('1 av 2 spørsmål viste');

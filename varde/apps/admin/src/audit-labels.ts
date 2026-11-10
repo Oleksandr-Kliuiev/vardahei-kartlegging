@@ -62,6 +62,7 @@ const WHAT: Record<string, string> = {
   'interviews.round.rename': 'Samtalerunde fekk nytt namn',
   'interviews.round.close': 'Samtalerunde avslutta',
   'interviews.round.reopen': 'Samtalerunde opna att',
+  'interviews.round.delete': 'Samtalerunde sletta',
   'interviews.start': 'Samtale starta',
   'interviews.client': 'Samtale flytta til annan kunde',
   'interviews.done': 'Samtale fullført',

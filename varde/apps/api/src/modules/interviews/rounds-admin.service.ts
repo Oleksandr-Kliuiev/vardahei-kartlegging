@@ -44,6 +44,43 @@ export class InterviewRoundsAdmin {
   }
 
   /**
+   * A round nobody has sat down in: made by mistake, or to try the thing out. Deleting it takes the
+   * planned conversations with it — rows that hold no word anyone said, only «we meant to talk to
+   * this client». The moment one conversation is started the round keeps everything, because what is
+   * written in it is `samtale` (ADR-017) and leaves only through «Personvern → Sletting», which
+   * writes a deletion request and a ledger entry. Closing is what tidies those away.
+   */
+  async remove(id: string, actor: Actor) {
+    const result = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM interview_round WHERE id = ${id}::uuid FOR UPDATE`;
+      const round = await tx.interviewRound.findUnique({
+        where: { id },
+        include: { interviews: { select: { id: true, status: true } } },
+      });
+      if (round === null) throw new NotFoundException('Samtalerunda finst ikkje.');
+      const started = round.interviews.filter((i) => i.status !== 'planned');
+      if (started.length > 0)
+        throw new ConflictException(
+          'Her er det alt samtalar, så runda kan ikkje slettast. Avslutt henne i staden.',
+        );
+      // `Interview.round` is Restrict, so the planned ones go first and in the same transaction.
+      await tx.interview.deleteMany({ where: { interview_round_id: id } });
+      await tx.interviewRound.delete({ where: { id } });
+      await tx.auditLog.create({
+        data: {
+          who: actor.audit,
+          what: 'interviews.round.delete',
+          target: `interview_round:${id}`,
+          details: { name: round.name, planned: round.interviews.length },
+        },
+      });
+      return { id };
+    });
+    this.events.changed('samtalar');
+    return result;
+  }
+
+  /**
    * Closing a round ends the tour: no client can be added to it and no conversation in it can be
    * started. What is written stays, the referats stay readable, and opening the round again undoes
    * all of it — so this is a tidy-up, never a deletion.

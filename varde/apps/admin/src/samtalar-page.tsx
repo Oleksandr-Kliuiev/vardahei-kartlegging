@@ -11,6 +11,7 @@ import { Fordeling } from './samtale-felt.js';
 import {
   dmy,
   type InterviewRow,
+  type RoundSummary,
   peopleText,
   rated,
   useGuides,
@@ -200,7 +201,11 @@ export function SamtalarPage({ search }: { search: string }) {
           {group('Ikkje starta', planned, all ? Infinity : 6)}
           {group('Fullførte', finished)}
           {!rows.length && (
-            <p className="muted">Ingen kundar i runda enno. Legg dei til med knappen over.</p>
+            <p className="muted">
+              {chosen.status === 'open'
+                ? 'Ingen kundar i runda enno. Legg dei til med knappen over.'
+                : 'Ingen kundar i runda. Ho er avslutta, så du kan ikkje leggje til fleire.'}
+            </p>
           )}
         </>
       )}
@@ -234,6 +239,19 @@ export function SamtalarPage({ search }: { search: string }) {
           onClose={() => setPanel(null)}
           onDone={() => {
             setPanel(null);
+            refresh();
+          }}
+          onDeleted={() => {
+            setPanel(null);
+            // Out of the list at once: a refetch alone would ask the server for the round that is
+            // gone and answer itself with a 404 on the way to the page without it.
+            queries.setQueryData<RoundSummary[]>(['samtalar', 'rounds'], (old) =>
+              (old ?? []).filter((r) => r.id !== chosen.id),
+            );
+            // Its own view goes with it, or the refresh below would ask for it once more.
+            queries.removeQueries({ queryKey: ['samtalar', 'round', chosen.id] });
+            // The address still names the round that is gone; start over at the plain page.
+            goTo('/admin/samtalar');
             refresh();
           }}
         />

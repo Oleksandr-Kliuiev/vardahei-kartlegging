@@ -30,18 +30,23 @@ const interview = {
 };
 
 let rounds: ReturnType<typeof round>[];
+let empty: boolean;
 let sent: { url: string; method: string; body: unknown }[];
+let asked: string[];
 let view: ReturnType<typeof mount> | undefined;
 const res = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
 beforeEach(() => {
   rounds = [round('r1', 'Kartkegging', 'open'), round('r2', 'Gamal runde', 'closed')];
+  empty = false;
   sent = [];
+  asked = [];
   window.history.pushState({}, '', '/admin/samtalar');
   vi.stubGlobal(
     'fetch',
     vi.fn((url: string, init?: RequestInit) => {
       const method = init?.method ?? 'GET';
+      if (method === 'GET') asked.push(url);
       if (method !== 'GET') {
         sent.push({ url, method, body: init?.body ? JSON.parse(init.body as string) : null });
         if (url.endsWith('/name')) {
@@ -53,6 +58,10 @@ beforeEach(() => {
           rounds = rounds.map((r) => (r.id === 'r1' ? { ...r, status: 'closed' } : r));
           return res({ status: 'closed' }, 201);
         }
+        if (method === 'DELETE') {
+          rounds = rounds.filter((r) => r.id !== 'r1');
+          return res({ id: 'r1' });
+        }
         if (url.endsWith('/reopen')) {
           rounds = rounds.map((r) => (r.id === 'r1' ? { ...r, status: 'open' } : r));
           return res({ status: 'open' }, 201);
@@ -63,7 +72,7 @@ beforeEach(() => {
       if (url.startsWith('/api/admin/interview-rounds/')) {
         const id = url.split('/').pop()!;
         const r = rounds.find((x) => x.id === id)!;
-        return res({ ...r, guide, interviews: [interview] });
+        return res({ ...r, guide, interviews: empty ? [] : [interview] });
       }
       if (url === '/api/admin/interview-guides') return res([guide]);
       if (url === '/api/admin/clients') return res([{ id: 'c1', name: 'Autohuset', tags: [] }]);
@@ -98,6 +107,22 @@ it('offers the way back to a closed round, so closing one is never a trap', asyn
   const seg = div.querySelector('.seg')?.textContent ?? '';
   expect(seg).toContain('Gamal runde (avslutta)');
   expect(seg).toContain('Kartkegging');
+});
+
+it('does not invite a closed and empty round to add clients it cannot take', async () => {
+  rounds = [round('r1', 'Tom runde', 'closed')];
+  empty = true;
+  const div = await open();
+  const text = div.textContent ?? '';
+  expect(text).toContain('Ho er avslutta');
+  expect(text).not.toContain('Legg dei til med knappen over');
+});
+
+it('still invites an open and empty round to add clients', async () => {
+  rounds = [round('r1', 'Tom runde', 'open')];
+  empty = true;
+  const div = await open();
+  expect(div.textContent).toContain('Legg dei til med knappen over');
 });
 
 it('shows a third, open round in the chooser beside the one in use', async () => {
@@ -157,4 +182,38 @@ it('closes the round, stops new conversations and opens it again', async () => {
     method: 'POST',
   });
   expect(button(div, 'Start samtale').disabled).toBe(false);
+});
+
+it('offers to delete a round nobody has sat down in, and says so when it cannot', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  const div = await open();
+  act(() => button(div, 'Endre runda').click());
+  expect(div.textContent).toContain('Ingen har sett seg ned i henne enno');
+  // «Slett runda» is a hold button: a click is not enough, the press has to last.
+  const hold = button(div, 'Slett runda');
+  asked.length = 0;
+  act(() => {
+    hold.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+  });
+  await act(async () => {
+    vi.advanceTimersByTime(1300);
+    await Promise.resolve();
+  });
+  await settle();
+  expect(sent.at(-1)).toMatchObject({ url: '/api/admin/interview-rounds/r1', method: 'DELETE' });
+  // Nothing asks the server for the round that is gone on the way back to the plain page.
+  await settle();
+  expect(asked).not.toContain('/api/admin/interview-rounds/r1');
+  vi.useRealTimers();
+});
+
+it('refuses the press and names the way out when a conversation is going', async () => {
+  rounds = [{ ...round('r1', 'Brukt', 'open'), counts: { ...counts, planned: 0, in_progress: 1 } }];
+  const div = await open();
+  act(() => button(div, 'Endre runda').click());
+  expect(div.textContent).toContain('Her er det alt samtalar');
+  expect(div.textContent).toContain('Personvern → Sletting');
+  expect([...div.querySelectorAll('button')].some((b) => b.textContent === 'Slett runda')).toBe(
+    false,
+  );
 });
