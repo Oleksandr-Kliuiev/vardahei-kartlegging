@@ -107,7 +107,7 @@ export function Zones({ data }: { data: NonNullable<Dashboard['zones']> }) {
         Spørsmål og bedrift: Grøn til 0,5 · Gul 0,5–1,5 · Oransje 1,5–2,5 · Raud over 2,5. Tilsett:
         Grøn under 1 · Gul 1–2 · Oransje 2–3 · Raud frå 3.
       </p>
-      <div className="tabell-wrap">
+      <div className="tabell-wrap" tabIndex={0} role="region" aria-label="Snitt per gruppe og spørsmål">
         <table className="rute">
           <thead>
             <tr>
@@ -309,7 +309,7 @@ export function CommonQuestions({ data }: { data: Dashboard }) {
           </div>
           <h3>Rutineoppgåvene som tek mest tid</h3>
           <p>Timane er eit anslag: kor ofte dei gjer oppgåva × kor lang tid ho tek.</p>
-          <div className="tabell-wrap">
+          <div className="tabell-wrap" tabIndex={0} role="region" aria-label="Rutineoppgåvene som tek mest tid">
             <table>
               <thead>
                 <tr>

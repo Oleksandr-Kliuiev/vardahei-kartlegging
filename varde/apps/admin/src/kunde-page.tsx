@@ -16,6 +16,7 @@ import { KundeFunn } from './kunde-funn.js';
 import { KundeKontaktar } from './kunde-kontaktar.js';
 import { KundeSamtalar } from './kunde-samtalar.js';
 import { SlettKunde } from './kunde-slett.js';
+import { Merkelappar } from './merkelappar.js';
 import type { Round } from './models.js';
 import { follow, useTitle } from './nav.js';
 import { shortDate } from './norsk.js';
@@ -94,11 +95,14 @@ export function KundePage({ id, search = '' }: { id: string; search?: string }) 
               {' · '}
               {mine.length} {mine.length === 1 ? 'runde' : 'rundar'}
             </p>
+            {/* The tags sort the cohorts of a campaign, so the client's own page has to show which
+                ones he carries — not only the form that sets them. */}
+            <Merkelappar tags={client.tags} />
           </div>
           {!editing && (
             <div className="handlingar">
               <button type="button" className="btn" onClick={() => setEditing(true)}>
-                Endre namn og tal tilsette
+                Endre kunden
               </button>
               <ArkiverKunde key={`arkiv-${client.id}`} client={client} />
               <SlettKunde key={client.id} client={client} />

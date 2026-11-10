@@ -1,7 +1,7 @@
 // «Slett kunden»: for a duplicate or a mistake. The button first asks the server what the client is
 // tied to: with nothing, the question with the consequence; with anything, the reason why not.
 import { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, mutate } from './api.js';
 import { Icon } from './icons.js';
 import type { Client } from './models.js';
@@ -37,24 +37,26 @@ export function SlettKunde({ client }: { client: Pick<Client, 'id' | 'name'> }) 
   const queries = useQueryClient();
   const toast = useToast();
   const [open, setOpen] = useState(false);
-  const [ties, setTies] = useState<ClientTies | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const path = `/api/admin/clients/${client.id}`;
-
-  async function ask() {
-    setOpen(true);
-    setBusy(true);
-    setError('');
-    setTies(null);
-    try {
-      setTies(await api<ClientTies>(`${path}/ties`));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Kunne ikkje sjekke kunden.');
-    } finally {
-      setBusy(false);
-    }
-  }
+  // The ties are asked of the server while the panel stands, not remembered from the press that
+  // opened it: taking the last contact away is the natural next move, and the refusal has to go
+  // when the reason for it does.
+  const spurt = useQuery({
+    queryKey: ['client-ties', client.id],
+    queryFn: () => api<ClientTies>(`${path}/ties`),
+    enabled: open,
+    staleTime: 0,
+    gcTime: 0,
+  });
+  const ties = open ? (spurt.data ?? null) : null;
+  const askError = spurt.error
+    ? spurt.error instanceof Error
+      ? spurt.error.message
+      : 'Kunne ikkje sjekke kunden.'
+    : '';
+  const vis = error || askError;
 
   async function remove() {
     setBusy(true);
@@ -72,7 +74,7 @@ export function SlettKunde({ client }: { client: Pick<Client, 'id' | 'name'> }) 
 
   if (!open)
     return (
-      <button type="button" className="btn ghost fare" onClick={() => void ask()}>
+      <button type="button" className="btn ghost fare" onClick={() => setOpen(true)}>
         <Icon name="slett" small />
         Slett kunden
       </button>
@@ -80,17 +82,17 @@ export function SlettKunde({ client }: { client: Pick<Client, 'id' | 'name'> }) 
   const text = ties && tiesText(ties);
   return (
     <div className="sem-sporsmal" role="group" aria-label={`Slett ${client.name}`}>
-      {!ties && !error && <p role="status">Sjekkar kva kunden er knytt til …</p>}
+      {!ties && !vis && <p role="status">Sjekkar kva kunden er knytt til …</p>}
       {ties && !text && <p>«{client.name}» blir sletta. Det kan ikkje angrast.</p>}
       {text && (
         <p>
-          «{client.name}» kan ikkje slettast, fordi kunden er knytt til {text}. Slik går ikkje svar
-          og historikk tapt.
+          «{client.name}» kan ikkje slettast, fordi kunden er knytt til {text}. Ta det bort først,
+          eller arkiver kunden i staden — då blir alt verande.
         </p>
       )}
-      {error && (
+      {vis && (
         <p role="alert" className="sem-sporsmal-feil">
-          {error}
+          {vis}
         </p>
       )}
       <div className="handlingar">

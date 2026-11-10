@@ -36,6 +36,9 @@ const WHAT: Record<string, string> = {
   'surveys.create': 'Skjema oppretta',
   'surveys.draft': 'Nytt utkast',
   'surveys.save': 'Utkast lagra',
+  'surveys.trash': 'Utkast lagt i papirkorga',
+  'surveys.restore': 'Utkast henta attende frå papirkorga',
+  'surveys.purge': 'Utkast sletta for godt',
   'surveys.editor_metrics': 'Bruk av verkstaden lagra',
   'surveys.frozen_change': 'Fast spørsmål endra',
   'surveys.comment': 'Kommentar skriven',
@@ -77,6 +80,12 @@ const WHAT: Record<string, string> = {
   'seminars.registration.remove': 'Påmelding fjerna',
   'seminars.material.add': 'Materiell lagt til',
   'seminars.material.remove': 'Materiell fjerna',
+  'clients.archive': 'Kunde arkivert',
+  'clients.unarchive': 'Kunde henta attende frå arkivet',
+  'rounds.remove': 'Runde sletta',
+  'rounds.client.remove': 'Kunde teken ut av runden',
+  'seminars.contact.create': 'Kontakt lagt til',
+  'seminars.delete': 'Seminar sletta',
 };
 
 export function auditWhat(what: string): string {
@@ -125,6 +134,8 @@ export function auditTarget(target: string | null, names: TargetNames): string {
     contact: 'Kontakt',
     contacts: 'Kontaktar',
     survey_template: 'Skjema',
+    interview: 'Samtale',
+    interview_round: 'Samtalerunde',
     finding: 'Funn',
     finding_rule: 'Regel for funn',
     rule: 'Regel for funn',

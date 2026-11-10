@@ -136,8 +136,8 @@ const fetcher = vi.fn((path: string, init?: RequestInit) => {
           ? current
           : path === '/api/admin/clients'
             ? [
-                { id: A, name: 'Syntetisk A', slug: 'a', employee_count: 10 },
-                { id: B, name: 'Syntetisk B', slug: 'b', employee_count: 9 },
+                { id: A, name: 'Syntetisk A', slug: 'a', employee_count: 10, tags: ['it'] },
+                { id: B, name: 'Syntetisk B', slug: 'b', employee_count: 9, tags: [] },
               ]
             : path === '/api/admin/rounds'
               ? ROUNDS

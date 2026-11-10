@@ -18,7 +18,7 @@ function Change({ value, points = false }: { value: ComparisonRow['change']; poi
 }
 function ComparisonTable({ rows }: { rows: ComparisonRow[] }) {
   return (
-    <div className="tabell-wrap">
+    <div className="tabell-wrap" tabIndex={0} role="region" aria-label="Samanlikning mellom rundane">
       <table>
         <thead>
           <tr>

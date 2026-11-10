@@ -98,7 +98,7 @@ export function LeggTilFleire({
         />
       </label>
       <p className="forklaring" id="bolk-hjelp">
-        Du kan skrive tal på tilsette og merkelappar etter semikolon: <code>Daco;25;IT</code>. Namn
+        Du kan skrive tal på tilsette og merkelappar etter semikolon: <code>Daco;25;it</code>. Namn
         som alt er kundar, blir ikkje rørte.
       </p>
       {text.trim() !== '' && (

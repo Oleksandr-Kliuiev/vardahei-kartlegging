@@ -55,7 +55,8 @@ export function Logg({
         {filter && <Seg label="Område" value={area} options={AREAS} onChange={setArea} />}
       </div>
       <ErrorMessage error={audit.error} />
-      <ol className="logg">
+      {/* The list scrolls inside its card, so the keyboard needs a way in and a name for it. */}
+      <ol className="logg" tabIndex={0} aria-label="Loggen">
         {rows.map((row, i) => (
           <li key={`${row.at}-${i}`}>
             <time dateTime={row.at}>{auditWhen(row.at)}</time>{' '}

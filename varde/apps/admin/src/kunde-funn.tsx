@@ -138,7 +138,9 @@ function Oppfolging({
           <button
             ref={opener}
             type="button"
-            className="btn sm ghost"
+            // The status beside it is a chip with an edge; a ghost here would be the only thing on
+            // the row that can be pressed and the only one that looks like text.
+            className="btn sm"
             aria-label={`Endre status for ${noun}: ${text}`}
             onClick={() => {
               setChoice(choiceOf(row));

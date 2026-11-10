@@ -201,7 +201,9 @@ progress::-webkit-progress-value {
   margin-top: 18px;
 }
 .logg {
-  padding-left: 20px;
+  /* The scroll container clips whatever leaves the padding box, and the marker of a numbered row
+     lives there: 20px fitted one digit, so «10.» lost its ten. Three digits fit now. */
+  padding-inline-start: 36px;
 }
 .logg li {
   padding: 6px 0;

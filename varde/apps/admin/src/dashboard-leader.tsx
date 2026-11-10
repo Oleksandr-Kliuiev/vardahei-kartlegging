@@ -18,7 +18,7 @@ function LeaderClient({ round, client }: { round: string; client: string }) {
       {data && (
         <>
           <Findings findings={data.findings} />
-          <div className="tabell-wrap">
+          <div className="tabell-wrap" tabIndex={0} role="region" aria-label="Leiarsvar, éi rad per leiar">
             <table>
               <thead>
                 <tr>
