@@ -159,7 +159,7 @@ test('an action of the catalogue chosen in a conversation shows in Oversikt, the
   await expect(tiltak.getByRole('button')).toHaveCount(0);
 
   // Oversikt: the recurring tiltak by action, with the seminar topic as the chip.
-  await page.goto(`/admin/samtalar/oversikt?runde=${round}`);
+  await page.goto(`/admin/samtalar/runde/${round}/oversikt`);
   const igjen = page.getByRole('region', { name: 'Tiltak som går igjen' });
   await expect(igjen.getByRole('heading', { name: 'Frå katalogen' })).toBeVisible();
   const row = igjen.getByRole('listitem').filter({ hasText: phishing });

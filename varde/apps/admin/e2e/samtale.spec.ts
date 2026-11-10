@@ -53,7 +53,8 @@ test('a conversation at the table is saved field by field, through a reload and 
   await ny.getByLabel('Finn kunde').fill('Syntetisk admin kunde');
   await ny.getByRole('checkbox', { name: 'Syntetisk admin kunde' }).check();
   await ny.getByRole('button', { name: 'Lag runda' }).click();
-  await expect(page.getByRole('heading', { name: /Ikkje starta/ })).toBeVisible();
+  // A new round opens on its own page (10.11), with the client to start.
+  await expect(page.getByRole('heading', { name: `Haust ${s.mark}`, level: 1 })).toBeVisible();
 
   // The start (a dialog in the middle, as in the concept): who sits at the table. The one signed in is
   // ticked under «Frå Vardahei».
@@ -70,10 +71,13 @@ test('a conversation at the table is saved field by field, through a reload and 
   ).toBeVisible();
   const id = new URL(page.url()).pathname.split('/').pop()!;
   await expect(page.locator('.sm-q')).toContainText('ansvaret for IT');
-  // Focus mode: no menu and no top line; the bar leads back to «Samtalar».
+  // Focus mode: no menu and no top line; the bar leads back to the round (10.11) and shows the steps.
   await expect(page.locator('#sidemeny')).toHaveCount(0);
   await expect(page.locator('.topplinje')).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Samtalar' })).toBeVisible();
+  await expect(page.getByRole('link', { name: `Haust ${s.mark}` })).toBeVisible();
+  await expect(
+    page.getByRole('navigation', { name: 'Samtalen' }).getByRole('link', { name: 'Spørsmål' }),
+  ).toHaveAttribute('aria-current', 'step');
 
   // Question 1: what the client says, the rating by keyboard while typing, the conclusion.
   const answer = page.getByLabel('Kva seier kunden?');
@@ -166,15 +170,19 @@ test('a conversation at the table is saved field by field, through a reload and 
   // The summary: the notes hide for the client; «Fullfør» locks the conversation.
   await page.getByRole('link', { name: 'Oppsummering' }).click();
   await expect(page.getByRole('heading', { name: 'Oppsummering' })).toBeVisible();
-  await expect(page.getByText('25 spørsmål er ikkje vurderte:')).toBeVisible();
+  await expect(page.getByText('25 spørsmål er ikkje vurderte.')).toBeVisible();
   await expect(page.getByText('Kandidat for beredskapspakken.')).toBeVisible();
-  await page.getByLabel('Vis for kunden').check();
+  const kunde = page.getByRole('button', { name: 'Vis for kunden' });
+  await kunde.click();
+  await expect(kunde).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByText('Kandidat for beredskapspakken.')).toHaveCount(0);
-  await page.getByLabel('Vis for kunden').uncheck();
+  await kunde.click();
   await page.getByLabel('Samla inntrykk').fill('God merksemd i leiinga.');
   await page.getByRole('button', { name: 'Fullfør samtalen' }).first().click();
   await expect(page.getByText(/Samtalen er no med i oversikta og på kundesida/)).toBeVisible();
-  await expect(page.getByLabel('Samla inntrykk')).toHaveJSProperty('readOnly', true);
+  // Locked, the fields are read as text: no box left to type in.
+  await expect(page.getByLabel('Samla inntrykk')).toHaveCount(0);
+  await expect(page.locator('.sm-lesetekst', { hasText: 'God merksemd i leiinga.' })).toBeVisible();
   const done = (await (await page.request.get(`/api/admin/interviews/${id}`)).json()) as {
     status: string;
     summary: string;
@@ -196,9 +204,10 @@ test('a conversation at the table is saved field by field, through a reload and 
   // Oversikt shows the finished conversation; its CSV has the answer and not the note.
   await page.getByRole('link', { name: 'Oppsummering' }).click();
   await page.getByRole('link', { name: 'Til oversikta' }).click();
+  // «Til oversikta» opens the round's own «Oversikt» tab (10.11).
   await expect(
-    page.getByRole('heading', { name: 'Oversikt over samtalane', level: 1 }),
-  ).toBeVisible();
+    page.getByRole('navigation', { name: 'Samtalerunda' }).getByRole('link', { name: 'Oversikt' }),
+  ).toHaveAttribute('aria-current', 'page');
   await expect(
     page.getByRole('link', {
       name: 'Syntetisk admin kunde, 1 Kven har IT-ansvaret: forbetringspotensial',
@@ -348,11 +357,12 @@ test('the wrong client is corrected in «Endre»; a session that ran out comes b
   await expect(answer).toHaveValue('Berre Dropbox og Teams.');
 
   // The list agrees: the right client is going on, the wrong one waits.
+  // The old address of the round still finds it (10.11: a round has its own page now).
   await page.goto(`/admin/samtalar?runde=${round}`);
-  const group = (name: RegExp) =>
-    page.locator('.sm-gruppekort').filter({ has: page.getByRole('heading', { name }) });
-  await expect(group(/^Pågår/)).toContainText('Syntetisk andre kunde');
-  await expect(group(/^Ikkje starta/)).toContainText('Syntetisk admin kunde');
+  await expect(page).toHaveURL(new RegExp(`/admin/samtalar/runde/${round}$`));
+  const row = (name: string) => page.locator('.sm-kunderad').filter({ hasText: name });
+  await expect(row('Syntetisk andre kunde')).toContainText('Pågår');
+  await expect(row('Syntetisk admin kunde')).toContainText('Ikkje starta');
 
   // On the client page the block of conversations comes first, as in the concept.
   await page.goto(`/admin/clients/${s.other_client}`);
@@ -446,9 +456,9 @@ test('a repeat conversation: criteria under the buttons, last time under the que
     /^1Kven har IT-ansvaret.*frå Forbetringspotensial til Ivaretatt$/,
     /^2Informasjon om endringar.*frå Manglar til Forbetringspotensial$/,
   ]);
-  await page.getByLabel('Vis for kunden').check();
+  await page.getByRole('button', { name: 'Vis for kunden' }).click();
   await expect(card.getByRole('row', { name: /^Poeng/ })).toHaveCount(0);
-  await page.getByLabel('Vis for kunden').uncheck();
+  await page.getByRole('button', { name: 'Vis for kunden' }).click();
   await page.getByRole('button', { name: 'Fullfør samtalen' }).first().click();
   // The done callout of 2.21 (the concept): saved, with the ways to the referat and Oversikt.
   await expect(page.getByText(/^Fullført og lagra /)).toBeVisible();

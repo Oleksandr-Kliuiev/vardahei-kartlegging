@@ -166,19 +166,18 @@ describe('the choice under «Konklusjon og tiltak»', () => {
     expect(chips()).toEqual(['Phishing-øving']);
     expect(view.div.querySelectorAll('button')).toHaveLength(0);
     view.close();
+    // Nothing chosen in a finished conversation: the block is not there at all (10.11).
     view = mount(<Med s={storeWith('', true)} readOnly />, true);
     await settle();
-    expect(view.div.textContent).toContain('Ingen tiltak frå katalogen er valde.');
+    expect(view.div.querySelector('.sm-katalog')).toBeNull();
   });
 
-  it('an empty catalogue says where the actions are made', async () => {
+  it('an empty catalogue takes no room under the question (10.11)', async () => {
+    // It said «Katalogen er tom» under every one of the 27 questions; nothing to choose, nothing shown.
     server.catalog = [];
     view = mount(<Med s={storeWith()} />, true);
     await settle();
-    expect(view.div.textContent).toContain('Katalogen er tom. Tiltak lagar du under Skjema');
-    expect(view.div.querySelector('a')!.getAttribute('href')).toBe(
-      '/admin/surveys/funn#tiltakskatalog',
-    );
+    expect(view.div.querySelector('.sm-katalog')).toBeNull();
     expect(view.div.querySelectorAll('button')).toHaveLength(0);
   });
 

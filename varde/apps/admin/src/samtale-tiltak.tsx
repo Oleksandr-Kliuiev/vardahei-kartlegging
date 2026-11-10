@@ -257,6 +257,9 @@ export function KatalogTiltak({
     store.set(key, valueOf(chosen.includes(a) ? chosen.filter((x) => x !== a) : [...chosen, a]));
   const conflict = store.conflicts.get(key);
   const empty = catalog.isSuccess && list.length === 0;
+  // An empty catalogue said so under every one of the 27 questions (10.11): with nothing to choose, and
+  // nothing chosen, there is nothing to show. A finished conversation shows only what was chosen.
+  if (!chosen.length && !conflict && (empty || catalog.isPending || readOnly)) return null;
   return (
     <div className="sm-katalog" role="group" aria-labelledby={`${id}-k`}>
       <div className="sm-label sm-katalog-label">

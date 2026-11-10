@@ -67,7 +67,8 @@ export const SECTIONS: Section[] = [
     url: '/admin/samtalar',
     label: 'Samtalar',
     icon: 'prat',
-    intro: 'Samtalar med nøkkelpersonar hos kundane. Vel kunden de sit med, og start samtalen.',
+    intro:
+      'Samtalar med nøkkelpersonar hos kundane, runde for runde. Opne runda for å finne kunden og starte samtalen.',
     sub: true,
   },
   {

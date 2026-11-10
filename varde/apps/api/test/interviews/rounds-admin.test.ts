@@ -1,6 +1,7 @@
 // Keeping a conversation round tidy (10.11): a new name for one that exists, the end of a tour and
 // the way back from it. A closed round takes no new clients and no new conversation; one already
-// going stays writable, so closing never traps half-done work. Nothing is ever deleted.
+// going stays writable, so closing never traps half-done work, and closing deletes nothing. Deleting
+// is its own act: a round or one conversation, written ones with a deletion request behind them.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { makeClients, seminarApp, type SeminarApp } from '../support/seminars.js';
 
@@ -45,13 +46,38 @@ async function makeRound(name: string, clients: string[] = [clientA]) {
 }
 
 const roundRow = async (id: string) =>
-  (await t.call('GET', '/api/admin/interview-rounds')).json<{ id: string; status: string; name: string }[]>()
+  (await t.call('GET', '/api/admin/interview-rounds'))
+    .json<{ id: string; status: string; name: string }[]>()
     .find((r) => r.id === id);
 
 const planned = async (round: string) =>
   json<{ interviews: { id: string; status: string }[] }>(
     await t.call('GET', `/api/admin/interview-rounds/${round}`),
   ).interviews.find((i) => i.status === 'planned')!.id;
+
+async function startOne(round: string, client: string) {
+  const rows = json<{ interviews: { id: string; client: { id: string } }[] }>(
+    await t.call('GET', `/api/admin/interview-rounds/${round}`),
+  ).interviews;
+  const id = rows.find((i) => i.client.id === client)!.id;
+  const r = await t.call('POST', `/api/admin/interviews/${id}/start`, {
+    held_on: '2026-11-10',
+    interviewees: [{ role: 'dagleg leiar' }],
+    interviewers: ['Syntetisk admin'],
+    client,
+  });
+  expect(r.statusCode, r.body).toBe(201);
+  return id;
+}
+
+/** Whether a deletion request lists the conversation, the way `applyInterviewLedger` reads it. */
+const ledgerHas = async (interview: string) =>
+  (
+    await t.prisma.deletionRequest.findMany({
+      where: { scope: 'client' },
+      select: { scope_ref: true },
+    })
+  ).some((r) => ((r.scope_ref as { interviews?: string[] }).interviews ?? []).includes(interview));
 
 const whatIn = async (round: string) =>
   (
@@ -63,10 +89,9 @@ const whatIn = async (round: string) =>
 
 beforeAll(async () => {
   t = await seminarApp();
-  [clientA, clientB] = (await makeClients(t, ['Rundeadmin A', 'Rundeadmin B'])).map((c) => c.id) as [
-    string,
-    string,
-  ];
+  [clientA, clientB] = (await makeClients(t, ['Rundeadmin A', 'Rundeadmin B'])).map(
+    (c) => c.id,
+  ) as [string, string];
   guide = await publishGuide();
 });
 
@@ -90,7 +115,10 @@ describe('the name of a conversation round', () => {
       where: { target: `interview_round:${round}`, what: 'interviews.round.rename' },
       select: { details: true },
     });
-    expect(log?.details).toMatchObject({ from: `Kartkegging ${t.mark}`, to: `Kartlegging ${t.mark}` });
+    expect(log?.details).toMatchObject({
+      from: `Kartkegging ${t.mark}`,
+      to: `Kartlegging ${t.mark}`,
+    });
 
     const clash = await t.call('PUT', `/api/admin/interview-rounds/${other}/name`, {
       name: `Kartlegging ${t.mark}`,
@@ -200,9 +228,7 @@ describe('deleting a conversation round', () => {
     const gone = await t.call('DELETE', `/api/admin/interview-rounds/${round}`);
     expect(gone.statusCode, gone.body).toBe(200);
     expect(await roundRow(round)).toBeUndefined();
-    expect(
-      await t.prisma.interview.count({ where: { interview_round_id: round } }),
-    ).toBe(0);
+    expect(await t.prisma.interview.count({ where: { interview_round_id: round } })).toBe(0);
     const log = await t.prisma.auditLog.findFirst({
       where: { target: `interview_round:${round}`, what: 'interviews.round.delete' },
       select: { details: true },
@@ -210,35 +236,83 @@ describe('deleting a conversation round', () => {
     expect(log?.details).toMatchObject({ name: `Feilopretta ${t.mark}`, planned: 2 });
   });
 
-  it('keeps a round the moment one conversation is started, closed or not', async () => {
-    const round = await makeRound(`Brukt ${t.mark}`);
-    const going = await planned(round);
-    expect(
-      (
-        await t.call('POST', `/api/admin/interviews/${going}/start`, {
-          held_on: '2026-11-10',
-          interviewees: [{ role: 'dagleg leiar' }],
-          interviewers: ['Syntetisk admin'],
-          client: clientA,
-        })
-      ).statusCode,
-    ).toBe(201);
-    const refused = await t.call('DELETE', `/api/admin/interview-rounds/${round}`);
-    expect(refused.statusCode).toBe(409);
-    expect(refused.body).toContain('Avslutt henne i staden');
-    expect((await roundRow(round))?.name).toBe(`Brukt ${t.mark}`);
-
-    // Closing does not open the door either: what is written leaves through «Personvern → Sletting».
+  it('deletes a round with written conversations too, leaving a deletion request per client', async () => {
+    const round = await makeRound(`Øving ${t.mark}`, [clientA, clientB]);
+    const going = await startOne(round, clientA);
     expect((await t.call('POST', `/api/admin/interview-rounds/${round}/close`)).statusCode).toBe(
       201,
     );
-    expect((await t.call('DELETE', `/api/admin/interview-rounds/${round}`)).statusCode).toBe(409);
+    const gone = await t.call('DELETE', `/api/admin/interview-rounds/${round}`);
+    expect(gone.statusCode, gone.body).toBe(200);
+    expect(await roundRow(round)).toBeUndefined();
+    expect(await t.prisma.interview.count({ where: { interview_round_id: round } })).toBe(0);
+    // The written one is in the ledger, so a restore from backup deletes it again.
+    expect(await ledgerHas(going)).toBe(true);
+    const log = await t.prisma.auditLog.findFirst({
+      where: { target: `interview_round:${round}`, what: 'interviews.round.delete' },
+      select: { details: true },
+    });
+    expect(log?.details).toMatchObject({ name: `Øving ${t.mark}`, planned: 1, started: 1 });
   });
 
   it('says so when the round is already gone', async () => {
     const gone = await t.call(
       'DELETE',
       '/api/admin/interview-rounds/00000000-0000-4000-8000-000000000000',
+    );
+    expect(gone.statusCode).toBe(404);
+  });
+});
+
+describe('deleting one conversation', () => {
+  it('takes a planned client off the round without a ledger entry', async () => {
+    const round = await makeRound(`Ta av ${t.mark}`, [clientA, clientB]);
+    const first = await planned(round);
+    const gone = await t.call('DELETE', `/api/admin/interviews/${first}`);
+    expect(gone.statusCode, gone.body).toBe(200);
+    expect(gone.json()).toEqual({ id: first, round });
+    expect(await t.prisma.interview.count({ where: { interview_round_id: round } })).toBe(1);
+    expect(await ledgerHas(first)).toBe(false);
+    const log = await t.prisma.auditLog.findFirst({
+      where: { target: `interview:${first}`, what: 'interviews.delete' },
+      select: { details: true },
+    });
+    expect(log?.details).toMatchObject({ round, status: 'planned' });
+  });
+
+  it('deletes a written one with its answers and keeps it deleted after a restore', async () => {
+    const round = await makeRound(`Skriven ${t.mark}`, [clientA]);
+    const going = await startOne(round, clientA);
+    await t.prisma.interviewAnswer.create({
+      data: {
+        interview_id: going,
+        question_id: 'q1',
+        answer: 'Syntetisk svar',
+        updated_by: 'Syntetisk admin',
+      },
+    });
+    const gone = await t.call('DELETE', `/api/admin/interviews/${going}`);
+    expect(gone.statusCode, gone.body).toBe(200);
+    expect(await t.prisma.interview.count({ where: { id: going } })).toBe(0);
+    expect(await t.prisma.interviewAnswer.count({ where: { interview_id: going } })).toBe(0);
+    expect(await ledgerHas(going)).toBe(true);
+    const log = await t.prisma.auditLog.findFirst({
+      where: { target: `interview:${going}`, what: 'interviews.delete' },
+      select: { details: true },
+    });
+    expect(log?.details).toMatchObject({ round, status: 'in_progress' });
+    // The round stays, and the client can be added to it again.
+    expect((await roundRow(round))?.name).toBe(`Skriven ${t.mark}`);
+    expect(
+      (await t.call('POST', `/api/admin/interview-rounds/${round}/clients`, { clients: [clientA] }))
+        .statusCode,
+    ).toBe(201);
+  });
+
+  it('says so when the conversation is already gone', async () => {
+    const gone = await t.call(
+      'DELETE',
+      '/api/admin/interviews/00000000-0000-4000-8000-000000000000',
     );
     expect(gone.statusCode).toBe(404);
   });
