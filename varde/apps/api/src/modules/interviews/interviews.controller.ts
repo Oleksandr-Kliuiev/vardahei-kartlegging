@@ -3,6 +3,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   NotFoundException,
   Param,
@@ -99,6 +100,11 @@ export class InterviewsController {
   @Post('interview-rounds/:id/reopen')
   reopenRound(@Param('id', ParseUUIDPipe) id: string, @Req() req: AdminRequest) {
     return this.roundAdmin.setOpen(id, true, actor(req));
+  }
+  /** A round nobody has sat down in; one with a conversation keeps everything (10.11). */
+  @Delete('interview-rounds/:id')
+  removeRound(@Param('id', ParseUUIDPipe) id: string, @Req() req: AdminRequest) {
+    return this.roundAdmin.remove(id, actor(req));
   }
   @Post('interview-rounds/:id/clients')
   addClients(

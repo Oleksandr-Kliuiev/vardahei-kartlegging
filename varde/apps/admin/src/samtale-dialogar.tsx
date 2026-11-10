@@ -7,6 +7,7 @@ import { Kundeval } from './kundeval.js';
 import type { Client } from './models.js';
 import { ErrorMessage } from './queries.js';
 import type { Guide, RoundSummary } from './samtale-models.js';
+import { HoldButton } from './widgets.js';
 
 /** A panel from the right; Escape and the veil close it (not an Escape the ⌘K palette has used). */
 export function Skuff(p: {
@@ -150,12 +151,19 @@ export function LeggTilKundar(p: {
  * used to stand for good, and a round that was over kept its place in the chooser beside the one in
  * use. Closing deletes nothing and opening the round again undoes it, so the panel says as much.
  */
-export function EndreRunde(p: { round: RoundSummary; onClose: () => void; onDone: () => void }) {
+export function EndreRunde(p: {
+  round: RoundSummary;
+  onClose: () => void;
+  onDone: () => void;
+  onDeleted: () => void;
+}) {
   const [name, setName] = useState(p.round.name);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const open = p.round.status === 'open';
   const left = p.round.counts.total - p.round.counts.done;
+  // Nobody has sat down in it yet: it can go. One conversation, and the round keeps everything.
+  const untouched = p.round.counts.done === 0 && p.round.counts.in_progress === 0;
   const run = (work: Promise<unknown>) => {
     setBusy(true);
     setError(null);
@@ -227,6 +235,39 @@ export function EndreRunde(p: { round: RoundSummary; onClose: () => void; onDone
         >
           {open ? 'Avslutt runda' : 'Opne runda att'}
         </button>
+      </div>
+      <div className="sm-rundestell">
+        <h3>Slett runda</h3>
+        {untouched ? (
+          <>
+            <p className="forklaring">
+              Ingen har sett seg ned i henne enno, så runda og dei {p.round.counts.total}{' '}
+              {p.round.counts.total === 1 ? 'planlagde samtalen' : 'planlagde samtalane'} blir borte
+              for godt. Det kan ikkje angrast.
+            </p>
+            <HoldButton
+              className="fare"
+              label="Slett runda"
+              hint="Hald inne knappen i over eitt sekund. Runda er tom og blir borte."
+              disabled={busy}
+              onConfirm={() => {
+                setBusy(true);
+                setError(null);
+                mutate(`/api/admin/interview-rounds/${p.round.id}`, 'DELETE')
+                  .then(() => p.onDeleted())
+                  .catch((err: unknown) =>
+                    setError(err instanceof Error ? err : new Error('Noko gjekk gale.')),
+                  )
+                  .finally(() => setBusy(false));
+              }}
+            />
+          </>
+        ) : (
+          <p className="forklaring">
+            Her er det alt samtalar, så runda kan ikkje slettast. Avslutt henne i staden. Skal det
+            som er skrive bort, gjer du det per kunde under «Personvern → Sletting».
+          </p>
+        )}
       </div>
     </Skuff>
   );

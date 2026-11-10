@@ -32,6 +32,7 @@ const interview = {
 let rounds: ReturnType<typeof round>[];
 let empty: boolean;
 let sent: { url: string; method: string; body: unknown }[];
+let asked: string[];
 let view: ReturnType<typeof mount> | undefined;
 const res = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
@@ -39,11 +40,13 @@ beforeEach(() => {
   rounds = [round('r1', 'Kartkegging', 'open'), round('r2', 'Gamal runde', 'closed')];
   empty = false;
   sent = [];
+  asked = [];
   window.history.pushState({}, '', '/admin/samtalar');
   vi.stubGlobal(
     'fetch',
     vi.fn((url: string, init?: RequestInit) => {
       const method = init?.method ?? 'GET';
+      if (method === 'GET') asked.push(url);
       if (method !== 'GET') {
         sent.push({ url, method, body: init?.body ? JSON.parse(init.body as string) : null });
         if (url.endsWith('/name')) {
@@ -54,6 +57,10 @@ beforeEach(() => {
         if (url.endsWith('/close')) {
           rounds = rounds.map((r) => (r.id === 'r1' ? { ...r, status: 'closed' } : r));
           return res({ status: 'closed' }, 201);
+        }
+        if (method === 'DELETE') {
+          rounds = rounds.filter((r) => r.id !== 'r1');
+          return res({ id: 'r1' });
         }
         if (url.endsWith('/reopen')) {
           rounds = rounds.map((r) => (r.id === 'r1' ? { ...r, status: 'open' } : r));
@@ -175,4 +182,38 @@ it('closes the round, stops new conversations and opens it again', async () => {
     method: 'POST',
   });
   expect(button(div, 'Start samtale').disabled).toBe(false);
+});
+
+it('offers to delete a round nobody has sat down in, and says so when it cannot', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  const div = await open();
+  act(() => button(div, 'Endre runda').click());
+  expect(div.textContent).toContain('Ingen har sett seg ned i henne enno');
+  // «Slett runda» is a hold button: a click is not enough, the press has to last.
+  const hold = button(div, 'Slett runda');
+  asked.length = 0;
+  act(() => {
+    hold.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+  });
+  await act(async () => {
+    vi.advanceTimersByTime(1300);
+    await Promise.resolve();
+  });
+  await settle();
+  expect(sent.at(-1)).toMatchObject({ url: '/api/admin/interview-rounds/r1', method: 'DELETE' });
+  // Nothing asks the server for the round that is gone on the way back to the plain page.
+  await settle();
+  expect(asked).not.toContain('/api/admin/interview-rounds/r1');
+  vi.useRealTimers();
+});
+
+it('refuses the press and names the way out when a conversation is going', async () => {
+  rounds = [{ ...round('r1', 'Brukt', 'open'), counts: { ...counts, planned: 0, in_progress: 1 } }];
+  const div = await open();
+  act(() => button(div, 'Endre runda').click());
+  expect(div.textContent).toContain('Her er det alt samtalar');
+  expect(div.textContent).toContain('Personvern → Sletting');
+  expect([...div.querySelectorAll('button')].some((b) => b.textContent === 'Slett runda')).toBe(
+    false,
+  );
 });
