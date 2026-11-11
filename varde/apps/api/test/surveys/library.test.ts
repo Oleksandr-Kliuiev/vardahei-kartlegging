@@ -25,7 +25,7 @@ interface Version {
   acceptance_basis: Record<string, { by: string; texts: Record<string, Record<string, string>> }>;
   people: Record<string, string>;
 }
-const call = (method: 'GET' | 'POST' | 'PUT', url: string, payload?: object) =>
+const call = (method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, payload?: object) =>
   t.app
     .getHttpAdapter()
     .getInstance()
@@ -282,5 +282,45 @@ describe('survey library, new surveys and settings (2.16)', () => {
       (await call('PUT', `/api/admin/surveys/${randomUUID()}/name`, { name: 'Finst ikkje' }))
         .statusCode,
     ).toBe(404);
+  });
+
+  it('a survey nobody uses is deleted whole, published versions too; the trigger still guards the rest', async () => {
+    const key = `test_${randomUUID().replaceAll('-', '')}`;
+    const made = (
+      await call('POST', '/api/admin/surveys', {
+        key,
+        audience: 'client_survey',
+        identification: 'none',
+        required_languages: ['nn', 'en'],
+      })
+    ).json<Version>();
+    const saved = (
+      await call('PUT', path(made.id), {
+        content_hash: made.content_hash,
+        content: editorContent(key),
+      })
+    ).json<Version>();
+    const template = (await db.templateVersion.findUniqueOrThrow({ where: { id: made.id } }))
+      .template_id;
+    // A published version cannot be deleted by anyone else, before or after.
+    await publish(saved.id);
+    await expect(db.templateVersion.delete({ where: { id: saved.id } })).rejects.toThrow(
+      /template_version_immutable/,
+    );
+    const draft = await call('POST', `/api/admin/surveys/${template}/drafts`, {
+      copy_from: saved.id,
+    });
+    expect(draft.statusCode, draft.body).toBe(201);
+
+    const gone = await call('DELETE', `/api/admin/surveys/${template}`);
+    expect(gone.statusCode, gone.body).toBe(200);
+    expect(await db.surveyTemplate.count({ where: { id: template } })).toBe(0);
+    expect(await db.templateVersion.count({ where: { template_id: template } })).toBe(0);
+    const log = await db.auditLog.findFirst({
+      where: { who, what: 'surveys.delete', target: `survey_template:${template}` },
+      select: { details: true },
+    });
+    expect(log?.details).toMatchObject({ key, versions: ['v2:draft', 'v1:published'] });
+    expect((await call('DELETE', `/api/admin/surveys/${template}`)).statusCode).toBe(404);
   });
 });

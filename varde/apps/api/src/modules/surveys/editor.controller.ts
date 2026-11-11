@@ -47,6 +47,10 @@ export class EditorController {
   rename(@Param('id', ParseUUIDPipe) id: string, @Body() body: unknown, @Req() r: AdminRequest) {
     return this.editor.rename(id, parse(NameInput, body).name, auditWho(r.adminSession));
   }
+  @Delete('/:id')
+  remove(@Param('id', ParseUUIDPipe) id: string, @Req() r: AdminRequest) {
+    return this.editor.remove(id, auditWho(r.adminSession));
+  }
   @Get('/trash')
   trash() {
     return this.editor.trash();
