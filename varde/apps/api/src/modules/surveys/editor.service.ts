@@ -101,7 +101,10 @@ export class EditorService {
           id: t.id,
           key: t.key,
           audience: t.audience,
-          title: latest?.intro?.title?.nn?.trim() || t.key,
+          title: t.name?.trim() || latest?.intro?.title?.nn?.trim() || t.key,
+          // The title inside the latest version, so the page can say what respondents read.
+          content_title: latest?.intro?.title?.nn?.trim() || null,
+          name: t.name,
           question_count: latest?.questions?.length ?? 0,
           languages: t.required_languages,
           rounds: t.versions.reduce((n, v) => n + v._count.rounds, 0),
@@ -120,6 +123,30 @@ export class EditorService {
           })),
         };
       });
+  }
+  /**
+   * A new name for the survey in Varde (11.11), without a new version: the library, the pickers and
+   * «Samtalar» show it at once. Published versions are untouched (they cannot change), so a respondent
+   * still reads the title that was published. An empty name falls back to that title.
+   */
+  async rename(id: string, name: string, who: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const before = await tx.surveyTemplate.findUnique({ where: { id }, select: { name: true } });
+      if (before === null) throw new NotFoundException('Skjemaet finst ikkje.');
+      const after = name.trim() || null;
+      if (before.name === after) return { name: after };
+      await tx.surveyTemplate.update({ where: { id }, data: { name: after } });
+      await tx.auditLog.create({
+        data: {
+          who,
+          what: 'surveys.rename',
+          target: `survey_template:${id}`,
+          // The old name, so the journal reads without the row it describes.
+          details: { from: before.name, to: after },
+        },
+      });
+      return { name: after };
+    });
   }
   /** One version for the workshop, with the names of who approved and published it. */
   async view(id: string) {
@@ -406,7 +433,7 @@ export class EditorService {
         template_id: r.template_id,
         version_no: r.version_no,
         audience: r.template.audience,
-        title: content.intro?.title?.nn?.trim() || r.template.key,
+        title: r.template.name?.trim() || content.intro?.title?.nn?.trim() || r.template.key,
         question_count: content.questions?.length ?? 0,
         deleted_at: r.deleted_at,
         deleted_by: r.deleted_by ? (names[r.deleted_by] ?? null) : null,

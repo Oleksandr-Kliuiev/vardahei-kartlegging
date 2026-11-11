@@ -41,6 +41,8 @@ export const DraftInput = z.strictObject({
 export const Hash = z.string().regex(/^[a-f0-9]{64}$/);
 export const SaveInput = z.strictObject({ content_hash: Hash, content: z.unknown() });
 export const DiscardInput = z.strictObject({ content_hash: Hash });
+/** A new name for a survey in Varde (11.11); an empty one gives the latest version's title back. */
+export const NameInput = z.strictObject({ name: z.string().trim().max(120) });
 export const AcceptInput = z.strictObject({ content_hash: Hash, lang: Lang });
 export const PublishInput = z.strictObject({
   content_hash: Hash,

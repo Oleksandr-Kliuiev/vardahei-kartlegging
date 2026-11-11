@@ -233,4 +233,54 @@ describe('survey library, new surveys and settings (2.16)', () => {
     expect(v.translation_acceptance).toEqual({});
     expect(v.acceptance_basis.en!.texts['intro.title']!.en).toBe('Syntetisk skjema');
   });
+
+  it('a survey is renamed in Varde without a new version; respondents keep the published title', async () => {
+    const title = `Kartlegging nøkkelpersoner ${run}`;
+    const res = await call('POST', '/api/admin/surveys', {
+      title,
+      audience: 'client_survey',
+      identification: 'initials',
+      required_languages: ['nn', 'en'],
+    });
+    expect(res.statusCode, res.body).toBe(201);
+    const made = res.json<Version>();
+    const template = (await db.templateVersion.findUniqueOrThrow({ where: { id: made.id } }))
+      .template_id;
+    const renamed = `Kartlegging nøkkelpersonar ${run}`;
+    const r = await call('PUT', `/api/admin/surveys/${template}/name`, { name: ` ${renamed} ` });
+    expect(r.statusCode, r.body).toBe(200);
+    expect(r.json()).toEqual({ name: renamed });
+
+    const row = () =>
+      call('GET', '/api/admin/surveys').then((x) =>
+        x
+          .json<
+            { id: string; title: string; name: string | null; content_title: string | null }[]
+          >()
+          .find((s) => s.id === template),
+      );
+    expect(await row()).toMatchObject({ title: renamed, name: renamed, content_title: title });
+    // No new version, and the version's own title is what it was.
+    expect(await db.templateVersion.count({ where: { template_id: template } })).toBe(1);
+    expect((await call('GET', path(made.id))).json<Version>().content.intro.title.nn).toBe(title);
+    const log = await db.auditLog.findFirst({
+      where: { who, what: 'surveys.rename', target: `survey_template:${template}` },
+      select: { details: true },
+    });
+    expect(log?.details).toEqual({ from: null, to: renamed });
+
+    // An empty name gives the version's title back.
+    expect(
+      (await call('PUT', `/api/admin/surveys/${template}/name`, { name: '  ' })).statusCode,
+    ).toBe(200);
+    expect(await row()).toMatchObject({ title, name: null });
+    expect(
+      (await call('PUT', `/api/admin/surveys/${template}/name`, { name: 'x'.repeat(121) }))
+        .statusCode,
+    ).toBe(400);
+    expect(
+      (await call('PUT', `/api/admin/surveys/${randomUUID()}/name`, { name: 'Finst ikkje' }))
+        .statusCode,
+    ).toBe(404);
+  });
 });

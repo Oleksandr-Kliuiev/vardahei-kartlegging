@@ -261,6 +261,7 @@ function Kort({ s, onCopy }: { s: SurveySummary; onCopy: () => void }) {
   const queries = useQueryClient();
   const toast = useToast();
   const [asking, setAsking] = useState(false);
+  const [naming, setNaming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const newest = s.versions.find((v) => v.status === 'published');
@@ -287,11 +288,17 @@ function Kort({ s, onCopy }: { s: SurveySummary; onCopy: () => void }) {
     <div className="bib-kortvegg">
       <a
         className={s.draft ? 'bib-kort har-utkast' : 'bib-kort'}
+        // How many icon buttons sit in the corner, so the top line keeps clear of them (11.11).
+        data-ikon={1 + (newest ? 1 : 0) + (s.draft ? 1 : 0)}
         href={`/admin/surveys/${target}`}
         onClick={(e) => open(e, target)}
       >
         <span className="bib-type">{AUDIENCE[s.audience] ?? s.audience}</span>
         <span className="bib-namn">{title}</span>
+        {/* A name given in Varde is not what respondents read: the card says so while they differ. */}
+        {s.name && s.content_title && s.content_title !== s.name && (
+          <span className="bib-tittel-kunde">Tittel i skjemaet: {s.content_title}</span>
+        )}
         <span className="bib-meta">
           {s.question_count ?? 0} spørsmål ·{' '}
           {(s.languages ?? []).map((l) => LANGS[l] ?? l).join(', ')}
@@ -317,8 +324,17 @@ function Kort({ s, onCopy }: { s: SurveySummary; onCopy: () => void }) {
           )}
         </span>
       </a>
-      {!asking && (
+      {!asking && !naming && (
         <div className="bib-kort-handlingar">
+          <button
+            type="button"
+            className="ikonknapp"
+            aria-label={`Endre namn på ${title}`}
+            title="Endre namn"
+            onClick={() => setNaming(true)}
+          >
+            <Icon name="blyant" small />
+          </button>
           {newest && (
             <button
               type="button"
@@ -343,6 +359,7 @@ function Kort({ s, onCopy }: { s: SurveySummary; onCopy: () => void }) {
           )}
         </div>
       )}
+      {naming && <EndreNamn s={s} title={title} onClose={() => setNaming(false)} />}
       {s.draft && asking && (
         <div className="bib-sporsmal" role="group" aria-label={`Stadfest sletting for ${title}`}>
           <p>
@@ -381,6 +398,89 @@ function Kort({ s, onCopy }: { s: SurveySummary; onCopy: () => void }) {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * «Endre namn» (11.11): the survey's name in Varde, changed without a new version. The library, the round
+ * pickers and «Samtalar» show it at once; respondents and clients keep the title of the published
+ * version, which the form says. An empty field gives that title back.
+ */
+function EndreNamn({
+  s,
+  title,
+  onClose,
+}: {
+  s: SurveySummary;
+  title: string;
+  onClose: () => void;
+}) {
+  const queries = useQueryClient();
+  const toast = useToast();
+  const [name, setName] = useState(title);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const id = `bib-nytt-namn-${s.id}`;
+  async function save(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setBusy(true);
+    setError('');
+    try {
+      const r = await mutate<{ name: string | null }>(`/api/admin/surveys/${s.id}/name`, 'PUT', {
+        name: name.trim() === (s.content_title ?? '') ? '' : name,
+      });
+      void queries.invalidateQueries({ queryKey: ['surveys'] });
+      void queries.invalidateQueries({ queryKey: ['samtalar'] });
+      toast(`Skjemaet heiter no «${r.name ?? s.content_title ?? s.key}».`);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Kunne ikkje endre namnet.');
+      setBusy(false);
+    }
+  }
+  return (
+    <form
+      className="bib-namnskjema"
+      aria-label={`Endre namn på ${title}`}
+      noValidate
+      onSubmit={(e) => void save(e)}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape' && !busy) {
+          e.preventDefault();
+          onClose();
+        }
+      }}
+    >
+      <label htmlFor={id}>Namn i Varde</label>
+      <input
+        id={id}
+        className="input"
+        value={name}
+        maxLength={120}
+        autoFocus
+        aria-describedby={`${id}-hint`}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <p id={`${id}-hint`}>
+        Ingen ny versjon.{' '}
+        {s.content_title
+          ? `Dei som svarar, ser framleis «${s.content_title}».`
+          : 'Dei som svarar, ser tittelen i skjemaet.'}
+      </p>
+      {error && (
+        <p role="alert" className="bib-feil">
+          {error}
+        </p>
+      )}
+      <div className="bib-sporsmal-knappar">
+        <button type="submit" className="btn sm primary" disabled={busy || !name.trim()}>
+          Lagre namnet
+        </button>
+        <button type="button" className="btn sm" disabled={busy} onClick={onClose}>
+          Avbryt
+        </button>
+      </div>
+    </form>
   );
 }
 

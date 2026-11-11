@@ -19,6 +19,7 @@ import {
   AcceptInput,
   DiscardInput,
   DraftInput,
+  NameInput,
   PublishInput,
   SaveInput,
   TemplateInput,
@@ -41,6 +42,10 @@ export class EditorController {
   @Post('/:id/drafts')
   draft(@Param('id', ParseUUIDPipe) id: string, @Body() body: unknown, @Req() r: AdminRequest) {
     return this.editor.draft(id, parse(DraftInput, body), auditWho(r.adminSession));
+  }
+  @Put('/:id/name')
+  rename(@Param('id', ParseUUIDPipe) id: string, @Body() body: unknown, @Req() r: AdminRequest) {
+    return this.editor.rename(id, parse(NameInput, body).name, auditWho(r.adminSession));
   }
   @Get('/trash')
   trash() {
