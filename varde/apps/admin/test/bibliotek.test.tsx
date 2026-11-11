@@ -234,3 +234,48 @@ it('«Innstillingar» shows where the defaults come from and saves them', async 
   });
   expect(view.div.textContent).toContain('Nye skjema byrjar med dette.');
 });
+
+it('«Endre namn» renames a survey in Varde without a new version and says what respondents read', async () => {
+  let rows = library.map((s) => ({ ...s, name: null as string | null, content_title: s.title }));
+  const calls = serve((url, method, body) => {
+    if (method === 'PUT' && url === '/api/admin/surveys/t2/name') {
+      const name = (body as { name: string }).name.trim() || null;
+      rows = rows.map((s) => (s.id === 't2' ? { ...s, name, title: name ?? s.content_title } : s));
+      return { name };
+    }
+    return rows;
+  });
+  view = mount(
+    <Toasts>
+      <SurveysPage />
+    </Toasts>,
+    true,
+  );
+  await settle();
+  const pencil = view.div.querySelector<HTMLButtonElement>(
+    'button[aria-label="Endre namn på Etter KI-seminaret"]',
+  )!;
+  act(() => pencil.click());
+  const form = view.div.querySelector<HTMLFormElement>(
+    'form[aria-label="Endre namn på Etter KI-seminaret"]',
+  )!;
+  expect(form.textContent).toContain('Ingen ny versjon.');
+  expect(form.textContent).toContain('Dei som svarar, ser framleis «Etter KI-seminaret».');
+  const field = form.querySelector('input')!;
+  expect(field.value).toBe('Etter KI-seminaret');
+  act(() => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(
+      field,
+      'Etter seminaret om KI',
+    );
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  act(() => byText(form, 'Lagre namnet').click());
+  await settle();
+  expect(calls.filter((c) => c.method === 'PUT')).toEqual([
+    { url: '/api/admin/surveys/t2/name', method: 'PUT', body: { name: 'Etter seminaret om KI' } },
+  ]);
+  expect(view.div.querySelector('form.bib-namnskjema')).toBeNull();
+  expect(document.body.textContent).toContain('Skjemaet heiter no «Etter seminaret om KI».');
+  expect(view.div.textContent).toContain('Tittel i skjemaet: Etter KI-seminaret');
+});

@@ -46,6 +46,9 @@ model AdminSession {
 model SurveyTemplate {
   id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   key                String            @unique
+  /// The name Varde shows for the survey (11.11): set without a new version; null = the title of
+  /// the latest version. What respondents and clients read stays the version's own title.
+  name               String?
   audience           String
   required_languages String[]
   created_at         DateTime          @default(now()) @db.Timestamptz(6)

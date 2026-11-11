@@ -31,7 +31,7 @@ export class AdminService {
         id: true,
         label: true,
         published_at: true,
-        template: { select: { key: true } },
+        template: { select: { key: true, name: true } },
         content: true,
       },
     });
@@ -41,7 +41,9 @@ export class AdminService {
       return {
         ...v,
         // The title people read (2.17): new surveys have keys made from their titles.
-        title: typeof title === 'string' && title.trim() ? title : null,
+        // A name given in Varde (11.11) comes first.
+        title:
+          v.template.name?.trim() || (typeof title === 'string' && title.trim() ? title : null),
         question_count: Array.isArray(c?.questions) ? c.questions.length : 0,
       };
     });

@@ -58,7 +58,10 @@ export function guideQuestions(content: unknown): GuideQuestion[] {
   });
 }
 
-export const guideTitle = (content: unknown): string => {
+/** The guide's name in Varde: the survey's own name when it has been given one (11.11), else the title
+ * inside the version. */
+export const guideTitle = (content: unknown, name?: string | null): string => {
+  if (name?.trim()) return name.trim();
   const title = (content as { intro?: { title?: { nn?: unknown } } } | null)?.intro?.title?.nn;
   return typeof title === 'string' && title.trim() ? title.trim() : 'Samtaleguide';
 };

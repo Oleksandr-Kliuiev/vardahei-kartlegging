@@ -60,11 +60,18 @@ export class InterviewsService {
     const rows = await this.prisma.templateVersion.findMany({
       where: { status: 'published', template: { audience: 'interview' } },
       orderBy: { published_at: 'desc' },
-      select: { id: true, label: true, version_no: true, published_at: true, content: true },
+      select: {
+        id: true,
+        label: true,
+        version_no: true,
+        published_at: true,
+        content: true,
+        template: { select: { name: true } },
+      },
     });
-    return rows.map(({ content, ...v }) => ({
+    return rows.map(({ content, template, ...v }) => ({
       ...v,
-      title: guideTitle(content),
+      title: guideTitle(content, template.name),
       question_count: guideQuestions(content).length,
     }));
   }
@@ -73,7 +80,9 @@ export class InterviewsService {
     const rounds = await this.prisma.interviewRound.findMany({
       orderBy: { created_at: 'desc' },
       include: {
-        template_version: { select: { id: true, label: true, content: true } },
+        template_version: {
+          select: { id: true, label: true, content: true, template: { select: { name: true } } },
+        },
         interviews: { select: { status: true } },
       },
     });
@@ -87,7 +96,7 @@ export class InterviewsService {
         guide: {
           id: r.template_version.id,
           label: r.template_version.label,
-          title: guideTitle(r.template_version.content),
+          title: guideTitle(r.template_version.content, r.template_version.template.name),
         },
         counts: {
           planned: n('planned'),
@@ -167,7 +176,9 @@ export class InterviewsService {
     const r = await this.prisma.interviewRound.findUnique({
       where: { id },
       include: {
-        template_version: { select: { id: true, label: true, content: true } },
+        template_version: {
+          select: { id: true, label: true, content: true, template: { select: { name: true } } },
+        },
         interviews: {
           include: {
             client: { select: { id: true, name: true } },
@@ -185,7 +196,7 @@ export class InterviewsService {
       guide: {
         id: r.template_version.id,
         label: r.template_version.label,
-        title: guideTitle(r.template_version.content),
+        title: guideTitle(r.template_version.content, r.template_version.template.name),
         question_count: questions.length,
       },
       interviews: r.interviews
@@ -218,7 +229,14 @@ export class InterviewsService {
         client: { select: { id: true, name: true } },
         round: {
           include: {
-            template_version: { select: { label: true, content: true, template_id: true } },
+            template_version: {
+              select: {
+                label: true,
+                content: true,
+                template_id: true,
+                template: { select: { name: true } },
+              },
+            },
           },
         },
         answers: { include: { actions: { select: { action_id: true } } } },
@@ -270,7 +288,7 @@ export class InterviewsService {
       client: i.client,
       round: { id: i.round.id, name: i.round.name },
       guide: {
-        title: guideTitle(content),
+        title: guideTitle(content, i.round.template_version.template.name),
         label: i.round.template_version.label,
         questions: withNewestCriteria(guideQuestions(content), guideQuestions(newest?.content)),
       },

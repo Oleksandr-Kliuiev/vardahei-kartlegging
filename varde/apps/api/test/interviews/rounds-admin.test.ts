@@ -141,6 +141,27 @@ describe('the name of a conversation round', () => {
   });
 });
 
+describe('the name of the guide (11.11)', () => {
+  it('follows a name given to the survey in Varde, without a new version', async () => {
+    const round = await makeRound(`Namn ${t.mark}`);
+    const template = (await t.prisma.templateVersion.findUniqueOrThrow({ where: { id: guide } }))
+      .template_id;
+    const renamed = `Kartlegging nøkkelpersonar ${t.mark}`;
+    expect(
+      (await t.call('PUT', `/api/admin/surveys/${template}/name`, { name: renamed })).statusCode,
+    ).toBe(200);
+    const guides = json<{ id: string; title: string }[]>(
+      await t.call('GET', '/api/admin/interview-guides'),
+    );
+    expect(guides.find((g) => g.id === guide)?.title).toBe(renamed);
+    const view = json<{ guide: { title: string } }>(
+      await t.call('GET', `/api/admin/interview-rounds/${round}`),
+    );
+    expect(view.guide.title).toBe(renamed);
+    await t.prisma.surveyTemplate.update({ where: { id: template }, data: { name: null } });
+  });
+});
+
 describe('closing a conversation round', () => {
   it('takes no new client and no new conversation, and says so', async () => {
     const round = await makeRound(`Avslutt ${t.mark}`);

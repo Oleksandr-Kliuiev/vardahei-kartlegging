@@ -56,6 +56,10 @@ export interface SurveySummary {
   key: string;
   audience: string;
   title?: string;
+  /** A name given in Varde (11.11); null when the survey goes by its version's title. */
+  name?: string | null;
+  /** The title inside the latest version: what respondents and clients read. */
+  content_title?: string | null;
   question_count?: number;
   languages?: string[];
   rounds?: number;
