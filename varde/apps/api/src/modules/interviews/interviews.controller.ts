@@ -101,7 +101,7 @@ export class InterviewsController {
   reopenRound(@Param('id', ParseUUIDPipe) id: string, @Req() req: AdminRequest) {
     return this.roundAdmin.setOpen(id, true, actor(req));
   }
-  /** A round nobody has sat down in; one with a conversation keeps everything (10.11). */
+  /** A round and every conversation in it; written ones leave a deletion request behind (10.11). */
   @Delete('interview-rounds/:id')
   removeRound(@Param('id', ParseUUIDPipe) id: string, @Req() req: AdminRequest) {
     return this.roundAdmin.remove(id, actor(req));
@@ -113,6 +113,11 @@ export class InterviewsController {
     @Req() req: AdminRequest,
   ) {
     return this.interviews.addClients(id, parseWith(ClientsInput, body).clients, actor(req));
+  }
+  /** One conversation, planned or written (10.11). */
+  @Delete('interviews/:id')
+  removeInterview(@Param('id', ParseUUIDPipe) id: string, @Req() req: AdminRequest) {
+    return this.roundAdmin.removeInterview(id, actor(req));
   }
   @Get('interviews/:id')
   get(@Param('id', ParseUUIDPipe) id: string) {

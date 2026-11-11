@@ -16,6 +16,7 @@ import { OppsummeringPage } from './samtale-oppsummering.js';
 import { OversiktPage } from './samtale-oversikt.js';
 import { SamtalePage } from './samtale-page.js';
 import { ReferatPage } from './samtale-referat.js';
+import { SamtaleRundePage } from './samtale-runde-page.js';
 import { SeminarPage } from './seminar-page.js';
 import { SettingsPage } from './settings-page.js';
 import { sectionOf } from './shell.js';
@@ -49,6 +50,13 @@ export function moved(path: string, search: string): string | null {
   const round = q.get('round');
   if (path === '/admin/dashboard' && round && /^[0-9a-f-]{36}$/i.test(round))
     return `/admin/rounds/${round}/resultat`;
+  // «Samtalar» chose its round with ?runde= until 10.11; a round has its own page now.
+  const runde = q.get('runde');
+  if (runde && /^[0-9a-f-]{36}$/i.test(runde)) {
+    if (path === '/admin/samtalar') return `/admin/samtalar/runde/${runde}`;
+    if (path === '/admin/samtalar/oversikt')
+      return `/admin/samtalar/runde/${runde}/oversikt${q.get('pagaande') === '1' ? '?pagaande=1' : ''}`;
+  }
   return null;
 }
 
@@ -91,10 +99,6 @@ function FlyttRunde({ kind, rc }: { kind: 'resultat' | 'rapportar'; rc?: string 
 const SKJEMA_FANER = [
   ['/admin/surveys', 'Skjema'],
   ['/admin/surveys/funn', 'Funn-reglar'],
-] as const;
-const SAMTALAR_FANER = [
-  ['/admin/samtalar', 'Kundar'],
-  ['/admin/samtalar/oversikt', 'Oversikt'],
 ] as const;
 
 /** The page of an address, or a pointer to where it moved. */
@@ -160,28 +164,27 @@ export function resolve(path: string, search: string): Page {
   const seminar = match(path, `/admin/seminars(?:/${ID})?`);
   // One seminar has its own heading and tab title, the topic, as a round and a client have.
   if (seminar) return page(<SeminarPage id={seminar[1]} />, seminar[1] ? null : undefined);
-  // Samtalar (2.20): the rounds; one conversation and its summary write their own heading and fill
-  // the window (focus mode of the concept). 2.21: «Kundar | Oversikt» and the referat, in the normal
-  // frame with the menu, as the concept draws them.
-  if (path === '/admin/samtalar')
-    return page(
-      <>
-        <Faner label="Samtalar" items={SAMTALAR_FANER} current={path} />
-        <SamtalarPage key={search} search={search} />
-      </>,
-    );
+  // Samtalar (2.20): the rounds; one round has its own page with «Kundar», «Oversikt» and «Innstillingar»
+  // (10.11, variant B), as a round in «Rundar» has. One conversation and its summary write their own
+  // heading and fill the window (focus mode of the concept); the referat is in the normal frame.
+  if (path === '/admin/samtalar') return page(<SamtalarPage />);
   if (path === '/admin/samtalar/oversikt')
+    return page(<OversiktPage search={search} />, {
+      title: 'Oversikt over alle samtalerunder',
+      intro:
+        'Berre fullførte samtalar, med mindre du tek med dei som pågår. Klikk på ei rute for å opne svaret.',
+      doc: 'Oversikt · Samtalar',
+    });
+  const samtaleRunde = match(path, `/admin/samtalar/runde/${ID}(?:/([a-z]+))?`);
+  if (samtaleRunde)
     return page(
-      <>
-        <Faner label="Samtalar" items={SAMTALAR_FANER} current={path} />
-        <OversiktPage search={search} />
-      </>,
-      {
-        title: 'Oversikt over samtalane',
-        intro:
-          'Berre fullførte samtalar, med mindre du tek med dei som pågår. Klikk på ei rute for å opne svaret.',
-        doc: 'Oversikt · Samtalar',
-      },
+      <SamtaleRundePage
+        key={samtaleRunde[1]}
+        id={samtaleRunde[1]!}
+        tab={samtaleRunde[2]}
+        search={search}
+      />,
+      null,
     );
   const referat = match(path, `/admin/samtalar/${ID}/referat`);
   if (referat) return page(<ReferatPage key={referat[1]} id={referat[1]!} />, null);

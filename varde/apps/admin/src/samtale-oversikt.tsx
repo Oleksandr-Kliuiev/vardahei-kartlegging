@@ -1,7 +1,8 @@
-// «Samtalar → Oversikt» (2.21, concept): the finished conversations of the chosen rounds on one page, and
-// those going on when asked. Four tiles, every answer on one map (or as a table), the weakest points,
-// the themes, the clients weakest first and the conclusions that recur; the CSV of the same choice.
-// The choice of rounds and «Ta med pågåande samtalar» live in the address, so back and reload keep them.
+// «Oversikt» (2.21, concept; a tab of the round since 10.11): the finished conversations of one round,
+// or of every round («Oversikt over alle»), and those going on when asked. Four tiles, every answer on
+// one map (or as a table), the weakest points, the themes, the clients weakest first and the
+// conclusions that recur; the CSV of the same choice. The round and «Ta med pågåande samtalar» live in
+// the address, so back and reload keep them.
 import { useRef, useState } from 'react';
 import { Icon } from './icons.js';
 import { follow, goTo } from './nav.js';
@@ -23,16 +24,9 @@ import './samtale.css';
 import './samtale-oversikt.css';
 
 const SCALE: (Rating | null)[] = ['ivaretatt', 'forbetring', 'manglar', 'ikkje_aktuelt', null];
-const ALL = 'alle';
-
-/** The address of a choice: a round (none for «Alle») and whether those going on count. */
-const addressOf = (round: string, inProgress: boolean) => {
-  const q = new URLSearchParams();
-  if (round !== ALL) q.set('runde', round);
-  if (inProgress) q.set('pagaande', '1');
-  const s = q.toString();
-  return `/admin/samtalar/oversikt${s ? `?${s}` : ''}`;
-};
+/** The address of a choice: the round's own tab, or every round, and whether those going on count. */
+const addressOf = (round: string | undefined, inProgress: boolean) =>
+  `${round ? `/admin/samtalar/runde/${round}/oversikt` : '/admin/samtalar/oversikt'}${inProgress ? '?pagaande=1' : ''}`;
 
 function Flisar({ o }: { o: Overview }) {
   const t = o.totals;
@@ -239,14 +233,13 @@ function Kundar({ o }: { o: Overview }) {
   );
 }
 
-export function OversiktPage({ search }: { search: string }) {
+/** The overview of one round (its «Oversikt» tab) or, without `round`, of every round together. */
+export function OversiktPage({ round, search }: { round?: string; search: string }) {
   const rounds = useInterviewRounds();
   const q = new URLSearchParams(search);
   const list = rounds.data ?? [];
-  const chosen = list.find((r) => r.id === q.get('runde'));
-  const round = chosen?.id ?? ALL;
   const inProgress = q.get('pagaande') === '1';
-  const ids = chosen ? [chosen.id] : list.map((r) => r.id);
+  const ids = round ? [round] : list.map((r) => r.id);
   const overview = useOverview(ids, inProgress);
   const o = overview.data;
   const root = useRef<HTMLDivElement>(null);
@@ -262,18 +255,8 @@ export function OversiktPage({ search }: { search: string }) {
           </div>
         </section>
       )}
-      {list.length > 0 && (
+      {ids.length > 0 && (
         <div className="sm-verktoy">
-          {list.length > 1 ? (
-            <Seg
-              label="Samtalerunde"
-              value={round}
-              options={[[ALL, 'Alle'] as const, ...list.map((r) => [r.id, r.name] as const)]}
-              onChange={(v) => goTo(addressOf(v, inProgress))}
-            />
-          ) : (
-            <b className="sm-runde-namn">{list[0]!.name}</b>
-          )}
           <label className="sm-med">
             <input
               type="checkbox"
@@ -290,7 +273,7 @@ export function OversiktPage({ search }: { search: string }) {
           </span>
         </div>
       )}
-      {list.length > 0 && !o && !overview.error && <p role="status">Hentar oversikta …</p>}
+      {ids.length > 0 && !o && !overview.error && <p role="status">Hentar oversikta …</p>}
       {o && (
         <>
           <Flisar o={o} />

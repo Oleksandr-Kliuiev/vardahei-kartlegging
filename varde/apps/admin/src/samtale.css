@@ -164,7 +164,12 @@ p.sm-forre, .sm-forre > summary { display: flex; flex-wrap: wrap; align-items: c
 }
 
 /* The summary */
-.sm-sum { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; max-width: 1040px; padding-top: 8px; }
+/* One centred column at most 1120 px wide: on a wide screen the summary reads as a page, not as a wall
+   (10.11, «more compact» for a finished conversation). */
+.sm-sum { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; width: 100%; max-width: 1120px; margin-inline: auto; padding-top: 8px; }
+.sm-label h3 { margin: 0; font: inherit; color: inherit; }
+h3.sm-label { margin-bottom: 6px; }
+.sm-lesetekst { margin: 0; font-size: 15px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
 .sm-sum-hovud { display: grid; gap: 10px; }
 .sm-sum-hovud h2 { font-size: clamp(24px, 3vw, 30px); line-height: 1.1; font-weight: 790; letter-spacing: -0.024em; margin: 0; overflow-wrap: anywhere; }
 .sm-meta { font-size: 14px; color: var(--ink-muted); }
@@ -303,3 +308,90 @@ p.sm-forre, .sm-forre > summary { display: flex; flex-wrap: wrap; align-items: c
 .sm-rundestell .forklaring { margin: 0; }
 /* The «Avslutta» chip follows running text in this line, so it needs the space the text has not. */
 .sm-guide .chip { margin-inline-start: 8px; }
+
+/* 10.11, variant B: the rounds as a list, one round as a page with tabs, the steps of a conversation. */
+.rad-lenkje.sm-runderad { grid-template-columns: minmax(0, 1fr) minmax(160px, 240px) auto auto; }
+.sm-runde-framdrift { display: grid; gap: 4px; min-width: 0; }
+.sm-runde-framdrift .sm-maalar { margin-top: 0; }
+.sm-runde-framdrift small { font-size: 12.5px; color: var(--ink-muted); }
+@media (max-width: 640px) {
+  .rad-lenkje.sm-runderad { grid-template-columns: minmax(0, 1fr) auto; }
+  .sm-runde-framdrift { grid-column: 1 / -1; grid-row: 2; }
+  .sm-runderad .rad-gaa { display: none; }
+}
+.sm-rundeside .sm-verktoy .seg { max-width: 100%; }
+.sm-rundeside, .sm-innstillingar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.sm-innstillingar { max-width: 760px; gap: 16px; }
+.sm-innstillingar .sm-rundestell { display: grid; gap: 10px; justify-items: start; }
+.sm-innstillingar .forklaring { margin: 0; max-width: 64ch; color: var(--ink-muted); font-size: 14px; }
+.sm-namnrad { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; }
+.sm-namnrad .input { flex: 1 1 260px; min-width: 0; }
+.sm-finn { position: relative; display: flex; align-items: center; flex: 0 1 300px; min-width: 200px; }
+.sm-finn .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-muted); pointer-events: none; }
+.sm-finn .input { width: 100%; min-height: 40px; padding-block: 6px; padding-left: 36px; }
+.sm-kunderad { display: grid; grid-template-columns: minmax(0, 1.6fr) 120px minmax(110px, 180px) 96px 52px 170px;
+  grid-template-areas: "namn status ford dato poeng gjer"; align-items: center; gap: 8px 16px; padding: 11px 18px; border-top: 1px solid var(--line); }
+.sm-kunderad > .sm-rundnamn { grid-area: namn; }
+.sm-kunderad-status { grid-area: status; }
+.sm-kunderad-fordeling { grid-area: ford; min-width: 0; }
+.sm-kunderad-fordeling > .sm-bar { width: 100%; max-width: 180px; min-width: 0; }
+.sm-kunderad-dato { grid-area: dato; font-size: 13.5px; color: var(--ink-muted); }
+.sm-kunderad-poeng { grid-area: poeng; text-align: right; }
+.sm-kunderad-poeng b { color: var(--ink-strong); }
+.sm-kunderad-gjer { grid-area: gjer; justify-self: end; display: flex; align-items: center; gap: 4px; }
+/* The bin beside the row's own action (10.11): quiet until pointed at, then red like every «Slett». */
+.sm-kunderad-gjer .sm-slett:hover, .sm-kunderad-gjer .sm-slett:focus-visible { color: var(--danger-fg); background: var(--danger-bg); }
+.sm-dlg-tekst { margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink); }
+.sm-kunderad-hovud { border-top: 0; padding-block: 10px; border-radius: var(--r-lg) var(--r-lg) 0 0; background: var(--surface-2); font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); }
+.sm-kunderad-hovud > :nth-child(1) { grid-area: namn; } .sm-kunderad-hovud > :nth-child(2) { grid-area: status; }
+.sm-kunderad-hovud > :nth-child(3) { grid-area: ford; } .sm-kunderad-hovud > :nth-child(4) { grid-area: dato; }
+.sm-kunderad-hovud > :nth-child(5) { grid-area: poeng; text-align: right; } .sm-kunderad-hovud > :nth-child(6) { grid-area: gjer; }
+.sm-rundeside .sm-rundliste { margin-top: 0; }
+.sm-ingen-treff { margin: 0; padding: 16px 18px; border-top: 1px solid var(--line); }
+@media (max-width: 900px) {
+  .sm-kunderad { grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: "namn namn namn gjer" "status ford dato poeng"; }
+  .sm-kunderad-hovud { display: none; }
+  .sm-rundeside .sm-rundliste > .sm-kunderad:first-child { border-top: 0; }
+}
+/* On a phone the name shares its line with the action and the bin across two columns, so the second
+   line's state, bar, date and score keep the width they need (320 px ran 26 px wide, 10.11). */
+@media (max-width: 480px) { .sm-kunderad { column-gap: 8px; padding-inline: 14px; grid-template-areas: "namn namn gjer gjer" "status ford dato poeng"; } }
+.sm-steg ol { list-style: none; margin: 0; padding: 3px; display: inline-flex; gap: 2px; border-radius: var(--r-full); background: var(--bg-sunken); }
+.sm-steg a, .sm-steg li > span { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 12px 4px 6px; border-radius: var(--r-full); font-size: 13px; font-weight: 650; color: color-mix(in oklab, var(--ink-muted) 55%, var(--ink-strong)); text-decoration: none; white-space: nowrap; }
+/* On a phone the steps keep one row: the step you are on keeps its word, the others their number. */
+@media (max-width: 480px) {
+  .sm-steg a:not([aria-current]) .sm-steg-tekst, .sm-steg li > span .sm-steg-tekst { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .sm-steg a:not([aria-current]), .sm-steg li > span { padding-right: 6px; }
+}
+.sm-steg a:hover { color: var(--ink-strong); }
+.sm-steg a[aria-current="step"] { background: var(--surface); color: var(--ink-strong); box-shadow: var(--shadow-1), var(--edge); }
+.sm-steg a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.sm-steg-nr { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: var(--r-full); background: var(--line); color: var(--ink); font-size: 11.5px; font-weight: 700; flex: none; }
+.sm-steg-nr .icon { width: 12px; height: 12px; }
+.sm-steg a[aria-current="step"] .sm-steg-nr { background: var(--accent); color: var(--on-accent); }
+.sm-steg .sm-steg-gjort .sm-steg-nr { background: var(--sm-iv); color: var(--sm-on-iv); }
+.sm-steg .sm-steg-gjort { color: var(--ink); }
+.btn.sm-kundevising-pa { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); }
+.sm-forebels { color: var(--ink-muted); }
+.sm-melding.sm-varsel > details { flex: 1; min-width: 0; }
+.sm-ikkje-vurdert summary { cursor: pointer; list-style: none; padding: 0; }
+.sm-ikkje-vurdert summary::-webkit-details-marker { display: none; }
+.sm-ikkje-vurdert .sm-vis-kva { display: inline-flex; align-items: center; gap: 2px; font-weight: 650; text-decoration: underline; text-underline-offset: 2px; }
+.sm-ikkje-vurdert .sm-vis-kva .icon { transition: transform var(--t-base) var(--ease-sti); }
+.sm-ikkje-vurdert[open] .sm-vis-kva .icon { transform: rotate(90deg); }
+.sm-ikkje-vurdert p { margin: 6px 0 0; }
+.sm-ikkje-vurdert summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+/* «Førre / Neste» stays at the foot of the window: with five fields under a question it used to sit
+   below the fold, so every one of the 27 questions began with a scroll. */
+.sm-kort > .sm-fot { position: sticky; bottom: 0; z-index: 4; margin-inline: -12px; padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in oklab, var(--bg) 88%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+/* The summary on the whole width: what to look at, what was said, what is in place. */
+.sm-sum-midt { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; }
+/* The long list spans both rows on the left; the second row takes what is left over, so the right
+   column stays one stack instead of a gap under its first card. */
+.sm-sum-flate { grid-template-rows: auto 1fr; }
+.sm-sum-flate > .sm-sjaa { grid-row: span 2; }
+@media (max-width: 960px) { .sm-sum-flate > .sm-sjaa { grid-row: auto; } }
+/* On the summary the bar lines up with the centred page under it (10.11): on a wide monitor the client's
+   name would otherwise sit at the far left edge, a screen away from what it heads. */
+.sm-samtale:has(> .sm-sum) > .sm-topp { padding-inline: max(20px, calc((100% - 1120px) / 2 + 16px)); }

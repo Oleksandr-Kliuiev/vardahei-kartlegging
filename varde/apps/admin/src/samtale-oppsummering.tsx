@@ -2,7 +2,7 @@
 // the conclusions, what is in place, the overall impression and what was agreed, and the own notes.
 // «Vis for kunden» hides the notes and the score, so the screen can be turned to the client.
 // «Fullfør samtalen» sends what is left, then locks the conversation; «Opne for endring» opens it again.
-// Its bar leads back to the questions; the client's name heads the page, as in the concept.
+// Its bar names the client and leads back to the round; the steps in it lead to the questions (10.11).
 // A repeat conversation adds «Før og etter» against the previous one (3.2).
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -29,7 +29,7 @@ import {
   today,
   useInterview,
 } from './samtale-models.js';
-import { Fullfort, TomSide, Topp, Utlogga, useReopen } from './samtale-page.js';
+import { Steg, tilRunda, TomSide, Topp, Utlogga, useReopen } from './samtale-page.js';
 import { PunktTiltak } from './samtale-tiltak.js';
 import './samtale.css';
 
@@ -129,7 +129,7 @@ export function OppsummeringPage({ id }: { id: string }) {
   const score = scoreOf(counts);
   const at = (n: number) => `/admin/samtalar/${id}?q=${questions[n]!.id}`;
   const referat = `/admin/samtalar/${id}/referat`;
-  const oversikt = `/admin/samtalar/oversikt?runde=${i.round.id}`;
+  const oversikt = `/admin/samtalar/runde/${i.round.id}/oversikt`;
   const items = questions.map((q, n) => ({ q, n, r: store.rating(q.id) }));
   const unrated = items.filter((x) => !x.r);
   const notes = items.filter((x) => store.text(`${x.q.id}:note`).trim());
@@ -151,26 +151,41 @@ export function OppsummeringPage({ id }: { id: string }) {
       setBusy(false);
     }
   };
-  const textField = (key: ':summary' | ':agreed', label: string, hint: string) => (
-    <div className="sm-felt">
-      <div className="sm-label">
-        <label htmlFor={`sm${key.slice(1)}`}>{label}</label>
-        <span className="sm-hint" id={`sm${key.slice(1)}-h`}>
-          {hint}
-        </span>
+  // A finished conversation is read, not filled in: its fields become text, and an empty one says so in a
+  // line instead of standing as an empty box.
+  const textField = (key: ':summary' | ':agreed', label: string, hint: string) =>
+    done ? (
+      <div className="sm-felt">
+        <div className="sm-label">
+          <h3>{label}</h3>
+          <span className="sm-hint">{hint}</span>
+        </div>
+        {store.text(key).trim() ? (
+          <p className="sm-lesetekst">{store.text(key)}</p>
+        ) : (
+          <p className="sm-lesetekst muted">Ikkje fylt ut.</p>
+        )}
       </div>
-      <textarea
-        id={`sm${key.slice(1)}`}
-        aria-describedby={`sm${key.slice(1)}-h`}
-        className="input sm-ta sm-ta-kort"
-        maxLength={MAX}
-        value={store.text(key)}
-        readOnly={done}
-        onChange={(e) => store.set(key, e.target.value)}
-      />
-      <Konflikt store={store} field={key} />
-    </div>
-  );
+    ) : (
+      <div className="sm-felt">
+        <div className="sm-label">
+          <label htmlFor={`sm${key.slice(1)}`}>{label}</label>
+          <span className="sm-hint" id={`sm${key.slice(1)}-h`}>
+            {hint}
+          </span>
+        </div>
+        <textarea
+          id={`sm${key.slice(1)}`}
+          aria-describedby={`sm${key.slice(1)}-h`}
+          className="input sm-ta sm-ta-kort"
+          maxLength={MAX}
+          value={store.text(key)}
+          readOnly={done}
+          onChange={(e) => store.set(key, e.target.value)}
+        />
+        <Konflikt store={store} field={key} />
+      </div>
+    );
   const finishButton = (size: string) => (
     <button
       type="button"
@@ -185,16 +200,24 @@ export function OppsummeringPage({ id }: { id: string }) {
   return (
     <div className="sm-samtale">
       <Topp
-        back={{ to: at(0), label: 'Spørsmåla' }}
-        title="Oppsummering"
-        sub={[i.client.name, dmy(i.held_on)].filter(Boolean).join(' · ')}
+        back={tilRunda(i)}
+        title={i.client.name}
+        sub={[peopleText(i.interviewees), dmy(i.held_on)].filter(Boolean).join(' · ')}
         store={store}
-        action={done ? <Fullfort /> : finishButton('sm')}
+        action={done ? undefined : finishButton('sm')}
       >
-        <label className="sm-brytar">
-          <input type="checkbox" checked={kunde} onChange={(e) => setKunde(e.target.checked)} />
+        <Steg id={id} at="oppsummering" done={done} />
+        {/* A button that stays pressed, not a switch: turning the screen to the client is a moment of
+            the meeting, and the press says what it does. */}
+        <button
+          type="button"
+          className={kunde ? 'btn sm sm-kundevising-pa' : 'btn sm'}
+          aria-pressed={kunde}
+          onClick={() => setKunde(!kunde)}
+        >
+          <Icon name="skjerm" small />
           Vis for kunden
-        </label>
+        </button>
       </Topp>
       <div className="sm-sum">
         {done && (
@@ -230,7 +253,7 @@ export function OppsummeringPage({ id }: { id: string }) {
         <Konfliktar store={store} questions={questions} at={at} />
         <ErrorMessage error={error ?? reopened.error} />
         <section className="sm-sum-hovud" aria-label="Fordeling">
-          <h2>{i.client.name}</h2>
+          <h2>Oppsummering</h2>
           <p className="sm-meta">
             {peopleText(i.interviewees)} · frå Vardahei: {i.interviewers.join(' og ') || '–'} ·{' '}
             {longDate(i.held_on)}
@@ -238,6 +261,13 @@ export function OppsummeringPage({ id }: { id: string }) {
               <>
                 {' '}
                 · poeng <b>{score}</b>
+                {/* A score of six answers out of 27 is not the client's score yet, and says so. */}
+                {counts.none > 0 && (
+                  <span className="sm-forebels">
+                    {' '}
+                    (førebels: {questions.length - counts.none} av {questions.length} vurderte)
+                  </span>
+                )}
               </>
             )}
           </p>
@@ -258,21 +288,33 @@ export function OppsummeringPage({ id }: { id: string }) {
         {unrated.length > 0 && !done && (
           <div className="sm-melding sm-varsel">
             <Icon name="varsel" small />
-            <p>
-              <b>
-                {unrated.length}{' '}
-                {unrated.length === 1 ? 'spørsmål er ikkje vurdert' : 'spørsmål er ikkje vurderte'}:
-              </b>{' '}
-              {unrated.map((x, k) => (
-                <span key={x.q.id}>
-                  {k > 0 && ', '}
-                  <a href={at(x.n)} onClick={(e) => follow(e, at(x.n))}>
-                    {x.n + 1} {x.q.short}
-                  </a>
+            {/* One line by default: a list of 21 links pushed what was rated below the screen. */}
+            <details className="sm-ikkje-vurdert">
+              <summary>
+                <b>
+                  {unrated.length}{' '}
+                  {unrated.length === 1
+                    ? 'spørsmål er ikkje vurdert'
+                    : 'spørsmål er ikkje vurderte'}
+                  .
+                </b>{' '}
+                Du kan fullføre likevel og vurdere seinare.{' '}
+                <span className="sm-vis-kva">
+                  Vis kva for
+                  <Icon name="chev" small />
                 </span>
-              ))}
-              . Du kan fullføre likevel og vurdere seinare.
-            </p>
+              </summary>
+              <p>
+                {unrated.map((x, k) => (
+                  <span key={x.q.id}>
+                    {k > 0 && ', '}
+                    <a href={at(x.n)} onClick={(e) => follow(e, at(x.n))}>
+                      {x.n + 1} {x.q.short}
+                    </a>
+                  </span>
+                ))}
+              </p>
+            </details>
           </div>
         )}
         <div className="sm-sum-flate">
@@ -299,14 +341,18 @@ export function OppsummeringPage({ id }: { id: string }) {
                             <b>{x.q.short}</b>
                             <PunktTiltak store={store} question={x.q.id} />
                           </span>
-                          <a
-                            className="linkbtn"
-                            href={at(x.n)}
-                            onClick={(e) => follow(e, at(x.n))}
-                            aria-label={`Endre ${x.n + 1} ${x.q.short}`}
-                          >
-                            Endre
-                          </a>
+                          {/* A finished conversation is locked: «Endre» would open a field that
+                              cannot be changed until «Opne for endring». */}
+                          {!done && (
+                            <a
+                              className="linkbtn"
+                              href={at(x.n)}
+                              onClick={(e) => follow(e, at(x.n))}
+                              aria-label={`Endre ${x.n + 1} ${x.q.short}`}
+                            >
+                              Endre
+                            </a>
+                          )}
                         </li>
                       ))}
                     </ul>
@@ -320,13 +366,25 @@ export function OppsummeringPage({ id }: { id: string }) {
               )}
             </div>
           </section>
-          <div className="sm-sum-side">
+          <div className="sm-sum-midt">
             <section className="kort">
               <div className="kort-innhald">
                 {textField(':summary', 'Samla inntrykk', 'Kjem med i referatet')}
                 {textField(':agreed', 'Avtalt vidare', 'Kjem med i referatet')}
               </div>
             </section>
+            {i.previous && (
+              <ForOgEtter
+                previous={i.previous}
+                questions={questions}
+                rating={store.rating}
+                counts={counts}
+                score={score}
+                kunde={kunde}
+              />
+            )}
+          </div>
+          <div className="sm-sum-side">
             <section className="kort">
               <div className="kort-hovud">
                 <h2>
@@ -348,16 +406,6 @@ export function OppsummeringPage({ id }: { id: string }) {
                 {!counts.ivaretatt && <p className="muted">Ingenting enno.</p>}
               </div>
             </section>
-            {i.previous && (
-              <ForOgEtter
-                previous={i.previous}
-                questions={questions}
-                rating={store.rating}
-                counts={counts}
-                score={score}
-                kunde={kunde}
-              />
-            )}
             {!kunde && (
               <section className="kort sm-intern">
                 <div className="kort-hovud">
@@ -380,19 +428,29 @@ export function OppsummeringPage({ id }: { id: string }) {
                       ))}
                     </ul>
                   )}
-                  <label className="sm-label" htmlFor="sm-notat-heile">
-                    Notat om heile samtalen
-                  </label>
-                  <textarea
-                    id="sm-notat-heile"
-                    className="input sm-ta sm-ta-kort sm-ta-notat"
-                    maxLength={MAX}
-                    value={store.text(':note')}
-                    readOnly={done}
-                    placeholder="Til dømes kven som bør følgje opp, og når."
-                    onChange={(e) => store.set(':note', e.target.value)}
-                  />
-                  <Konflikt store={store} field=":note" />
+                  {!done ? (
+                    <>
+                      <label className="sm-label" htmlFor="sm-notat-heile">
+                        Notat om heile samtalen
+                      </label>
+                      <textarea
+                        id="sm-notat-heile"
+                        className="input sm-ta sm-ta-kort sm-ta-notat"
+                        maxLength={MAX}
+                        value={store.text(':note')}
+                        placeholder="Til dømes kven som bør følgje opp, og når."
+                        onChange={(e) => store.set(':note', e.target.value)}
+                      />
+                      <Konflikt store={store} field=":note" />
+                    </>
+                  ) : store.text(':note').trim() ? (
+                    <>
+                      <h3 className="sm-label">Notat om heile samtalen</h3>
+                      <p className="sm-lesetekst">{store.text(':note')}</p>
+                    </>
+                  ) : (
+                    !notes.length && <p className="sm-lesetekst muted">Ingen eigne notat.</p>
+                  )}
                 </div>
               </section>
             )}
@@ -402,6 +460,7 @@ export function OppsummeringPage({ id }: { id: string }) {
         {!done && (
           <div className="sm-sum-fot">
             <button type="button" className="btn ghost" onClick={() => goTo(at(0))}>
+              <Icon name="tilbake" small />
               Tilbake til spørsmåla
             </button>
             {finishButton('')}

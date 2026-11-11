@@ -120,13 +120,59 @@ export function TomSide({ error }: { error: Error | null }) {
   );
 }
 
-/** «Fullført» in the bar of a finished conversation, where the minutes or «Fullfør» stood. */
-export const Fullfort = () => (
-  <span className="sm-status sm-status-ok">
-    <Icon name="hake" small />
-    Fullført
-  </span>
-);
+/** Where a conversation stands, in its bar (10.11, variant B): the questions, the summary and the end
+ * as three steps of one page, so the way on is always in the same place. «Fullført» is a state, not a
+ * place: it is ticked when the conversation is finished, and the summary is where that happens. */
+export function Steg({
+  id,
+  at,
+  done,
+}: {
+  id: string;
+  at: 'sporsmal' | 'oppsummering';
+  done: boolean;
+}) {
+  const steps = [
+    ['sporsmal', 'Spørsmål', `/admin/samtalar/${id}`],
+    ['oppsummering', 'Oppsummering', `/admin/samtalar/${id}/oppsummering`],
+  ] as const;
+  return (
+    <nav className="sm-steg" aria-label="Samtalen">
+      <ol>
+        {steps.map(([key, text, to], n) => (
+          <li key={key}>
+            <a
+              href={to}
+              aria-current={key === at ? 'step' : undefined}
+              onClick={(e) => follow(e, to)}
+              className={key === 'sporsmal' && at === 'oppsummering' ? 'sm-steg-gjort' : undefined}
+            >
+              <span className="sm-steg-nr" aria-hidden="true">
+                {key === 'sporsmal' && at === 'oppsummering' ? <Icon name="hake" small /> : n + 1}
+              </span>
+              <span className="sm-steg-tekst">{text}</span>
+            </a>
+          </li>
+        ))}
+        <li>
+          <span className={done ? 'sm-steg-gjort' : undefined}>
+            <span className="sm-steg-nr" aria-hidden="true">
+              {done ? <Icon name="hake" small /> : 3}
+            </span>
+            <span className="sm-steg-tekst">Fullført</span>
+            {!done && <span className="sr-only"> (ikkje enno)</span>}
+          </span>
+        </li>
+      </ol>
+    </nav>
+  );
+}
+
+/** The way back from a conversation: the page of its round. */
+export const tilRunda = (i: Interview) => ({
+  to: `/admin/samtalar/runde/${i.round.id}`,
+  label: i.round.name,
+});
 
 /** The bar on top of a conversation and of its summary (focus mode of the concept): the way back, what
  * is on screen, and on the right how far it has come, what is saved and the next step. */
@@ -212,12 +258,8 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
     return (
       <div className="sm-tom-side">
         <p>Samtalen med {i.client.name} er ikkje starta enno.</p>
-        <a
-          className="lenkje"
-          href={`/admin/samtalar?runde=${i.round.id}`}
-          onClick={(e) => follow(e, `/admin/samtalar?runde=${i.round.id}`)}
-        >
-          Start han frå lista over samtalar
+        <a className="lenkje" href={tilRunda(i).to} onClick={(e) => follow(e, tilRunda(i).to)}>
+          Start han frå lista i {i.round.name}
         </a>
       </div>
     );
@@ -294,12 +336,11 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
       </button>
     );
   };
-  const summary = `/admin/samtalar/${id}/oppsummering`;
   return (
     <>
       <div className="sm-samtale" onKeyDown={keys}>
         <Topp
-          back={{ to: `/admin/samtalar?runde=${i.round.id}`, label: 'Samtalar' }}
+          back={tilRunda(i)}
           title={i.client.name}
           sub={[peopleText(i.interviewees), dmy(i.held_on)].filter(Boolean).join(' · ')}
           store={store}
@@ -313,11 +354,7 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
                   setEditing(true);
                 }
           }
-          action={
-            <a className="btn sm primary" href={summary} onClick={(e) => follow(e, summary)}>
-              Oppsummering
-            </a>
-          }
+          action={<Steg id={id} at="sporsmal" done={store.locked} />}
         >
           <span className="sm-framdrift">
             <span>
@@ -328,15 +365,11 @@ export function SamtalePage({ id, search }: { id: string; search: string }) {
             </span>
             <Fordeling counts={counts} label="Framdrift" />
           </span>
-          {store.locked ? (
-            <Fullfort />
-          ) : (
-            minutes !== null && (
-              <span className="sm-tid">
-                <Icon name="klokke" small />
-                {minutes} min
-              </span>
-            )
+          {!store.locked && minutes !== null && (
+            <span className="sm-tid">
+              <Icon name="klokke" small />
+              {minutes} min
+            </span>
           )}
         </Topp>
         {store.locked && (

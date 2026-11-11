@@ -10,7 +10,7 @@ import { dmy, type Status, STATUS, useClientInterviews } from './samtale-models.
 import './samtale.css';
 
 /** The state of one conversation: going on shows the live dot, finished the tick. */
-function Tilstand({ status }: { status: Status }) {
+export function Tilstand({ status }: { status: Status }) {
   if (status === 'done')
     return (
       <span className="sm-status sm-status-ok">
@@ -42,7 +42,13 @@ export function KundeSamtalar({ client }: { client: string }) {
         <ul className="sm-kundesamtalar">
           {list.map((i) => {
             const planned = i.status === 'planned';
-            const to = planned ? `/admin/samtalar?runde=${i.round.id}` : `/admin/samtalar/${i.id}`;
+            const referat = `/admin/samtalar/${i.id}/referat`;
+            // A finished conversation opens on its summary (10.11), one going on at its questions.
+            const to = planned
+              ? `/admin/samtalar/runde/${i.round.id}`
+              : i.status === 'done'
+                ? `/admin/samtalar/${i.id}/oppsummering`
+                : `/admin/samtalar/${i.id}`;
             return (
               <li key={i.id}>
                 <p className="sm-kunde-linje">
@@ -80,9 +86,9 @@ export function KundeSamtalar({ client }: { client: string }) {
                   {!planned && (
                     <a
                       className="btn sm"
-                      href={`${to}/referat`}
+                      href={referat}
                       aria-label={`Referat, ${i.round.name}`}
-                      onClick={(e) => follow(e, `${to}/referat`)}
+                      onClick={(e) => follow(e, referat)}
                     >
                       <Icon name="dok" small />
                       Referat

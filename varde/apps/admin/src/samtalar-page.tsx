@@ -1,272 +1,143 @@
-// «Samtalar» (2.20): the rounds of conversations with key people and, for the chosen round, its clients:
-// going on, not started and finished. The boss picks the client at the table and starts the
-// conversation there; a finished one opens read-only until «Opne for endring».
+// «Samtalar» (2.20; laid out like «Rundar» on 10.11, variant B): every round of conversations with how far
+// it has come, and the panel for a new one. A round opens its own page with «Kundar», «Oversikt» and
+// «Innstillingar» (samtale-runde-page.tsx), so the round is chosen once, by opening it.
 import { useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Icon } from './icons.js';
 import { follow, goTo } from './nav.js';
 import { ErrorMessage, useClients } from './queries.js';
-import { EndreRunde, LeggTilKundar, NyRunde } from './samtale-dialogar.js';
-import { Fordeling } from './samtale-felt.js';
-import {
-  dmy,
-  type InterviewRow,
-  type RoundSummary,
-  peopleText,
-  rated,
-  useGuides,
-  useInterviewRound,
-  useInterviewRounds,
-} from './samtale-models.js';
-import { StartSamtale } from './samtale-start.js';
-import { Seg, useModal } from './widgets.js';
+import { NyRunde } from './samtale-dialogar.js';
+import { longDate, type RoundSummary, useGuides, useInterviewRounds } from './samtale-models.js';
+import { useModal } from './widgets.js';
 import './samtale.css';
+import './samtale-oversikt.css';
 
-type Panel = null | 'ny' | 'kundar' | 'endre' | InterviewRow;
+/** «Open» or «Avslutta», as a chip, the way «Rundar» marks its rounds. */
+export const rundeStatus = (status: string): [string, string] =>
+  status === 'open' ? ['Open', 'chip ok'] : ['Avslutta', 'chip warn'];
 
-export function SamtalarPage({ search }: { search: string }) {
+/** «2 av 48 fullførte · 1 pågår»: how far a round has come, in conversations. */
+export function framdrift(c: RoundSummary['counts']) {
+  return [`${c.done} av ${c.total} fullførte`, c.in_progress > 0 ? `${c.in_progress} pågår` : '']
+    .filter(Boolean)
+    .join(' · ');
+}
+
+function RundeRad({ round }: { round: RoundSummary }) {
+  const to = `/admin/samtalar/runde/${round.id}`;
+  const [status, chip] = rundeStatus(round.status);
+  const c = round.counts;
+  const done = c.total ? Math.round((c.done / c.total) * 100) : 0;
+  const facts = [
+    `${round.guide.title} · ${round.guide.label}`,
+    `${c.total} ${c.total === 1 ? 'kunde' : 'kundar'}`,
+    `oppretta ${longDate(round.created_at)}`,
+  ];
+  return (
+    <a className="rad-lenkje sm-runderad" href={to} onClick={(e) => follow(e, to)}>
+      <span className="rad-hovud">
+        <b>{round.name}</b>
+        <small>{facts.join(' · ')}</small>
+      </span>
+      <span className="sm-runde-framdrift">
+        <span className="sm-maalar" role="img" aria-label={`${done} prosent fullført`}>
+          <i style={{ width: `${done}%` }} />
+        </span>
+        <small className="tnum">{framdrift(c)}</small>
+      </span>
+      <span className="rad-tal">
+        <span className={chip}>{status}</span>
+      </span>
+      <span className="rad-gaa" aria-hidden="true">
+        <Icon name="chev" small />
+      </span>
+    </a>
+  );
+}
+
+export function SamtalarPage() {
   const rounds = useInterviewRounds();
   const guides = useGuides();
   const clients = useClients();
   const queries = useQueryClient();
-  const asked = new URLSearchParams(search).get('runde');
-  const list = rounds.data ?? [];
-  const chosen =
-    list.find((r) => r.id === asked) ?? list.find((r) => r.status === 'open') ?? list[0];
-  // A round that is over leaves the chooser so the list stops growing; the one being looked at
-  // stays in it whatever its state, or closing a round would make it vanish under your hand.
-  // «Vis avslutta» is the way back to one — without it a closed round could never be opened again.
-  const [visAvslutta, setVisAvslutta] = useState(false);
-  const offered = list.filter(
-    (r) => r.status === 'open' || visAvslutta || r.id === chosen?.id,
-  );
-  const avslutta = list.filter((r) => r.status !== 'open' && r.id !== chosen?.id).length;
-  const round = useInterviewRound(chosen?.id);
-  const [panel, setPanel] = useState<Panel>(null);
-  const [all, setAll] = useState(false);
+  const [making, setMaking] = useState(false);
   const opener = useRef<HTMLElement | null>(null);
-  useModal(panel !== null, opener, '.sm-rundar > :not(.sm-skuff, .sm-slor, .sm-dlg-slor)');
-  const me = queries.getQueryData<{ name: string | null }>(['session'])?.name ?? null;
-  const open = (p: Panel) => {
-    opener.current = document.activeElement as HTMLElement | null;
-    setPanel(p);
-  };
-  const refresh = () => void queries.invalidateQueries({ queryKey: ['samtalar'] });
-  const rows = round.data?.interviews ?? [];
-  const going = rows.filter((r) => r.status === 'in_progress');
-  const planned = rows.filter((r) => r.status === 'planned');
-  const finished = rows
-    .filter((r) => r.status === 'done')
-    .sort((a, b) => (b.done_at ?? '').localeCompare(a.done_at ?? ''));
-  const total = round.data?.guide.question_count ?? 0;
-  const known = new Set(rows.map((r) => r.client.id));
-
-  const row = (r: InterviewRow) => {
-    const to = `/admin/samtalar/${r.id}`;
-    const meta =
-      r.status === 'planned'
-        ? null
-        : [
-            r.status === 'done'
-              ? `Fullført ${dmy(r.done_at?.slice(0, 10) ?? null)}`
-              : `${rated(r.counts)} av ${total} vurderte`,
-            peopleText(r.interviewees),
-          ]
-            .filter(Boolean)
-            .join(' · ');
-    return (
-      <li key={r.id} className="sm-rundrad">
-        <span className="sm-rundnamn">
-          <b>{r.client.name}</b>
-          {meta && <span>{meta}</span>}
-        </span>
-        <span className="sm-rundtal">
-          {r.status !== 'planned' && <Fordeling counts={r.counts} label={r.client.name} />}
-          {r.status === 'done' && r.score !== null && <b className="tnum">{r.score}</b>}
-        </span>
-        {r.status === 'planned' ? (
-          // A closed round takes no new conversation, so the press is not offered either.
-          <button
-            type="button"
-            className="btn sm"
-            disabled={chosen?.status !== 'open'}
-            onClick={() => open(r)}
-          >
-            Start samtale
-          </button>
-        ) : (
-          <a
-            className={r.status === 'in_progress' ? 'btn sm primary' : 'btn sm'}
-            href={to}
-            onClick={(e) => follow(e, to)}
-          >
-            {r.status === 'in_progress' ? 'Hald fram' : 'Opne'}
-          </a>
-        )}
-      </li>
-    );
-  };
-  const group = (title: string, items: InterviewRow[], limit = Infinity) =>
+  useModal(making, opener, '.sm-rundar > :not(.sm-skuff, .sm-slor)');
+  const list = rounds.data ?? [];
+  const open = list.filter((r) => r.status === 'open');
+  const closed = list.filter((r) => r.status !== 'open');
+  const noGuide = guides.data !== undefined && guides.data.length === 0;
+  const group = (title: string, items: RoundSummary[]) =>
     items.length > 0 && (
-      <section className="kort sm-gruppekort">
-        <div className="kort-hovud">
-          <h2>
-            {title} <span className="muted tnum">{items.length}</span>
-          </h2>
-        </div>
-        <ul className="sm-rundliste">{items.slice(0, limit).map(row)}</ul>
-        {items.length > limit && (
-          <div className="sm-meir">
-            <button type="button" className="linkbtn" onClick={() => setAll(!all)}>
-              {all ? 'Vis færre' : `Vis alle ${items.length}`}
-            </button>
-          </div>
-        )}
+      <section className="del rad-liste" aria-label={title}>
+        <h2>{title}</h2>
+        <ul>
+          {items.map((r) => (
+            <li key={r.id}>
+              <RundeRad round={r} />
+            </li>
+          ))}
+        </ul>
       </section>
     );
-
   return (
     <div className="sm-rundar">
-      <ErrorMessage error={rounds.error ?? round.error} />
-      <div className="sm-verktoy">
-        {offered.length > 1 && chosen && (
-          <Seg
-            label="Samtalerunde"
-            value={chosen.id}
-            options={offered.map(
-              (r) =>
-                [
-                  r.id,
-                  `${r.name}${r.status === 'open' ? '' : ' (avslutta)'} · ${r.counts.done} av ${r.counts.total}`,
-                ] as const,
-            )}
-            onChange={(id) => goTo(`/admin/samtalar?runde=${id}`)}
-          />
-        )}
+      <div className="bib-topp">
+        <p className="bib-tal" role="status">
+          {rounds.data
+            ? `${list.length} ${list.length === 1 ? 'samtalerunde' : 'samtalerunder'}`
+            : 'Hentar samtalerundene …'}
+        </p>
         <span className="sm-verktoy-hogre">
-          {chosen && chosen.status === 'open' && (
-            <button type="button" className="btn sm" onClick={() => open('kundar')}>
-              <Icon name="pluss" small />
-              Legg til kundar
-            </button>
-          )}
-          {chosen && (
-            <button type="button" className="btn sm" onClick={() => open('endre')}>
-              Endre runda
-            </button>
-          )}
-          {avslutta > 0 && !visAvslutta && (
-            <button type="button" className="btn sm" onClick={() => setVisAvslutta(true)}>
-              Vis {avslutta} avslutta
-            </button>
+          {list.length > 1 && (
+            <a
+              className="btn"
+              href="/admin/samtalar/oversikt"
+              onClick={(e) => follow(e, '/admin/samtalar/oversikt')}
+            >
+              <Icon name="graf" small />
+              Oversikt over alle
+            </a>
           )}
           <button
             type="button"
-            className="btn sm"
+            className="btn primary"
             disabled={!guides.data?.length}
-            onClick={() => open('ny')}
+            onClick={() => {
+              opener.current = document.activeElement as HTMLElement | null;
+              setMaking(true);
+            }}
           >
             <Icon name="pluss" small />
             Ny samtalerunde
           </button>
         </span>
       </div>
+      <ErrorMessage error={rounds.error ?? guides.error} />
       {rounds.data && !list.length && (
         <section className="kort sm-gruppekort">
           <div className="kort-innhald sm-tomt">
             <h2>Ingen samtalerunder enno</h2>
             <p>
               Ei samtalerunde er éin samtaleguide og kundane de skal snakke med.{' '}
-              {guides.data && !guides.data.length
+              {noGuide
                 ? 'Lag og publiser guiden først: Skjema → Nytt skjema → Samtale med nøkkelpersonar.'
                 : 'Lag den første runda med knappen over.'}
             </p>
           </div>
         </section>
       )}
-      {chosen && round.data && (
-        <>
-          <p className="sm-guide">
-            {/* With one round offered there is no chooser to read the name from, so the line carries
-                it; a closed round says so here whether the chooser shows it or not. */}
-            {offered.length === 1 && (
-              <>
-                <b>{chosen.name}</b> ·{' '}
-              </>
-            )}
-            {round.data.guide.title} · {round.data.guide.label} · {total} spørsmål
-            {chosen.status !== 'open' && <span className="chip warn">Avslutta</span>}
-          </p>
-          {group('Pågår', going)}
-          {group('Ikkje starta', planned, all ? Infinity : 6)}
-          {group('Fullførte', finished)}
-          {!rows.length && (
-            <p className="muted">
-              {chosen.status === 'open'
-                ? 'Ingen kundar i runda enno. Legg dei til med knappen over.'
-                : 'Ingen kundar i runda. Ho er avslutta, så du kan ikkje leggje til fleire.'}
-            </p>
-          )}
-        </>
-      )}
-      {panel === 'ny' && guides.data && (
+      {group('Opne', open)}
+      {group('Avslutta', closed)}
+      {making && guides.data && (
         <NyRunde
           guides={guides.data}
           clients={clients.data ?? []}
-          onClose={() => setPanel(null)}
+          onClose={() => setMaking(false)}
           onCreated={(id) => {
-            setPanel(null);
-            refresh();
-            goTo(`/admin/samtalar?runde=${id}`);
-          }}
-        />
-      )}
-      {panel === 'kundar' && chosen && (
-        <LeggTilKundar
-          round={chosen}
-          clients={(clients.data ?? []).filter((c) => !known.has(c.id))}
-          onClose={() => setPanel(null)}
-          onDone={() => {
-            setPanel(null);
-            refresh();
-          }}
-        />
-      )}
-      {panel === 'endre' && chosen && (
-        <EndreRunde
-          key={chosen.id}
-          round={chosen}
-          onClose={() => setPanel(null)}
-          onDone={() => {
-            setPanel(null);
-            refresh();
-          }}
-          onDeleted={() => {
-            setPanel(null);
-            // Out of the list at once: a refetch alone would ask the server for the round that is
-            // gone and answer itself with a 404 on the way to the page without it.
-            queries.setQueryData<RoundSummary[]>(['samtalar', 'rounds'], (old) =>
-              (old ?? []).filter((r) => r.id !== chosen.id),
-            );
-            // Its own view goes with it, or the refresh below would ask for it once more.
-            queries.removeQueries({ queryKey: ['samtalar', 'round', chosen.id] });
-            // The address still names the round that is gone; start over at the plain page.
-            goTo('/admin/samtalar');
-            refresh();
-          }}
-        />
-      )}
-      {panel !== null && typeof panel === 'object' && (
-        <StartSamtale
-          row={panel}
-          guide={round.data?.guide ?? null}
-          names={rows.flatMap((r) => r.interviewers ?? [])}
-          me={me}
-          onClose={() => setPanel(null)}
-          onDone={() => {
-            setPanel(null);
+            setMaking(false);
             void queries.invalidateQueries({ queryKey: ['samtalar'] });
-            goTo(`/admin/samtalar/${panel.id}`);
+            goTo(`/admin/samtalar/runde/${id}`);
           }}
         />
       )}
