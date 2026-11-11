@@ -13,7 +13,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { namesOf } from '../auth/people.js';
 import { contentHash, sourceHash } from './hashes.js';
 import { PublishService } from './publish.service.js';
-import { createEditorMetrics } from './editor-metrics.js';
+import { createEditorMetrics, editorMetricPrefix } from './editor-metrics.js';
 import { SettingsService } from './settings.service.js';
 import { keyOf, starterContent } from './starters.js';
 import { withStandardCriteria } from './interview-guide.js';
@@ -83,7 +83,7 @@ export class EditorService {
             published_by: true,
             content: true,
             translation_acceptance: true,
-            _count: { select: { rounds: true } },
+            _count: { select: { rounds: true, interview_rounds: true } },
           },
         },
       },
@@ -108,6 +108,8 @@ export class EditorService {
           question_count: latest?.questions?.length ?? 0,
           languages: t.required_languages,
           rounds: t.versions.reduce((n, v) => n + v._count.rounds, 0),
+          // Conversation rounds on any version (11.11): a survey in use cannot be deleted.
+          interview_rounds: t.versions.reduce((n, v) => n + v._count.interview_rounds, 0),
           draft: draft ? { id: draft.id, version_no: draft.version_no, left: leftOf(draft) } : null,
           versions: t.versions.map((v) => ({
             id: v.id,
@@ -146,6 +148,70 @@ export class EditorService {
         },
       });
       return { name: after };
+    });
+  }
+  /**
+   * Deletes a survey whole, published versions and all (11.11), when nothing uses it: no round, no
+   * conversation round, no FUNN rule built on its own numbers. A published version stays immutable for
+   * everything else; the trigger lets this one transaction through (SET LOCAL varde.slett_skjema).
+   * Its notes go with it, and so do the per-version numbers a publish made (`auto.<version>.`).
+   */
+  async remove(id: string, who: string) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM survey_template WHERE id = ${id}::uuid FOR UPDATE`;
+      const t = await tx.surveyTemplate.findUnique({
+        where: { id },
+        include: {
+          versions: {
+            orderBy: { version_no: 'desc' },
+            select: {
+              id: true,
+              label: true,
+              status: true,
+              content: true,
+              _count: { select: { rounds: true, interview_rounds: true } },
+            },
+          },
+        },
+      });
+      if (t === null) throw new NotFoundException('Skjemaet finst ikkje.');
+      const rounds = t.versions.reduce((n, v) => n + v._count.rounds, 0);
+      const talks = t.versions.reduce((n, v) => n + v._count.interview_rounds, 0);
+      if (rounds + talks > 0)
+        throw new ConflictException(
+          talks > 0
+            ? `Skjemaet er brukt i ${talks} ${talks === 1 ? 'samtalerunde' : 'samtalerunder'}. Slett dei først.`
+            : `Skjemaet er brukt i ${rounds} ${rounds === 1 ? 'runde' : 'rundar'}, så det kan ikkje slettast.`,
+        );
+      const prefixes = t.versions.map((v) => editorMetricPrefix(v.id));
+      const rules = await tx.findingRule.findMany({ select: { key: true, definition: true } });
+      const used = rules.filter((r) =>
+        prefixes.some((p) => JSON.stringify(r.definition).includes(p)),
+      );
+      if (used.length > 0)
+        throw new ConflictException(
+          `Funn-regelen «${used[0]!.key}» byggjer på tala i skjemaet. Ta regelen bort først.`,
+        );
+      await tx.$executeRaw`SELECT set_config('varde.slett_skjema', 'on', true)`;
+      for (const p of prefixes)
+        await tx.metricDefinition.deleteMany({ where: { key: { startsWith: p } } });
+      await tx.templateVersion.deleteMany({ where: { template_id: id } });
+      await tx.surveyTemplate.delete({ where: { id } });
+      const latest = t.versions[0]?.content as Partial<TemplateContent> | undefined;
+      await tx.auditLog.create({
+        data: {
+          who,
+          what: 'surveys.delete',
+          target: `survey_template:${id}`,
+          // What it was, so the journal reads without the rows that are gone.
+          details: {
+            title: t.name?.trim() || latest?.intro?.title?.nn?.trim() || t.key,
+            key: t.key,
+            versions: t.versions.map((v) => `${v.label}:${v.status}`),
+          },
+        },
+      });
+      return { id };
     });
   }
   /** One version for the workshop, with the names of who approved and published it. */
