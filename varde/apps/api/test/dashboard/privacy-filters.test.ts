@@ -13,6 +13,9 @@ let f: DashboardFixture;
 const added: string[] = [];
 beforeAll(async () => {
   f = await dashboardFixture();
+  // These tests check the k machinery of the live admin views as it runs when admin_k > 1;
+  // privacy.json sets admin_k = 1 (19.11), checked in «admin_k = 1» below.
+  vi.spyOn(f.app.get(PrivacyService), 'adminK', 'get').mockReturnValue(3);
 }, 180_000);
 afterAll(async () => {
   for (const id of added) {
@@ -205,4 +208,37 @@ it('Soner counts common responses with no scored answer while keeping score stat
   const v = await f.app.get(AggregateView).load(r.id, 'daco');
   expect(v.zones).toMatchObject({ n: 3, mean: null, critical: null, zone: null });
   expect(v.zones!.questions.every((q) => q.mean === null)).toBe(true);
+});
+
+it('admin_k = 1: an open round shows the numbers of two answers; its release keeps k = 3', async () => {
+  const privacy = f.app.get(PrivacyService);
+  vi.restoreAllMocks();
+  expect(privacy.adminK).toBe(1);
+  expect(privacy.minimumGroupSize).toBe(3);
+  const r = await synthetic();
+  await withPg(async (db) => {
+    for (const role of ['kontor', 'sal'])
+      await insertResponse(db, {
+        round_client_id: r.rcs.daco!,
+        role,
+        respondent_key: 'ZZTEST',
+        answers: { F2: role, F12: 'nei' },
+      });
+  });
+  const view = f.app.get(AggregateView);
+  const live = await view.load(r.id);
+  expect(live.source).toBe('live');
+  expect(live.zones!.n).toBe(2);
+  expect(live.zones!.mean).not.toBeNull();
+  expect((await view.load(r.id, undefined, 'kontor')).zones!.n).toBe(1);
+  expect(live.suppression_note).toMatch(/Alle svar er med/);
+  await f.prisma.round.update({
+    where: { id: r.id },
+    data: { status: 'closed', closed_at: new Date() },
+  });
+  await f.app.get(MetricsService).releaseRound(r.id, { type: 'auto', who: 'system' });
+  const closed = await view.load(r.id);
+  expect(closed.source).toBe('released');
+  expect(closed.zones!.n).toBeNull();
+  vi.spyOn(privacy, 'adminK', 'get').mockReturnValue(3);
 });
