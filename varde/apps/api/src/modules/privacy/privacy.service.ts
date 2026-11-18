@@ -199,9 +199,9 @@ export class PrivacyService {
     if (!releasedOnly && r.status !== 'closed' && r.status !== 'archived') {
       if (population === 'all_clients') {
         const { cells, cross } = await this.allClientsCells(round, defs);
-        return liveCells(cells, this.config.k, cross);
+        return liveCells(cells, this.adminK, cross);
       }
-      return liveCells(await this.computeCells(round, population, defs, client), this.config.k);
+      return liveCells(await this.computeCells(round, population, defs, client), this.adminK);
     }
     const c = client ? await this.prisma.client.findUnique({ where: { slug: client } }) : null;
     if (client && !c) throw new NotFoundException('Kunden finst ikkje.');
@@ -303,7 +303,7 @@ export class PrivacyService {
       const visible = own.filter(
         (c): c is Extract<ViewCell, { suppressed: false }> => !c.suppressed,
       );
-      const hidden = suppressedGroups({ ...total, group: 'all' }, visible, this.config.k);
+      const hidden = suppressedGroups({ ...total, group: 'all' }, visible, this.adminK);
       return [
         { ...total, group: 'all' },
         ...own.map((c): ViewCell =>
@@ -341,7 +341,7 @@ export class PrivacyService {
   ): Promise<ClientGroup> {
     // The report a client gets is its released cells (ownCells); live ones reach admins only.
     const report = (client: string) => this.cells(round, 'round_client', defs, client, true);
-    return clientGroup(this.read, round, defs, clients, report, this.config.k);
+    return clientGroup(this.read, round, defs, clients, report, this.adminK);
   }
 
   private readonly read = (
@@ -455,6 +455,12 @@ export class PrivacyService {
 
   get minimumGroupSize(): number {
     return this.config.k;
+  }
+
+  /** k of the admin views of an open round (privacy.json `admin_k`, 19.11): the live cells of
+   * the dashboard, never a release, a client's report or a seminar screen. */
+  get adminK(): number {
+    return this.config.admin_k ?? this.config.k;
   }
 
   employeeHistory(

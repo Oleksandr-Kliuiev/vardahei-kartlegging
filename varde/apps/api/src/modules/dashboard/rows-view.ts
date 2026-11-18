@@ -163,7 +163,7 @@ export class RowsView {
             text,
             client: r.client,
             client_name: scope.clients.find((c) => c.slug === r.client)?.name ?? r.client,
-            ...((roles.get(r.role) ?? 0) >= this.privacy.minimumGroupSize &&
+            ...((roles.get(r.role) ?? 0) >= this.privacy.adminK &&
             roleQ &&
             'options' in roleQ
               ? { role: roleQ.options.find((o) => o.id === r.role)?.texts.text.nn ?? r.role }

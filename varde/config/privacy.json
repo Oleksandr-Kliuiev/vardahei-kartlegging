@@ -1,1 +1,1 @@
-{ "k": 3, "exact_counts": ["responses_total"] }
+{ "k": 3, "admin_k": 1, "exact_counts": ["responses_total"] }
