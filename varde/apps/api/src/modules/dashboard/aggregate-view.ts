@@ -234,8 +234,13 @@ export class AggregateView {
       client: scope.client ?? null,
       role: selectedRole ?? null,
       roles,
-      suppression_note:
-        'Roller med færre enn 3 svar og grupper som kan røpe små grupper, er ikkje viste.',
+      // An open round is counted live with admin_k (19.11: every answer); released numbers keep k.
+      suppression_note: ['closed', 'archived'].includes(scope.round.status)
+        ? `Roller med færre enn ${this.privacy.minimumGroupSize} svar og grupper som kan røpe små grupper, er ikkje viste.`
+        : this.privacy.adminK > 1
+          ? `Roller med færre enn ${this.privacy.adminK} svar og grupper som kan røpe små grupper, er ikkje viste.`
+          : 'Alle svar er med, også frå éin person. Berre for Vardahei IT: kunden får tal frå minst ' +
+            `${this.privacy.minimumGroupSize} personar.`,
       zones:
         prefix === 'tryggleik'
           ? {

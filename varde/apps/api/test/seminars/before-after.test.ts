@@ -6,7 +6,8 @@
 // without a declared link is marked without numbers; a declared `approximate` link shows numbers
 // with its note. The caveats are always there. The live poll and the technical client stay out.
 import 'reflect-metadata';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { PrivacyService } from '../../src/modules/privacy/privacy.service.js';
 import { MetricDefinition } from '@varde/schema/metrics/metric-definition';
 import type { TemplateContent } from '@varde/schema/template/template';
 import { findBokmal } from '@varde/schema/i18n/nn-stoplist';
@@ -93,6 +94,8 @@ const r = (n: number) => Number(n.toFixed(4));
 
 beforeAll(async () => {
   t = await seminarApp();
+  // The k machinery as it runs when admin_k > 1; privacy.json sets 1 (19.11, privacy-filters).
+  vi.spyOn(t.app.get(PrivacyService), 'adminK', 'get').mockReturnValue(3);
   const made = await makeClients(t, ['Syntetisk A', 'Syntetisk B', 'Syntetisk C']);
   [A, B, C] = [made[0]!, made[1]!, made[2]!];
   template = await scoredTemplate(t);

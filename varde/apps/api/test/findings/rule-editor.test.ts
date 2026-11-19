@@ -2,7 +2,8 @@
 // never reach the parity tests. Closed rounds show the findings saved once per release; a new release
 // is computed with the versions in effect; open rounds are live (orchestrator decision 16.10).
 import 'reflect-metadata';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { PrivacyService } from '../../src/modules/privacy/privacy.service.js';
 import { AggregateView } from '../../src/modules/dashboard/aggregate-view.js';
 import { LeaderView } from '../../src/modules/dashboard/leader-view.js';
 import { FindingsService } from '../../src/modules/findings/findings.service.js';
@@ -19,6 +20,8 @@ let f: DashboardFixture;
 beforeAll(async () => {
   dispose = await temporaryDatabase();
   f = await dashboardFixture();
+  // The k machinery as it runs when admin_k > 1; privacy.json sets 1 (19.11, privacy-filters).
+  vi.spyOn(f.app.get(PrivacyService), 'adminK', 'get').mockReturnValue(3);
 }, 240_000);
 afterAll(async () => {
   await f?.close();
