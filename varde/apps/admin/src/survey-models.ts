@@ -63,6 +63,8 @@ export interface SurveySummary {
   question_count?: number;
   languages?: string[];
   rounds?: number;
+  /** Conversation rounds on any of its versions (11.11). */
+  interview_rounds?: number;
   /** The open draft and what is left before it can be published. */
   draft?: { id: string; version_no: number; left: number } | null;
   versions: VersionSummary[];

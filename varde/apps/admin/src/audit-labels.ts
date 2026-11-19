@@ -39,6 +39,7 @@ const WHAT: Record<string, string> = {
   'surveys.trash': 'Utkast lagt i papirkorga',
   'surveys.restore': 'Utkast henta attende frå papirkorga',
   'surveys.rename': 'Skjema fekk nytt namn',
+  'surveys.delete': 'Skjema sletta',
   'surveys.purge': 'Utkast sletta for godt',
   'surveys.editor_metrics': 'Bruk av verkstaden lagra',
   'surveys.frozen_change': 'Fast spørsmål endra',

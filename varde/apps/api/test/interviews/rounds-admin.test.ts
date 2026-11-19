@@ -162,6 +162,32 @@ describe('the name of the guide (11.11)', () => {
   });
 });
 
+describe('deleting a conversation guide (11.11)', () => {
+  it('is refused while a round uses it, and goes whole once the rounds are gone', async () => {
+    const own = await publishGuide();
+    const template = (await t.prisma.templateVersion.findUniqueOrThrow({ where: { id: own } }))
+      .template_id;
+    const r = await t.call('POST', '/api/admin/interview-rounds', {
+      name: `Guide i bruk ${t.mark}`,
+      template_version_id: own,
+      clients: [clientA],
+    });
+    expect(r.statusCode, r.body).toBe(201);
+    const round = json<{ id: string }>(r).id;
+    const refused = await t.call('DELETE', `/api/admin/surveys/${template}`);
+    expect(refused.statusCode).toBe(409);
+    expect(refused.body).toContain('brukt i 1 samtalerunde');
+    expect(await t.prisma.templateVersion.count({ where: { template_id: template } })).toBe(1);
+
+    expect((await t.call('DELETE', `/api/admin/interview-rounds/${round}`)).statusCode).toBe(200);
+    const gone = await t.call('DELETE', `/api/admin/surveys/${template}`);
+    expect(gone.statusCode, gone.body).toBe(200);
+    expect(await t.prisma.surveyTemplate.count({ where: { id: template } })).toBe(0);
+    const guides = json<{ id: string }[]>(await t.call('GET', '/api/admin/interview-guides'));
+    expect(guides.some((g) => g.id === own)).toBe(false);
+  });
+});
+
 describe('closing a conversation round', () => {
   it('takes no new client and no new conversation, and says so', async () => {
     const round = await makeRound(`Avslutt ${t.mark}`);

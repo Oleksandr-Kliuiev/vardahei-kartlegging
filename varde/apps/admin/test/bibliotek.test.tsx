@@ -279,3 +279,55 @@ it('«Endre namn» renames a survey in Varde without a new version and says what
   expect(document.body.textContent).toContain('Skjemaet heiter no «Etter seminaret om KI».');
   expect(view.div.textContent).toContain('Tittel i skjemaet: Etter KI-seminaret');
 });
+
+it('a survey nobody uses is deleted whole by a held press; one in use offers no such thing', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  let rows = [
+    { ...library[1]!, interview_rounds: 0 },
+    { ...library[0]!, id: 't3', title: 'Brukt guide', rounds: 0, interview_rounds: 2, draft: null },
+  ];
+  const calls = serve((url, method) => {
+    if (method === 'DELETE' && url === '/api/admin/surveys/t2') {
+      rows = rows.filter((s) => s.id !== 't2');
+      return { id: 't2' };
+    }
+    return url.endsWith('/trash') ? [] : rows;
+  });
+  view = mount(
+    <Toasts>
+      <SurveysPage />
+    </Toasts>,
+    true,
+  );
+  await settle();
+  expect(view.div.querySelector('button[aria-label="Slett Brukt guide"]')).toBeNull();
+  act(() =>
+    view!.div
+      .querySelector<HTMLButtonElement>('button[aria-label="Slett Etter KI-seminaret"]')!
+      .click(),
+  );
+  const panel = view.div.querySelector<HTMLElement>(
+    '[aria-label="Stadfest sletting for Etter KI-seminaret"]',
+  )!;
+  expect(panel.textContent).toContain(
+    'Heile skjemaet blir sletta for godt, med den eine versjonen.',
+  );
+  expect(panel.textContent).toContain('Det kan ikkje angrast.');
+  const hold = byText(panel, 'Slett heile skjemaet') as HTMLButtonElement;
+  act(() => hold.click());
+  await settle();
+  expect(calls.some((c) => c.method === 'DELETE')).toBe(false);
+  act(() => {
+    hold.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+  });
+  await act(async () => {
+    vi.advanceTimersByTime(1300);
+    await Promise.resolve();
+  });
+  await settle();
+  expect(calls.filter((c) => c.method === 'DELETE').map((c) => c.url)).toEqual([
+    '/api/admin/surveys/t2',
+  ]);
+  expect(document.body.textContent).toContain('«Etter KI-seminaret» er sletta.');
+  vi.useRealTimers();
+});
