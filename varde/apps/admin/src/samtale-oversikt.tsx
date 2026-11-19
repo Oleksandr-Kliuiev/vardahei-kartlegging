@@ -216,13 +216,21 @@ function Kundar({ o }: { o: Overview }) {
                       {r.client.name}
                     </a>
                   </td>
-                  <td>{r.round.name}</td>
-                  <td className="tnum">{dmy(r.held_on)}</td>
-                  <td className="r">{r.score ?? '–'}</td>
-                  <td>
+                  <td data-label="Runde" className="sm-kt-runde">
+                    {r.round.name}
+                  </td>
+                  <td data-label="Dato" className="tnum">
+                    {dmy(r.held_on)}
+                  </td>
+                  <td data-label="Poeng" className="r">
+                    {r.score ?? '–'}
+                  </td>
+                  <td data-label="Fordeling">
                     <Fordeling counts={r.counts} label={r.client.name} tips />
                   </td>
-                  <td className="r">{r.counts.manglar}</td>
+                  <td data-label="Manglar" className="r">
+                    {r.counts.manglar}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -183,7 +183,7 @@ export function NameList({ seminar }: { seminar: SeminarDetail }) {
     void queries.invalidateQueries({ queryKey: ['seminars'] });
   };
   return (
-    <section className="kort s8">
+    <section className="kort s8 sem-namneliste">
       <div className="kort-hovud">
         <h2>Namneliste</h2>
         {rows === null && (

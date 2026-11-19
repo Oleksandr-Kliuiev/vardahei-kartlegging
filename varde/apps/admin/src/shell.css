@@ -120,6 +120,9 @@ kbd { font-family: var(--font-mono); font-size: 12px; padding: 1px 6px; border-r
 .ingress .eyebrow { display: inline-block; margin-bottom: 4px; }
 .velg { margin: 0 0 16px; font-weight: 600; color: var(--ink); }
 .flate + .flate, .flate + .del { margin-top: 16px; }
+/* Side cards with a few lines keep their own height beside a tall neighbour, not a blank band (19.11). */
+.flate > .rapport-kontroll, .flate > .sem-kontaktar, .flate > .sem-namneliste { align-self: start; }
+@media (min-width: 1181px) { .flate > .rapport-kontroll { position: sticky; top: 80px; } }
 .fjellbord { display: grid; gap: 4px; }
 .fjellbord-hovud, .spor-rad { display: grid; grid-template-columns: 150px minmax(0, 1fr) 132px 92px 110px; gap: 14px; }
 .fjellbord-hovud { padding: 0 8px 4px; font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); }
@@ -140,8 +143,15 @@ kbd { font-family: var(--font-mono); font-size: 12px; padding: 1px 6px; border-r
 .aktive.skjult { color: var(--ink-muted); }
 .frist { font-size: 12.5px; color: var(--ink-muted); }
 .frist.snart { color: var(--warning-fg); font-weight: 650; }
+/* Below a wide desktop the path gets a line of its own under the name: squeezed between fixed
+   columns its 24 stones ran into one another and under the walker (19.11). */
+@media (max-width: 1180px) {
+  .spor-rad, .fjellbord-hovud { grid-template-columns: minmax(0, 1fr) 132px 92px 110px; row-gap: 6px; }
+  .spor-rad > .spor-felt { grid-column: 1 / -1; grid-row: 2; }
+  .fjellbord-hovud > :nth-child(2) { display: none; }
+}
 @media (max-width: 760px) {
-  .spor-rad, .fjellbord-hovud { grid-template-columns: 96px minmax(0, 1fr) 76px; }
+  .spor-rad, .fjellbord-hovud { grid-template-columns: minmax(0, 1fr) 76px; }
   .spor-rad > :nth-child(4), .spor-rad > :nth-child(5), .fjellbord-hovud > :nth-child(4), .fjellbord-hovud > :nth-child(5) { display: none; }
   .spor-prikkar .p { width: 6px; height: 6px; margin: -3px 0 0 -3px; }
 }
@@ -232,7 +242,9 @@ select:not([multiple]):not([size]) {
 .del.smal label:has(> input[type="checkbox"]) { flex-direction: row; align-items: center; font-weight: 400; }
 .del.smal select, .del.smal input:not([type="checkbox"]), .del.smal textarea { width: 100%; }
 .del.smal fieldset { display: grid; gap: 14px; border: 0; padding: 0; margin: 0; }
-.del .logg { max-height: 300px; overflow-y: auto; margin: 8px 0 0; padding-right: 8px; }
+.del .logg { max-height: 300px; overflow-y: auto; margin: 8px 0 0; padding-right: 8px; padding-bottom: 20px; scrollbar-width: thin;
+  /* The last entry fades out at the edge instead of being cut through its words (19.11). */
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent); }
 .skjema-versjonar li { flex: none; max-width: 100%; }
 .skjema-versjonar button { white-space: nowrap; }
 

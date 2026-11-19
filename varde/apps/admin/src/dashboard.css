@@ -345,6 +345,8 @@ blockquote {
   background: var(--god);
 }
 
+/* «Samanlikning»: a sub-heading starts a group, with room above it, not glued to the table before (19.11). */
+.samanlikning-tittel { margin: 24px 0 8px; font-size: 15px; }
 /* «Alle svar, person for person» (19.11): questions down, one column per person, every answer. */
 .alle-svar-wrap {
   max-height: min(78vh, 900px);

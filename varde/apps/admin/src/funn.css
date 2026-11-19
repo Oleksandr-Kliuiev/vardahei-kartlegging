@@ -97,9 +97,9 @@
 }
 @media (min-width: 861px) {
   .funn-liste { position: sticky; top: 76px; max-height: calc(100vh - 92px); display: flex; flex-direction: column; }
-  .funn-liste .regel-liste { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .funn-liste .regel-liste { min-height: 0; overflow-y: auto; overscroll-behavior: contain;  padding-bottom: 24px; -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent); }
 }
 @media (max-width: 860px) {
   .funn-flate { grid-template-columns: minmax(0, 1fr); }
-  .regel-liste { max-height: 46vh; overflow-y: auto; overscroll-behavior: contain; }
+  .regel-liste { max-height: 46vh; overflow-y: auto; overscroll-behavior: contain;  padding-bottom: 24px; -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent); }
 }

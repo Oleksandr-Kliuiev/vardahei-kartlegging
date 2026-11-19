@@ -22,7 +22,7 @@
 .sem-namn small, .sem-tal small { color: var(--ink-muted); font-size: 13px; overflow-wrap: anywhere; }
 .sem-tal { display: grid; justify-items: end; gap: 6px; text-align: right; }
 @media (max-width: 560px) {
-  .sem-liste a { grid-template-columns: 44px minmax(0, 1fr); }
+  .sem-liste a { grid-template-columns: 44px minmax(0, 1fr); align-items: start; } /* the date beside the title, not the middle (19.11) */
   .sem-liste a { padding-right: 14px; }
   .sem-liste a.har-slett { padding-right: 48px; }
   .sem-slett { top: 8px; margin-top: 0; right: 8px; }
