@@ -6,6 +6,83 @@ import { Zone } from './dashboard-aggregate.js';
 import { ErrorMessage } from './queries.js';
 import { Fold } from './fold.js';
 
+const employeesQuery = (query: string) => ({
+  queryKey: ['responses', 'employees', query],
+  queryFn: () => api<Employees>(`/api/admin/rows/per-employee?${query}`),
+});
+
+/** «Alle svar» (19.11): every answer of everyone who has answered, question by question, one
+ * column per person. Open from the start; the read is logged like every rows read. */
+export function AllAnswersSection({ query }: { query: string }) {
+  return (
+    <Fold title="Alle svar, person for person">
+      <AllAnswers query={query} />
+    </Fold>
+  );
+}
+function AllAnswers({ query }: { query: string }) {
+  const result = useQuery(employeesQuery(query));
+  const data = result.data;
+  if (result.error) return <ErrorMessage error={result.error} />;
+  if (!data) return <p role="status">Hentar svara …</p>;
+  if (!data.rows.length) return <p className="under">Ingen har svart enno.</p>;
+  return (
+    <>
+      <p className="under">
+        {data.rows.length === 1
+          ? 'Éin person har svart.'
+          : `${data.rows.length} personar har svart.`}{' '}
+        Kvart svar er med. Oransje og raudt er svar med høg risiko. Berre for Vardahei IT.
+      </p>
+      <div
+        className="tabell-wrap alle-svar-wrap"
+        tabIndex={0}
+        role="region"
+        aria-label="Alle svar, person for person"
+      >
+        <table className="alle-svar">
+          <thead>
+            <tr>
+              <th scope="col">Spørsmål</th>
+              {data.rows.map((r) => (
+                <th scope="col" key={r.submission_id}>
+                  <span className="alle-svar-kven">{r.respondent_key || '–'}</span>
+                  {!data.client && <span className="alle-svar-kunde">{r.client_name}</span>}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.questions.map((q, i) => (
+              <tr key={q.id}>
+                <th scope="row" title={q.text === q.label ? undefined : q.text}>
+                  {q.label}
+                </th>
+                {data.rows.map((r) => {
+                  const a = r.replies[i];
+                  return (
+                    <td
+                      key={r.submission_id}
+                      className={a?.score && a.score >= 2 ? `m${a.score}` : ''}
+                    >
+                      {a?.text ?? (
+                        <span className="alle-svar-tom" title="Ikkje svart">
+                          –
+                        </span>
+                      )}
+                      {a?.free && <span className="alle-svar-fritt">«{a.free}»</span>}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
 /** Rows per employee: read (and logged) only when the block is opened. */
 export function EmployeeSection({ query }: { query: string }) {
   return (
@@ -15,10 +92,7 @@ export function EmployeeSection({ query }: { query: string }) {
   );
 }
 function EmployeeRows({ query }: { query: string }) {
-  const result = useQuery({
-    queryKey: ['responses', 'employees', query],
-    queryFn: () => api<Employees>(`/api/admin/rows/per-employee?${query}`),
-  });
+  const result = useQuery(employeesQuery(query));
   const data = result.data;
   return (
     <>
@@ -97,13 +171,12 @@ function EmployeeRows({ query }: { query: string }) {
                         <td>
                           {r.marked.length ? (
                             <>
-                              {r.marked.slice(0, 5).map((m, i) => (
+                              {r.marked.map((m, i) => (
                                 <span className={`m${m.score}`} key={m.id}>
                                   {i ? ', ' : ''}
                                   {m.label}
                                 </span>
                               ))}
-                              {r.marked.length > 5 && ` +${r.marked.length - 5}`}
                             </>
                           ) : (
                             '–'

@@ -83,8 +83,12 @@ export interface Employees {
   previous_round: { id: string; name: string } | null;
   columns: { id: string; label: string }[];
   summary: { matched: number; better: number; worse: number; same: number };
+  /** «Alle svar» (19.11): every common question of the round, in survey order. */
+  questions: { id: string; label: string; text: string }[];
   rows: {
     submission_id: string;
+    /** One cell per entry of `questions`, in the same order. */
+    replies: { text: string | null; free: string | null; score: number | null }[];
     respondent_key: string;
     role: string;
     client: string;

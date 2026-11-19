@@ -4,6 +4,9 @@ import { readConfigJson } from './config-dir.js';
 export interface PrivacyConfig {
   /** A group is shown only when n ≥ k. */
   k: number;
+  /** k of the admin views of an open round (the trusted circle, 19.11): 1 shows every answer.
+   * Clients, seminar screens and releases keep `k`. Absent: the same as `k`. */
+  admin_k?: number;
   /** Counts released exactly, the named exception of ADR-021 rule 6 (`responses_total`). */
   exact_counts: readonly string[];
 }
@@ -17,5 +20,9 @@ export function readPrivacyConfig(env: NodeJS.ProcessEnv = process.env): Privacy
   if (!Array.isArray(exact) || !exact.every((e) => typeof e === 'string')) {
     throw new Error('privacy.json: exact_counts must be a list of metric keys');
   }
-  return { k: raw.k, exact_counts: exact };
+  const adminK = raw.admin_k ?? raw.k;
+  if (typeof adminK !== 'number' || !Number.isInteger(adminK) || adminK < 1 || adminK > raw.k) {
+    throw new Error('privacy.json: admin_k must be an integer from 1 to k');
+  }
+  return { k: raw.k, admin_k: adminK, exact_counts: exact };
 }
