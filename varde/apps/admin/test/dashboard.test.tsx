@@ -84,6 +84,35 @@ it('separate short labels drive client/role queries; anonymous rounds never requ
   expect(get.mock.calls.some(([path]) => path.includes('/per-employee'))).toBe(false);
   expect(view.div.textContent).not.toContain('Svar per tilsett');
 });
+it('hides the role filter when there is no role to filter by (role question hidden)', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((path: string) =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify(
+            path.startsWith('/api/admin/dashboard?')
+              ? { ...blank, roles: [] }
+              : path.includes('/quotes')
+                ? { quotes: [] }
+                : [],
+          ),
+        ),
+      ),
+    ),
+  );
+  view = mount(
+    <DashboardRound
+      round="synthetic"
+      clients={[{ client_id: 'client', client: { name: 'Syntetisk kunde' } }]}
+    />,
+    true,
+  );
+  await settle();
+  await settle();
+  expect([...view.div.querySelectorAll('label')].map((l) => l.textContent)).toEqual(['Kunde']);
+  expect(view.div.querySelector('#dashboard-role')).toBeNull();
+});
 it('rings expose accessible critical shares while suppressed buckets remain dashes', () => {
   const cell = { suppressed: false as const, n: 4, numerator: 3, denominator: 4, missing: 0 };
   view = mount(

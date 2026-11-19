@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { Question } from '@varde/schema/template/question';
 import type { PrivacyRow } from '../../src/modules/privacy/privacy.service.js';
 import { answerCells, answerQuestions } from '../../src/modules/dashboard/answer-text.js';
+import { neverShown } from '../../src/modules/dashboard/aggregate-view.js';
 
 const text = (nn: string) => ({ text: { nn } });
 const single = (id: string, extra: Partial<Question> = {}) =>
@@ -51,6 +52,17 @@ describe('answer-text', () => {
     expect(answerCells(version, qs, b, {}).map((c) => [c.text, c.shown])).toEqual([
       ['Nei', true],
       [null, false],
+    ]);
+  });
+});
+
+describe('neverShown', () => {
+  it('is true only for a visible_if that reads no answer and is false', () => {
+    expect(version.questions.map((q) => [q.id, neverShown(q)])).toEqual([
+      ['F1', false],
+      ['F2', true],
+      ['F3', false],
+      ['F4', false],
     ]);
   });
 });
