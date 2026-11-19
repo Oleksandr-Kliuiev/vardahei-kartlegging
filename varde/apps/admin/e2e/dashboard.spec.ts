@@ -70,16 +70,18 @@ test.describe('dashboard (1.27–1.29)', () => {
     await expect(
       page.getByRole('heading', { name: 'Samanlikning med runde 1', exact: true }),
     ).toBeVisible();
-    // The summary comes first; rows per employee are read (and logged) only when opened (2.17).
-    await expect(page.locator('main section.fold details[open]')).toHaveCount(4);
-    expect(rows).toEqual([]);
+    // «Alle svar, person for person» opens first and reads the rows at once (19.11); the read is
+    // audited like every rows read. The other blocks of rows still open on a click.
+    await expect(page.locator('main section.fold details[open]')).toHaveCount(5);
+    await expect(page.locator('table.alle-svar thead th')).toHaveCount(10);
+    expect(rows.length).toBeGreaterThan(0);
     await page.locator('summary').filter({ hasText: 'Svar per tilsett' }).click();
     await expect(page.locator('table.tilsette tbody tr')).toHaveCount(9);
-    expect(rows.length).toBeGreaterThan(0);
     const headings = await page
       .locator('main section.fold > details > summary > h2')
       .allTextContents();
     expect(headings).toEqual([
+      'Alle svar, person for person',
       'Soner',
       'Dette bør vi ta tak i',
       'Nøkkelspørsmåla',
@@ -96,10 +98,10 @@ test.describe('dashboard (1.27–1.29)', () => {
     await expect(page.locator('table.tilsette')).toBeHidden();
     await page.reload();
     // The round is in the address, so a reload stays on it.
-    await expect(page.locator('main section.fold')).toHaveCount(8);
+    await expect(page.locator('main section.fold')).toHaveCount(9);
     await expect(page.locator('main section.fold details[open]')).toHaveCount(0);
     await page.getByRole('button', { name: 'Opne alle' }).click();
-    await expect(page.locator('main section.fold details[open]')).toHaveCount(8);
+    await expect(page.locator('main section.fold details[open]')).toHaveCount(9);
     await expect(page.locator('table.tilsette tbody tr')).toHaveCount(9);
     const audit = await page.request.get('/api/admin/audit?limit=40');
     expect(await audit.json()).toEqual(

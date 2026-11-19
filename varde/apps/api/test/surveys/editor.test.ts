@@ -7,6 +7,7 @@ import type { TemplateContent } from '@varde/schema/template/template';
 import { editorContent } from '../support/editor-content.js';
 import { PrismaService } from '../../src/prisma/prisma.service.js';
 import { MetricsService } from '../../src/modules/metrics/metrics.service.js';
+import { PrivacyService } from '../../src/modules/privacy/privacy.service.js';
 import { startApp, type TestApp } from '../support/auth-app.js';
 import { contentHash } from '../../src/modules/surveys/hashes.js';
 import { withPg } from '../support/rounds.js';
@@ -499,6 +500,8 @@ describe('admin survey editor and launch (1d)', () => {
     );
   });
   it('new distributions run through privacy: two respondents stay hidden, three show and release freezes the result', async () => {
+    // The k machinery as it runs when admin_k > 1; privacy.json sets 1 (19.11, privacy-filters).
+    vi.spyOn(t.app.get(PrivacyService), 'adminK', 'get').mockReturnValue(3);
     const roundId = rounds[0]!;
     const rc = await db.roundClient.findFirstOrThrow({ where: { round_id: roundId } });
     const send = () =>
