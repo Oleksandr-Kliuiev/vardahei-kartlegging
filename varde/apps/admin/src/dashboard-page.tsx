@@ -7,7 +7,7 @@ import type { Dashboard } from './dashboard-models.js';
 import { talNorsk } from './norsk.js';
 import { ErrorMessage } from './queries.js';
 import { Zones, KeyQuestions, Findings, CommonQuestions } from './dashboard-aggregate.js';
-import { EmployeeSection, QuotesSection } from './dashboard-rows.js';
+import { AllAnswersSection, EmployeeSection, QuotesSection } from './dashboard-rows.js';
 import { LeaderSection } from './dashboard-leader.js';
 import { ComparisonSection } from './dashboard-comparison.js';
 import './dashboard.css';
@@ -81,6 +81,7 @@ export function DashboardRound({
               : 'Levande tal frå den opne runden.'}{' '}
             {data.suppression_note}
           </p>
+          {data.mode === 'initials' && <AllAnswersSection query={rowsQuery} />}
           {data.zones && <Zones data={data.zones} />}
           <Fold title={data.template === 'ki' ? 'Kvar KI kan hjelpe' : 'Dette bør vi ta tak i'}>
             <p className="under">{thresholdText(data.finding_thresholds)}</p>

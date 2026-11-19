@@ -9,6 +9,7 @@ import {
 import { DashboardContext, type DashboardScope } from './dashboard-context.js';
 import { KI_COLUMNS } from './ki-columns.js';
 import { labelOf } from './aggregate-view.js';
+import { answerCells, answerQuestions } from './answer-text.js';
 
 const identity = (r: PrivacyRow) => `${r.client}|${r.respondent_key ?? ''}`;
 const scoring = (scope: DashboardScope) => {
@@ -60,6 +61,7 @@ export class RowsView {
         role: label(r),
         client: r.client,
         client_name: scope.clients.find((c) => c.slug === r.client)?.name ?? r.client,
+        replies: answerCells(scope.content.questions, r, sc.table),
       };
       const old = r.respondent_key ? prev.get(identity(r)) : undefined;
       if (scope.content.key === 'ki') {
@@ -137,6 +139,7 @@ export class RowsView {
       summary,
       columns:
         scope.content.key === 'ki' ? KI_COLUMNS.map((c) => ({ id: c.id, label: c.label })) : [],
+      questions: answerQuestions(scope.content.questions),
       rows,
     };
   }
@@ -163,9 +166,7 @@ export class RowsView {
             text,
             client: r.client,
             client_name: scope.clients.find((c) => c.slug === r.client)?.name ?? r.client,
-            ...((roles.get(r.role) ?? 0) >= this.privacy.adminK &&
-            roleQ &&
-            'options' in roleQ
+            ...((roles.get(r.role) ?? 0) >= this.privacy.adminK && roleQ && 'options' in roleQ
               ? { role: roleQ.options.find((o) => o.id === r.role)?.texts.text.nn ?? r.role }
               : {}),
           }));

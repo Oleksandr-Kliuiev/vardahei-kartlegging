@@ -93,6 +93,12 @@ describe('1.27b audited rows; golden runs (a)/(b), §6.11', () => {
           .sort(),
       );
       expect(v.rows.every((r) => !!r.submission_id)).toBe(true);
+      // «Alle svar» (19.11): one cell per question for every person, and every given answer has words.
+      expect(v.questions.length).toBeGreaterThan(10);
+      for (const r of v.rows) {
+        expect(r.replies).toHaveLength(v.questions.length);
+        expect(r.replies.some((a) => a.text !== null)).toBe(true);
+      }
       const summary = section(golden(`tryggleik.${slug}.json`), 'Svar per tilsett').lines.find(
         (l) => l.startsWith('Av dei '),
       );

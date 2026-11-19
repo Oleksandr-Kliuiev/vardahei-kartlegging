@@ -2,7 +2,7 @@ import { act } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { DashboardRound, thresholdText } from '../src/dashboard-page.js';
 import { Findings, KeyQuestions } from '../src/dashboard-aggregate.js';
-import { EmployeeSection, QuotesSection } from '../src/dashboard-rows.js';
+import { AllAnswersSection, EmployeeSection, QuotesSection } from '../src/dashboard-rows.js';
 import type { Dashboard, Employees } from '../src/dashboard-models.js';
 import { mount, settle } from './support.js';
 
@@ -129,9 +129,11 @@ it('KI history column and red marked answers use the server model, with no unsaf
     previous_round: { id: 'old', name: 'Førre KI-runde' },
     summary: { matched: 0, better: 0, worse: 0, same: 0 },
     columns: [{ id: 'K19', label: 'Jobbdata i KI' }],
+    questions: [{ id: 'K19', label: 'Jobbdata i KI', text: 'Har du lagt jobbdata i KI?' }],
     rows: [
       {
         submission_id: 'synthetic-id',
+        replies: [{ text: 'Ja, ofte', free: null, score: null }],
         respondent_key: 'ZZTEST',
         role: 'Kontor',
         client: 'daco',
@@ -159,6 +161,54 @@ it('KI history column and red marked answers use the server model, with no unsaf
   expect(view.div.textContent).toContain('Førre runde');
   expect(view.div.querySelector('td.merk')?.textContent).toBe('Privat konto');
   expect(view.div.textContent).toContain('Prøvd, usikker → opp');
+});
+it('«Alle svar» opens at once and shows every answer of every person, free text too', async () => {
+  const data: Employees = {
+    template: 'tryggleik',
+    client: null,
+    previous_round: null,
+    summary: { matched: 0, better: 0, worse: 0, same: 0 },
+    columns: [],
+    questions: [
+      { id: 'F2', label: 'Rolle', text: 'Kva rolle har du?' },
+      { id: 'F12', label: 'Passord', text: 'Brukar du same passord?' },
+    ],
+    rows: ['AAAAA', 'BBBBB'].map((key, i) => ({
+      submission_id: `s${i}`,
+      respondent_key: key,
+      role: '–',
+      client: 'daco',
+      client_name: 'Daco',
+      mean: null,
+      zone: null,
+      marked: [],
+      columns: [],
+      previous: null,
+      replies: [
+        { text: 'Anna', free: i ? null : '<b>Lager</b>', score: null },
+        i ? { text: null, free: null, score: null } : { text: 'Ja', free: null, score: 3 },
+      ],
+    })),
+  };
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() => Promise.resolve(new Response(JSON.stringify(data)))),
+  );
+  view = mount(<AllAnswersSection query="round=synthetic" />, true);
+  await settle();
+  expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+  const heads = [...view.div.querySelectorAll('thead th')].map((t) => t.textContent);
+  expect(heads).toEqual(['Spørsmål', 'AAAAADaco', 'BBBBBDaco']);
+  const rows = [...view.div.querySelectorAll('tbody tr')].map((r) =>
+    [...r.children].map((c) => c.textContent),
+  );
+  expect(rows).toEqual([
+    ['Rolle', 'Anna«<b>Lager</b>»', 'Anna'],
+    ['Passord', 'Ja', '–'],
+  ]);
+  expect(view.div.querySelector('td.m3')?.textContent).toBe('Ja');
+  expect(view.div.querySelector('b')).toBeNull();
+  expect(view.div.textContent).toContain('2 personar har svart.');
 });
 it('quotes render as plain text and never invent a role omitted by privacy', async () => {
   vi.stubGlobal(
