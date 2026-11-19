@@ -186,6 +186,8 @@ export function DeletionPage() {
           />
         </label>
         <button
+          type="button"
+          className="btn sletting-forhand"
           disabled={!reason.trim()}
           onClick={() => {
             void act(true);

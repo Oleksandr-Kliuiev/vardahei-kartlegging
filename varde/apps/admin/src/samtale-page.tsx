@@ -199,9 +199,14 @@ export function Topp(p: {
   }, []);
   return (
     <header className="sm-topp" ref={bar}>
-      <a className="btn ghost sm" href={p.back.to} onClick={(e) => follow(e, p.back.to)}>
+      <a
+        className="btn ghost sm sm-tilbake"
+        href={p.back.to}
+        onClick={(e) => follow(e, p.back.to)}
+        title={p.back.label}
+      >
         <Icon name="tilbake" small />
-        {p.back.label}
+        <span>{p.back.label}</span>
       </a>
       <div className="sm-kven">
         <h1>{p.title}</h1>

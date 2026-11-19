@@ -58,13 +58,15 @@ a.ting:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 /* Lister over rundar og kundar: heile rada er lenkja */
 .rad-liste > h2 { margin-bottom: 8px; }
 .rad-liste ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.rad-lenkje { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px 16px; padding: 12px 14px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; transition: border-color var(--t-quick), background-color var(--t-quick); }
+.rad-lenkje { display: grid; grid-template-columns: minmax(min(14rem, 100%), 1fr) minmax(0, auto) auto; align-items: center; gap: 8px 16px; padding: 12px 14px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; transition: border-color var(--t-quick), background-color var(--t-quick); }
 .rad-lenkje:hover { border-color: var(--accent); background: var(--surface-hover); }
 .rad-lenkje:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .rad-hovud { display: grid; gap: 2px; min-width: 0; }
 .rad-hovud b { color: var(--ink-strong); font-weight: 700; overflow-wrap: anywhere; }
 .rad-hovud small { color: var(--ink-muted); font-size: 13px; overflow-wrap: anywhere; }
-.rad-tal { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.rad-tal { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; min-width: 0; }
+/* A long round name beside a client wraps in its own column; the client's name keeps 14rem (19.11). */
+.rad-tal > small { min-width: 0; overflow-wrap: anywhere; text-align: end; }
 .rad-tal small { color: var(--ink-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .rad-gaa { color: var(--ink-muted); display: grid; place-items: center; }
 @media (max-width: 560px) {

@@ -72,11 +72,11 @@ export function ComparisonSection({ query, showClients }: { query: string; showC
           <p>Lågare snittscore og lågare kritisk andel er betre.</p>
           {showClients && (
             <>
-              <h3>Per kunde</h3>
+              <h3 className="samanlikning-tittel">Per kunde</h3>
               <ComparisonTable rows={data.clients} />
             </>
           )}
-          <h3>Per spørsmål</h3>
+          <h3 className="samanlikning-tittel">Per spørsmål</h3>
           {data.not_yet.length > 0 && (
             <p className="under">
               Berre kundar som har svart i begge rundane. Ikkje med enno: {data.not_yet.join(', ')}.

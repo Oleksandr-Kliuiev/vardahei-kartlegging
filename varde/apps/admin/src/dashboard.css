@@ -344,3 +344,6 @@ blockquote {
 .leader-signal.good i {
   background: var(--god);
 }
+
+/* «Samanlikning»: a sub-heading starts a group, with room above it, not glued to the table before (19.11). */
+.samanlikning-tittel { margin: 24px 0 8px; font-size: 15px; }
