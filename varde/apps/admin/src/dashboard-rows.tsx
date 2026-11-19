@@ -66,7 +66,12 @@ function AllAnswers({ query }: { query: string }) {
                       className={a?.score && a.score >= 2 ? `m${a.score}` : ''}
                     >
                       {a?.text ?? (
-                        <span className="alle-svar-tom" title="Ikkje svart">
+                        <span
+                          className="alle-svar-tom"
+                          title={
+                            a?.shown === false ? 'Ikkje vist for denne personen' : 'Ikkje svart'
+                          }
+                        >
                           –
                         </span>
                       )}

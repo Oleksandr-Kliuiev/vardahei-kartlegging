@@ -84,6 +84,35 @@ it('separate short labels drive client/role queries; anonymous rounds never requ
   expect(get.mock.calls.some(([path]) => path.includes('/per-employee'))).toBe(false);
   expect(view.div.textContent).not.toContain('Svar per tilsett');
 });
+it('hides the role filter when there is no role to filter by (role question hidden)', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((path: string) =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify(
+            path.startsWith('/api/admin/dashboard?')
+              ? { ...blank, roles: [] }
+              : path.includes('/quotes')
+                ? { quotes: [] }
+                : [],
+          ),
+        ),
+      ),
+    ),
+  );
+  view = mount(
+    <DashboardRound
+      round="synthetic"
+      clients={[{ client_id: 'client', client: { name: 'Syntetisk kunde' } }]}
+    />,
+    true,
+  );
+  await settle();
+  await settle();
+  expect([...view.div.querySelectorAll('label')].map((l) => l.textContent)).toEqual(['Kunde']);
+  expect(view.div.querySelector('#dashboard-role')).toBeNull();
+});
 it('rings expose accessible critical shares while suppressed buckets remain dashes', () => {
   const cell = { suppressed: false as const, n: 4, numerator: 3, denominator: 4, missing: 0 };
   view = mount(
@@ -133,7 +162,7 @@ it('KI history column and red marked answers use the server model, with no unsaf
     rows: [
       {
         submission_id: 'synthetic-id',
-        replies: [{ text: 'Ja, ofte', free: null, score: null }],
+        replies: [{ text: 'Ja, ofte', free: null, score: null, shown: true }],
         respondent_key: 'ZZTEST',
         role: 'Kontor',
         client: 'daco',
@@ -185,8 +214,10 @@ it('«Alle svar» opens at once and shows every answer of every person, free tex
       columns: [],
       previous: null,
       replies: [
-        { text: 'Anna', free: i ? null : '<b>Lager</b>', score: null },
-        i ? { text: null, free: null, score: null } : { text: 'Ja', free: null, score: 3 },
+        { text: 'Anna', free: i ? null : '<b>Lager</b>', score: null, shown: true },
+        i
+          ? { text: null, free: null, score: null, shown: false }
+          : { text: 'Ja', free: null, score: 3, shown: true },
       ],
     })),
   };
@@ -207,6 +238,9 @@ it('«Alle svar» opens at once and shows every answer of every person, free tex
     ['Passord', 'Ja', '–'],
   ]);
   expect(view.div.querySelector('td.m3')?.textContent).toBe('Ja');
+  expect(view.div.querySelector('.alle-svar-tom')?.getAttribute('title')).toBe(
+    'Ikkje vist for denne personen',
+  );
   expect(view.div.querySelector('b')).toBeNull();
   expect(view.div.textContent).toContain('2 personar har svart.');
 });

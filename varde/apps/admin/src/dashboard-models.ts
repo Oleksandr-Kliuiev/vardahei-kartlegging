@@ -88,7 +88,7 @@ export interface Employees {
   rows: {
     submission_id: string;
     /** One cell per entry of `questions`, in the same order. */
-    replies: { text: string | null; free: string | null; score: number | null }[];
+    replies: { text: string | null; free: string | null; score: number | null; shown: boolean }[];
     respondent_key: string;
     role: string;
     client: string;

@@ -1,6 +1,7 @@
 import { FindingsService } from '../findings/findings.service.js';
 import { Injectable } from '@nestjs/common';
 import type { Question } from '@varde/schema/template/question';
+import { evaluate } from '@varde/rules/runner';
 import { PrivacyService, type ViewCell } from '../privacy/privacy.service.js';
 import { DashboardContext, type DashboardScope } from './dashboard-context.js';
 
@@ -11,6 +12,16 @@ export function cellAt(cells: readonly ViewCell[], key: string, group = 'all') {
   return cells.find((c) => c.metric_key === key && c.group === group);
 }
 
+/** A question the survey shows no one: a `visible_if` that reads no answer and is false, as
+ * the role question of «Tilsette Undersøkelse» hidden 17.11 with «vis» == «aldri». */
+export function neverShown(q: Question): boolean {
+  return (
+    q.visible_if !== undefined &&
+    !JSON.stringify(q.visible_if).includes('"var"') &&
+    !evaluate(q.visible_if, {})
+  );
+}
+
 export function questionViews(
   scope: DashboardScope,
   cells: readonly ViewCell[],
@@ -19,7 +30,7 @@ export function questionViews(
 ) {
   const { content, defs } = scope;
   return content.questions
-    .filter((q) => q.part === part && !q.identifier && q.type !== 'text')
+    .filter((q) => q.part === part && !q.identifier && q.type !== 'text' && !neverShown(q))
     .map((q) => {
       const distributions = defs.filter(
         (d) =>
@@ -113,7 +124,7 @@ export class AggregateView {
       ? `${roleDefs.key}.${Object.values(roleDefs.options_mapping[roleQ!.id] ?? {})[0]}`
       : '';
     const roles =
-      roleQ && 'options' in roleQ
+      roleQ && 'options' in roleQ && !neverShown(roleQ)
         ? roleQ.options
             .map((o) => ({
               id: o.id,

@@ -54,6 +54,7 @@ export class RowsView {
             .trim() ?? '–')
         : '–';
     const summary = { matched: 0, better: 0, worse: 0, same: 0 };
+    const questions = answerQuestions(scope.content, current);
     const rows = current.map((r) => {
       const base = {
         submission_id: r.submission_id,
@@ -61,7 +62,7 @@ export class RowsView {
         role: label(r),
         client: r.client,
         client_name: scope.clients.find((c) => c.slug === r.client)?.name ?? r.client,
-        replies: answerCells(scope.content.questions, r, sc.table),
+        replies: answerCells(scope.content, questions, r, sc.table),
       };
       const old = r.respondent_key ? prev.get(identity(r)) : undefined;
       if (scope.content.key === 'ki') {
@@ -139,7 +140,7 @@ export class RowsView {
       summary,
       columns:
         scope.content.key === 'ki' ? KI_COLUMNS.map((c) => ({ id: c.id, label: c.label })) : [],
-      questions: answerQuestions(scope.content.questions),
+      questions,
       rows,
     };
   }

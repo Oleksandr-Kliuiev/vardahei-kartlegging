@@ -59,17 +59,20 @@ export function DashboardRound({
             ))}
           </select>
         </span>
-        <span className="filterpar">
-          <label htmlFor="dashboard-role">Rolle</label>
-          <select id="dashboard-role" value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="">Alle</option>
-            {options.data?.roles.map((r) => (
-              <option value={r.id} key={r.id}>
-                {r.label}
-              </option>
-            ))}
-          </select>
-        </span>
+        {/* No role to filter by (the role question hidden, or no answers with a role yet). */}
+        {options.data?.roles.length !== 0 && (
+          <span className="filterpar">
+            <label htmlFor="dashboard-role">Rolle</label>
+            <select id="dashboard-role" value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="">Alle</option>
+              {options.data?.roles.map((r) => (
+                <option value={r.id} key={r.id}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          </span>
+        )}
         <FoldAll />
       </div>
       <ErrorMessage error={result.error} />
