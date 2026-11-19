@@ -1,7 +1,10 @@
 // «Alle svar» (19.11, Oleksandr: every answer of everyone who has answered, nothing left out): each
 // common question of the round in survey order, and one person's answer to it as Nynorsk text.
 // Admin only, inside the audited rows read of RowsView.perEmployee (identified rounds).
+// A question no one of them was shown (`visible_if`, e.g. the role question hidden 17.11 with
+// «vis» == «aldri») is left out; a cell of a question this person was not shown says so.
 import type { Question } from '@varde/schema/template/question';
+import { visibleQuestions, type Answers, type RunnerVersion } from '@varde/rules/runner';
 import type { Scoring } from '@varde/rules/findings';
 import type { PrivacyRow } from '../privacy/privacy.service.js';
 import { labelOf } from './aggregate-view.js';
@@ -18,12 +21,26 @@ export interface AnswerCell {
   free: string | null;
   /** Points of the zone model (0 green … 3 red), when the answer is scored. */
   score: number | null;
+  /** False when the survey did not show this person the question (`visible_if`). */
+  shown: boolean;
 }
 
-/** The questions people answer, in survey order: the identifier field is not one. */
-export function answerQuestions(questions: readonly Question[]): AnswerQuestion[] {
-  return questions
-    .filter((q) => q.part === 'common' && !q.identifier)
+const asked = (q: Question) => q.part === 'common' && !q.identifier;
+
+/** Ids of the questions the survey showed this person, by its own answers. */
+export function shownTo(version: RunnerVersion, row: PrivacyRow): Set<string> {
+  return new Set(visibleQuestions(version, row.answers as Answers).map((q) => q.id));
+}
+
+/** The questions people answer, in survey order, that at least one of `rows` was shown: the
+ * identifier field is not one. */
+export function answerQuestions(
+  version: RunnerVersion,
+  rows: readonly PrivacyRow[],
+): AnswerQuestion[] {
+  const shown = new Set(rows.flatMap((r) => [...shownTo(version, r)]));
+  return version.questions
+    .filter((q) => asked(q) && shown.has(q.id))
     .map((q) => ({ id: q.id, label: labelOf(q), text: q.texts.text.nn }));
 }
 
@@ -53,14 +70,17 @@ function words(q: Question, v: unknown): string | null {
   }
 }
 
-/** One person's answers to `questions`, in the same order. */
+/** One person's answers to `questions` (from answerQuestions), in the same order. */
 export function answerCells(
-  questions: readonly Question[],
+  version: RunnerVersion,
+  questions: readonly AnswerQuestion[],
   row: PrivacyRow,
   table: Scoring,
 ): AnswerCell[] {
-  return questions
-    .filter((q) => q.part === 'common' && !q.identifier)
+  const ids = new Set(questions.map((q) => q.id));
+  const mine = shownTo(version, row);
+  return version.questions
+    .filter((q) => ids.has(q.id))
     .map((q) => {
       const v = row.answers[q.id];
       const free = row.free?.[q.id];
@@ -69,6 +89,7 @@ export function answerCells(
         text: words(q, v),
         free: typeof free === 'string' && free.trim() ? free : null,
         score: score ?? null,
+        shown: mine.has(q.id),
       };
     });
 }

@@ -133,7 +133,7 @@ it('KI history column and red marked answers use the server model, with no unsaf
     rows: [
       {
         submission_id: 'synthetic-id',
-        replies: [{ text: 'Ja, ofte', free: null, score: null }],
+        replies: [{ text: 'Ja, ofte', free: null, score: null, shown: true }],
         respondent_key: 'ZZTEST',
         role: 'Kontor',
         client: 'daco',
@@ -185,8 +185,10 @@ it('«Alle svar» opens at once and shows every answer of every person, free tex
       columns: [],
       previous: null,
       replies: [
-        { text: 'Anna', free: i ? null : '<b>Lager</b>', score: null },
-        i ? { text: null, free: null, score: null } : { text: 'Ja', free: null, score: 3 },
+        { text: 'Anna', free: i ? null : '<b>Lager</b>', score: null, shown: true },
+        i
+          ? { text: null, free: null, score: null, shown: false }
+          : { text: 'Ja', free: null, score: 3, shown: true },
       ],
     })),
   };
@@ -207,6 +209,9 @@ it('«Alle svar» opens at once and shows every answer of every person, free tex
     ['Passord', 'Ja', '–'],
   ]);
   expect(view.div.querySelector('td.m3')?.textContent).toBe('Ja');
+  expect(view.div.querySelector('.alle-svar-tom')?.getAttribute('title')).toBe(
+    'Ikkje vist for denne personen',
+  );
   expect(view.div.querySelector('b')).toBeNull();
   expect(view.div.textContent).toContain('2 personar har svart.');
 });
